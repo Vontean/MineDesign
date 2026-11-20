@@ -18,13 +18,13 @@ var MAX_CARRIED_FILE_REFERRERS: number;
 function planSystemStoreConversion(
   title: string,
   files: Model.FileTable,
-  options: Storage.ConversionOptions = {},
+  conversionOptions: Storage.ConversionOptions = {},
 ): Storage.ConversionPlan {
   let documents = new Map<string, Storage.DatabaseRecord>(),
     uploads: Storage.ConversionUpload[] = [],
     carried = [
-      ...(options.precarried ?? []).map((input) => ({
-        ...input,
+      ...(conversionOptions.precarried ?? []).map((file) => ({
+        ...file,
       })),
     ],
     catalog = storageCatalogFromManifest(
@@ -32,276 +32,276 @@ function planSystemStoreConversion(
     );
   documents.set(
     SYSTEM_META_DOCUMENT_PATH,
-    makeStoredSystemMetadata(title, files, options.meta),
+    makeStoredSystemMetadata(title, files, conversionOptions.meta),
   );
-  let setFileRecord = (input: string, options2: Storage.DatabaseRecord) =>
+  let setFileRecord = (path: string, record: Storage.DatabaseRecord) =>
       void documents.set(
-        rawDocumentPathForFile(input),
-        options2,
+        rawDocumentPathForFile(path),
+        record,
       ),
-    bytesForPath = (input: string, options2: string) =>
-      options.binaries?.get(input)?.bytes ??
-      fileContentBytesModelStoredFileCodec(options2, input),
-    digestForPath = (input: string, options2: () => Uint8Array) =>
-      options.binaries?.get(input)?.sha256 ??
-      (options.sha256 !== undefined ? options.sha256(options2()) : undefined),
-    binarySize = (input: string) =>
-      options.binaries?.get(input)?.bytes?.length,
-    omitFile = (input: string, options2: string) =>
+    bytesForPath = (path: string, content: string) =>
+      conversionOptions.binaries?.get(path)?.bytes ??
+      fileContentBytesModelStoredFileCodec(content, path),
+    digestForPath = (path: string, readBytes: () => Uint8Array) =>
+      conversionOptions.binaries?.get(path)?.sha256 ??
+      (conversionOptions.sha256 !== undefined ? conversionOptions.sha256(readBytes()) : undefined),
+    binarySize = (path: string) =>
+      conversionOptions.binaries?.get(path)?.bytes?.length,
+    omitFile = (path: string, reason: string) =>
       void carried.push({
-        path: input,
-        reason: options2,
+        path: path,
+        reason: reason,
         form: "omitted",
       }),
     knownByDigest = new Map<string, Storage.KnownUpload>(),
     useOrQueueBlob = (
-      input: string,
-      options2: string,
-      context: string,
-      value?: Storage.BinaryFile,
+      path: string,
+      content: string,
+      contentType: string,
+      detachedBinary?: Storage.BinaryFile,
     ): boolean => {
-      let value2 = options.known?.get(input);
-      if (value2 === null) {
-        omitFile(input, FAILED_CONVERSION_UPLOAD_MESSAGE);
+      let knownUpload = conversionOptions.known?.get(path);
+      if (knownUpload === null) {
+        omitFile(path, FAILED_CONVERSION_UPLOAD_MESSAGE);
         return false;
       }
-      let callback = () => value?.bytes ?? bytesForPath(input, options2),
-        callback2 = () =>
-          value?.sha256 ??
-          (value !== undefined && options.sha256 !== undefined
-            ? options.sha256(value.bytes)
-            : digestForPath(input, callback)),
-        value3 =
-          value2 === undefined
+      let readBytes = () => detachedBinary?.bytes ?? bytesForPath(path, content),
+        computeDigest = () =>
+          detachedBinary?.sha256 ??
+          (detachedBinary !== undefined && conversionOptions.sha256 !== undefined
+            ? conversionOptions.sha256(detachedBinary.bytes)
+            : digestForPath(path, readBytes)),
+        normalizedUpload =
+          knownUpload === undefined
             ? null
-            : normalizeKnownUpload(value2);
-      if (value3 !== null) {
-        let value4 = value3.sha256 ?? callback2(),
-          state = {
+            : normalizeKnownUpload(knownUpload);
+      if (normalizedUpload !== null) {
+        let digest = normalizedUpload.sha256 ?? computeDigest(),
+          blobInfo = {
             bytes:
-              value3.bytes ??
-              value?.bytes.length ??
-              binarySize(input) ??
-              storedContentByteLength(options2, input),
-            contentType: value3.contentType ?? context,
-            sha256: value4,
-            storedSha256: value3.storedSha256,
-            ...options.stamp,
-            id: value3.id,
+              normalizedUpload.bytes ??
+              detachedBinary?.bytes.length ??
+              binarySize(path) ??
+              storedContentByteLength(content, path),
+            contentType: normalizedUpload.contentType ?? contentType,
+            sha256: digest,
+            storedSha256: normalizedUpload.storedSha256,
+            ...conversionOptions.stamp,
+            id: normalizedUpload.id,
           };
         setFileRecord(
-          input,
+          path,
           makeRemoteFileRecord(
-            input,
-            blobAbsoluteUrl(value3.id),
+            path,
+            blobAbsoluteUrl(normalizedUpload.id),
             {
-              ...state,
-              name: storedPathBasename(input),
+              ...blobInfo,
+              name: storedPathBasename(path),
             },
           ),
         );
-        if (value4 !== undefined) {
-          knownByDigest.set(value4 + "|" + state.contentType, state);
+        if (digest !== undefined) {
+          knownByDigest.set(digest + "|" + blobInfo.contentType, blobInfo);
         }
         return true;
       }
       addConversionUpload(
         uploads,
-        input,
-        context,
-        callback(),
-        callback2(),
+        path,
+        contentType,
+        readBytes(),
+        computeDigest(),
       );
       return true;
     },
-    convertFile = (input: string, options2: string): void => {
-      let value = chooseStoredConversionRoute(
-        input,
-        options2,
-        binarySize(input),
+    convertFile = (path: string, content: string): void => {
+      let route = chooseStoredConversionRoute(
+        path,
+        content,
+        binarySize(path),
       );
-      if (value.to === "inline") {
-        setFileRecord(input, {
-          path: input,
-          kind: storedFileKind(input),
-          data: options2,
+      if (route.to === "inline") {
+        setFileRecord(path, {
+          path: path,
+          kind: storedFileKind(path),
+          data: content,
         });
-      } else if (value.to === "data-uri") {
-        setFileRecord(input, {
-          path: input,
-          kind: storedFileKind(input),
-          data: options2,
+      } else if (route.to === "data-uri") {
+        setFileRecord(path, {
+          path: path,
+          kind: storedFileKind(path),
+          data: content,
         });
         carried.push({
-          path: input,
-          reason: value.carried,
+          path: path,
+          reason: route.carried,
           form: "data-uri",
         });
-      } else if (value.to === "omit") {
-        omitFile(input, value.carried);
+      } else if (route.to === "omit") {
+        omitFile(path, route.carried);
       } else if (
-        useOrQueueBlob(input, options2, value.contentType) &&
-        value.carried !== undefined
+        useOrQueueBlob(path, content, route.contentType) &&
+        route.carried !== undefined
       ) {
         carried.push({
-          path: input,
-          reason: value.carried,
+          path: path,
+          reason: route.carried,
           form: "blob",
         });
       }
     };
-  for (let value of Object.keys(files).sort()) {
+  for (let path of Object.keys(files).sort()) {
     if (
-      value === DESIGN_SYSTEM_PATHS.manifest ||
-      value === DESIGN_SYSTEM_PATHS.readme
+      path === DESIGN_SYSTEM_PATHS.manifest ||
+      path === DESIGN_SYSTEM_PATHS.readme
     ) {
       continue;
     }
-    let value2 = files[value],
-      value3 = explainUnsafeMirrorPath(value);
-    if (value3 !== null) {
-      omitFile(value, "its name " + value3 + ", so it was left out");
+    let content = files[path],
+      pathProblem = explainUnsafeMirrorPath(path);
+    if (pathProblem !== null) {
+      omitFile(path, "its name " + pathProblem + ", so it was left out");
       continue;
     }
-    if (value === DESIGN_SYSTEM_PATHS.tokens) {
-      let value5 = chooseStoredConversionRoute(value, value2),
-        value6 =
-          value5.to === "inline"
+    if (path === DESIGN_SYSTEM_PATHS.tokens) {
+      let route = chooseStoredConversionRoute(path, content),
+        tokenRecord =
+          route.to === "inline"
             ? parseJsonObjectOrNull(
                 tokensJsonWithManifestName(files),
               )
             : null;
-      if (value6 !== null) {
-        documents.set(SYSTEM_TOKENS_DOCUMENT_PATH, value6);
-      } else if (value5.to === "inline") {
-        setFileRecord(value, {
-          path: value,
+      if (tokenRecord !== null) {
+        documents.set(SYSTEM_TOKENS_DOCUMENT_PATH, tokenRecord);
+      } else if (route.to === "inline") {
+        setFileRecord(path, {
+          path: path,
           kind: "text",
-          data: value2,
+          data: content,
         });
         carried.push({
-          path: value,
+          path: path,
           reason:
             "it is not a JSON object, so it is kept as text and the page shows no tokens",
           form: "text-doc",
         });
       } else if (
-        value5.to === "blob" &&
-        useOrQueueBlob(value, value2, value5.contentType!)
+        route.to === "blob" &&
+        useOrQueueBlob(path, content, route.contentType!)
       ) {
         carried.push({
-          path: value,
+          path: path,
           reason:
-            (value5.carried ?? "it is stored as a file") +
+            (route.carried ?? "it is stored as a file") +
             "; the page shows no tokens",
           form: "blob",
         });
-      } else if (value5.to === "omit") {
-        omitFile(value, value5.carried);
+      } else if (route.to === "omit") {
+        omitFile(path, route.carried);
       }
       continue;
     }
-    let value4 = storagePointerForFile(value, value2);
-    if (value4 === null || value4.store === "file") {
-      convertFile(value, value2);
-    } else if (isPendingBlobId(value4.id)) {
+    let pointer = storagePointerForFile(path, content);
+    if (pointer === null || pointer.store === "file") {
+      convertFile(path, content);
+    } else if (isPendingBlobId(pointer.id)) {
       if (
-        options.known?.has(value) === true ||
-        options.binaries?.get(value)?.bytes !== undefined
+        conversionOptions.known?.has(path) === true ||
+        conversionOptions.binaries?.get(path)?.bytes !== undefined
       ) {
         useOrQueueBlob(
-          value,
-          value2,
-          storedContentType(value) ??
-            storageRecordForFile(files, catalog, value)!.type,
+          path,
+          content,
+          storedContentType(path) ??
+            storageRecordForFile(files, catalog, path)!.type,
         );
       } else {
         omitFile(
-          value,
+          path,
           "its stored copy was never uploaded (it names a placeholder, not a file), so it was left out",
         );
       }
     } else {
-      let value5 = storageRecordForFile(files, catalog, value)!;
+      let storedRecord = storageRecordForFile(files, catalog, path)!;
       setFileRecord(
-        value,
+        path,
         makeRemoteFileRecord(
-          value,
-          blobAbsoluteUrl(value4.id),
+          path,
+          blobAbsoluteUrl(pointer.id),
           {
-            bytes: value5.bytes,
-            contentType: value5.type,
-            sha256: value5.sha256,
-            storedSha256: value5.storedSha256,
-            name: value5.name,
-            addedAt: value5.addedAt,
-            via: value5.via,
+            bytes: storedRecord.bytes,
+            contentType: storedRecord.type,
+            sha256: storedRecord.sha256,
+            storedSha256: storedRecord.storedSha256,
+            name: storedRecord.name,
+            addedAt: storedRecord.addedAt,
+            via: storedRecord.via,
           },
         ),
       );
     }
   }
-  for (let [value, value2] of [...(options.detached ?? [])].sort(
-    ([input], [options2]): number =>
-      input < options2 ? -1 : input > options2 ? 1 : 0,
+  for (let [path, detachedBinary] of [...(conversionOptions.detached ?? [])].sort(
+    ([leftPath], [rightPath]): number =>
+      leftPath < rightPath ? -1 : leftPath > rightPath ? 1 : 0,
   )) {
     if (
-      !isValidDesignSystemPath(value) ||
-      Object.hasOwn(files, value) ||
-      value === DESIGN_SYSTEM_PATHS.readme ||
-      value === DESIGN_SYSTEM_PATHS.manifest ||
-      value === DESIGN_SYSTEM_PATHS.tokens
+      !isValidDesignSystemPath(path) ||
+      Object.hasOwn(files, path) ||
+      path === DESIGN_SYSTEM_PATHS.readme ||
+      path === DESIGN_SYSTEM_PATHS.manifest ||
+      path === DESIGN_SYSTEM_PATHS.tokens
     ) {
       continue;
     }
-    let value3 = explainUnsafeMirrorPath(value);
-    if (value3 !== null) {
-      omitFile(value, "its name " + value3 + ", so it was left out");
+    let pathProblem = explainUnsafeMirrorPath(path);
+    if (pathProblem !== null) {
+      omitFile(path, "its name " + pathProblem + ", so it was left out");
       continue;
     }
     useOrQueueBlob(
-      value,
+      path,
       "",
-      storedContentType(value) ?? "text/plain",
-      value2,
+      storedContentType(path) ?? "text/plain",
+      detachedBinary,
     );
   }
-  if (options.derived !== false) {
-    let value = consumptionDocumentationForFiles(files),
-      value2 = mergeReadmeWithGeneratedTail(
+  if (conversionOptions.derived !== false) {
+    let documentation = consumptionDocumentationForFiles(files),
+      readmeText = mergeReadmeWithGeneratedTail(
         files[DESIGN_SYSTEM_PATHS.readme] ?? "",
-        generatedReadmeTail(value.readme),
+        generatedReadmeTail(documentation.readme),
       );
-    if (value2 !== "") {
-      convertFile(DESIGN_SYSTEM_PATHS.readme, value2);
+    if (readmeText !== "") {
+      convertFile(DESIGN_SYSTEM_PATHS.readme, readmeText);
     }
-    for (let [value4, value5] of value.files) {
-      convertFile(value4, value5);
+    for (let [path, content] of documentation.files) {
+      convertFile(path, content);
     }
-    let value3 = generatedTokensCssForFiles(files);
-    if (value3 !== null) {
-      convertFile(GENERATED_TOKENS_CSS_PATH, value3);
+    let tokensCss = generatedTokensCssForFiles(files);
+    if (tokensCss !== null) {
+      convertFile(GENERATED_TOKENS_CSS_PATH, tokensCss);
     }
   }
-  for (let value of [...uploads]) {
-    let value2 =
-      value.sha256 === undefined
+  for (let upload of [...uploads]) {
+    let knownBlob =
+      upload.sha256 === undefined
         ? undefined
-        : knownByDigest.get(value.sha256 + "|" + value.contentType);
-    if (value2 === undefined) {
+        : knownByDigest.get(upload.sha256 + "|" + upload.contentType);
+    if (knownBlob === undefined) {
       continue;
     }
-    uploads.splice(uploads.indexOf(value), 1);
-    for (let value3 of value.paths) {
+    uploads.splice(uploads.indexOf(upload), 1);
+    for (let path of upload.paths) {
       setFileRecord(
-        value3,
+        path,
         makeRemoteFileRecord(
-          value3,
-          blobAbsoluteUrl(value2.id),
+          path,
+          blobAbsoluteUrl(knownBlob.id),
           {
-            ...value2,
-            bytes: value.byteLength,
-            name: storedPathBasename(value3),
+            ...knownBlob,
+            bytes: upload.byteLength,
+            name: storedPathBasename(path),
           },
         ),
       );
@@ -314,19 +314,19 @@ function planSystemStoreConversion(
         uploads: uploads,
         carried: carried,
       },
-      options.sha256,
+      conversionOptions.sha256,
     ),
-    knownUploads = options.known;
+    knownUploads = conversionOptions.known;
   if (
     knownUploads !== undefined &&
-    plan.uploads.some((input) =>
-      input.paths.some((input2) => knownUploads.has(input2)),
+    plan.uploads.some((upload) =>
+      upload.paths.some((path) => knownUploads.has(path)),
     )
   ) {
     return applyKnownConversionUploads(
       plan,
       knownUploads,
-      options.stamp ?? {},
+      conversionOptions.stamp ?? {},
     );
   } else {
     return appendStoredFilesGuidance(plan);
@@ -341,34 +341,34 @@ function applyKnownConversionUploads(
     uploads: Storage.ConversionUpload[] = [],
     carried = [...plan.carried];
   for (let value of plan.uploads) {
-    let value2 = value.paths.find((input) => knownUploads.has(input)),
-      value3 = value2 === undefined ? undefined : knownUploads.get(value2),
-      value4 =
-        value3 === undefined || value3 === null
+    let knownPath = value.paths.find((path) => knownUploads.has(path)),
+      knownUpload = knownPath === undefined ? undefined : knownUploads.get(knownPath),
+      normalizedUpload =
+        knownUpload === undefined || knownUpload === null
           ? null
-          : normalizeKnownUpload(value3);
-    if (value3 === undefined || (value3 !== null && value4 === null)) {
+          : normalizeKnownUpload(knownUpload);
+    if (knownUpload === undefined || (knownUpload !== null && normalizedUpload === null)) {
       uploads.push(value);
     } else {
-      for (let value5 of value.paths) {
-        if (value4 === null) {
+      for (let path of value.paths) {
+        if (normalizedUpload === null) {
           carried.push({
-            path: value5,
+            path: path,
             reason: FAILED_CONVERSION_UPLOAD_MESSAGE,
             form: "omitted",
           });
         } else {
           documents.set(
-            rawDocumentPathForFile(value5),
+            rawDocumentPathForFile(path),
             makeRemoteFileRecord(
-              value5,
-              blobAbsoluteUrl(value4.id),
+              path,
+              blobAbsoluteUrl(normalizedUpload.id),
               {
-                bytes: value4.bytes ?? value.byteLength,
-                contentType: value4.contentType ?? value.contentType,
-                sha256: value4.sha256 ?? value.sha256,
-                storedSha256: value4.storedSha256,
-                name: storedPathBasename(value5),
+                bytes: normalizedUpload.bytes ?? value.byteLength,
+                contentType: normalizedUpload.contentType ?? value.contentType,
+                sha256: normalizedUpload.sha256 ?? value.sha256,
+                storedSha256: normalizedUpload.storedSha256,
+                name: storedPathBasename(path),
                 ...stamp,
               },
             ),
@@ -390,57 +390,57 @@ function conversionFileReferrers(
   plan: Storage.ConversionPlan,
 ): Map<string, string[]> {
   let referrers = new Map<string, Set<string>>(),
-    addReference = (input: string | null, options: string): void => {
-      if (input === null || input === "") {
+    addReference = (referencedPath: string | null, referringPath: string): void => {
+      if (referencedPath === null || referencedPath === "") {
         return;
       }
-      referrers.set(input, (referrers.get(input) ?? new Set()).add(options));
+      referrers.set(referencedPath, (referrers.get(referencedPath) ?? new Set()).add(referringPath));
     },
     readmes: [string, string][] = [];
   for (let [, value] of plan.docs) {
-    let value2 = stringOrUndefined(value.path),
-      value3 = stringOrUndefined(value.data);
-    if (value2 === undefined || value3 === undefined) {
+    let path = stringOrUndefined(value.path),
+      content = stringOrUndefined(value.data);
+    if (path === undefined || content === undefined) {
       continue;
     }
     if (
-      classifyDesignSystemFile(value2) === "preview" ||
-      classifyDesignSystemFile(value2) === "componentReadme"
+      classifyDesignSystemFile(path) === "preview" ||
+      classifyDesignSystemFile(path) === "componentReadme"
     ) {
-      for (let value4 of componentFileReferences(
-        value2,
-        value3,
+      for (let reference of componentFileReferences(
+        path,
+        content,
       )) {
         addReference(
-          resolveLocalFileReference(value2, value4),
-          value2,
+          resolveLocalFileReference(path, reference),
+          path,
         );
       }
     }
     if (
-      value2 === DESIGN_SYSTEM_PATHS.readme ||
-      (classifyDesignSystemFile(value2) === "doc" &&
-        !isGeneratedApiPath(value2)) ||
-      (value2.startsWith(DESIGN_SYSTEM_PATHS.assetsDir) &&
-        fileExtension(value2) === "md")
+      path === DESIGN_SYSTEM_PATHS.readme ||
+      (classifyDesignSystemFile(path) === "doc" &&
+        !isGeneratedApiPath(path)) ||
+      (path.startsWith(DESIGN_SYSTEM_PATHS.assetsDir) &&
+        fileExtension(path) === "md")
     ) {
       readmes.push([
-        value2,
-        value2 === DESIGN_SYSTEM_PATHS.readme
-          ? stripGeneratedReadmeTail(value3)
-          : value3,
+        path,
+        path === DESIGN_SYSTEM_PATHS.readme
+          ? stripGeneratedReadmeTail(content)
+          : content,
       ]);
     }
   }
   for (let value of plan.uploads) {
     if (fileExtension(value.path) === "css") {
-      for (let value2 of new TextDecoder()
+      for (let match of new TextDecoder()
         .decode(value.bytes)
         .matchAll(CSS_FILE_REFERENCE_PATTERN)) {
         addReference(
           resolveLocalFileReference(
             value.path,
-            value2[1] ?? value2[2] ?? value2[3] ?? "",
+            match[1] ?? match[2] ?? match[3] ?? "",
           ),
           value.path,
         );
@@ -456,27 +456,27 @@ function conversionFileReferrers(
   if (readmes.length > 0) {
     for (let value of new Set([
       ...[...plan.docs.values()].map(
-        (input) => stringOrUndefined(input.path) ?? "",
+        (record) => stringOrUndefined(record.path) ?? "",
       ),
-      ...plan.uploads.flatMap((input) => input.paths),
+      ...plan.uploads.flatMap((upload) => upload.paths),
     ])) {
       if (!value.startsWith(DESIGN_SYSTEM_PATHS.assetsDir)) {
         continue;
       }
-      for (let [value2, value3] of readmes) {
+      for (let [readmePath, readmeText] of readmes) {
         if (
-          value3.includes(value) ||
-          value3.includes(storedPathBasename(value))
+          readmeText.includes(value) ||
+          readmeText.includes(storedPathBasename(value))
         ) {
-          addReference(value, value2);
+          addReference(value, readmePath);
         }
       }
     }
   }
   return new Map(
     [...referrers]
-      .sort(([input], [options]): number => (input < options ? -1 : 1))
-      .map(([input, input2]) => [input, [...input2].sort()]),
+      .sort(([leftPath], [rightPath]): number => (leftPath < rightPath ? -1 : 1))
+      .map(([path, pathsReferencingFile]) => [path, [...pathsReferencingFile].sort()]),
   );
 }
 function conversionFilePriority(
@@ -487,80 +487,80 @@ function conversionFilePriority(
       plan.docs.get(SYSTEM_META_DOCUMENT_PATH),
     ),
     groupOrder = (metadata?.assetGroups ?? []).map(
-      (input) => (input as Storage.StoredPriorityGroup).name,
+      (group) => (group as Storage.StoredPriorityGroup).name,
     ),
     paths = [
       ...new Set([
         ...[...plan.docs.values()].map(
-          (input) => stringOrUndefined(input.path) ?? "",
+          (record) => stringOrUndefined(record.path) ?? "",
         ),
-        ...plan.uploads.flatMap((input) => input.paths),
+        ...plan.uploads.flatMap((upload) => upload.paths),
       ]),
-    ].filter((input): boolean => input !== ""),
-    priority = (input: string) => {
-      if (!input.startsWith(DESIGN_SYSTEM_PATHS.assetsDir)) {
+    ].filter((path): boolean => path !== ""),
+    priority = (path: string) => {
+      if (!path.startsWith(DESIGN_SYSTEM_PATHS.assetsDir)) {
         return [0];
       }
-      let value = input
+      let value = path
           .slice(DESIGN_SYSTEM_PATHS.assetsDir.length)
           .split("/"),
-        value2 = value.length > 1 ? groupOrder.indexOf(value[0]) : -1,
-        value3 =
-          value2 < 0
+        groupIndex = value.length > 1 ? groupOrder.indexOf(value[0]) : -1,
+        groupFiles =
+          groupIndex < 0
             ? []
             : ((
-                metadata?.assetGroups?.[value2] as
+                metadata?.assetGroups?.[groupIndex] as
                   | Storage.StoredPriorityGroup
                   | undefined
               )?.order ?? []),
-        value4 = value3.indexOf(value.slice(1).join("/"));
+        fileIndex = groupFiles.indexOf(value.slice(1).join("/"));
       return [
-        referrers.has(input) ? 1 : 2,
-        value2 < 0 ? groupOrder.length : value2,
-        value4 < 0 ? value3.length : value4,
+        referrers.has(path) ? 1 : 2,
+        groupIndex < 0 ? groupOrder.length : groupIndex,
+        fileIndex < 0 ? groupFiles.length : fileIndex,
       ];
     },
-    ranked = paths.map((input) => ({
-      p: input,
-      r: priority(input),
+    ranked = paths.map((path) => ({
+      p: path,
+      r: priority(path),
     }));
-  ranked.sort((input, options) => {
+  ranked.sort((left, right) => {
     for (let index: number = 0; index < 3; index++) {
-      let value = (input.r[index] ?? 0) - (options.r[index] ?? 0);
+      let value = (left.r[index] ?? 0) - (right.r[index] ?? 0);
       if (value !== 0) {
         return value;
       }
     }
-    if (input.p < options.p) {
+    if (left.p < right.p) {
       return -1;
     } else {
-      if (input.p > options.p) {
+      if (left.p > right.p) {
         return 1;
       } else {
         return 0;
       }
     }
   });
-  return new Map(ranked.map((input, options) => [input.p, options]));
+  return new Map(ranked.map((entry, rank) => [entry.p, rank]));
 }
 function enforceConversionBudgets(
   plan: Storage.ConversionPlan,
-  sha2562?: (bytes: Uint8Array) => string,
+  hashBytes?: (bytes: Uint8Array) => string,
 ): Storage.ConversionPlan {
   let documents = new Map(plan.docs),
-    uploads = plan.uploads.map((input) => ({
-      ...input,
-      paths: [...input.paths],
+    uploads = plan.uploads.map((upload) => ({
+      ...upload,
+      paths: [...upload.paths],
     })),
     carried: Storage.CarriedFile[] = [],
-    carry = (input: Storage.CarriedFile): void => {
+    carry = (file: Storage.CarriedFile): void => {
       let value = carried.findIndex(
-        (input2): boolean => input2.path === input.path,
+        (existing): boolean => existing.path === file.path,
       );
       if (value >= 0) {
         carried.splice(value, 1);
       }
-      carried.push(input);
+      carried.push(file);
     };
   for (let value of plan.carried) {
     carry({
@@ -581,96 +581,96 @@ function enforceConversionBudgets(
       priority ??= conversionFilePriority(plan, referrers);
       return priority;
     },
-    comparePriority = (input: string, options: string) =>
-      (filePriority().get(input) ?? 0) - (filePriority().get(options) ?? 0) ||
-      (input < options ? -1 : 1),
-    uploadForPath = (input: string) =>
-      uploads.find((input2) => input2.paths.includes(input)),
-    pathsInCollection = (input: string) =>
+    comparePriority = (leftPath: string, rightPath: string) =>
+      (filePriority().get(leftPath) ?? 0) - (filePriority().get(rightPath) ?? 0) ||
+      (leftPath < rightPath ? -1 : 1),
+    uploadForPath = (path: string) =>
+      uploads.find((upload) => upload.paths.includes(path)),
+    pathsInCollection = (collection: string) =>
       [
         ...new Set([
           ...[...documents]
             .filter(
-              ([input2]): boolean => documentCollectionPath(input2) === input,
+              ([documentPath]): boolean => documentCollectionPath(documentPath) === collection,
             )
             .map(
-              ([, input2]) =>
-                stringOrUndefined(input2.path) ??
-                (input === SYSTEM_COLLECTION ? "" : ""),
+              ([, document]) =>
+                stringOrUndefined(document.path) ??
+                (collection === SYSTEM_COLLECTION ? "" : ""),
             ),
           ...uploads
-            .flatMap((input2) => input2.paths)
+            .flatMap((upload) => upload.paths)
             .filter(
-              (input2): boolean =>
+              (path): boolean =>
                 documentCollectionPath(
-                  rawDocumentPathForFile(input2),
-                ) === input,
+                  rawDocumentPathForFile(path),
+                ) === collection,
             ),
         ]),
-      ].filter((input2): boolean => input2 !== ""),
-    documentBytes = (input: string) =>
-      documents.has(rawDocumentPathForFile(input))
+      ].filter((path): boolean => path !== ""),
+    documentBytes = (path: string) =>
+      documents.has(rawDocumentPathForFile(path))
         ? estimateEmbeddedJsonBytes(
-            documents.get(rawDocumentPathForFile(input)),
+            documents.get(rawDocumentPathForFile(path)),
           )
         : 512,
-    omitPath = (input: string, options: string): void => {
-      documents.delete(rawDocumentPathForFile(input));
-      let value = uploadForPath(input);
-      if (value !== undefined) {
+    omitPath = (path: string, reason: string): void => {
+      documents.delete(rawDocumentPathForFile(path));
+      let upload = uploadForPath(path);
+      if (upload !== undefined) {
         if (
-          ((value.paths = value.paths.filter(
-            (input2): boolean => input2 !== input,
+          ((upload.paths = upload.paths.filter(
+            (otherPath): boolean => otherPath !== path,
           )),
-          value.paths.length === 0)
+          upload.paths.length === 0)
         ) {
-          uploads.splice(uploads.indexOf(value), 1);
+          uploads.splice(uploads.indexOf(upload), 1);
         } else {
-          value.path = value.paths[0];
-          value.docPath = rawDocumentPathForFile(value.path);
+          upload.path = upload.paths[0];
+          upload.docPath = rawDocumentPathForFile(upload.path);
         }
       }
       carry({
-        path: input,
-        reason: options,
+        path: path,
+        reason: reason,
         form: "omitted",
       });
     };
-  for (let value of DESIGN_SYSTEM_COLLECTIONS) {
-    if (value === SYSTEM_COLLECTION) {
+  for (let collection of DESIGN_SYSTEM_COLLECTIONS) {
+    if (collection === SYSTEM_COLLECTION) {
       continue;
     }
-    let value2 = pathsInCollection(value),
-      value3 = value2
-        .filter((input) =>
+    let collectionPaths = pathsInCollection(collection),
+      inlineDataUriPaths = collectionPaths
+        .filter((path) =>
           carried.some(
-            (input2) => input2.path === input && input2.form === "data-uri",
+            (file) => file.path === path && file.form === "data-uri",
           ),
         )
         .sort(
-          (input, options) =>
-            documentBytes(options) - documentBytes(input) ||
-            (input < options ? -1 : 1),
+          (leftPath, rightPath) =>
+            documentBytes(rightPath) - documentBytes(leftPath) ||
+            (leftPath < rightPath ? -1 : 1),
         ),
-      value4 = value3.reduce(
-        (input, options) => input + documentBytes(options),
+      inlineDataUriBytes = inlineDataUriPaths.reduce(
+        (bytes, path) => bytes + documentBytes(path),
         0,
       );
-    for (let value6 of value3) {
+    for (let path of inlineDataUriPaths) {
       if (
-        value4 <=
+        inlineDataUriBytes <=
         MAX_INLINE_DATA_URI_BUDGET_FRACTION *
           MAX_SYNC_COLLECTION_BYTES
       ) {
         break;
       }
-      value4 -= documentBytes(value6);
+      inlineDataUriBytes -= documentBytes(path);
       omitPath(
-        value6,
+        path,
         "the store takes no " +
-          fileKindDescription(value6) +
+          fileKindDescription(path) +
           " and " +
-          value +
+          collection +
           "/ already holds its " +
           formatStoredFileKilobytes(
             MAX_INLINE_DATA_URI_BUDGET_FRACTION *
@@ -679,93 +679,93 @@ function enforceConversionBudgets(
           " of such files inline, so it was left out",
       );
     }
-    value2 = pathsInCollection(value);
-    let value5 = value2.reduce(
-      (input, options) => input + documentBytes(options),
+    collectionPaths = pathsInCollection(collection);
+    let collectionBytes = collectionPaths.reduce(
+      (bytes, path) => bytes + documentBytes(path),
       0,
     );
-    if (value5 > MAX_SYNC_COLLECTION_BYTES) {
-      let value6 = value2
-        .filter((input) => {
+    if (collectionBytes > MAX_SYNC_COLLECTION_BYTES) {
+      let textPathsToExternalize = collectionPaths
+        .filter((path) => {
           let entry = documents.get(
-            rawDocumentPathForFile(input),
+            rawDocumentPathForFile(path),
           );
           return (
             entry !== undefined &&
             typeof entry.data === "string" &&
-            isTextFilePath(input) &&
-            storedContentType(input) !== null
+            isTextFilePath(path) &&
+            storedContentType(path) !== null
           );
         })
         .sort(
-          (input, options) =>
-            documentBytes(options) - documentBytes(input) ||
-            (input < options ? -1 : 1),
+          (leftPath, rightPath) =>
+            documentBytes(rightPath) - documentBytes(leftPath) ||
+            (leftPath < rightPath ? -1 : 1),
         );
-      for (let value7 of value6) {
-        if (value5 <= MAX_SYNC_COLLECTION_BYTES) {
+      for (let path of textPathsToExternalize) {
+        if (collectionBytes <= MAX_SYNC_COLLECTION_BYTES) {
           break;
         }
         let entry = documents.get(
-          rawDocumentPathForFile(value7),
+          rawDocumentPathForFile(path),
         );
-        value5 -= estimateEmbeddedJsonBytes(entry) - 512;
-        documents.delete(rawDocumentPathForFile(value7));
-        let value8 = storedFileEncoder.encode(entry!.data as string);
+        collectionBytes -= estimateEmbeddedJsonBytes(entry) - 512;
+        documents.delete(rawDocumentPathForFile(path));
+        let textBytes = storedFileEncoder.encode(entry!.data as string);
         addConversionUpload(
           uploads,
-          value7,
-          storedContentType(value7)!,
-          value8,
-          sha2562?.(value8),
+          path,
+          storedContentType(path)!,
+          textBytes,
+          hashBytes?.(textBytes),
         );
         carry({
-          path: value7,
-          reason: collectionOverflowConversionMessage(value),
+          path: path,
+          reason: collectionOverflowConversionMessage(collection),
           form: "blob",
         });
       }
-      value2 = pathsInCollection(value);
+      collectionPaths = pathsInCollection(collection);
     }
-    if (value2.length > MAX_FILES_PER_COLLECTION) {
-      let value6 = value2.sort(comparePriority);
-      while (value6.length > MAX_FILES_PER_COLLECTION) {
-        omitPath(value6.pop()!, collectionFileOverflowMessage(value));
+    if (collectionPaths.length > MAX_FILES_PER_COLLECTION) {
+      let rankedPaths = collectionPaths.sort(comparePriority);
+      while (rankedPaths.length > MAX_FILES_PER_COLLECTION) {
+        omitPath(rankedPaths.pop()!, collectionFileOverflowMessage(collection));
       }
     }
   }
-  let storageIdentity = (input: string): string | null => {
-      let entry = documents.get(rawDocumentPathForFile(input)),
-        value =
+  let storageIdentity = (path: string): string | null => {
+      let entry = documents.get(rawDocumentPathForFile(path)),
+        blobId =
           entry !== undefined
             ? blobIdFromReference(
                 stringOrUndefined(entry.dataRef) ?? "",
               )
             : null;
-      if (value !== null) {
-        return "id:" + value;
+      if (blobId !== null) {
+        return "id:" + blobId;
       }
-      let value2 = uploadForPath(input);
-      if (value2 === undefined) {
+      let upload = uploadForPath(path);
+      if (upload === undefined) {
         return null;
       } else {
-        if (value2.sha256 !== undefined) {
-          return "sha:" + value2.sha256 + "|" + value2.contentType;
+        if (upload.sha256 !== undefined) {
+          return "sha:" + upload.sha256 + "|" + upload.contentType;
         } else {
-          return "path:" + value2.path;
+          return "path:" + upload.path;
         }
       }
     },
     storageIdentityByPath = new Map<string, string>();
   for (let value of new Set([
     ...[...documents.values()].map(
-      (input) => stringOrUndefined(input.path) ?? "",
+      (document) => stringOrUndefined(document.path) ?? "",
     ),
-    ...uploads.flatMap((input) => input.paths),
+    ...uploads.flatMap((upload) => upload.paths),
   ])) {
-    let value2 = value === "" ? null : storageIdentity(value);
-    if (value2 !== null) {
-      storageIdentityByPath.set(value, value2);
+    let identity = value === "" ? null : storageIdentity(value);
+    if (identity !== null) {
+      storageIdentityByPath.set(value, identity);
     }
   }
   let referenceCounts = new Map<string, number>();
@@ -779,18 +779,18 @@ function enforceConversionBudgets(
       storedFileCount > BLOB_STORAGE_LIMITS.files &&
       value.length > 0
     ) {
-      let value2 = value.pop()!;
+      let path = value.pop()!;
       if (
-        classifyDesignSystemFile(value2) !== "asset" &&
-        classifyDesignSystemFile(value2) !== "componentOther"
+        classifyDesignSystemFile(path) !== "asset" &&
+        classifyDesignSystemFile(path) !== "componentOther"
       ) {
         continue;
       }
-      let entry = storageIdentityByPath.get(value2)!;
-      omitPath(value2, BLOB_FILE_COUNT_OVERFLOW_MESSAGE);
-      let value3: number = referenceCounts.get(entry)! - 1;
-      referenceCounts.set(entry, value3);
-      if (value3 === 0) {
+      let entry = storageIdentityByPath.get(path)!;
+      omitPath(path, BLOB_FILE_COUNT_OVERFLOW_MESSAGE);
+      let remainingReferences: number = referenceCounts.get(entry)! - 1;
+      referenceCounts.set(entry, remainingReferences);
+      if (remainingReferences === 0) {
         storedFileCount--;
       }
     }
@@ -799,10 +799,10 @@ function enforceConversionBudgets(
     referrers ??= conversionFileReferrers(plan);
   }
   for (let value of carried) {
-    let value2 = referrers?.get(value.path);
-    if (value2 !== undefined) {
+    let additionalReferrers = referrers?.get(value.path);
+    if (additionalReferrers !== undefined) {
       value.referrers = [
-        ...new Set([...(value.referrers ?? []), ...value2]),
+        ...new Set([...(value.referrers ?? []), ...additionalReferrers]),
       ].sort();
     }
   }
@@ -829,32 +829,32 @@ function metadataWithCarriedFiles(
       carriedMore: previousMore,
       ...base
     } = metadata,
-    records = carried.map((input) => ({
-      path: input.path,
-      reason: input.reason,
-      form: input.form,
-      ...(input.referrers !== undefined
+    records = carried.map((file) => ({
+      path: file.path,
+      reason: file.reason,
+      form: file.form,
+      ...(file.referrers !== undefined
         ? {
-            referrers: input.referrers.slice(0, MAX_CARRIED_FILE_REFERRERS),
-            ...(input.referrers.length > MAX_CARRIED_FILE_REFERRERS
+            referrers: file.referrers.slice(0, MAX_CARRIED_FILE_REFERRERS),
+            ...(file.referrers.length > MAX_CARRIED_FILE_REFERRERS
               ? {
-                  referrerCount: input.referrers.length,
+                  referrerCount: file.referrers.length,
                 }
               : {}),
           }
         : {}),
     })),
-    build = (input: Storage.DatabaseRecord, options: number) =>
+    build = (baseMetadata: Storage.DatabaseRecord, recordLimit: number) =>
       carried.length === 0
         ? {
-            ...input,
+            ...baseMetadata,
           }
         : {
-            ...input,
-            carried: records.slice(0, options),
-            ...(carried.length > options
+            ...baseMetadata,
+            carried: records.slice(0, recordLimit),
+            ...(carried.length > recordLimit
               ? {
-                  carriedMore: carried.length - options,
+                  carriedMore: carried.length - recordLimit,
                 }
               : {}),
           },
@@ -868,18 +868,18 @@ function metadataWithCarriedFiles(
     estimateEmbeddedJsonBytes(withCarried) >
     MAX_SYNC_DOCUMENT_BYTES
   ) {
-    let { sections: value, ...value2 } = base;
+    let { sections: _omittedSections, ...baseWithoutSections } = base;
     compactBase = {
-      ...value2,
+      ...baseWithoutSections,
       ...(base.assetGroups !== undefined
         ? {
             assetGroups: (
               base.assetGroups as Storage.StoredPriorityGroup[]
-            ).map((input) => ({
-              name: input.name,
-              ...(input.tile !== undefined
+            ).map((group) => ({
+              name: group.name,
+              ...(group.tile !== undefined
                 ? {
-                    tile: input.tile,
+                    tile: group.tile,
                   }
                 : {}),
             })),
@@ -917,15 +917,15 @@ export {
 };
 export function installModelStoreConversion(): () => void {
   return () => {
-    collectionOverflowConversionMessage = (input): string =>
-      input +
+    collectionOverflowConversionMessage = (collection): string =>
+      collection +
       "/ holds more than " +
       formatStoredFileKilobytes(
         MAX_SYNC_COLLECTION_BYTES,
       ) +
       " of text, so it is stored as a file";
-    collectionFileOverflowMessage = (input): string =>
-      input +
+    collectionFileOverflowMessage = (collection): string =>
+      collection +
       "/ is past the " +
       String(MAX_FILES_PER_COLLECTION) +
       " files one area holds, so it was left out of the store";

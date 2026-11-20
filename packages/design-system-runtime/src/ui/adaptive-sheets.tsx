@@ -20,20 +20,20 @@ function AdaptiveSheetPopupHost({
 }: AdaptiveSheetPopupHostProps): React.ReactElement {
   useUiLocale();
   let value: MobileSheetParts | null = useSheetImplementation(),
-    { pending: value2 } = useSheetState();
+    { pending: isPending } = useSheetState();
   if (value !== null) {
     return (
       <value.SheetPopupHost>
-        {(input: SheetRenderState): React.ReactNode => children(input, value)}
+        {(sheetState: SheetRenderState): React.ReactNode => children(sheetState, value)}
       </value.SheetPopupHost>
     );
   }
   return (
     <jsxtK.Fragment>
       {[children(
-          value2 ? concealedSheetHost : defaultSheetHost,
+          isPending ? concealedSheetHost : defaultSheetHost,
           null,
-        ), value2 ? <PendingSheetBackdrop kind={kind} /> : null]}
+        ), isPending ? <PendingSheetBackdrop kind={kind} /> : null]}
     </jsxtK.Fragment>
   );
 }

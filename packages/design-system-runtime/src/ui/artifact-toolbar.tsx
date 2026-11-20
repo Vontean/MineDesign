@@ -45,12 +45,12 @@ var TOOLBAR_SCROLL_FOCUS_MARGIN: number;
 var TOOLBAR_PADDLE_CLASS: string;
 function hasVisibleToolbarContent(
   element: Element,
-  options: ToolbarContentOptions = {},
+  visibilityOptions: ToolbarContentOptions = {},
 ) {
   let attribute = element.getAttribute("role");
   if (
-    options.skip?.(element) ||
-    (options.pinFixed && element.classList.contains("tb-pin-scroll"))
+    visibilityOptions.skip?.(element) ||
+    (visibilityOptions.pinFixed && element.classList.contains("tb-pin-scroll"))
   ) {
     return false;
   }
@@ -72,7 +72,7 @@ function hasVisibleToolbarContent(
     }
     if (
       value.nodeType === 1 &&
-      hasVisibleToolbarContent(value as Element, options)
+      hasVisibleToolbarContent(value as Element, visibilityOptions)
     ) {
       return true;
     }
@@ -81,13 +81,13 @@ function hasVisibleToolbarContent(
 }
 function toolbarContentCount(
   element: Element,
-  options?: ToolbarContentOptions,
+  visibilityOptions?: ToolbarContentOptions,
 ) {
   let index = 0;
   for (let value of element.children) {
     index += value.matches("[data-tb-seat], .contents")
-      ? toolbarContentCount(value, options)
-      : hasVisibleToolbarContent(value as Element, options)
+      ? toolbarContentCount(value, visibilityOptions)
+      : hasVisibleToolbarContent(value as Element, visibilityOptions)
         ? 1
         : 0;
   }
@@ -120,8 +120,8 @@ function updateToolbarEmptyState(toolbar: Element) {
     toggleAttributeIfChanged(
       value,
       "data-tb-has-save",
-      [...value.querySelectorAll("[data-tb-save]")].some((input: Element) =>
-        hasVisibleToolbarContent(input, state),
+      [...value.querySelectorAll("[data-tb-save]")].some((saveArea: Element) =>
+        hasVisibleToolbarContent(saveArea, state),
       ),
     );
   }
@@ -152,16 +152,16 @@ function updateToolbarWordLock(toolbar: Element) {
   if (element.scrollLeft > 1 && !element.hasAttribute("data-tb-lock-words")) {
     return;
   }
-  let element2 = element.querySelector<HTMLElement>(".tb-yields"),
-    value = element2 ? "yield" : "";
-  if (element.getAttribute("data-tb-lock-words") !== value) {
-    element.setAttribute("data-tb-lock-words", value);
+  let yieldingContent = element.querySelector<HTMLElement>(".tb-yields"),
+    lockMode = yieldingContent ? "yield" : "";
+  if (element.getAttribute("data-tb-lock-words") !== lockMode) {
+    element.setAttribute("data-tb-lock-words", lockMode);
   }
-  let value2 =
-    element2 != null &&
-    element2.clientWidth < TOOLBAR_SCROLL_FOCUS_MARGIN &&
-    element2.scrollWidth > element2.clientWidth;
-  if (element.scrollWidth > element.clientWidth + 1 || value2) {
+  let yieldingContentClipped =
+    yieldingContent != null &&
+    yieldingContent.clientWidth < TOOLBAR_SCROLL_FOCUS_MARGIN &&
+    yieldingContent.scrollWidth > yieldingContent.clientWidth;
+  if (element.scrollWidth > element.clientWidth + 1 || yieldingContentClipped) {
     element.removeAttribute("data-tb-lock-words");
   }
 }
@@ -179,13 +179,13 @@ function SaveStatusDot({ state: state }: SaveStatusProps) {
   if (state.status === "error" || state.status === "readonly") {
     return <SaveProblemStatus state={state} />;
   }
-  let value = state.status === "saving",
-    value2 = state.status === "dirty";
+  let isSaving = state.status === "saving",
+    hasPendingEdits = state.status === "dirty";
   return (
     <span
       role={"status"}
       title={
-        value ? (uiMessage("design-system.artifactToolbar.saving")) : (value2 ? (uiMessage("design-system.artifactToolbar.editsAreHeldInThe")) : (uiMessage("design-system.artifactToolbar.everyChangeSavesAutomatically")))
+        isSaving ? (uiMessage("design-system.artifactToolbar.saving")) : (hasPendingEdits ? (uiMessage("design-system.artifactToolbar.editsAreHeldInThe")) : (uiMessage("design-system.artifactToolbar.everyChangeSavesAutomatically")))
       }
       className={
         "inline-flex shrink-0 items-center gap-1.5 text-xs whitespace-nowrap text-fg-muted"
@@ -194,10 +194,10 @@ function SaveStatusDot({ state: state }: SaveStatusProps) {
       {[<span
           className={
             "h-1.5 w-1.5 shrink-0 rounded-full " +
-            (value || value2 ? "bg-fill-warning" : "bg-fill-success")
+            (isSaving || hasPendingEdits ? "bg-fill-warning" : "bg-fill-success")
           }
         />, <span className={"tb-status-text truncate"}>
-          {value ? (uiMessage("design-system.artifactToolbar.saving")) : (value2 ? (uiMessage("design-system.artifactToolbar.unsavedEdits")) : (uiMessage("design-system.artifactToolbar.savedAutomatically")))}
+          {isSaving ? (uiMessage("design-system.artifactToolbar.saving")) : (hasPendingEdits ? (uiMessage("design-system.artifactToolbar.unsavedEdits")) : (uiMessage("design-system.artifactToolbar.savedAutomatically")))}
         </span>]}
     </span>
   );
@@ -208,30 +208,30 @@ function SaveStatusControl({
   tipSide = "bottom",
 }: SaveStatusControlProps) {
   useUiLocale();
-  let value = reactForUiArtifactToolbar.useSyncExternalStore(
+  let hostShowsSave = reactForUiArtifactToolbar.useSyncExternalStore(
       subscribeHostSaveChrome,
       hostDrawsSave,
       () => false,
     ),
-    value2 = reactForUiArtifactToolbar.useSyncExternalStore(
+    hostHandlesSaveRetry = reactForUiArtifactToolbar.useSyncExternalStore(
       subscribeHostSaveChrome,
       hostTakesRetry,
       () => false,
     ),
-    [value3, value4] = reactForUiArtifactToolbar.useState(false),
-    [value5, value6] = reactForUiArtifactToolbar.useState(false),
-    [value7, value8] = reactForUiArtifactToolbar.useState(false),
+    [isFocused, setFocused] = reactForUiArtifactToolbar.useState(false),
+    [isHovered, setHovered] = reactForUiArtifactToolbar.useState(false),
+    [retryRequested, setRetryRequested] = reactForUiArtifactToolbar.useState(false),
     status = state.status,
-    value9 =
+    isWaiting =
       status === "saving" || status === "dirty" || status === "loading";
-  if (value7 && !value9 && status !== "error") {
-    value8(false);
+  if (retryRequested && !isWaiting && status !== "error") {
+    setRetryRequested(false);
   }
-  let value10 = value3 || value5 || (value7 && value9);
-  if (value && (status !== "error" || value2) && !value10) {
+  let isEngaged = isFocused || isHovered || (retryRequested && isWaiting);
+  if (hostShowsSave && (status !== "error" || hostHandlesSaveRetry) && !isEngaged) {
     return null;
   }
-  let value11 =
+  let indicatorState =
       status === "loading" || status === "cached"
         ? "loading"
         : status === "error"
@@ -239,18 +239,18 @@ function SaveStatusControl({
           : status === "dirty" || status === "saving"
             ? "pending"
             : "synced",
-    value12 = value11 === "synced" && !value10,
-    value13 =
+    isQuiet = indicatorState === "synced" && !isEngaged,
+    statusText =
       state.message ??
-      (value11 === "pending"
+      (indicatorState === "pending"
         ? "Syncing…"
-        : value11 === "error"
+        : indicatorState === "error"
           ? uiMessage("design-system.artifactToolbar.couldnTSyncClickTo")
           : uiMessage("design-system.artifactToolbar.allChangesSynced")),
-    value14 = status === "error" || status === "dirty";
+    canRetry = status === "error" || status === "dirty";
   return (
     <Tooltip
-      content={value13}
+      content={statusText}
       side={tipSide}
       align={"end"}
       multiline={true}
@@ -259,23 +259,23 @@ function SaveStatusControl({
     >
       <button
         type={"button"}
-        aria-disabled={value14 ? undefined : true}
+        aria-disabled={canRetry ? undefined : true}
         onClick={() => {
-          if (!value14) {
+          if (!canRetry) {
             return;
           }
           if (status === "error") {
-            value8(true);
+            setRetryRequested(true);
           }
           onRetry();
         }}
-        onFocus={() => value4(true)}
-        onBlur={() => value4(false)}
-        onPointerEnter={() => value6(true)}
-        onPointerLeave={() => value6(false)}
-        aria-label={value13}
-        data-sync={value11}
-        data-quiet={value12 ? "" : undefined}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        onPointerEnter={() => setHovered(true)}
+        onPointerLeave={() => setHovered(false)}
+        aria-label={statusText}
+        data-sync={indicatorState}
+        data-quiet={isQuiet ? "" : undefined}
         data-testid={"sync-dot"}
         className={"tb-sync-dot"}
       >
@@ -292,18 +292,18 @@ function SaveProblemStatus({ state: state }: SaveStatusProps) {
     () => false,
   );
   if (state.status === "error") {
-    let value2 = state.message ?? uiMessage("design-system.artifactToolbar.couldnTSave");
+    let errorMessage = state.message ?? uiMessage("design-system.artifactToolbar.couldnTSave");
     return (
       <span
         role={"status"}
-        title={value2}
+        title={errorMessage}
         className={
           "inline-flex max-w-80 shrink-0 items-center gap-1.5 truncate rounded-full bg-bad/10 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-bad"
         }
       >
         {[<span
             className={"h-1.5 w-1.5 shrink-0 rounded-full bg-fill-danger"}
-          />, <span className={"tb-status-text truncate"}>{value2}</span>]}
+          />, <span className={"tb-status-text truncate"}>{errorMessage}</span>]}
       </span>
     );
   }
@@ -332,16 +332,16 @@ function toolbarScrollPageTarget(
   scrollWidth: number,
   margin: number,
 ) {
-  let value = Math.max(0, scrollWidth - viewportWidth),
-    value2 = Math.max(viewportWidth - 2 * margin, 48),
-    value3 = scrollLeft + direction * value2;
-  if (direction === 1 && value - value3 <= margin) {
-    value3 = value;
+  let maxScrollLeft = Math.max(0, scrollWidth - viewportWidth),
+    pageWidth = Math.max(viewportWidth - 2 * margin, 48),
+    targetScrollLeft = scrollLeft + direction * pageWidth;
+  if (direction === 1 && maxScrollLeft - targetScrollLeft <= margin) {
+    targetScrollLeft = maxScrollLeft;
   }
-  if (direction === -1 && value3 <= margin) {
-    value3 = 0;
+  if (direction === -1 && targetScrollLeft <= margin) {
+    targetScrollLeft = 0;
   }
-  return Math.min(value, Math.max(0, value3));
+  return Math.min(maxScrollLeft, Math.max(0, targetScrollLeft));
 }
 function isFocusVisibleUiArtifactToolbar(element: Element) {
   try {
@@ -360,8 +360,8 @@ function ToolbarScrollPaddle({
   return (
     <div
       data-tb-paddle={""}
-      onClick={(input: React.MouseEvent<HTMLDivElement>) =>
-        onPress(input.detail === 0)
+      onClick={(event: React.MouseEvent<HTMLDivElement>) =>
+        onPress(event.detail === 0)
       }
       className={joinClassNames(
         TOOLBAR_PADDLE_CLASS,
@@ -387,80 +387,80 @@ function ToolbarScrollArea({
   children: children,
 }: ToolbarScrollAreaProps) {
   useUiLocale();
-  let ref = reactForUiArtifactToolbar.useRef<HTMLDivElement | null>(null),
-    ref2 = reactForUiArtifactToolbar.useRef<HTMLDivElement | null>(null),
-    [value, value2] = reactForUiArtifactToolbar.useState(false),
-    [value3, value4] = reactForUiArtifactToolbar.useState(false),
-    value5 = useCoarsePointer(),
-    ref3 = reactForUiArtifactToolbar.useRef<string | undefined>(undefined),
-    ref4 = reactForUiArtifactToolbar.useRef(false),
-    ref5 = reactForUiArtifactToolbar.useRef(false);
+  let scrollRef = reactForUiArtifactToolbar.useRef<HTMLDivElement | null>(null),
+    viewportRef = reactForUiArtifactToolbar.useRef<HTMLDivElement | null>(null),
+    [showLeftPaddle, setShowLeftPaddle] = reactForUiArtifactToolbar.useState(false),
+    [showRightPaddle, setShowRightPaddle] = reactForUiArtifactToolbar.useState(false),
+    hasCoarsePointer = useCoarsePointer(),
+    lastRevealKeyRef = reactForUiArtifactToolbar.useRef<string | undefined>(undefined),
+    paddlePressedByKeyboardRef = reactForUiArtifactToolbar.useRef(false),
+    movingFocusFromPaddleRef = reactForUiArtifactToolbar.useRef(false);
   reactForUiArtifactToolbar.useEffect(() => {
-    if (revealLeading != null && revealLeading !== ref3.current) {
-      ref.current?.scrollTo({
+    if (revealLeading != null && revealLeading !== lastRevealKeyRef.current) {
+      scrollRef.current?.scrollTo({
         left: 0,
         behavior: "smooth",
       });
     }
-    ref3.current = revealLeading;
+    lastRevealKeyRef.current = revealLeading;
   }, [revealLeading]);
-  let callback = reactForUiArtifactToolbar.useCallback(() => {
-    let current = ref.current;
+  let updatePaddles = reactForUiArtifactToolbar.useCallback(() => {
+    let current = scrollRef.current;
     if (!current) {
       return;
     }
-    let value6 =
-        (ref2.current?.clientWidth ?? current.clientWidth) >=
-        (value5 ? 80 : 48),
-      value7 = value6 && current.scrollLeft > 1,
-      value8 =
-        value6 &&
+    let hasPaddleSpace =
+        (viewportRef.current?.clientWidth ?? current.clientWidth) >=
+        (hasCoarsePointer ? 80 : 48),
+      canScrollLeft = hasPaddleSpace && current.scrollLeft > 1,
+      canScrollRight =
+        hasPaddleSpace &&
         current.scrollLeft + current.clientWidth < current.scrollWidth - 1,
-      current2 = ref2.current,
+      viewport = viewportRef.current,
       activeElement = current.ownerDocument.activeElement,
-      value9 = activeElement?.closest("[data-tb-paddle]");
+      focusedPaddle = activeElement?.closest("[data-tb-paddle]");
     if (
-      current2 &&
+      viewport &&
       activeElement &&
-      value9?.parentElement === current2 &&
-      (ref4.current || isFocusVisibleUiArtifactToolbar(activeElement))
+      focusedPaddle?.parentElement === viewport &&
+      (paddlePressedByKeyboardRef.current || isFocusVisibleUiArtifactToolbar(activeElement))
     ) {
-      let value10 = value9 === current2.lastElementChild;
-      if (!(value10 ? value8 : value7)) {
-        let value11 = collectFocusableDescendants(current);
-        ref5.current = true;
+      let isRightPaddle = focusedPaddle === viewport.lastElementChild;
+      if (!(isRightPaddle ? canScrollRight : canScrollLeft)) {
+        let focusableElements = collectFocusableDescendants(current);
+        movingFocusFromPaddleRef.current = true;
         try {
-          for (let value12 of value10 ? value11.reverse() : value11) {
-            if (value12.hasAttribute("data-base-ui-focus-guard")) {
+          for (let element of isRightPaddle ? focusableElements.reverse() : focusableElements) {
+            if (element.hasAttribute("data-base-ui-focus-guard")) {
               continue;
             }
-            value12.focus({
+            element.focus({
               preventScroll: true,
             });
-            if (value9.contains(current.ownerDocument.activeElement)) {
+            if (focusedPaddle.contains(current.ownerDocument.activeElement)) {
               continue;
             }
             suppressEnterClicksUntilRelease();
             break;
           }
         } finally {
-          ref5.current = false;
+          movingFocusFromPaddleRef.current = false;
         }
       }
     }
-    value2(value7);
-    value4(value8);
-  }, [value5]);
+    setShowLeftPaddle(canScrollLeft);
+    setShowRightPaddle(canScrollRight);
+  }, [hasCoarsePointer]);
   reactForUiArtifactToolbar.useEffect(() => {
-    let current = ref.current;
+    let current = scrollRef.current;
     if (!current) {
       return;
     }
-    callback();
+    updatePaddles();
     let ancestor = current.closest(".tb-root"),
       index = 0,
       observer = new ResizeObserver(() => {
-        callback();
+        updatePaddles();
         cancelAnimationFrame(index);
         if (ancestor) {
           index = requestAnimationFrame(() =>
@@ -469,42 +469,42 @@ function ToolbarScrollArea({
         }
       });
     observer.observe(current);
-    for (let value7 of current.children) {
-      observer.observe(value7);
+    for (let child of current.children) {
+      observer.observe(child);
     }
-    let value6 = ancestor?.querySelector(".tb-card-end");
+    let endOfToolbar = ancestor?.querySelector(".tb-card-end");
     if (ancestor) {
       observer.observe(ancestor);
     }
-    if (value6) {
-      observer.observe(value6);
+    if (endOfToolbar) {
+      observer.observe(endOfToolbar);
     }
-    let callback4 = (event: WheelEvent) => {
+    let onWheel = (event: WheelEvent) => {
       if (
         (event.ctrlKey && current.closest("[data-tb-overlay]")) ||
         current.scrollWidth <= current.clientWidth
       ) {
         return;
       }
-      let value7 =
+      let delta =
         Math.abs(event.deltaX) > Math.abs(event.deltaY)
           ? event.deltaX
           : event.deltaY;
-      if (value7 === 0) {
+      if (delta === 0) {
         return;
       }
-      current.scrollLeft += value7;
+      current.scrollLeft += delta;
       event.preventDefault();
     };
-    current.addEventListener("wheel", callback4, {
+    current.addEventListener("wheel", onWheel, {
       passive: false,
     });
-    let callback5 = (event: FocusEvent) => {
+    let onFocusIn = (event: FocusEvent) => {
       let target = event.target,
-        current2 = ref2.current;
+        viewport = viewportRef.current;
       if (
-        !current2 ||
-        ref5.current ||
+        !viewport ||
+        movingFocusFromPaddleRef.current ||
         !(target instanceof Element) ||
         target.hasAttribute("data-base-ui-focus-guard") ||
         !isFocusVisibleUiArtifactToolbar(target)
@@ -515,84 +515,84 @@ function ToolbarScrollArea({
       if (bounds.width <= 1) {
         return;
       }
-      let bounds2 = current2.getBoundingClientRect(),
-        callback6 = (input: string) =>
-          current2.querySelector(":scope > " + input)?.getBoundingClientRect()
+      let viewportBounds = viewport.getBoundingClientRect(),
+        childWidth = (selector: string) =>
+          viewport.querySelector(":scope > " + selector)?.getBoundingClientRect()
             .width ?? 0,
-        value7 = callback6("[data-tb-paddle]"),
-        value8 =
-          bounds2.width - 2 * (value7 + callback6("[data-tb-fade]")) >=
+        paddleWidth = childWidth("[data-tb-paddle]"),
+        sideInset =
+          viewportBounds.width - 2 * (paddleWidth + childWidth("[data-tb-fade]")) >=
           bounds.width
-            ? value7 + callback6("[data-tb-fade]")
-            : value7,
-        value9 = bounds2.left + value8,
-        value10 = bounds2.right - value8,
-        value11 =
-          bounds.left < value9 || bounds.width > value10 - value9
-            ? bounds.left - value9
-            : bounds.right > value10
-              ? bounds.right - value10
+            ? paddleWidth + childWidth("[data-tb-fade]")
+            : paddleWidth,
+        visibleLeft = viewportBounds.left + sideInset,
+        visibleRight = viewportBounds.right - sideInset,
+        scrollDelta =
+          bounds.left < visibleLeft || bounds.width > visibleRight - visibleLeft
+            ? bounds.left - visibleLeft
+            : bounds.right > visibleRight
+              ? bounds.right - visibleRight
               : 0;
-      if (Math.round(value11) === 0) {
+      if (Math.round(scrollDelta) === 0) {
         return;
       }
-      let value12 = current.scrollWidth - current.clientWidth,
-        value13 = current.scrollLeft + value11;
-      if (value13 <= value8 && bounds.right - value11 + value13 <= value10) {
-        value13 = 0;
+      let maxScrollLeft = current.scrollWidth - current.clientWidth,
+        targetScrollLeft = current.scrollLeft + scrollDelta;
+      if (targetScrollLeft <= sideInset && bounds.right - scrollDelta + targetScrollLeft <= visibleRight) {
+        targetScrollLeft = 0;
       } else if (
-        value12 - value13 <= value8 &&
-        bounds.left - value11 - (value12 - value13) >= value9
+        maxScrollLeft - targetScrollLeft <= sideInset &&
+        bounds.left - scrollDelta - (maxScrollLeft - targetScrollLeft) >= visibleLeft
       ) {
-        value13 = value12;
+        targetScrollLeft = maxScrollLeft;
       }
-      current.scrollLeft = Math.round(value13);
+      current.scrollLeft = Math.round(targetScrollLeft);
     };
-    current.addEventListener("focusin", callback5);
+    current.addEventListener("focusin", onFocusIn);
     return () => {
       cancelAnimationFrame(index);
       observer.disconnect();
-      current.removeEventListener("wheel", callback4);
-      current.removeEventListener("focusin", callback5);
+      current.removeEventListener("wheel", onWheel);
+      current.removeEventListener("focusin", onFocusIn);
     };
-  }, [callback]);
-  let callback2 = () => {
-      ref4.current = false;
+  }, [updatePaddles]);
+  let releasePaddle = () => {
+      paddlePressedByKeyboardRef.current = false;
     },
-    callback3 = (input: number, options: boolean) => {
-      let current = ref.current;
+    scrollPage = (direction: number, fromKeyboard: boolean) => {
+      let current = scrollRef.current;
       if (!current) {
         return;
       }
-      let value6 = ref2.current?.querySelector<HTMLElement>(
+      let paddle = viewportRef.current?.querySelector<HTMLElement>(
           ":scope > [data-tb-paddle]",
         ),
-        value7 = ref2.current?.querySelector<HTMLElement>(
+        fade = viewportRef.current?.querySelector<HTMLElement>(
           ":scope > span[aria-hidden]",
         ),
-        value8 = (value6?.offsetWidth ?? 24) + (value7?.offsetWidth ?? 24),
-        value9 = ref2.current?.clientWidth ?? current.clientWidth,
-        value10 = current.clientWidth - value9;
-      ref4.current = options;
+        sideMargin = (paddle?.offsetWidth ?? 24) + (fade?.offsetWidth ?? 24),
+        viewportWidth = viewportRef.current?.clientWidth ?? current.clientWidth,
+        overflowInset = current.clientWidth - viewportWidth;
+      paddlePressedByKeyboardRef.current = fromKeyboard;
       current.scrollTo({
         left: toolbarScrollPageTarget(
-          input,
+          direction,
           current.scrollLeft,
-          value9,
-          current.scrollWidth - value10,
-          value8,
+          viewportWidth,
+          current.scrollWidth - overflowInset,
+          sideMargin,
         ),
         behavior: "smooth",
       });
     };
   return (
     <div
-      ref={ref2}
+      ref={viewportRef}
       className={"relative flex min-w-0 flex-1 items-center self-stretch"}
     >
       {[<div
-          ref={ref}
-          onScroll={callback}
+          ref={scrollRef}
+          onScroll={updatePaddles}
           className={
             "tb-scroll flex min-w-0 flex-1 items-center gap-1 self-stretch overflow-x-auto pointer-coarse:gap-1.5"
           }
@@ -613,12 +613,12 @@ function ToolbarScrollArea({
             >
               {children}
             </div>]}
-        </div>, value ? (
+        </div>, showLeftPaddle ? (
           <jsxForUiArtifactToolbar.Fragment>
             {[<ToolbarScrollPaddle
                 dir={-1}
-                onPress={(input: boolean) => callback3(-1, input)}
-                onLetGo={callback2}
+                onPress={(fromKeyboard: boolean) => scrollPage(-1, fromKeyboard)}
+                onLetGo={releasePaddle}
               />, <span
                 aria-hidden={"true"}
                 data-tb-fade={"start"}
@@ -627,7 +627,7 @@ function ToolbarScrollArea({
                 }
               />]}
           </jsxForUiArtifactToolbar.Fragment>
-        ) : null, value3 ? (
+        ) : null, showRightPaddle ? (
           <jsxForUiArtifactToolbar.Fragment>
             {[<span
                 aria-hidden={"true"}
@@ -637,8 +637,8 @@ function ToolbarScrollArea({
                 }
               />, <ToolbarScrollPaddle
                 dir={1}
-                onPress={(input: boolean) => callback3(1, input)}
-                onLetGo={callback2}
+                onPress={(fromKeyboard: boolean) => scrollPage(1, fromKeyboard)}
+                onLetGo={releasePaddle}
               />]}
           </jsxForUiArtifactToolbar.Fragment>
         ) : null]}
@@ -654,26 +654,26 @@ function ToolbarSaveControls({
   onToggleEdit: onToggleEdit,
 }: ToolbarSaveControlsProps) {
   useUiLocale();
-  let value = saveState.status === "readonly",
-    value2 = saveState.status === "dirty" || saveState.status === "error",
-    value3 = !value2 || saveState.status === "saving",
-    value4 = saveState.status === "saving",
-    value5 = value4 ? "Saving…" : "Save",
-    value6 = value4
-      ? value5
-      : value2
+  let isReadOnly = saveState.status === "readonly",
+    canSave = saveState.status === "dirty" || saveState.status === "error",
+    isSaveDisabled = !canSave || saveState.status === "saving",
+    isSaving = saveState.status === "saving",
+    saveLabel = isSaving ? "Saving…" : "Save",
+    saveDescription = isSaving
+      ? saveLabel
+      : canSave
         ? uiMessage("design-system.artifactToolbar.publishYourChangesEveryOpen")
         : uiMessage("design-system.artifactToolbar.everythingIsPublished"),
-    value7 = useDisabledButtonDescription({
-      disabled: value3,
-      name: value5,
-      reason: value6,
+    disabledDescription = useDisabledButtonDescription({
+      disabled: isSaveDisabled,
+      name: saveLabel,
+      reason: saveDescription,
     }),
     ref = reactForUiArtifactToolbar.useRef<HTMLSpanElement | null>(null);
-  useDeferredTooltipFocus(ref, value3);
+  useDeferredTooltipFocus(ref, isSaveDisabled);
   return (
     <jsxForUiArtifactToolbar.Fragment>
-      {[!value && onToggleEdit ? (
+      {[!isReadOnly && onToggleEdit ? (
           <ToolbarButton
             icon={"Edit"}
             label={uiMessage("design-system.artifactToolbar.edit")}
@@ -682,34 +682,34 @@ function ToolbarSaveControls({
             onClick={onToggleEdit}
             data-testid={"dc-mode-edit"}
           />
-        ) : null, !value && syncDot ? (
+        ) : null, !isReadOnly && syncDot ? (
           <SaveStatusControl state={saveState} onRetry={onSave} />
-        ) : null, !value && saveMode === "manual" && !syncDot ? (
+        ) : null, !isReadOnly && saveMode === "manual" && !syncDot ? (
           <Tooltip
-            content={value6}
-            shortcut={value2 ? "cmd+s" : undefined}
+            content={saveDescription}
+            shortcut={canSave ? "cmd+s" : undefined}
             side={"bottom"}
             align={"end"}
             hoverable={false}
           >
             <span
               ref={ref}
-              tabIndex={value3 ? 0 : -1}
-              {...value7.props}
+              tabIndex={isSaveDisabled ? 0 : -1}
+              {...disabledDescription.props}
               data-tb-save={""}
               className={
                 "inline-flex shrink-0 rounded outline-none focus-visible:outline-hidden focus-visible:shadow-focus"
               }
             >
               {[<Button
-                  variant={value2 ? "primary" : "secondary"}
-                  disabled={value3}
+                  variant={canSave ? "primary" : "secondary"}
+                  disabled={isSaveDisabled}
                   onClick={onSave}
-                  aria-label={value5}
-                  {...value7.inner}
+                  aria-label={saveLabel}
+                  {...disabledDescription.inner}
                 >
-                  {value5}
-                </Button>, value7.mirror]}
+                  {saveLabel}
+                </Button>, disabledDescription.mirror]}
             </span>
           </Tooltip>
         ) : null]}
@@ -754,44 +754,44 @@ function ArtifactToolbar({
   extrasEnd: extrasEnd,
 }: ArtifactToolbarProps) {
   useUiLocale();
-  let [, value] = reactForUiArtifactToolbar.useState(0);
+  let [, setUndoRevision] = reactForUiArtifactToolbar.useState(0);
   reactForUiArtifactToolbar.useEffect(
-    () => undo?.subscribe(() => value((input: number) => input + 1)),
+    () => undo?.subscribe(() => setUndoRevision((revision: number) => revision + 1)),
     [undo],
   );
-  let value2 = readOnly === true || saveState.status === "readonly",
-    value3 = reactForUiArtifactToolbar.useSyncExternalStore(
+  let isReadOnly = readOnly === true || saveState.status === "readonly",
+    hostShowsReadOnly = reactForUiArtifactToolbar.useSyncExternalStore(
       subscribeHostSaveChrome,
       hostDrawsReadOnly,
       () => false,
     ),
-    value4 = effectiveToolbarDensity(density),
-    value5 = touchTargets === "square" ? value4 : density,
-    ref = reactForUiArtifactToolbar.useRef<HTMLDivElement | null>(null),
-    [value6, value7] = reactForUiArtifactToolbar.useState(false),
-    [value8, value9] = reactForUiArtifactToolbar.useState(false),
-    value10 = useCoarsePointer(),
-    value11 = variant === "floating";
+    resolvedDensity = effectiveToolbarDensity(density),
+    toolbarDensity = touchTargets === "square" ? resolvedDensity : density,
+    toolbarRef = reactForUiArtifactToolbar.useRef<HTMLDivElement | null>(null),
+    [collapsed, setCollapsed] = reactForUiArtifactToolbar.useState(false),
+    [pinControls, setPinControls] = reactForUiArtifactToolbar.useState(false),
+    hasCoarsePointer = useCoarsePointer(),
+    isFloating = variant === "floating";
   reactForUiArtifactToolbar.useLayoutEffect(() => {
-    let current = ref.current;
+    let current = toolbarRef.current;
     if (!current) {
       return;
     }
-    let callback = () => {
-        let value13 = getComputedStyle(current),
-          value14 =
+    let measureToolbar = () => {
+        let style = getComputedStyle(current),
+          availableWidth =
             current.clientWidth -
-            parseFloat(value13.paddingLeft || "0") -
-            parseFloat(value13.paddingRight || "0");
-        value7(current.clientWidth > 0 && value14 <= TOOLBAR_WIDE_BREAKPOINT);
-        value9(
+            parseFloat(style.paddingLeft || "0") -
+            parseFloat(style.paddingRight || "0");
+        setCollapsed(current.clientWidth > 0 && availableWidth <= TOOLBAR_WIDE_BREAKPOINT);
+        setPinControls(
           current.clientWidth > 0 &&
-            value14 <=
-              (value10
+            availableWidth <=
+              (hasCoarsePointer
                 ? TOOLBAR_FULL_BREAKPOINT
                 : TOOLBAR_COMPACT_BREAKPOINT),
         );
-        if (!value11) {
+        if (!isFloating) {
           return;
         }
         current.parentElement?.style.setProperty(
@@ -804,27 +804,27 @@ function ArtifactToolbar({
         );
       },
       ancestor = current.closest<HTMLElement>("[data-mc-paned]"),
-      value12 =
+      observer =
         typeof ResizeObserver !== "undefined"
-          ? new ResizeObserver(callback)
+          ? new ResizeObserver(measureToolbar)
           : null;
-    value12?.observe(current);
-    callback();
+    observer?.observe(current);
+    measureToolbar();
     return () => {
-      value12?.disconnect();
+      observer?.disconnect();
       ancestor?.style.removeProperty("--tb-row-h");
       current.parentElement?.style.removeProperty("--tb-overlay-h");
     };
-  }, [value10, value11]);
+  }, [hasCoarsePointer, isFloating]);
   reactForUiArtifactToolbar.useLayoutEffect(() => {
-    if (!ref.current) {
+    if (!toolbarRef.current) {
       return;
     }
-    updateToolbarEmptyState(ref.current);
-    updateToolbarWordLock(ref.current);
+    updateToolbarEmptyState(toolbarRef.current);
+    updateToolbarWordLock(toolbarRef.current);
   });
   reactForUiArtifactToolbar.useLayoutEffect(() => {
-    let current = ref.current;
+    let current = toolbarRef.current;
     if (!current || typeof MutationObserver === "undefined") {
       return;
     }
@@ -855,17 +855,17 @@ function ArtifactToolbar({
   }, []);
   return (
     <CdsRoot
-      density={value5}
+      density={toolbarDensity}
       render={
         <header
-          ref={ref}
-          data-collapsed={value6 ? "" : undefined}
-          data-pin-fixed={value8 ? "" : undefined}
+          ref={toolbarRef}
+          data-collapsed={collapsed ? "" : undefined}
+          data-pin-fixed={pinControls ? "" : undefined}
           data-touch-targets={touchTargets}
-          data-tb-overlay={value11 ? "" : undefined}
+          data-tb-overlay={isFloating ? "" : undefined}
           className={joinClassNames(
             "tb-root flex shrink-0 items-center",
-            value11
+            isFloating
               ? "absolute inset-x-0 top-0 z-toolbar"
               : "h-10 gap-1 px-1 shadow-[inset_0_-1px_0_0_var(--t-border)] pointer-coarse:h-12 pointer-coarse:gap-1.5 pointer-coarse:px-2",
           )}
@@ -873,22 +873,22 @@ function ArtifactToolbar({
       }
     >
       <TooltipProvider>
-        <ToolbarFloatingContext.Provider value={value6}>
-          <ToolbarQuietContext.Provider value={value2}>
+        <ToolbarFloatingContext.Provider value={collapsed}>
+          <ToolbarQuietContext.Provider value={isReadOnly}>
             {[<ToolbarSurface
-                floating={value11}
+                floating={isFloating}
                 className={"tb-card tb-card-start flex min-w-0 items-center"}
               >
                 <ToolbarScrollArea
                   revealLeading={
-                    (saveState.status === "readonly" && !value3) ||
+                    (saveState.status === "readonly" && !hostShowsReadOnly) ||
                     (saveState.status === "error" && !syncDot)
                       ? saveState.status
                       : undefined
                   }
                   leading={
                     <jsxForUiArtifactToolbar.Fragment>
-                      {[leading, undo && !value2 && undoButtons ? (
+                      {[leading, undo && !isReadOnly && undoButtons ? (
                           <jsxForUiArtifactToolbar.Fragment>
                             {[<ToolbarButton
                                 iconOnly={true}
@@ -926,7 +926,7 @@ function ArtifactToolbar({
                   {children}
                 </ToolbarScrollArea>
               </ToolbarSurface>, <ToolbarSurface
-                floating={value11}
+                floating={isFloating}
                 className={
                   "tb-card tb-card-end ml-auto flex items-center gap-1 pointer-coarse:gap-1.5"
                 }
@@ -940,13 +940,13 @@ function ArtifactToolbar({
                     >
                       {extrasEnd}
                     </span>
-                  ) : null, (pinned != null && value8) || trailing != null ? (
+                  ) : null, (pinned != null && pinControls) || trailing != null ? (
                     <span
                       className={
                         "tb-tail flex items-center gap-1 pointer-coarse:gap-1.5"
                       }
                     >
-                      {[pinned != null && value8 ? (
+                      {[pinned != null && pinControls ? (
                           <span
                             data-tb-cluster={""}
                             className={

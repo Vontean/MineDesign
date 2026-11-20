@@ -25,8 +25,8 @@ function escapePageHtmlAttribute(text: string): string {
 function escapeHtmlComment(text: string): string {
   return text.replaceAll("-->", "--​>").replaceAll("--!>", "--​!>");
 }
-function stringifyInlineJson(value: unknown): string {
-  return JSON.stringify(value).replaceAll("<", "\\u003c");
+function stringifyInlineJson(documentData: unknown): string {
+  return JSON.stringify(documentData).replaceAll("<", "\\u003c");
 }
 function compiledPageHtmlAttributes(capabilities: string): string {
   return (
@@ -108,8 +108,8 @@ function assembleCompiledPage(
   ].join(`
 `);
 }
-function readCompiledPageDocument(document2: Document): unknown {
-  let value = document2.getElementById(compiledPageDocumentId);
+function readCompiledPageDocument(pageDocument: Document): unknown {
+  let value = pageDocument.getElementById(compiledPageDocumentId);
   if (!value) {
     return;
   }
@@ -119,10 +119,10 @@ function readCompiledPageDocument(document2: Document): unknown {
     return;
   }
 }
-function readCompiledPageAnatomy(document2: Document): Host.CompiledPage {
-  let value = document2.getElementById(compiledPageAppId),
-    value2 = document2.getElementById(compiledPageStyleId);
-  if (!value || !value2) {
+function readCompiledPageAnatomy(pageDocument: Document): Host.CompiledPage {
+  let appScript = pageDocument.getElementById(compiledPageAppId),
+    styleSheet = pageDocument.getElementById(compiledPageStyleId);
+  if (!appScript || !styleSheet) {
     throw Error(
       "page anatomy missing (#" +
         compiledPageAppId +
@@ -133,9 +133,9 @@ function readCompiledPageAnatomy(document2: Document): Host.CompiledPage {
     );
   }
   let text = "";
-  for (let value9 of Array.from(document2.head.childNodes)) {
-    if (value9.nodeType === 8) {
-      let data = (value9 as Comment).data;
+  for (let node of Array.from(pageDocument.head.childNodes)) {
+    if (node.nodeType === 8) {
+      let data = (node as Comment).data;
       if (
         data.startsWith(` README
 `) &&
@@ -147,66 +147,66 @@ function readCompiledPageAnatomy(document2: Document): Host.CompiledPage {
       }
     }
   }
-  let value3 =
-      document2
+  let readmeMeta =
+      pageDocument
         .querySelector('meta[name="README"]')
         ?.getAttribute("content") ?? "",
-    value4: boolean =
-      document2.querySelector(
+    emulator: boolean =
+      pageDocument.querySelector(
         'meta[name="' + emulatorBuildMetaName() + '"]',
       ) !== null,
-    value5 = document2.getElementById(emulatorShimId),
-    callback = (input: string | null) => {
-      let value9 = input ?? "";
+    emulatorShim = pageDocument.getElementById(emulatorShimId),
+    trimWrapperNewlines = (textContent: string | null) => {
+      let source = textContent ?? "";
       if (
-        value9.startsWith(`
+        source.startsWith(`
 `) &&
-        value9.endsWith(`
+        source.endsWith(`
 `)
       ) {
-        return value9.slice(1, -1);
+        return source.slice(1, -1);
       } else {
-        return value9;
+        return source;
       }
     },
-    value6 =
-      document2
+    capabilities =
+      pageDocument
         .querySelector(
           'meta[name="' + compiledPageCapabilitiesMetaName + '"]',
         )
         ?.getAttribute("content") ?? defaultCompiledPageCapabilities,
-    value7 = document2.getElementById(compiledPageModeId)?.textContent ?? "",
-    value8 = (["light", "dark"] as const).find(
-      (input): boolean =>
-        value7 === colorModeBootstrapScript(input),
+    colorModeSource = pageDocument.getElementById(compiledPageModeId)?.textContent ?? "",
+    colorMode = (["light", "dark"] as const).find(
+      (mode): boolean =>
+        colorModeSource === colorModeBootstrapScript(mode),
     );
   return {
-    title: document2.querySelector("title")?.textContent ?? "",
-    capabilities: value6,
+    title: pageDocument.querySelector("title")?.textContent ?? "",
+    capabilities: capabilities,
     readme: text,
-    readmeMeta: value3,
-    css: callback(value2.textContent),
-    js: callback(value.textContent),
-    emulator: value4,
-    emulatorShim: value4 && value5 ? callback(value5.textContent) : undefined,
-    ...(value8 !== undefined
+    readmeMeta: readmeMeta,
+    css: trimWrapperNewlines(styleSheet.textContent),
+    js: trimWrapperNewlines(appScript.textContent),
+    emulator: emulator,
+    emulatorShim: emulator && emulatorShim ? trimWrapperNewlines(emulatorShim.textContent) : undefined,
+    ...(colorMode !== undefined
       ? {
-          colorMode: value8,
+          colorMode: colorMode,
         }
       : {}),
   };
 }
 function detectCompiledPageStorageMode(
-  document2: Document,
+  pageDocument: Document,
 ): "db" | "page" | "files" {
   let value =
-    document2
+    pageDocument
       .querySelector('meta[name="' + compiledPageCapabilitiesMetaName + '"]')
       ?.getAttribute("content") ?? "";
   if (capabilitiesUseDatabase(value)) {
     return "db";
   }
-  if (document2.getElementById(compiledPageDocumentId) !== null) {
+  if (pageDocument.getElementById(compiledPageDocumentId) !== null) {
     return "page";
   } else {
     return "files";
@@ -229,8 +229,8 @@ function truncateUtf16Safely(text: string, maxLength: number): string {
     return text;
   }
   let value = text.slice(0, maxLength),
-    value2 = value.charCodeAt(value.length - 1);
-  if (value2 >= 55296 && value2 <= 56319) {
+    lastCodeUnit = value.charCodeAt(value.length - 1);
+  if (lastCodeUnit >= 55296 && lastCodeUnit <= 56319) {
     return value.slice(0, -1);
   } else {
     return value;

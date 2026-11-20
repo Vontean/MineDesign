@@ -139,8 +139,8 @@ var tooltipProviderContext: React.Context<boolean>;
 var initializeTooltip: () => void;
 var initializeHostSupport: () => void;
 var hotReloadCopyExports: HotReloadCopyExports;
-function getKeycapClasses(input: string | undefined): string {
-  return `${shortcutKeycapClasses} ${Array.from(input ?? "").length === 1 ? singleCharacterKeycapClasses : multipleCharacterKeycapClasses}`;
+function getKeycapClasses(label: string | undefined): string {
+  return `${shortcutKeycapClasses} ${Array.from(label ?? "").length === 1 ? singleCharacterKeycapClasses : multipleCharacterKeycapClasses}`;
 }
 function Shortcut({
   keys: keys,
@@ -150,15 +150,15 @@ function Shortcut({
   ...props
 }: ShortcutProps): React.ReactElement {
   useUiLocale();
-  let value = useAppleKeyboard(),
-    value2 = useTranslation(
+  let usesAppleKeyboard = useAppleKeyboard(),
+    sequenceSeparator = useTranslation(
       "sequenceThen",
       SHORTCUT_SEQUENCE_SEPARATOR,
     ),
-    value3 = parseShortcutSequence(keys).map((input: string) =>
-      renderShortcutChord(input, value),
+    chords = parseShortcutSequence(keys).map((chord: string) =>
+      renderShortcutChord(chord, usesAppleKeyboard),
     ),
-    value4 = variant === "text" && !value;
+    usesSpokenLabels = variant === "text" && !usesAppleKeyboard;
   return (
     <span
       {...props}
@@ -170,28 +170,28 @@ function Shortcut({
         className,
       )}
     >
-      {value3.map((input: ShortcutLabel[], options: number) =>
+      {chords.map((labels: ShortcutLabel[], chordIndex: number) =>
         (() => {
-          const _Element2 = reactShortcut.Fragment;
-          const _elementProps2 = {
+          const ChordFragment = reactShortcut.Fragment;
+          const chordProps = {
             children: [
-              options > 0 && (
+              chordIndex > 0 && (
                 <span
                   className={"px-[2px] [color:var(--cds-shortcut-cap-ink)]"}
                 >
-                  {value2}
+                  {sequenceSeparator}
                 </span>
               ),
-              input.map(
+              labels.map(
                 (
                   { label: label, spoken: spoken }: ShortcutLabel,
-                  options2: number,
+                  keyIndex: number,
                 ) =>
                   (() => {
                     const _Element = reactShortcut.Fragment;
                     const _elementProps = {
                       children: [
-                        value4 && options2 > 0 && (
+                        usesSpokenLabels && keyIndex > 0 && (
                           <span
                             className={
                               "mx-[-0.3em] [color:var(--cds-shortcut-cap-ink)]"
@@ -207,7 +207,7 @@ function Shortcut({
                               : getKeycapClasses(label)
                           }
                         >
-                          {spoken === undefined ? (label) : (value4 ? (spoken) : (<jsxShortcut.Fragment>
+                          {spoken === undefined ? (label) : (usesSpokenLabels ? (spoken) : (<jsxShortcut.Fragment>
                               {[<span aria-hidden={"true"}>{label}</span>, <span className={"sr-only select-none"}>
                                   {spoken}
                                 </span>]}
@@ -215,14 +215,14 @@ function Shortcut({
                         </kbd>,
                       ],
                     };
-                    const _elementKey = options2;
+                    const _elementKey = keyIndex;
                     return <_Element key={_elementKey} {..._elementProps} />;
                   })(),
               ),
             ],
           };
-          const _elementKey2 = options;
-          return <_Element2 key={_elementKey2} {..._elementProps2} />;
+          const chordKey = chordIndex;
+          return <ChordFragment key={chordKey} {...chordProps} />;
         })(),
       )}
     </span>
@@ -236,132 +236,132 @@ function useAppleKeyboard(): boolean {
   );
 }
 function ownPropertyValue<Value>(
-  input: Readonly<Record<string, Value>>,
-  options: string,
+  record: Readonly<Record<string, Value>>,
+  key: string,
 ): Value | undefined {
-  if (Object.hasOwn(input, options)) {
-    return input[options];
+  if (Object.hasOwn(record, key)) {
+    return record[key];
   } else {
     return undefined;
   }
 }
-function getShortcutKeyLabel(items: string, options: boolean): string {
+function getShortcutKeyLabel(key: string, useAppleLabels: boolean): string {
   let value = ownPropertyValue(
-    options ? appleKeyLabels : otherKeyLabels,
-    items,
+    useAppleLabels ? appleKeyLabels : otherKeyLabels,
+    key,
   );
   if (value !== undefined) {
     return value;
   }
-  if (/^f\d+$/.test(items)) {
-    return items.toUpperCase();
+  if (/^f\d+$/.test(key)) {
+    return key.toUpperCase();
   }
-  if (items.length === 1) {
-    return items.toUpperCase();
+  if (key.length === 1) {
+    return key.toUpperCase();
   }
-  return items.charAt(0).toUpperCase() + items.slice(1);
+  return key.charAt(0).toUpperCase() + key.slice(1);
 }
-function parseShortcutSequence(input: string): string[] {
-  let value = input.trim().replace(/\s*\+\s*/g, "+");
-  if (value) {
-    return value.split(/\s+/);
+function parseShortcutSequence(shortcut: string): string[] {
+  let normalized = shortcut.trim().replace(/\s*\+\s*/g, "+");
+  if (normalized) {
+    return normalized.split(/\s+/);
   } else {
     return [];
   }
 }
 function parseShortcutChord(
-  input: string,
-  options: boolean | undefined,
+  chord: string,
+  useAppleLabels: boolean | undefined,
 ): ShortcutChord {
-  let value = input
+  let value = chord
       .toLowerCase()
       .split("+")
-      .map((input2: string) => input2.trim())
-      .filter((input2: string) => input2 !== ""),
+      .map((part: string) => part.trim())
+      .filter((part: string) => part !== ""),
     items: ShortcutModifier[] = [],
-    items2: string[] = [];
-  for (let value2 of value) {
-    if (isShortcutModifier(value2)) {
-      items.push(value2);
+    keys: string[] = [];
+  for (let part of value) {
+    if (isShortcutModifier(part)) {
+      items.push(part);
     } else {
-      items2.push(value2);
+      keys.push(part);
     }
   }
-  let callback = (input2: string) =>
+  let callback = (modifier: string) =>
     (shortcutModifierOrder as readonly string[]).indexOf(
-      !options &&
-        (input2 === "cmd" || input2 === "command" || input2 === "meta")
+      !useAppleLabels &&
+        (modifier === "cmd" || modifier === "command" || modifier === "meta")
         ? "ctrl"
-        : input2,
+        : modifier,
     );
   items.sort(
-    (input2: ShortcutModifier, options2: ShortcutModifier) =>
-      callback(input2) - callback(options2),
+    (left: ShortcutModifier, right: ShortcutModifier) =>
+      callback(left) - callback(right),
   );
   return {
     modifiers: items,
-    keys: items2,
+    keys: keys,
   };
 }
 function renderShortcutChord(
-  input: string,
-  options: boolean,
+  chord: string,
+  useAppleLabels: boolean,
 ): ShortcutLabel[] {
-  let { modifiers: value, keys: value2 } = parseShortcutChord(input, options),
-    value3 = options ? appleModifierLabels : otherModifierLabels,
-    callback = (input2: string, options2: string) => {
-      if (/^[A-Za-z0-9 ]+$/.test(options2)) {
+  let { modifiers: modifiers, keys: keys } = parseShortcutChord(chord, useAppleLabels),
+    modifierLabels = useAppleLabels ? appleModifierLabels : otherModifierLabels,
+    callback = (key: string, label: string) => {
+      if (/^[A-Za-z0-9 ]+$/.test(label)) {
         return {
-          label: options2,
+          label: label,
         };
       }
-      let value4 = ownPropertyValue(appleAriaModifierNames, input2);
-      if (value4 === undefined) {
+      let spokenLabel = ownPropertyValue(appleAriaModifierNames, key);
+      if (spokenLabel === undefined) {
         return {
-          label: options2,
+          label: label,
         };
       } else {
         return {
-          label: options2,
-          spoken: value4,
+          label: label,
+          spoken: spokenLabel,
         };
       }
     };
   return [
-    ...value.map((input2: ShortcutModifier) =>
-      callback(input2, value3[input2]),
+    ...modifiers.map((modifier: ShortcutModifier) =>
+      callback(modifier, modifierLabels[modifier]),
     ),
-    ...value2.map((input2: string) =>
-      callback(input2, getShortcutKeyLabel(input2, options)),
+    ...keys.map((key: string) =>
+      callback(key, getShortcutKeyLabel(key, useAppleLabels)),
     ),
   ];
 }
 function shortcutToAriaKeyShortcuts(
-  input: string,
-  options: boolean,
+  shortcut: string,
+  useAppleLabels: boolean,
 ): string | undefined {
-  let [value, ...value2] = parseShortcutSequence(input);
-  if (value === undefined || value2.length > 0) {
+  let [chord, ...remainingChords] = parseShortcutSequence(shortcut);
+  if (chord === undefined || remainingChords.length > 0) {
     return;
   }
-  let { modifiers: value3, keys: value4 } = parseShortcutChord(
-    value,
-    options,
+  let { modifiers: modifiers, keys: keys } = parseShortcutChord(
+    chord,
+    useAppleLabels,
   );
-  if (value4.length !== 1) {
+  if (keys.length !== 1) {
     return;
   }
-  let value5 = options ? "Meta" : "Control",
+  let primaryModifier = useAppleLabels ? "Meta" : "Control",
     callback = (items: string) =>
       items === "cmd" || items === "command" || items === "meta"
-        ? value5
+        ? primaryModifier
         : (ownPropertyValue(otherAriaModifierNames, items) ??
           (/^f\d+$/.test(items)
             ? items.toUpperCase()
             : items.length === 1
               ? items
               : items.charAt(0).toUpperCase() + items.slice(1)));
-  return [...value3, ...value4].map(callback).join("+");
+  return [...modifiers, ...keys].map(callback).join("+");
 }
 function isTextRangeClipped(element: HTMLElement): boolean {
   let ownerDocument = element.ownerDocument,
@@ -386,162 +386,162 @@ function useCancelableTimeout(): CancelableTimeout {
       window.clearTimeout(ref.current);
       ref.current = undefined;
     }, []),
-    callback2 = reactCancelableTimeout.useCallback(
-      (input: number, options: () => void) => {
+    start = reactCancelableTimeout.useCallback(
+      (delayMs: number, run: () => void) => {
         callback();
-        ref.current = window.setTimeout(options, input);
+        ref.current = window.setTimeout(run, delayMs);
       },
       [callback],
     );
   reactCancelableTimeout.useEffect(() => callback, [callback]);
   return reactCancelableTimeout.useMemo(
     () => ({
-      start: callback2,
+      start: start,
       cancel: callback,
     }),
-    [callback2, callback],
+    [start, callback],
   );
 }
-function writeShrinkWrapWidth(input: HTMLElement, options: string): void {
-  input.style[SHRINK_WRAP_STYLE_PROPERTY] = options;
-  shrinkWrapWrittenWidths.set(input, options);
+function writeShrinkWrapWidth(element: HTMLElement, width: string): void {
+  element.style[SHRINK_WRAP_STYLE_PROPERTY] = width;
+  shrinkWrapWrittenWidths.set(element, width);
 }
-function captureShrinkWrapBaseline(input: HTMLElement): void {
-  let value = input.style[SHRINK_WRAP_STYLE_PROPERTY];
+function captureShrinkWrapBaseline(element: HTMLElement): void {
+  let value = element.style[SHRINK_WRAP_STYLE_PROPERTY];
   if (
-    !shrinkWrapBaselineWidths.has(input) ||
-    value !== shrinkWrapWrittenWidths.get(input)
+    !shrinkWrapBaselineWidths.has(element) ||
+    value !== shrinkWrapWrittenWidths.get(element)
   ) {
-    shrinkWrapBaselineWidths.set(input, value);
+    shrinkWrapBaselineWidths.set(element, value);
   }
 }
 function measureShrinkWrapLineRects(
   element: HTMLElement,
-  options?: (width: number) => boolean,
+  shouldStopAtWidth?: (width: number) => boolean,
 ): ShrinkWrapMeasurement {
   let ownerDocument = element.ownerDocument,
     defaultView = ownerDocument.defaultView,
     items: DOMRect[] = [],
-    POSITIVE_INFINITY = Number.POSITIVE_INFINITY,
-    NEGATIVE_INFINITY = Number.NEGATIVE_INFINITY,
-    callback = (input: DOMRect) => {
-      items.push(input);
-      if (input.left < POSITIVE_INFINITY) {
-        POSITIVE_INFINITY = input.left;
+    contentLeft = Number.POSITIVE_INFINITY,
+    contentRight = Number.NEGATIVE_INFINITY,
+    addContentRect = (rect: DOMRect) => {
+      items.push(rect);
+      if (rect.left < contentLeft) {
+        contentLeft = rect.left;
       }
-      if (input.right > NEGATIVE_INFINITY) {
-        NEGATIVE_INFINITY = input.right;
+      if (rect.right > contentRight) {
+        contentRight = rect.right;
       }
     },
     index = 0,
-    POSITIVE_INFINITY2 = Number.POSITIVE_INFINITY,
-    NEGATIVE_INFINITY2 = Number.NEGATIVE_INFINITY,
-    callback2 = (input: DOMRect) => {
-      if (input.left < POSITIVE_INFINITY2) {
-        POSITIVE_INFINITY2 = input.left;
+    boundsLeft = Number.POSITIVE_INFINITY,
+    boundsRight = Number.NEGATIVE_INFINITY,
+    expandBounds = (rect: DOMRect) => {
+      if (rect.left < boundsLeft) {
+        boundsLeft = rect.left;
       }
-      if (input.right > NEGATIVE_INFINITY2) {
-        NEGATIVE_INFINITY2 = input.right;
+      if (rect.right > boundsRight) {
+        boundsRight = rect.right;
       }
     },
-    callback3 = (input: Node) => {
+    isWithinFillRegion = (candidateNode: Node) => {
       for (
-        let value4 =
-          input.nodeType === 1 ? (input as Element) : input.parentElement;
-        value4 && value4 !== element;
-        value4 = value4.parentElement
+        let ancestor =
+          candidateNode.nodeType === 1 ? (candidateNode as Element) : candidateNode.parentElement;
+        ancestor && ancestor !== element;
+        ancestor = ancestor.parentElement
       ) {
-        if (value4.getAttribute("data-shrinkwrap") === "fill") {
+        if (ancestor.getAttribute("data-shrinkwrap") === "fill") {
           return true;
         }
       }
       return false;
     },
     value = ownerDocument.createRange(),
-    value2 = ownerDocument.createTreeWalker(element, 5, {
-      acceptNode: (input: Node) => {
-        if (input.nodeType === 1) {
-          let value4 = defaultView?.getComputedStyle(input as Element);
+    walker = ownerDocument.createTreeWalker(element, 5, {
+      acceptNode: (candidateNode: Node) => {
+        if (candidateNode.nodeType === 1) {
+          let style = defaultView?.getComputedStyle(candidateNode as Element);
           if (
-            value4 &&
-            (value4.display === "none" ||
-              value4.position === "absolute" ||
-              value4.position === "fixed")
+            style &&
+            (style.display === "none" ||
+              style.position === "absolute" ||
+              style.position === "fixed")
           ) {
             return 2;
           }
           return 1;
         }
-        if (callback3(input)) {
+        if (isWithinFillRegion(candidateNode)) {
           return 2;
         } else {
           return 1;
         }
       },
     }),
-    value3 = value2.nextNode();
-  while (value3) {
-    if (value3.nodeType === 3) {
-      value.selectNodeContents(value3);
-      for (let value4 of value.getClientRects?.() ?? []) {
-        if (value4.width > 0) {
-          callback(value4);
-          callback2(value4);
+    node = walker.nextNode();
+  while (node) {
+    if (node.nodeType === 3) {
+      value.selectNodeContents(node);
+      for (let rect of value.getClientRects?.() ?? []) {
+        if (rect.width > 0) {
+          addContentRect(rect);
+          expandBounds(rect);
         }
       }
     } else {
-      let value4 = value3 as HTMLElement,
-        value5 = defaultView?.getComputedStyle(value4),
-        bounds = value4.getBoundingClientRect();
+      let child = node as HTMLElement,
+        childStyle = defaultView?.getComputedStyle(child),
+        bounds = child.getBoundingClientRect();
       if (bounds.width > 0) {
-        callback2(bounds);
+        expandBounds(bounds);
       }
       if (
-        value5 &&
-        !callback3(value4) &&
-        isShrinkWrapAtomicElement(value4, value5)
+        childStyle &&
+        !isWithinFillRegion(child) &&
+        isShrinkWrapAtomicElement(child, childStyle)
       ) {
-        for (let value6 of value4.getClientRects()) {
-          if (value6.width > 0) {
-            callback(value6);
+        for (let rect of child.getClientRects()) {
+          if (rect.width > 0) {
+            addContentRect(rect);
           }
         }
       }
       if (
-        value5 &&
-        (value5.overflowX !== "visible" || value5.overflowY !== "visible")
+        childStyle &&
+        (childStyle.overflowX !== "visible" || childStyle.overflowY !== "visible")
       ) {
         index +=
-          Math.max(0, value4.scrollWidth - value4.clientWidth) +
-          Math.max(0, value4.scrollHeight - value4.clientHeight);
+          Math.max(0, child.scrollWidth - child.clientWidth) +
+          Math.max(0, child.scrollHeight - child.clientHeight);
       }
     }
     if (
-      options &&
-      NEGATIVE_INFINITY > POSITIVE_INFINITY &&
-      options(NEGATIVE_INFINITY - POSITIVE_INFINITY)
+      shouldStopAtWidth &&
+      contentRight > contentLeft &&
+      shouldStopAtWidth(contentRight - contentLeft)
     ) {
       break;
     }
-    value3 = value2.nextNode();
+    node = walker.nextNode();
   }
   return {
     rects: items,
-    left: POSITIVE_INFINITY,
-    right: NEGATIVE_INFINITY,
+    left: contentLeft,
+    right: contentRight,
     clipped: index,
-    boundLeft: POSITIVE_INFINITY2,
-    boundRight: NEGATIVE_INFINITY2,
+    boundLeft: boundsLeft,
+    boundRight: boundsRight,
   };
 }
 function isShrinkWrapAtomicElement(
-  input: Element,
-  options: CSSStyleDeclaration,
+  element: Element,
+  style: CSSStyleDeclaration,
 ): boolean {
-  if (shrinkWrapAtomicTags.has(input.tagName.toUpperCase())) {
+  if (shrinkWrapAtomicTags.has(element.tagName.toUpperCase())) {
     return true;
   }
-  return options.display.startsWith("inline");
+  return style.display.startsWith("inline");
 }
 function measureShrinkWrapLayout(
   element: HTMLElement,
@@ -556,27 +556,27 @@ function measureShrinkWrapLayout(
     bounds = element.getBoundingClientRect(),
     index = 0;
   if (value && Number.isFinite(boundLeft)) {
-    let value2 = parseFloat(value.width),
-      value3 =
+    let computedWidth = parseFloat(value.width),
+      borderBoxWidth =
         value.boxSizing === "border-box"
-          ? value2
-          : value2 +
+          ? computedWidth
+          : computedWidth +
             parseFloat(value.paddingLeft) +
             parseFloat(value.paddingRight) +
             parseFloat(value.borderLeftWidth) +
             parseFloat(value.borderRightWidth),
-      value4 = value3 > 0 ? bounds.width / value3 || 1 : 1,
-      value5 =
+      scale = borderBoxWidth > 0 ? bounds.width / borderBoxWidth || 1 : 1,
+      contentLeft =
         bounds.left +
         (parseFloat(value.borderLeftWidth) + parseFloat(value.paddingLeft)) *
-          value4,
-      value6 =
+          scale,
+      contentRight =
         bounds.right -
         (parseFloat(value.borderRightWidth) +
           parseFloat(value.paddingRight)) *
-          value4;
+          scale;
     index =
-      Math.max(0, boundRight - value6) + Math.max(0, value5 - boundLeft);
+      Math.max(0, boundRight - contentRight) + Math.max(0, contentLeft - boundLeft);
   }
   return {
     height: element.scrollHeight,
@@ -584,57 +584,57 @@ function measureShrinkWrapLayout(
     client: element.clientWidth,
     spill: index,
     clipped: clipped,
-    widths: rects.map((input) => input.width),
+    widths: rects.map((rect) => rect.width),
   };
 }
-function shrinkWrapLayoutWorsened(
-  input: ShrinkWrapLayout,
-  options: ShrinkWrapLayout,
+function preservesShrinkWrapLayout(
+  natural: ShrinkWrapLayout,
+  candidate: ShrinkWrapLayout,
 ): boolean {
   if (
-    options.height > input.height ||
-    options.overflow > options.client + 0.5 ||
-    options.spill > input.spill + 0.5 ||
-    options.clipped > input.clipped + 0.5
+    candidate.height > natural.height ||
+    candidate.overflow > candidate.client + 0.5 ||
+    candidate.spill > natural.spill + 0.5 ||
+    candidate.clipped > natural.clipped + 0.5
   ) {
     return false;
   }
   return (
-    input.widths.length === options.widths.length &&
-    input.widths.every(
-      (input2, options2) =>
-        Math.abs(input2 - (options.widths[options2] ?? NaN)) <= 0.5,
+    natural.widths.length === candidate.widths.length &&
+    natural.widths.every(
+      (width, index) =>
+        Math.abs(width - (candidate.widths[index] ?? NaN)) <= 0.5,
     )
   );
 }
 function shrinkWrapLayoutImproved(
-  input: ShrinkWrapLayout,
-  options: ShrinkWrapLayout,
+  natural: ShrinkWrapLayout,
+  candidate: ShrinkWrapLayout,
 ): boolean {
   return (
-    (options.height < input.height ||
-      options.clipped < input.clipped - 0.5) &&
-    input.widths.length === options.widths.length &&
-    input.widths.every(
-      (input2, options2) =>
-        Math.abs(input2 - (options.widths[options2] ?? NaN)) <= 0.5,
+    (candidate.height < natural.height ||
+      candidate.clipped < natural.clipped - 0.5) &&
+    natural.widths.length === candidate.widths.length &&
+    natural.widths.every(
+      (width, index) =>
+        Math.abs(width - (candidate.widths[index] ?? NaN)) <= 0.5,
     )
   );
 }
-function restoreShrinkWrapWidth(input: HTMLElement): void {
-  if (!shrinkWrapBaselineWidths.has(input)) {
+function restoreShrinkWrapWidth(element: HTMLElement): void {
+  if (!shrinkWrapBaselineWidths.has(element)) {
     return;
   }
-  captureShrinkWrapBaseline(input);
-  writeShrinkWrapWidth(input, shrinkWrapBaselineWidths.get(input) ?? "");
+  captureShrinkWrapBaseline(element);
+  writeShrinkWrapWidth(element, shrinkWrapBaselineWidths.get(element) ?? "");
 }
 function createShrinkWrapJob(
-  input: HTMLElement,
-  options: (width: number | null) => void,
+  element: HTMLElement,
+  onDone: (width: number | null) => void,
 ): ShrinkWrapJob {
   return {
-    el: input,
-    done: options,
+    el: element,
+    done: onDone,
     boxWidth: 0,
     borderBoxSizing: true,
     natural: null,
@@ -647,266 +647,266 @@ function createShrinkWrapJob(
   };
 }
 function settleShrinkWrapJob(
-  input: ShrinkWrapJob,
-  options: number | null,
+  job: ShrinkWrapJob,
+  width: number | null,
 ): void {
-  if (options === null) {
-    restoreShrinkWrapWidth(input.el);
+  if (width === null) {
+    restoreShrinkWrapWidth(job.el);
   } else {
-    writeShrinkWrapWidth(input.el, `${options}px`);
+    writeShrinkWrapWidth(job.el, `${width}px`);
   }
-  input.stage = "settled";
-  input.done(options);
+  job.stage = "settled";
+  job.done(width);
 }
-function readShrinkWrapNaturalLayout(input: ShrinkWrapJob): void {
-  let { el: value } = input,
-    defaultView = value.ownerDocument.defaultView;
-  if (!defaultView || typeof value.getBoundingClientRect !== "function") {
-    settleShrinkWrapJob(input, null);
+function readShrinkWrapNaturalLayout(job: ShrinkWrapJob): void {
+  let { el: element } = job,
+    defaultView = element.ownerDocument.defaultView;
+  if (!defaultView || typeof element.getBoundingClientRect !== "function") {
+    settleShrinkWrapJob(job, null);
     return;
   }
-  let style = defaultView.getComputedStyle(value),
-    value2 = parseFloat(style.width);
-  if (!Number.isFinite(value2) || value2 <= 0) {
-    settleShrinkWrapJob(input, null);
+  let style = defaultView.getComputedStyle(element),
+    computedWidth = parseFloat(style.width);
+  if (!Number.isFinite(computedWidth) || computedWidth <= 0) {
+    settleShrinkWrapJob(job, null);
     return;
   }
-  let value3 = style.boxSizing === "border-box",
-    value4 =
+  let usesBorderBox = style.boxSizing === "border-box",
+    horizontalInsets =
       parseFloat(style.paddingLeft) +
       parseFloat(style.paddingRight) +
       parseFloat(style.borderLeftWidth) +
       parseFloat(style.borderRightWidth),
-    value5 = value3 ? value2 : value2 + value4,
-    value6 = value.getBoundingClientRect().width / value5 || 1,
-    callback = (input2: number) => {
-      let value9 = input2 / value6;
-      return Math.ceil((value3 ? value9 + value4 : value9) - 0.001);
+    borderBoxWidth = usesBorderBox ? computedWidth : computedWidth + horizontalInsets,
+    scale = element.getBoundingClientRect().width / borderBoxWidth || 1,
+    toCssWidth = (visualWidth: number) => {
+      let unscaledWidth = visualWidth / scale;
+      return Math.ceil((usesBorderBox ? unscaledWidth + horizontalInsets : unscaledWidth) - 0.001);
     },
-    callback2 = (input2: number) => callback(input2) >= value2 - 0.5,
-    value7 = measureShrinkWrapLineRects(value, callback2);
-  if (value7.rects.length === 0) {
-    settleShrinkWrapJob(input, null);
+    wouldUseNaturalWidth = (visualWidth: number) => toCssWidth(visualWidth) >= computedWidth - 0.5,
+    measurement = measureShrinkWrapLineRects(element, wouldUseNaturalWidth);
+  if (measurement.rects.length === 0) {
+    settleShrinkWrapJob(job, null);
     return;
   }
-  let value8 = value7.right - value7.left;
-  if (callback2(value8)) {
-    settleShrinkWrapJob(input, null);
+  let measuredWidth = measurement.right - measurement.left;
+  if (wouldUseNaturalWidth(measuredWidth)) {
+    settleShrinkWrapJob(job, null);
     return;
   }
-  input.natural = measureShrinkWrapLayout(value, value7);
-  input.boxWidth = value2;
-  input.borderBoxSizing = value3;
-  input.candidate = callback(value8);
-  input.stage = "verify";
+  job.natural = measureShrinkWrapLayout(element, measurement);
+  job.boxWidth = computedWidth;
+  job.borderBoxSizing = usesBorderBox;
+  job.candidate = toCssWidth(measuredWidth);
+  job.stage = "verify";
 }
-function checkShrinkWrapCandidate(input: ShrinkWrapJob): boolean | "shrank" {
-  if (input.natural === null) {
+function checkShrinkWrapCandidate(job: ShrinkWrapJob): boolean | "shrank" {
+  if (job.natural === null) {
     return false;
   }
   let value = measureShrinkWrapLayout(
-    input.el,
-    measureShrinkWrapLineRects(input.el),
+    job.el,
+    measureShrinkWrapLineRects(job.el),
   );
-  if (shrinkWrapLayoutImproved(input.natural, value)) {
+  if (shrinkWrapLayoutImproved(job.natural, value)) {
     return "shrank";
   } else {
-    return shrinkWrapLayoutWorsened(input.natural, value);
+    return preservesShrinkWrapLayout(job.natural, value);
   }
 }
 function advanceShrinkWrapSearch(
-  input: ShrinkWrapJob,
-  options: boolean,
+  job: ShrinkWrapJob,
+  layoutMatches: boolean,
 ): number | null {
-  let { boxWidth: value } = input;
-  if (input.stage === "verify") {
-    if (options) {
-      settleShrinkWrapJob(input, input.candidate);
+  let { boxWidth: value } = job;
+  if (job.stage === "verify") {
+    if (layoutMatches) {
+      settleShrinkWrapJob(job, job.candidate);
       return null;
     }
-    input.stage = "nudge1";
-    if (input.candidate + 1 < value) {
-      return input.candidate + 1;
+    job.stage = "nudge1";
+    if (job.candidate + 1 < value) {
+      return job.candidate + 1;
     }
-    input.stage = "bisect";
-  } else if (input.stage === "nudge1") {
-    if (options) {
-      settleShrinkWrapJob(input, input.candidate + 1);
+    job.stage = "bisect";
+  } else if (job.stage === "nudge1") {
+    if (layoutMatches) {
+      settleShrinkWrapJob(job, job.candidate + 1);
       return null;
     }
-    input.stage = "nudge2";
-    if (input.candidate + 2 < value) {
-      return input.candidate + 2;
+    job.stage = "nudge2";
+    if (job.candidate + 2 < value) {
+      return job.candidate + 2;
     }
-    input.stage = "bisect";
-  } else if (input.stage === "nudge2") {
-    if (options) {
-      settleShrinkWrapJob(input, input.candidate + 2);
+    job.stage = "bisect";
+  } else if (job.stage === "nudge2") {
+    if (layoutMatches) {
+      settleShrinkWrapJob(job, job.candidate + 2);
       return null;
     }
-    input.stage = "bisect";
-  } else if (input.stage === "bisect") {
-    input.probes += 1;
-    let value2 = input.lo > 0 ? Math.floor((input.lo + input.hi) / 2) : NaN;
-    if (options) {
-      input.hi = value2;
+    job.stage = "bisect";
+  } else if (job.stage === "bisect") {
+    job.probes += 1;
+    let midpoint = job.lo > 0 ? Math.floor((job.lo + job.hi) / 2) : NaN;
+    if (layoutMatches) {
+      job.hi = midpoint;
     } else {
-      input.lo = value2;
+      job.lo = midpoint;
     }
   }
-  if (input.stage === "bisect") {
-    if (input.lo === 0) {
-      input.lo = input.candidate + 2;
-      input.hi = Math.ceil(value);
+  if (job.stage === "bisect") {
+    if (job.lo === 0) {
+      job.lo = job.candidate + 2;
+      job.hi = Math.ceil(value);
     }
     if (
-      input.probes >= SHRINK_WRAP_MAX_ITERATIONS ||
-      input.hi - input.lo <= 1
+      job.probes >= SHRINK_WRAP_MAX_ITERATIONS ||
+      job.hi - job.lo <= 1
     ) {
-      if (input.hi < value - 0.5) {
-        settleShrinkWrapJob(input, input.hi);
+      if (job.hi < value - 0.5) {
+        settleShrinkWrapJob(job, job.hi);
       } else {
-        settleShrinkWrapJob(input, null);
+        settleShrinkWrapJob(job, null);
       }
       return null;
     }
-    return Math.floor((input.lo + input.hi) / 2);
+    return Math.floor((job.lo + job.hi) / 2);
   }
   return null;
 }
-function runShrinkWrapJobs(input: ShrinkWrapJob[]): void {
-  for (let value2 of input) {
-    captureShrinkWrapBaseline(value2.el);
-    restoreShrinkWrapWidth(value2.el);
+function runShrinkWrapJobs(jobs: ShrinkWrapJob[]): void {
+  for (let job of jobs) {
+    captureShrinkWrapBaseline(job.el);
+    restoreShrinkWrapWidth(job.el);
   }
-  for (let value2 of input) {
-    readShrinkWrapNaturalLayout(value2);
+  for (let job of jobs) {
+    readShrinkWrapNaturalLayout(job);
   }
-  let value = input.filter((input2) => input2.stage === "verify");
-  for (let value2 of value) {
-    writeShrinkWrapWidth(value2.el, `${value2.candidate}px`);
+  let value = jobs.filter((job) => job.stage === "verify");
+  for (let job of value) {
+    writeShrinkWrapWidth(job.el, `${job.candidate}px`);
   }
   for (let index = 0; value.length > 0 && index < 16; index++) {
-    let value2 = value.map((input2): [ShrinkWrapJob, boolean | "shrank"] => [
-        input2,
-        checkShrinkWrapCandidate(input2),
+    let layoutChecks = value.map((job): [ShrinkWrapJob, boolean | "shrank"] => [
+        job,
+        checkShrinkWrapCandidate(job),
       ]),
       items: [ShrinkWrapJob, number][] = [];
-    for (let [value3, value4] of value2) {
-      if (value4 === "shrank") {
-        settleShrinkWrapJob(value3, null);
+    for (let [job, layoutCheck] of layoutChecks) {
+      if (layoutCheck === "shrank") {
+        settleShrinkWrapJob(job, null);
         continue;
       }
-      let value5 = advanceShrinkWrapSearch(value3, value4);
-      if (value5 !== null) {
-        items.push([value3, value5]);
+      let nextWidth = advanceShrinkWrapSearch(job, layoutCheck);
+      if (nextWidth !== null) {
+        items.push([job, nextWidth]);
       }
     }
-    for (let [value3, value4] of items) {
-      writeShrinkWrapWidth(value3.el, `${value4}px`);
+    for (let [job, width] of items) {
+      writeShrinkWrapWidth(job.el, `${width}px`);
     }
-    value = items.map(([input2]) => input2);
+    value = items.map(([job]) => job);
   }
-  for (let value2 of value) {
-    if (value2.stage !== "settled") {
-      settleShrinkWrapJob(value2, null);
+  for (let job of value) {
+    if (job.stage !== "settled") {
+      settleShrinkWrapJob(job, null);
     }
   }
 }
-function shrinkWrapSynchronously(input: HTMLElement): number | null {
+function shrinkWrapSynchronously(element: HTMLElement): number | null {
   let value: number | null = null;
   runShrinkWrapJobs([
-    createShrinkWrapJob(input, (input2) => {
-      value = input2;
+    createShrinkWrapJob(element, (width) => {
+      value = width;
     }),
   ]);
   return value;
 }
-function getShrinkWrapQueue(input: Window): ShrinkWrapQueue {
-  let entry = shrinkWrapQueues.get(input);
+function getShrinkWrapQueue(ownerWindow: Window): ShrinkWrapQueue {
+  let entry = shrinkWrapQueues.get(ownerWindow);
   if (!entry) {
     entry = {
       queue: new Map(),
       microtaskQueued: false,
       frameQueued: 0,
     };
-    shrinkWrapQueues.set(input, entry);
+    shrinkWrapQueues.set(ownerWindow, entry);
   }
   return entry;
 }
 function drainShrinkWrapQueue(
-  input: Window,
-  options: ShrinkWrapQueue,
+  ownerWindow: Window,
+  schedule: ShrinkWrapQueue,
   items: ShrinkWrapJob[],
 ): void {
   if (items.length > 0) {
     runShrinkWrapJobs(items);
   }
-  if (options.queue.size > 0) {
+  if (schedule.queue.size > 0) {
     return;
   }
-  if (options.frameQueued) {
-    input.cancelAnimationFrame(options.frameQueued);
-    options.frameQueued = 0;
+  if (schedule.frameQueued) {
+    ownerWindow.cancelAnimationFrame(schedule.frameQueued);
+    schedule.frameQueued = 0;
   }
-  if (!options.microtaskQueued) {
-    shrinkWrapQueues.delete(input);
+  if (!schedule.microtaskQueued) {
+    shrinkWrapQueues.delete(ownerWindow);
   }
 }
-function flushShrinkWrapMicrotask(input: Window): void {
-  let entry = shrinkWrapQueues.get(input);
+function flushShrinkWrapMicrotask(ownerWindow: Window): void {
+  let entry = shrinkWrapQueues.get(ownerWindow);
   if (!entry) {
     return;
   }
   entry.microtaskQueued = false;
   if (entry.frameQueued) {
-    input.cancelAnimationFrame(entry.frameQueued);
+    ownerWindow.cancelAnimationFrame(entry.frameQueued);
     entry.frameQueued = 0;
   }
   let items = [...entry.queue.values()];
   entry.queue.clear();
-  drainShrinkWrapQueue(input, entry, items);
+  drainShrinkWrapQueue(ownerWindow, entry, items);
 }
-function flushShrinkWrapResizeJobs(input: Window): void {
-  let entry = shrinkWrapQueues.get(input);
+function flushShrinkWrapResizeJobs(ownerWindow: Window): void {
+  let entry = shrinkWrapQueues.get(ownerWindow);
   if (!entry) {
     return;
   }
   let items: ShrinkWrapJob[] = [];
-  for (let [value, value2] of entry.queue) {
-    if (value2.resizeDue) {
+  for (let [value, job] of entry.queue) {
+    if (job.resizeDue) {
       entry.queue.delete(value);
-      items.push(value2);
+      items.push(job);
     }
   }
-  drainShrinkWrapQueue(input, entry, items);
+  drainShrinkWrapQueue(ownerWindow, entry, items);
 }
 function enqueueShrinkWrapJob(
   element: HTMLElement,
-  options: (width: number | null) => void,
-  context: ShrinkWrapSchedule,
+  onDone: (width: number | null) => void,
+  schedule: ShrinkWrapSchedule,
 ): void {
   let defaultView = element.ownerDocument.defaultView;
   if (!defaultView) {
-    options(shrinkWrapSynchronously(element));
+    onDone(shrinkWrapSynchronously(element));
     return;
   }
   let value = getShrinkWrapQueue(defaultView),
     entry = value.queue.get(element);
   if (entry) {
-    entry.done = options;
+    entry.done = onDone;
   } else {
-    entry = createShrinkWrapJob(element, options);
+    entry = createShrinkWrapJob(element, onDone);
     value.queue.set(element, entry);
   }
-  if (context === "microtask") {
+  if (schedule === "microtask") {
     if (!value.microtaskQueued) {
       value.microtaskQueued = true;
       queueMicrotask(() => {
         flushShrinkWrapMicrotask(defaultView);
       });
     }
-  } else if (context === "resize") {
+  } else if (schedule === "resize") {
     entry.resizeDue = true;
   } else if (!value.frameQueued && !value.microtaskQueued) {
     value.frameQueued = defaultView.requestAnimationFrame(() => {
@@ -926,94 +926,94 @@ function cancelShrinkWrapJob(element: HTMLElement): void {
   entry.queue.delete(element);
   drainShrinkWrapQueue(defaultView, entry, []);
 }
-function shouldRecomputeShrinkWrap(input: ShrinkWrapRecompute): boolean {
-  if (input.self) {
+function shouldRecomputeShrinkWrap(resize: ShrinkWrapRecompute): boolean {
+  if (resize.self) {
     let value =
-      input.applied !== null && Math.abs(input.inline - input.applied) <= 1;
+      resize.applied !== null && Math.abs(resize.inline - resize.applied) <= 1;
     return (
-      Math.abs(input.block - input.prevBlock) > 1 ||
-      (!value && Math.abs(input.inline - input.prevInline) > 1)
+      Math.abs(resize.block - resize.prevBlock) > 1 ||
+      (!value && Math.abs(resize.inline - resize.prevInline) > 1)
     );
   }
-  return Math.abs(input.inline - input.prevInline) > 1;
+  return Math.abs(resize.inline - resize.prevInline) > 1;
 }
 function registerShrinkWrapResizeHandler(
-  input: BrowserWindow,
-  options: Element,
-  context: (entry: ResizeObserverEntry) => void,
+  ownerWindow: BrowserWindow,
+  element: Element,
+  onResize: (entry: ResizeObserverEntry) => void,
 ): void {
-  let entry = shrinkWrapResizeObservers.get(input);
+  let entry = shrinkWrapResizeObservers.get(ownerWindow);
   if (!entry) {
     let entries = new Map<
       Element,
       Set<(entry: ResizeObserverEntry) => void>
     >();
     entry = {
-      observer: new input.ResizeObserver((input2) => {
-        for (let value of input2) {
-          for (let value2 of entries.get(value.target) ?? []) {
-            value2(value);
+      observer: new ownerWindow.ResizeObserver((observations) => {
+        for (let value of observations) {
+          for (let handler of entries.get(value.target) ?? []) {
+            handler(value);
           }
         }
-        flushShrinkWrapResizeJobs(input);
+        flushShrinkWrapResizeJobs(ownerWindow);
       }),
       handlers: entries,
       paused: new Set(),
       resumeQueued: 0,
     };
-    shrinkWrapResizeObservers.set(input, entry);
+    shrinkWrapResizeObservers.set(ownerWindow, entry);
   }
-  let entry2 = entry.handlers.get(options);
-  if (!entry2) {
+  let handlers = entry.handlers.get(element);
+  if (!handlers) {
     try {
-      entry.observer.observe(options);
+      entry.observer.observe(element);
     } catch (value: unknown) {
       if (entry.handlers.size === 0) {
-        shrinkWrapResizeObservers.delete(input);
+        shrinkWrapResizeObservers.delete(ownerWindow);
       }
       throw value;
     }
-    entry2 = new Set();
-    entry.handlers.set(options, entry2);
+    handlers = new Set();
+    entry.handlers.set(element, handlers);
   }
-  entry2.add(context);
+  handlers.add(onResize);
 }
 function unregisterShrinkWrapResizeHandler(
-  input: BrowserWindow,
-  options: Element,
-  context: (entry: ResizeObserverEntry) => void,
+  ownerWindow: BrowserWindow,
+  element: Element,
+  onResize: (entry: ResizeObserverEntry) => void,
 ): void {
-  let entry = shrinkWrapResizeObservers.get(input),
-    value = entry?.handlers.get(options);
+  let entry = shrinkWrapResizeObservers.get(ownerWindow),
+    value = entry?.handlers.get(element);
   if (!entry || !value) {
     return;
   }
-  value.delete(context);
+  value.delete(onResize);
   if (value.size === 0) {
-    entry.handlers.delete(options);
-    entry.paused.delete(options);
-    entry.observer.unobserve(options);
+    entry.handlers.delete(element);
+    entry.paused.delete(element);
+    entry.observer.unobserve(element);
   }
   if (entry.handlers.size === 0) {
     entry.observer.disconnect();
     if (entry.resumeQueued) {
-      input.cancelAnimationFrame(entry.resumeQueued);
+      ownerWindow.cancelAnimationFrame(entry.resumeQueued);
     }
-    shrinkWrapResizeObservers.delete(input);
+    shrinkWrapResizeObservers.delete(ownerWindow);
   }
 }
 function pauseShrinkWrapResizeObservation(
-  input: BrowserWindow,
-  options: Element,
+  ownerWindow: BrowserWindow,
+  element: Element,
 ): void {
-  let entry = shrinkWrapResizeObservers.get(input);
-  if (!entry || !entry.handlers.has(options) || entry.paused.has(options)) {
+  let entry = shrinkWrapResizeObservers.get(ownerWindow);
+  if (!entry || !entry.handlers.has(element) || entry.paused.has(element)) {
     return;
   }
-  entry.observer.unobserve(options);
-  entry.paused.add(options);
+  entry.observer.unobserve(element);
+  entry.paused.add(element);
   if (!entry.resumeQueued) {
-    entry.resumeQueued = input.requestAnimationFrame(() => {
+    entry.resumeQueued = ownerWindow.requestAnimationFrame(() => {
       entry.resumeQueued = 0;
       for (let value of entry.paused) {
         if (entry.handlers.has(value)) {
@@ -1025,45 +1025,45 @@ function pauseShrinkWrapResizeObservation(
   }
 }
 function subscribeShrinkWrapWindowResize(
-  input: EventTarget | undefined,
-  options: () => void,
+  eventTarget: EventTarget | undefined,
+  onRefit: () => void,
 ): () => void {
-  if (typeof input?.addEventListener !== "function") {
+  if (typeof eventTarget?.addEventListener !== "function") {
     return () => {
       return;
     };
   }
-  let entry = shrinkWrapWindowResizeStores.get(input);
+  let entry = shrinkWrapWindowResizeStores.get(eventTarget);
   if (!entry) {
     let values = new Set<() => void>(),
       callback = () => {
-        for (let value2 of values) {
-          value2();
+        for (let refit of values) {
+          refit();
         }
       };
-    input.addEventListener("loadingdone", callback);
+    eventTarget.addEventListener("loadingdone", callback);
     entry = {
       refits: values,
       listener: callback,
     };
-    shrinkWrapWindowResizeStores.set(input, entry);
+    shrinkWrapWindowResizeStores.set(eventTarget, entry);
   }
   let value = entry;
-  value.refits.add(options);
+  value.refits.add(onRefit);
   return () => {
-    value.refits.delete(options);
+    value.refits.delete(onRefit);
     if (
       value.refits.size === 0 &&
-      shrinkWrapWindowResizeStores.get(input) === value
+      shrinkWrapWindowResizeStores.get(eventTarget) === value
     ) {
-      shrinkWrapWindowResizeStores.delete(input);
-      input.removeEventListener?.("loadingdone", value.listener);
+      shrinkWrapWindowResizeStores.delete(eventTarget);
+      eventTarget.removeEventListener?.("loadingdone", value.listener);
     }
   };
 }
 function observeShrinkWrap(
   element: HTMLElement,
-  { immediate: options = false }: Pick<ShrinkWrapOptions, "immediate"> = {},
+  { immediate: immediate = false }: Pick<ShrinkWrapOptions, "immediate"> = {},
 ): () => void {
   let flag = false,
     value: number | null = null,
@@ -1076,185 +1076,185 @@ function observeShrinkWrap(
       }
     >(),
     items: Element[] = [],
-    callback = (input: Element) => {
-      let value4 = input as HTMLElement;
-      entries.set(input, {
-        inline: value4.offsetWidth ?? 0,
-        block: value4.offsetHeight ?? 0,
+    callback = (target: Element) => {
+      let targetElement = target as HTMLElement;
+      entries.set(target, {
+        inline: targetElement.offsetWidth ?? 0,
+        block: targetElement.offsetHeight ?? 0,
       });
     },
-    value2 = defaultView?.ResizeObserver ? defaultView : null,
+    resizeWindow = defaultView?.ResizeObserver ? defaultView : null,
     index = 0,
-    callback2 = (input: number | null) => {
+    onFit = (width: number | null) => {
       if (flag) {
         return;
       }
-      value = input;
-      for (let value4 of items) {
-        callback(value4);
+      value = width;
+      for (let target of items) {
+        callback(target);
       }
-      if (value2 && index > 0) {
-        for (let value4 of items.slice(index)) {
-          pauseShrinkWrapResizeObservation(value2, value4);
+      if (resizeWindow && index > 0) {
+        for (let target of items.slice(index)) {
+          pauseShrinkWrapResizeObservation(resizeWindow, target);
         }
       }
       index = 0;
     },
-    callback3 = (input: ShrinkWrapSchedule) => {
+    queueFit = (schedule: ShrinkWrapSchedule) => {
       if (!flag) {
-        enqueueShrinkWrapJob(element, callback2, input);
+        enqueueShrinkWrapJob(element, onFit, schedule);
       }
     },
-    callback4 = (event: ResizeObserverEntry) => {
-      let value4 = event.borderBoxSize?.[0],
-        value5 = value4 ? value4.inlineSize : event.contentRect.width,
-        value6 = value4 ? value4.blockSize : event.contentRect.height,
-        value7 = entries.get(event.target) ?? {
-          inline: value5,
-          block: value6,
+    onResize = (event: ResizeObserverEntry) => {
+      let borderBox = event.borderBoxSize?.[0],
+        inlineSize = borderBox ? borderBox.inlineSize : event.contentRect.width,
+        blockSize = borderBox ? borderBox.blockSize : event.contentRect.height,
+        previousSize = entries.get(event.target) ?? {
+          inline: inlineSize,
+          block: blockSize,
         };
       entries.set(event.target, {
-        inline: value5,
-        block: value6,
+        inline: inlineSize,
+        block: blockSize,
       });
-      let value8 = event.target === element;
+      let isTargetElement = event.target === element;
       if (
         shouldRecomputeShrinkWrap({
-          self: value8,
-          inline: value5,
-          block: value6,
-          prevInline: value7.inline,
-          prevBlock: value7.block,
+          self: isTargetElement,
+          inline: inlineSize,
+          block: blockSize,
+          prevInline: previousSize.inline,
+          prevBlock: previousSize.block,
           applied: value,
         })
       ) {
-        if (!value8) {
+        if (!isTargetElement) {
           index = Math.max(index, items.indexOf(event.target));
         }
-        callback3(value8 ? "frame" : "resize");
+        queueFit(isTargetElement ? "frame" : "resize");
       }
     },
-    callback5 = (input: Element) => {
-      if (value2) {
-        registerShrinkWrapResizeHandler(value2, input, callback4);
+    observeTarget = (target: Element) => {
+      if (resizeWindow) {
+        registerShrinkWrapResizeHandler(resizeWindow, target, onResize);
       }
-      items.push(input);
-      if (options) {
-        callback(input);
+      items.push(target);
+      if (immediate) {
+        callback(target);
       }
     },
-    value3: MutationObserver | null = null,
-    callback6 = () => {
+    mutationObserver: MutationObserver | null = null,
+    unsubscribeFontResize = () => {
       return;
     },
-    callback7 = () => {
+    stopObserving = () => {
       flag = true;
       cancelShrinkWrapJob(element);
-      if (value2) {
-        for (let value4 of items) {
-          unregisterShrinkWrapResizeHandler(value2, value4, callback4);
+      if (resizeWindow) {
+        for (let target of items) {
+          unregisterShrinkWrapResizeHandler(resizeWindow, target, onResize);
         }
       }
-      value3?.disconnect();
-      callback6();
+      mutationObserver?.disconnect();
+      unsubscribeFontResize();
       restoreShrinkWrapWidth(element);
     };
   try {
-    if (options) {
+    if (immediate) {
       value = shrinkWrapSynchronously(element);
     } else {
-      callback3("microtask");
+      queueFit("microtask");
     }
-    callback5(element);
+    observeTarget(element);
     for (
-      let parentElement = element.parentElement, index2 = 0;
-      parentElement && index2 < SHRINK_WRAP_MAX_LINE_RECTS;
-      parentElement = parentElement.parentElement, index2++
+      let parentElement = element.parentElement, ancestorDepth = 0;
+      parentElement && ancestorDepth < SHRINK_WRAP_MAX_LINE_RECTS;
+      parentElement = parentElement.parentElement, ancestorDepth++
     ) {
-      callback5(parentElement);
+      observeTarget(parentElement);
     }
     if (defaultView?.MutationObserver) {
-      let value4 = new defaultView.MutationObserver(() => {
-        callback3("microtask");
+      let observer = new defaultView.MutationObserver(() => {
+        queueFit("microtask");
       });
-      value4.observe(element, {
+      observer.observe(element, {
         subtree: true,
         childList: true,
         characterData: true,
         attributes: true,
         attributeFilter: [SHRINK_WRAP_ATTRIBUTE],
       });
-      value3 = value4;
+      mutationObserver = observer;
     }
     let fonts = element.ownerDocument.fonts,
-      callback8 = () => callback3("microtask");
-    callback6 = subscribeShrinkWrapWindowResize(fonts, callback8);
+      refitAfterFonts = () => queueFit("microtask");
+    unsubscribeFontResize = subscribeShrinkWrapWindowResize(fonts, refitAfterFonts);
     if (fonts && fonts.status !== "loaded") {
-      fonts.ready.then(callback8);
+      fonts.ready.then(refitAfterFonts);
     }
-  } catch (value4: unknown) {
+  } catch (error: unknown) {
     try {
-      callback7();
+      stopObserving();
     } catch {}
-    throw value4;
+    throw error;
   }
-  return callback7;
+  return stopObserving;
 }
 function useShrinkWrapRef({
-  enabled: input = true,
-  immediate: input2 = false,
+  enabled: enabled = true,
+  immediate: immediate = false,
 }: ShrinkWrapOptions = {}): React.RefCallback<HTMLElement> {
   let ref = reactShrinkWrap.useRef<(() => void) | null>(null);
   return reactShrinkWrap.useCallback(
-    (input3: HTMLElement | null) => {
+    (element: HTMLElement | null) => {
       let current = ref.current;
       ref.current = null;
       if (current) {
         invokeAndReportError(current);
       }
-      if (!input3) {
+      if (!element) {
         return;
       }
-      if (!input) {
-        restoreShrinkWrapWidth(input3);
+      if (!enabled) {
+        restoreShrinkWrapWidth(element);
         return;
       }
       invokeAndReportError(() => {
-        ref.current = observeShrinkWrap(input3, {
-          immediate: input2,
+        ref.current = observeShrinkWrap(element, {
+          immediate: immediate,
         });
       });
     },
-    [input, input2],
+    [enabled, immediate],
   );
 }
-function getButtonBackgroundLayerClasses(input: {
+function getButtonBackgroundLayerClasses(layerOptions: {
   joined?: boolean;
   solid?: boolean;
 }): string {
-  return `${buttonBackgroundLayerClasses} ${!input.joined && input.solid ? buttonSolidInsetClasses : "inset-0"} ${input.joined ? "" : buttonBackgroundShadowClasses}`;
+  return `${buttonBackgroundLayerClasses} ${!layerOptions.joined && layerOptions.solid ? buttonSolidInsetClasses : "inset-0"} ${layerOptions.joined ? "" : buttonBackgroundShadowClasses}`;
 }
 function getDisabledReasonWrapperProps(
-  input: React.ReactNode,
-  options: string | undefined,
-  context: string | undefined,
+  disabledReason: React.ReactNode,
+  descriptionId: string | undefined,
+  className: string | undefined,
 ): React.HTMLAttributes<HTMLSpanElement> & {
   "data-cds-disabled-reason-wrapper": string;
 } {
-  let value = hasDisabledReason(input);
+  let value = hasDisabledReason(disabledReason);
   return {
     tabIndex: value ? 0 : -1,
-    "aria-describedby": value ? options : undefined,
+    "aria-describedby": value ? descriptionId : undefined,
     "data-cds-disabled-reason-wrapper": "",
     className: cn(
       "inline-flex",
       disabledReasonFocusClasses,
-      context,
+      className,
     ),
   };
 }
-function hasDisabledReason(input: React.ReactNode): boolean {
-  return !!input;
+function hasDisabledReason(reason: React.ReactNode): boolean {
+  return !!reason;
 }
 function DisabledReasonAnnouncement({
   id: id,
@@ -1295,40 +1295,40 @@ function useTooltipsDisabled(): boolean {
   return reactTooltipContext.useContext(tooltipsDisabledContext);
 }
 function cancelInputDismissingTooltipOpen(
-  input: boolean,
-  options: TooltipPrimitive.Root.ChangeEventDetails,
+  isOpening: boolean,
+  changeDetails: TooltipPrimitive.Root.ChangeEventDetails,
 ): boolean {
   if (
-    input &&
-    options.reason === "trigger-focus" &&
-    isInputTriggeredBlur(options.event)
+    isOpening &&
+    changeDetails.reason === "trigger-focus" &&
+    isInputTriggeredBlur(changeDetails.event)
   ) {
-    options.cancel();
+    changeDetails.cancel();
     return true;
   }
   return false;
 }
 function closePreviousTooltip(
-  input: React.RefObject<Overlays.TooltipInstantActions>,
+  nextActionsRef: React.RefObject<Overlays.TooltipInstantActions>,
 ): void {
-  if (activeTooltipActionsRef !== null && activeTooltipActionsRef !== input) {
+  if (activeTooltipActionsRef !== null && activeTooltipActionsRef !== nextActionsRef) {
     activeTooltipActionsRef.current?.closeInstant();
   }
-  activeTooltipActionsRef = input;
+  activeTooltipActionsRef = nextActionsRef;
 }
-function isEmptyTooltipContent(input: unknown): boolean {
+function isEmptyTooltipContent(content: unknown): boolean {
   return (
-    input === null ||
-    input === undefined ||
-    input === "" ||
-    typeof input === "boolean" ||
-    (Array.isArray(input) && input.every(isEmptyTooltipContent))
+    content === null ||
+    content === undefined ||
+    content === "" ||
+    typeof content === "boolean" ||
+    (Array.isArray(content) && content.every(isEmptyTooltipContent))
   );
 }
 function evaluateTooltipContent(
-  input: () => React.ReactNode,
+  renderContent: () => React.ReactNode,
 ): React.ReactNode | Overlays.EmptyTooltipContent {
-  let value = input();
+  let value = renderContent();
   if (isEmptyTooltipContent(value)) {
     return TOOLTIP_NO_SHOW;
   } else {
@@ -1356,7 +1356,7 @@ function TooltipShortcut({
 }
 function Tooltip({
   content: content,
-  detail: detail,
+  detail: tooltipDetail,
   secondaryHint: secondaryHint,
   multiline: multiline,
   shortcut: shortcut,
@@ -1379,185 +1379,185 @@ function Tooltip({
   children: children,
 }: Overlays.TooltipProps): React.ReactElement {
   useUiLocale();
-  let value = usePortalContainer(),
-    value2 = useShrinkWrapRef({
+  let portalContainer = usePortalContainer(),
+    shrinkWrapRef = useShrinkWrapRef({
       immediate: true,
     }),
-    value3 = reactTooltip.useId(),
-    ref = reactTooltip.useRef<TooltipPrimitive.Root.Actions | null>(null),
-    [value4, value5] = reactTooltip.useState(false),
-    ref2 = reactTooltip.useRef({
+    triggerId = reactTooltip.useId(),
+    rootActionsRef = reactTooltip.useRef<TooltipPrimitive.Root.Actions | null>(null),
+    [closeWithoutAnimation, setCloseWithoutAnimation] = reactTooltip.useState(false),
+    tooltipActionsRef = reactTooltip.useRef({
       closeInstant: () => {
-        value5(true);
-        ref.current?.close();
+        setCloseWithoutAnimation(true);
+        rootActionsRef.current?.close();
       },
     }),
-    [value6, value7] = reactTooltip.useState<Element | null>(null),
-    [value8, value9] = reactTooltip.useState(closedTooltipState);
-  if (open === false && value8.open) {
-    value9(closeTooltipState);
+    [hoveredTrigger, setHoveredTrigger] = reactTooltip.useState<Element | null>(null),
+    [tooltipState, setTooltipState] = reactTooltip.useState(closedTooltipState);
+  if (open === false && tooltipState.open) {
+    setTooltipState(closeTooltipState);
   }
-  let value10 = typeof content === "function",
-    value11 = value10 || !isEmptyTooltipContent(content),
-    value12 =
-      !value10 && value11 ? (content as React.ReactNode) : value8.body,
-    value13 = !isEmptyTooltipContent(value12),
-    value14 = (open ?? value8.open) && (!value10 || value13);
-  if (!value10 && value11 && value14 && !Object.is(value8.body, content)) {
-    value9(replaceTooltipBody(content as React.ReactNode));
+  let hasDeferredContent = typeof content === "function",
+    hasPotentialContent = hasDeferredContent || !isEmptyTooltipContent(content),
+    tooltipBody =
+      !hasDeferredContent && hasPotentialContent ? (content as React.ReactNode) : tooltipState.body,
+    hasTooltipBody = !isEmptyTooltipContent(tooltipBody),
+    isTooltipOpen = (open ?? tooltipState.open) && (!hasDeferredContent || hasTooltipBody);
+  if (!hasDeferredContent && hasPotentialContent && isTooltipOpen && !Object.is(tooltipState.body, content)) {
+    setTooltipState(replaceTooltipBody(content as React.ReactNode));
   }
-  let callback = reactTooltip.useCallback(
-      (input: boolean, options: TooltipPrimitive.Root.ChangeEventDetails) => {
+  let updateTooltipOpen = reactTooltip.useCallback(
+      (nextOpen: boolean, changeDetails: TooltipPrimitive.Root.ChangeEventDetails) => {
         if (
           !openOnHandedBackFocus &&
-          cancelInputDismissingTooltipOpen(input, options)
+          cancelInputDismissingTooltipOpen(nextOpen, changeDetails)
         ) {
           return false;
         }
-        if (input) {
+        if (nextOpen) {
           if (typeof content !== "function") {
-            value9(openTooltipWithBody(content));
-          } else if (!value14) {
-            let value29 = evaluateTooltipContent(content);
-            if (value29 === TOOLTIP_NO_SHOW) {
-              options.cancel();
+            setTooltipState(openTooltipWithBody(content));
+          } else if (!isTooltipOpen) {
+            let evaluatedContent = evaluateTooltipContent(content);
+            if (evaluatedContent === TOOLTIP_NO_SHOW) {
+              changeDetails.cancel();
               return false;
             }
-            value9(openTooltipWithBody(value29));
+            setTooltipState(openTooltipWithBody(evaluatedContent));
           } else {
-            value9(openTooltipState);
+            setTooltipState(openTooltipState);
           }
-          value5(false);
-          closePreviousTooltip(ref2);
+          setCloseWithoutAnimation(false);
+          closePreviousTooltip(tooltipActionsRef);
         } else if (
-          (value9(value14 ? closeTooltipState : resetTooltipState),
-          activeTooltipActionsRef === ref2)
+          (setTooltipState(isTooltipOpen ? closeTooltipState : resetTooltipState),
+          activeTooltipActionsRef === tooltipActionsRef)
         ) {
           activeTooltipActionsRef = null;
         }
-        value7(
-          input && options.reason === "trigger-hover"
-            ? (options.trigger ?? null)
+        setHoveredTrigger(
+          nextOpen && changeDetails.reason === "trigger-hover"
+            ? (changeDetails.trigger ?? null)
             : null,
         );
-        onOpenChange?.(input);
+        onOpenChange?.(nextOpen);
         return true;
       },
-      [onOpenChange, openOnHandedBackFocus, content, value14],
+      [onOpenChange, openOnHandedBackFocus, content, isTooltipOpen],
     ),
-    value15 = open !== undefined,
-    open2 = value8.open;
+    isControlled = open !== undefined,
+    isInternallyOpen = tooltipState.open;
   reactTooltip.useEffect(() => {
-    if (!value15 || !value11 || !value13) {
+    if (!isControlled || !hasPotentialContent || !hasTooltipBody) {
       return;
     }
     if (open) {
-      closePreviousTooltip(ref2);
-    } else if (activeTooltipActionsRef === ref2) {
+      closePreviousTooltip(tooltipActionsRef);
+    } else if (activeTooltipActionsRef === tooltipActionsRef) {
       activeTooltipActionsRef = null;
     }
     return () => {
-      if (!open2 && activeTooltipActionsRef === ref2) {
+      if (!isInternallyOpen && activeTooltipActionsRef === tooltipActionsRef) {
         activeTooltipActionsRef = null;
       }
     };
-  }, [value15, open, value11, value13, open2, value10]);
-  let callback2 = reactTooltip.useCallback((input: boolean) => {
-    if (!input) {
-      value5(false);
-      value7(null);
-      value9(clearTooltipBody);
+  }, [isControlled, open, hasPotentialContent, hasTooltipBody, isInternallyOpen, hasDeferredContent]);
+  let handleOpenChangeComplete = reactTooltip.useCallback((nextOpen: boolean) => {
+    if (!nextOpen) {
+      setCloseWithoutAnimation(false);
+      setHoveredTrigger(null);
+      setTooltipState(clearTooltipBody);
     }
   }, []);
   reactTooltip.useEffect(() => {
-    if (!value6) {
+    if (!hoveredTrigger) {
       return;
     }
-    let ownerDocument = value6.ownerDocument,
-      callback5 = (event: Event) => {
+    let ownerDocument = hoveredTrigger.ownerDocument,
+      handleAncestorScroll = (event: Event) => {
         let target = event.target as Node | null;
-        if (target && target !== value6 && target.contains(value6)) {
-          ref2.current.closeInstant();
+        if (target && target !== hoveredTrigger && target.contains(hoveredTrigger)) {
+          tooltipActionsRef.current.closeInstant();
         }
       };
-    ownerDocument.addEventListener("scroll", callback5, {
+    ownerDocument.addEventListener("scroll", handleAncestorScroll, {
       capture: true,
       passive: true,
     });
     return () => {
-      ownerDocument.removeEventListener("scroll", callback5, {
+      ownerDocument.removeEventListener("scroll", handleAncestorScroll, {
         capture: true,
       });
     };
-  }, [value6]);
+  }, [hoveredTrigger]);
   reactTooltip.useEffect(() => {
     return () => {
-      if (activeTooltipActionsRef === ref2) {
+      if (activeTooltipActionsRef === tooltipActionsRef) {
         activeTooltipActionsRef = null;
       }
     };
   }, []);
-  let value16 = useDefaultOverlayLayer("tooltip"),
-    [value17] = reactTooltip.useState(() =>
+  let overlayLayer = useDefaultOverlayLayer("tooltip"),
+    [lazyHandle] = reactTooltip.useState(() =>
       lazy && open === undefined ? baseTooltip.createHandle() : null,
     ),
-    [value18, value19] = reactTooltip.useState(false),
-    value20 = value18 || value17 === null,
-    ref3 = reactTooltip.useRef(false),
-    callback3 = reactTooltip.useCallback(() => {
-      ref3.current = true;
-      value19(true);
+    [hasMountedLazyRoot, setHasMountedLazyRoot] = reactTooltip.useState(false),
+    shouldMountRoot = hasMountedLazyRoot || lazyHandle === null,
+    lazyOpenStartedRef = reactTooltip.useRef(false),
+    mountLazyRoot = reactTooltip.useCallback(() => {
+      lazyOpenStartedRef.current = true;
+      setHasMountedLazyRoot(true);
     }, []),
-    value21 = useCancelableTimeout(),
-    ref4 = reactTooltip.useRef<HTMLElement | null>(null),
-    ref5 = reactTooltip.useRef(false);
+    openingTimeout = useCancelableTimeout(),
+    lazyHoveredTriggerRef = reactTooltip.useRef<HTMLElement | null>(null),
+    isLazyTooltipOpenRef = reactTooltip.useRef(false);
   reactTooltip.useEffect(() => {
     if (open === false) {
-      ref5.current = false;
+      isLazyTooltipOpenRef.current = false;
     }
   }, [open]);
-  let value22 = useOptionalEventCallback(() => {
-      if (ref3.current || value20 || !value11 || open !== undefined) {
+  let openLazyTooltip = useOptionalEventCallback(() => {
+      if (lazyOpenStartedRef.current || shouldMountRoot || !hasPotentialContent || open !== undefined) {
         return;
       }
-      let value29: React.ReactNode;
+      let bodyToShow: React.ReactNode;
       if (typeof content === "function") {
-        let value30 = evaluateTooltipContent(content);
-        if (value30 === TOOLTIP_NO_SHOW) {
+        let evaluatedContent = evaluateTooltipContent(content);
+        if (evaluatedContent === TOOLTIP_NO_SHOW) {
           return;
         }
-        value29 = value30;
+        bodyToShow = evaluatedContent;
       } else {
-        value29 = content;
+        bodyToShow = content;
       }
-      callback3();
-      value5(false);
-      closePreviousTooltip(ref2);
-      value7(ref4.current);
-      value9(openTooltipWithBody(value29));
-      ref5.current = true;
+      mountLazyRoot();
+      setCloseWithoutAnimation(false);
+      closePreviousTooltip(tooltipActionsRef);
+      setHoveredTrigger(lazyHoveredTriggerRef.current);
+      setTooltipState(openTooltipWithBody(bodyToShow));
+      isLazyTooltipOpenRef.current = true;
       onOpenChange?.(true);
     }),
-    value23 = useOptionalEventCallback(
-      (input: React.PointerEvent<HTMLElement>) => {
-        if (value20 || input.pointerType === "touch") {
+    handleLazyPointerEnter = useOptionalEventCallback(
+      (pointerEvent: React.PointerEvent<HTMLElement>) => {
+        if (shouldMountRoot || pointerEvent.pointerType === "touch") {
           return;
         }
-        if (!value11) {
+        if (!hasPotentialContent) {
           return;
         }
-        ref4.current = input.currentTarget;
-        value21.start(delay, value22);
+        lazyHoveredTriggerRef.current = pointerEvent.currentTarget;
+        openingTimeout.start(delay, openLazyTooltip);
       },
     ),
-    value24 = useOptionalEventCallback(() => {
+    handleLazyPointerDown = useOptionalEventCallback(() => {
       if (closeOnClick !== false) {
-        value21.cancel();
+        openingTimeout.cancel();
       }
     }),
-    value25 = useOptionalEventCallback(
+    handleLazyFocus = useOptionalEventCallback(
       (event: React.FocusEvent<HTMLElement>) => {
-        if (value20) {
+        if (shouldMountRoot) {
           return;
         }
         if (!event.target.matches(":focus-visible")) {
@@ -1569,81 +1569,81 @@ function Tooltip({
         ) {
           return;
         }
-        ref4.current = null;
-        value21.cancel();
-        value22();
+        lazyHoveredTriggerRef.current = null;
+        openingTimeout.cancel();
+        openLazyTooltip();
       },
     );
-  if (value17 !== null && open === true && !value18) {
-    value19(true);
+  if (lazyHandle !== null && open === true && !hasMountedLazyRoot) {
+    setHasMountedLazyRoot(true);
   }
-  let callback4 = reactTooltip.useCallback(
-      (input: boolean, options: TooltipPrimitive.Root.ChangeEventDetails) => {
+  let handleLazyOpenChange = reactTooltip.useCallback(
+      (nextOpen: boolean, changeDetails: TooltipPrimitive.Root.ChangeEventDetails) => {
         if (
           !openOnHandedBackFocus &&
-          cancelInputDismissingTooltipOpen(input, options)
+          cancelInputDismissingTooltipOpen(nextOpen, changeDetails)
         ) {
           return;
         }
-        if (input && ref5.current && value14) {
-          value9(openTooltipState);
+        if (nextOpen && isLazyTooltipOpenRef.current && isTooltipOpen) {
+          setTooltipState(openTooltipState);
           return;
         }
-        if (callback(input, options)) {
-          ref5.current = input;
+        if (updateTooltipOpen(nextOpen, changeDetails)) {
+          isLazyTooltipOpenRef.current = nextOpen;
         }
       },
-      [callback, openOnHandedBackFocus, value14],
+      [updateTooltipOpen, openOnHandedBackFocus, isTooltipOpen],
     ),
-    value26 =
+    renderTrigger =
       reactTooltip.isValidElement(children) &&
       children.type !== reactTooltip.Fragment
         ? children
-        : (input: React.HTMLAttributes<HTMLSpanElement>) => (
-            <span {...input} className={"inline-flex"}>
+        : (triggerProps: React.HTMLAttributes<HTMLSpanElement>) => (
+            <span {...triggerProps} className={"inline-flex"}>
               {children}
             </span>
           ),
-    value27 = (
+    tooltipTrigger = (
       <baseTooltip.Trigger
         ref={triggerRef as React.Ref<HTMLButtonElement>}
-        id={value3}
+        id={triggerId}
         delay={delay}
         closeDelay={closeDelay}
         closeOnClick={closeOnClick}
-        handle={value17 ?? undefined}
-        disabled={value17 !== null && !value20 ? !value11 : undefined}
-        onPointerEnter={value17 ? value23 : undefined}
-        onPointerLeave={value17 ? value21.cancel : undefined}
-        onPointerDown={value17 ? value24 : undefined}
-        onFocus={value17 ? value25 : undefined}
-        render={value26}
+        handle={lazyHandle ?? undefined}
+        disabled={lazyHandle !== null && !shouldMountRoot ? !hasPotentialContent : undefined}
+        onPointerEnter={lazyHandle ? handleLazyPointerEnter : undefined}
+        onPointerLeave={lazyHandle ? openingTimeout.cancel : undefined}
+        onPointerDown={lazyHandle ? handleLazyPointerDown : undefined}
+        onFocus={lazyHandle ? handleLazyFocus : undefined}
+        render={renderTrigger}
       />
     ),
-    value28 =
-      value20 && value13 ? (
-        <baseTooltip.Portal container={(container ?? value) as import("../contracts/overlays").BaseUIPortalContainer}>
+    tooltipPortal =
+      shouldMountRoot && hasTooltipBody ? (
+        <baseTooltip.Portal container={(container ?? portalContainer) as import("../contracts/overlays").BaseUIPortalContainer}>
           <PortalRoot>
             <CollisionPaddingProvider
               override={collisionPadding}
-              container={container ?? value}
+              container={container ?? portalContainer}
             >
-              {(input: Overlays.CollisionPadding) => (
-                <layerBaseContext.Provider value={value16.base}>
+              {(resolvedCollisionPadding: Overlays.CollisionPadding) => (
+                <layerBaseContext.Provider value={overlayLayer.base}>
                   <baseTooltip.Positioner
                     data-cds={"Tooltip"}
                     className={"data-[anchor-hidden]:invisible"}
-                    style={value16.style}
+                    style={overlayLayer.style}
                     side={side}
                     align={align}
                     sideOffset={sideOffset}
-                    collisionPadding={input}
+                    collisionPadding={resolvedCollisionPadding}
                   >
                     <baseTooltip.Popup
-                      ref={value2}
+                      ref={shrinkWrapRef}
                       role={"tooltip"}
                       style={
-                        value4
+                        closeWithoutAnimation
                           ? {
                               transition: "none",
                             }
@@ -1652,7 +1652,7 @@ function Tooltip({
                       className={cn(
                         tooltipSingleLineClasses,
                         tooltipSecondaryDetailClasses,
-                        multiline || detail || secondaryHint
+                        multiline || tooltipDetail || secondaryHint
                           ? tooltipMultilineBodyClasses
                           : tooltipContentRowClasses,
                         !shortcut && tooltipTextBalanceClass,
@@ -1660,7 +1660,7 @@ function Tooltip({
                       )}
                     >
                       <DarkTooltipScope>
-                        {multiline || detail || secondaryHint ? (<jsxTooltip.Fragment>
+                        {multiline || tooltipDetail || secondaryHint ? (<jsxTooltip.Fragment>
                             {[<span
                                 className={
                                   "inline-flex min-w-0 items-center gap-2"
@@ -1669,7 +1669,7 @@ function Tooltip({
                                 {[<span
                                     className={multilineTooltipArrowClass}
                                   >
-                                    {value12}
+                                    {tooltipBody}
                                   </span>, shortcut && (
                                     <TooltipShortcut keys={shortcut} />
                                   )]}
@@ -1685,18 +1685,18 @@ function Tooltip({
                                       keys={secondaryHint.shortcut}
                                     />]}
                                 </span>
-                              ), detail && (
+                              ), tooltipDetail && (
                                 <span
                                   className={
                                     "break-words text-[calc(0.6875rem*var(--cds-rem-scale,1))]/[calc(0.875rem*var(--cds-rem-scale,1))] text-secondary"
                                   }
                                 >
-                                  {detail}
+                                  {tooltipDetail}
                                 </span>
                               )]}
                           </jsxTooltip.Fragment>) : (<jsxTooltip.Fragment>
                             {[<span className={multilineTooltipArrowClass}>
-                                {value12}
+                                {tooltipBody}
                               </span>, shortcut && (
                                 <TooltipShortcut
                                   keys={shortcut}
@@ -1713,28 +1713,28 @@ function Tooltip({
           </PortalRoot>
         </baseTooltip.Portal>
       ) : null;
-  if (value17) {
+  if (lazyHandle) {
     return (
       <jsxTooltip.Fragment>
         {[<tooltipImplementationContext.Provider
             value={defaultTooltipImplementation}
           >
-            <tooltipsDisabledContext.Provider value={value11}>
-              {value27}
+            <tooltipsDisabledContext.Provider value={hasPotentialContent}>
+              {tooltipTrigger}
             </tooltipsDisabledContext.Provider>
-          </tooltipImplementationContext.Provider>, value20 && (
+          </tooltipImplementationContext.Provider>, shouldMountRoot && (
             <baseTooltip.Root
-              handle={value17}
-              open={value14}
+              handle={lazyHandle}
+              open={isTooltipOpen}
               disableHoverablePopup={!hoverable}
               trackCursorAxis={trackCursorAxis}
-              disabled={!value11}
-              actionsRef={ref}
-              onOpenChange={callback4}
-              onOpenChangeComplete={callback2}
-              triggerId={value3}
+              disabled={!hasPotentialContent}
+              actionsRef={rootActionsRef}
+              onOpenChange={handleLazyOpenChange}
+              onOpenChangeComplete={handleOpenChangeComplete}
+              triggerId={triggerId}
             >
-              {value28}
+              {tooltipPortal}
             </baseTooltip.Root>
           )]}
       </jsxTooltip.Fragment>
@@ -1742,22 +1742,22 @@ function Tooltip({
   }
   return (
     <baseTooltip.Root
-      open={value14}
+      open={isTooltipOpen}
       disableHoverablePopup={!hoverable}
       trackCursorAxis={trackCursorAxis}
-      disabled={!value11}
-      actionsRef={ref}
-      onOpenChange={callback}
-      onOpenChangeComplete={callback2}
-      triggerId={value3}
+      disabled={!hasPotentialContent}
+      actionsRef={rootActionsRef}
+      onOpenChange={updateTooltipOpen}
+      onOpenChangeComplete={handleOpenChangeComplete}
+      triggerId={triggerId}
     >
       {[<tooltipImplementationContext.Provider
           value={defaultTooltipImplementation}
         >
-          <tooltipsDisabledContext.Provider value={value11}>
-            {value27}
+          <tooltipsDisabledContext.Provider value={hasPotentialContent}>
+            {tooltipTrigger}
           </tooltipsDisabledContext.Provider>
-        </tooltipImplementationContext.Provider>, value28]}
+        </tooltipImplementationContext.Provider>, tooltipPortal]}
     </baseTooltip.Root>
   );
 }
@@ -1944,7 +1944,7 @@ export {
   shrinkWrapAtomicTags,
   shrinkWrapBaselineWidths,
   shrinkWrapLayoutImproved,
-  shrinkWrapLayoutWorsened,
+  preservesShrinkWrapLayout as shrinkWrapLayoutWorsened,
   shrinkWrapQueues,
   shrinkWrapResizeObservers,
   shrinkWrapSynchronously,
@@ -1992,8 +1992,8 @@ export function installUiAvatars(): () => void {
     subscribeAppleKeyboardNoop = () => () => {
       return;
     };
-    isShortcutModifier = (input: string): input is ShortcutModifier =>
-      (shortcutModifierNames as readonly string[]).includes(input);
+    isShortcutModifier = (key: string): key is ShortcutModifier =>
+      (shortcutModifierNames as readonly string[]).includes(key);
     initializeShortcuts = initializeOnce(() => {
       initializeClassNames();
       initializeTranslations();
@@ -2193,15 +2193,15 @@ export function installUiAvatars(): () => void {
             children: children,
             ...props
           }: React.ComponentPropsWithoutRef<"div"> & ShrinkWrapOptions,
-          options: React.ForwardedRef<HTMLDivElement>,
+          forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
-          let value = useShrinkWrapRef({
+          let shrinkWrapRef = useShrinkWrapRef({
               enabled: enabled,
               immediate: immediate,
             }),
-            value2 = useMergedRefs(options, value);
+            mergedRef = useMergedRefs(forwardedRef, shrinkWrapRef);
           return (
-            <div ref={value2} data-cds={"ShrinkWrap"} {...props}>
+            <div ref={mergedRef} data-cds={"ShrinkWrap"} {...props}>
               {children}
             </div>
           );
@@ -2275,43 +2275,43 @@ export function installUiAvatars(): () => void {
       DisabledReasonTooltip: () => DisabledReasonTooltip,
     });
     activeTooltipActionsRef = null;
-    openTooltipState = (input) =>
-      input.open
-        ? input
+    openTooltipState = (state) =>
+      state.open
+        ? state
         : {
-            ...input,
+            ...state,
             open: true,
           };
-    closeTooltipState = (input) =>
-      input.open
+    closeTooltipState = (state) =>
+      state.open
         ? {
-            ...input,
+            ...state,
             open: false,
           }
-        : input;
-    clearTooltipBody = (input) =>
-      input.body === undefined
-        ? input
+        : state;
+    clearTooltipBody = (state) =>
+      state.body === undefined
+        ? state
         : {
-            ...input,
+            ...state,
             body: undefined,
           };
-    openTooltipWithBody = (input) => (input2) =>
-      input2.open && Object.is(input2.body, input)
-        ? input2
+    openTooltipWithBody = (body) => (state) =>
+      state.open && Object.is(state.body, body)
+        ? state
         : {
             open: true,
-            body: input,
+            body: body,
           };
-    replaceTooltipBody = (input) => (input2) =>
-      Object.is(input2.body, input)
-        ? input2
+    replaceTooltipBody = (body) => (state) =>
+      Object.is(state.body, body)
+        ? state
         : {
-            ...input2,
-            body: input,
+            ...state,
+            body: body,
           };
-    resetTooltipState = (input) =>
-      input.open || input.body !== undefined ? closedTooltipState : input;
+    resetTooltipState = (state) =>
+      state.open || state.body !== undefined ? closedTooltipState : state;
     tooltipTextBalanceClass = "text-balance";
     tooltipContentRowClasses =
       "inline-flex items-center gap-2 min-h-[calc(1.5rem*var(--cds-rem-scale,1))] max-w-[240px] py-[calc(0.1875rem*var(--cds-rem-scale,1))]";
@@ -2364,15 +2364,15 @@ export function installUiAvatars(): () => void {
           children: children,
           ...props
         }: Overlays.OverflowTooltipProps,
-        options: React.ForwardedRef<HTMLSpanElement>,
+        forwardedRef: React.ForwardedRef<HTMLSpanElement>,
       ): React.ReactElement {
         let ref = reactTooltip.useRef<HTMLSpanElement | null>(null),
-          value = useMergedRefs(ref, options),
-          value2 = useTooltipsDisabled();
+          mergedRef = useMergedRefs(ref, forwardedRef),
+          tooltipsDisabled = useTooltipsDisabled();
         return (
           <Tooltip
             content={
-              value2
+              tooltipsDisabled
                 ? undefined
                 : () => {
                     let current = ref.current;
@@ -2399,7 +2399,7 @@ export function installUiAvatars(): () => void {
           >
             <span
               {...props}
-              ref={value}
+              ref={mergedRef}
               data-cds={"OverflowTooltip"}
               className={cn(
                 "block min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap",

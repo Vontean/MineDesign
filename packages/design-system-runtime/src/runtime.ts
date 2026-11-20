@@ -212,7 +212,7 @@ import { installBootstrap } from "./bootstrap";
 
 /** Preserve hoisting, live bindings, and initialization order from the shipped IIFE. */
 export function createDesignSystemRuntime(
-  options: { boot?: boolean } = {},
+  runtimeOptions: { boot?: boolean } = {},
 ): void {
   installDependencies();
   const initializers = [
@@ -426,7 +426,7 @@ export function createDesignSystemRuntime(
     installBootstrap(),
   ];
   for (let index = 0; index < initializers.length; index++) {
-    if (options.boot === false && index === initializers.length - 1) continue;
+    if (runtimeOptions.boot === false && index === initializers.length - 1) continue;
     initializers[index]();
   }
 }

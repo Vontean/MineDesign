@@ -28,27 +28,27 @@ export {
 export function installTelemetryHealth(): () => void {
   return () => {
     artifactHealth = {
-      report(input, options, context): void {
+      report(eventName, outcome, eventDetails): void {
         try {
-          getArtifactHealthReporter()?.report(input, options, context);
+          getArtifactHealthReporter()?.report(eventName, outcome, eventDetails);
         } catch {}
       },
       async track<Value>(
-        input: string,
-        options: () => Value | PromiseLike<Value>,
-        context?: unknown,
+        eventName: string,
+        run: () => Value | PromiseLike<Value>,
+        eventDetails?: unknown,
       ): Promise<Value> {
         let value = getArtifactHealthReporter();
         if (value === undefined) {
-          return await options();
+          return await run();
         }
-        let value2: Promise<Value>;
+        let trackedResult: Promise<Value>;
         try {
-          value2 = value.track(input, options, context);
+          trackedResult = value.track(eventName, run, eventDetails);
         } catch {
-          return await options();
+          return await run();
         }
-        return await value2;
+        return await trackedResult;
       },
     };
   };

@@ -49,69 +49,69 @@ function ArtifactLoadBoundary({
   children: children,
 }: ArtifactLoadBoundaryProps) {
   useUiLocale();
-  let callback: () => ArtifactLoadState = () => {
-      let value5 =
+  let readLoadState: () => ArtifactLoadState = () => {
+      let documentLoadState =
         typeof doc.loadState === "function" ? doc.loadState() : "live";
-      if (value5 === "loading" || value5 === "failed") {
-        return value5;
+      if (documentLoadState === "loading" || documentLoadState === "failed") {
+        return documentLoadState;
       } else {
         return "live";
       }
     },
-    [value, value2] = reactGQ.useState(callback),
-    [value3, value4] = reactGQ.useState(""),
-    ref = reactGQ.useRef<HTMLElement | null>(null),
-    ref2 = reactGQ.useRef(false),
-    ref3 = reactGQ.useRef(true);
+    [loadState, setLoadState] = reactGQ.useState(readLoadState),
+    [announcement, setAnnouncement] = reactGQ.useState(""),
+    retryButtonRef = reactGQ.useRef<HTMLElement | null>(null),
+    wasRetryButtonFocusedRef = reactGQ.useRef(false),
+    shouldAnnounceFailureRef = reactGQ.useRef(true);
   reactGQ.useEffect(() => {
-    ref2.current = false;
-    ref3.current = true;
-    value2(callback());
+    wasRetryButtonFocusedRef.current = false;
+    shouldAnnounceFailureRef.current = true;
+    setLoadState(readLoadState());
     return doc.subscribeLoad?.(() => {
-      let value5 = callback();
-      if (value5 === "loading" && ref.current !== null) {
-        ref2.current = document.activeElement === ref.current;
+      let nextLoadState = readLoadState();
+      if (nextLoadState === "loading" && retryButtonRef.current !== null) {
+        wasRetryButtonFocusedRef.current = document.activeElement === retryButtonRef.current;
       }
-      value2(value5);
+      setLoadState(nextLoadState);
     });
   }, [doc]);
   reactGQ.useEffect(() => {
-    if (value !== "failed") {
-      if (value === "live") {
-        ref2.current = false;
-        ref3.current = true;
+    if (loadState !== "failed") {
+      if (loadState === "live") {
+        wasRetryButtonFocusedRef.current = false;
+        shouldAnnounceFailureRef.current = true;
       }
-      value4("");
+      setAnnouncement("");
       return;
     }
     let activeElement = document.activeElement,
-      value5 =
+      canRestoreFocus =
         document.hasFocus() &&
         (activeElement === null ||
           activeElement === document.body ||
           activeElement === document.documentElement);
-    if (ref2.current && value5) {
-      ref.current?.focus({
+    if (wasRetryButtonFocusedRef.current && canRestoreFocus) {
+      retryButtonRef.current?.focus({
         preventScroll: true,
       });
     }
-    if (!ref3.current) {
+    if (!shouldAnnounceFailureRef.current) {
       return;
     }
-    let value6 = setTimeout(() => {
-        ref3.current = false;
-        value4(uiMessage("design-system.artifactLoadBoundary.theLatestContentFailedTo"));
+    let announcementTimer = setTimeout(() => {
+        shouldAnnounceFailureRef.current = false;
+        setAnnouncement(uiMessage("design-system.artifactLoadBoundary.theLatestContentFailedTo"));
       }, ARTIFACT_LOAD_DELAY_MS),
-      value7 = setTimeout(
-        () => value4(""),
+      clearTimer = setTimeout(
+        () => setAnnouncement(""),
         ARTIFACT_LOAD_DELAY_MS + ANNOUNCEMENT_CLEAR_MS,
       );
     return () => {
-      clearTimeout(value6);
-      clearTimeout(value7);
+      clearTimeout(announcementTimer);
+      clearTimeout(clearTimer);
     };
-  }, [value]);
-  if (value === "live") {
+  }, [loadState]);
+  if (loadState === "live") {
     return (
       <jsxForUiArtifactLoadBoundary.Fragment>
         {children}
@@ -125,7 +125,7 @@ function ArtifactLoadBoundary({
         !(skeletonFlush && skeleton != null) &&
           "pt-[var(--tb-overlay-h,0px)]",
       )}
-      aria-busy={value === "loading"}
+      aria-busy={loadState === "loading"}
     >
       {[skeleton ?? <ArtifactSkeleton className={"m-6 h-48 rounded-lg"} />, <span
           className={"sr-only"}
@@ -134,21 +134,21 @@ function ArtifactLoadBoundary({
           aria-atomic={"true"}
           data-kit={"load-status"}
         >
-          {value3}
+          {announcement}
         </span>, <div
           className={
             "pointer-events-none absolute inset-x-0 top-[calc(var(--tb-overlay-h,0px)+1rem)] flex justify-center"
           }
         >
-          {value === "loading" ? (<ArtifactLoadingSpinner />) : (<span
+          {loadState === "loading" ? (<ArtifactLoadingSpinner />) : (<span
               className={
                 "pointer-events-auto inline-flex items-center gap-2 rounded-md border border-border-line bg-panel px-3 py-1.5 text-xs text-fg-muted shadow-sm"
               }
             >
               {[uiMessage("design-system.artifactLoadBoundary.theLatestContentFailedTo"), <TextLink
-                  ref={ref}
+                  ref={retryButtonRef}
                   onClick={() => {
-                    ref3.current = true;
+                    shouldAnnounceFailureRef.current = true;
                     doc.save?.();
                   }}
                 >

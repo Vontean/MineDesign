@@ -59,15 +59,15 @@ function reuseStoredDocumentIdentity(
   }
 }
 function decomposeDesignSystemDocuments(
-  document2: Host.ArtifactEnvelope<Model.DesignSystemContent>,
+  document: Host.ArtifactEnvelope<Model.DesignSystemContent>,
   previous?: ReadonlyMap<string, Storage.DatabaseRecord>,
   carry?: Storage.SystemCarry,
 ): Storage.DocumentRecords {
-  let files = document2.content.files,
+  let files = document.content.files,
     knownUploads = knownRemoteUploadsForFiles(files),
     regenerate: boolean = regenerateStoredDerivedFiles;
   regenerateStoredDerivedFiles = false;
-  let plan = planSystemStoreConversion(document2.title, files, {
+  let plan = planSystemStoreConversion(document.title, files, {
       known: knownUploads,
       derived: regenerate,
       ...(carry?.meta !== undefined
@@ -77,7 +77,7 @@ function decomposeDesignSystemDocuments(
         : {}),
     }),
     documents = new Map<string, Storage.DatabaseRecord>();
-  for (let [value, value2] of plan.docs) {
+  for (let [value, record] of plan.docs) {
     documents.set(
       value,
       reuseStoredDocumentIdentity(
@@ -85,24 +85,24 @@ function decomposeDesignSystemDocuments(
         value,
         value === SYSTEM_META_DOCUMENT_PATH
           ? {
-              ...value2,
+              ...record,
               ...retainedDerivedSystemDocuments.meta,
               ...localSystemMetadataChanges,
             }
-          : value2,
+          : record,
       ),
     );
   }
-  let readmeUpload = plan.uploads.some((input) =>
-    input.paths.includes(DESIGN_SYSTEM_PATHS.readme),
+  let readmeUpload = plan.uploads.some((upload) =>
+    upload.paths.includes(DESIGN_SYSTEM_PATHS.readme),
   );
   if (regenerate) {
     let entry = documents.get(README_DOCUMENT_PATH);
     retainedDerivedSystemDocuments = {
       ...retainedDerivedSystemDocuments,
       derived: new Map(
-        [...documents].filter(([input]: [string, Storage.DatabaseRecord]) =>
-          isDerivedSystemDocument(input),
+        [...documents].filter(([path]: [string, Storage.DatabaseRecord]) =>
+          isDerivedSystemDocument(path),
         ),
       ),
       readmeTail:
@@ -113,11 +113,11 @@ function decomposeDesignSystemDocuments(
             : "",
     };
   }
-  for (let [value, value2] of retainedDerivedSystemDocuments.derived) {
+  for (let [value, record] of retainedDerivedSystemDocuments.derived) {
     if (!documents.has(value)) {
       documents.set(
         value,
-        reuseStoredDocumentIdentity(previous, value, value2),
+        reuseStoredDocumentIdentity(previous, value, record),
       );
     }
   }
@@ -164,7 +164,7 @@ function decomposeDesignSystemDocuments(
       );
     }
   }
-  for (let [value, value2] of remoteTextDocumentRecords) {
+  for (let [value, record] of remoteTextDocumentRecords) {
     if (
       !Object.hasOwn(files, value) ||
       !knownUploads.has(value) ||
@@ -175,39 +175,39 @@ function decomposeDesignSystemDocuments(
         reuseStoredDocumentIdentity(
           previous,
           documentPathForFile(value),
-          value2,
+          record,
         ),
       );
     }
   }
-  for (let [value, value2] of getLocalRemoteTextEdits()) {
-    if (!Object.hasOwn(files, value) || files[value] !== value2) {
+  for (let [value, localText] of getLocalRemoteTextEdits()) {
+    if (!Object.hasOwn(files, value) || files[value] !== localText) {
       discardRemoteTextEdit(value);
-    } else if (remoteTextEntry(value)?.text === value2) {
+    } else if (remoteTextEntry(value)?.text === localText) {
       acceptRemoteTextEdit(value);
     }
   }
   for (let value of plan.uploads) {
-    for (let value2 of value.paths) {
-      if (value2 === DESIGN_SYSTEM_PATHS.readme) {
+    for (let path of value.paths) {
+      if (path === DESIGN_SYSTEM_PATHS.readme) {
         continue;
       }
       if (
-        !remoteTextDocumentRecords.has(value2) &&
-        previous?.has(documentPathForFile(value2)) === true
+        !remoteTextDocumentRecords.has(path) &&
+        previous?.has(documentPathForFile(path)) === true
       ) {
         documents.set(
-          documentPathForFile(value2),
-          previous.get(documentPathForFile(value2))!,
+          documentPathForFile(path),
+          previous.get(documentPathForFile(path))!,
         );
       }
-      getAssetsCapability().then((input) =>
+      getAssetsCapability().then((assetsCapability) =>
         uploadEditedRemoteText(
-          value2,
-          files[value2],
+          path,
+          files[path],
           value.contentType,
-          input?.upload !== undefined
-            ? (input2, options) => input.upload(input2, options)
+          assetsCapability?.upload !== undefined
+            ? (bytes, uploadOptions) => assetsCapability.upload(bytes, uploadOptions)
             : null,
           value.kind === "code" ? undefined : value.bytes,
         ),
@@ -215,7 +215,7 @@ function decomposeDesignSystemDocuments(
     }
   }
   decomposeCommentDocuments(
-    document2.comments,
+    document.comments,
     previous,
     documents,
   );
@@ -228,15 +228,15 @@ function knownRemoteUploadsForFiles(
   let known = new Map<string, Storage.KnownUpload>(),
     byText = knownRemoteUploadsByText();
   for (let value of Object.keys(files)) {
-    let value2 = remoteTextEntry(value);
-    if (value2 !== undefined && value2.text === files[value]) {
-      known.set(value, knownUploadFromRemoteRecord(value2.ptr));
+    let remoteEntry = remoteTextEntry(value);
+    if (remoteEntry !== undefined && remoteEntry.text === files[value]) {
+      known.set(value, knownUploadFromRemoteRecord(remoteEntry.ptr));
     } else {
-      let value3 =
+      let knownUpload =
         knownUploadForRemoteText(value, files[value]) ??
         byText.get(files[value]);
-      if (value3 !== undefined) {
-        known.set(value, value3);
+      if (knownUpload !== undefined) {
+        known.set(value, knownUpload);
       }
     }
   }
@@ -376,9 +376,9 @@ function composeDesignSystemDocuments(
   let composed = composeStoredSystemFiles(documents);
   remoteTextDocumentRecords = new Map(
     [...composed.remoteText.keys()].map(
-      (input: string): [string, Storage.DatabaseRecord] => [
-        input,
-        documents.get(documentPathForFile(input))!,
+      (path: string): [string, Storage.DatabaseRecord] => [
+        path,
+        documents.get(documentPathForFile(path))!,
       ],
     ),
   );
@@ -386,8 +386,8 @@ function composeDesignSystemDocuments(
   retainedDerivedSystemDocuments = {
     derived: new Map(
       [...documents].filter(
-        ([input, input2]: [string, Storage.DatabaseRecord]) =>
-          isDerivedSystemDocument(input) && typeof input2.path === "string",
+        ([path, record]: [string, Storage.DatabaseRecord]) =>
+          isDerivedSystemDocument(path) && typeof record.path === "string",
       ),
     ),
     readmeTail:
@@ -449,26 +449,26 @@ function composeDesignSystemDocuments(
       hydratedRemoteTexts(),
     ),
   };
-  for (let [value, value2] of getLocalRemoteTextEdits()) {
-    let value3 = composed.remoteText.has(value)
+  for (let [value, localText] of getLocalRemoteTextEdits()) {
+    let remoteText = composed.remoteText.has(value)
         ? remoteTextEntry(value)?.text
         : undefined,
-      value4 =
+      hasBlobUrl =
         typeof composed.files[value] === "string" &&
         /^blob:/.test(composed.files[value]),
-      value5 =
+      remoteReference =
         composed.remoteText.get(value)?.dataRef ??
-        (value4 ? composed.files[value] : undefined);
+        (hasBlobUrl ? composed.files[value] : undefined);
     if (
-      value3 === value2 ||
+      remoteText === localText ||
       (getRemoteTextProblems().has(value)
-        ? value5 !== undefined &&
-          value5 !== failedRemoteTextReference(value)
-        : value4)
+        ? remoteReference !== undefined &&
+          remoteReference !== failedRemoteTextReference(value)
+        : hasBlobUrl)
     ) {
       acceptRemoteTextEdit(value);
     } else {
-      files[value] = value2;
+      files[value] = localText;
     }
   }
   return {
@@ -486,34 +486,34 @@ function blobIdsInDocumentRecords(
   documents: ReadonlyMap<string, Storage.DatabaseRecord>,
 ): Set<string> {
   let ids = new Set<string>(),
-    walk = (items: unknown, options: number): void => {
+    walk = (items: unknown, depth: number): void => {
       if (typeof items === "string") {
         let value = blobIdFromReference(items);
         if (value !== null) {
           ids.add(value);
         }
         if (items.length > 12) {
-          for (let value2 of items.matchAll(
+          for (let match of items.matchAll(
             /(?:_blob\/|read(?:_asset)?[\s\u0060]+)([A-Za-z0-9_-]{8,})/g,
           )) {
             for (
-              let count: number = 8, value3 = value2[1];
-              count <= Math.min(value3.length, 64);
+              let count: number = 8, blobId = match[1];
+              count <= Math.min(blobId.length, 64);
               count++
             ) {
-              ids.add(value3.slice(0, count));
+              ids.add(blobId.slice(0, count));
             }
           }
         }
       } else if (
-        options <= MAX_SYNC_DOCUMENT_DEPTH &&
+        depth <= MAX_SYNC_DOCUMENT_DEPTH &&
         typeof items === "object" &&
         items !== null
       ) {
         for (let value of Array.isArray(items)
           ? (items as readonly unknown[])
           : Object.values<unknown>(items as Storage.DatabaseRecord)) {
-          walk(value, options + 1);
+          walk(value, depth + 1);
         }
       }
     };
@@ -545,7 +545,7 @@ function hasFullCollectionWindow(
     );
   }
   return [...counts.values()].some(
-    (input: number): boolean => input >= MAX_COLLECTION_DOCUMENTS,
+    (count: number): boolean => count >= MAX_COLLECTION_DOCUMENTS,
   );
 }
 function refuseOversizedSystemDocument(
@@ -639,9 +639,9 @@ export function installModelSystemSync(): () => void {
     README_DOCUMENT_PATH = documentPathForFile(
       DESIGN_SYSTEM_PATHS.readme,
     );
-    isDerivedSystemDocument = (input: string) =>
-      documentCollectionPath(input) === API_COLLECTION ||
-      input ===
+    isDerivedSystemDocument = (path: string) =>
+      documentCollectionPath(path) === API_COLLECTION ||
+      path ===
         documentPathForFile(GENERATED_TOKENS_CSS_PATH);
     currentSystemDocumentRecords = new Map();
     pendingSystemDocumentRecords = new Map();
@@ -657,8 +657,8 @@ export function installModelSystemSync(): () => void {
       decompose: decomposeDesignSystemDocuments,
       compose: composeDesignSystemDocuments,
       refuse: refuseOversizedSystemDocument,
-      replaceOnly: (input: string): boolean =>
-        input === SYSTEM_TOKENS_DOCUMENT_PATH,
+      replaceOnly: (path: string): boolean =>
+        path === SYSTEM_TOKENS_DOCUMENT_PATH,
     };
   };
 }

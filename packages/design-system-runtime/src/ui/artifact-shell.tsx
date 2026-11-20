@@ -48,7 +48,7 @@ function LocalStashRecoveryOffer<Seed>({
       mins: Math.max(1, Math.round((Date.now() - value.at) / 60000)),
     };
   }
-  let value2 = value ? (ref.current?.mins ?? 1) : 0;
+  let unsavedMinutes = value ? (ref.current?.mins ?? 1) : 0;
   return (
     <div data-mc-chrome={""} role={"status"} className={"shrink-0"}>
       {value ? (<div className={"px-md pt-md"}>
@@ -60,9 +60,9 @@ function LocalStashRecoveryOffer<Seed>({
                 {[<Button
                     variant={"secondary"}
                     onClick={() => {
-                      let value3 = doc.restoreStash();
-                      if (value3 && undo) {
-                        undo.seed(value3);
+                      let restoredState = doc.restoreStash();
+                      if (restoredState && undo) {
+                        undo.seed(restoredState);
                       }
                     }}
                   >
@@ -70,9 +70,9 @@ function LocalStashRecoveryOffer<Seed>({
                   </Button>, <Button
                     variant={"ghost"}
                     onClick={() => {
-                      let value3 = !undo || undo.redoDepth() <= 1;
+                      let shouldClearHistory = !undo || undo.redoDepth() <= 1;
                       doc.discardStash();
-                      if (undo && value3) {
+                      if (undo && shouldClearHistory) {
                         undo.clear();
                       }
                     }}
@@ -82,7 +82,7 @@ function LocalStashRecoveryOffer<Seed>({
               </jsxForUiArtifactShell.Fragment>
             }
           >
-            {[uiMessage(value2 === 1 ? "design-system.artifactShell.unsavedMinute" : "design-system.artifactShell.unsavedMinutes", { minutes: value2 }), " ", doc.readOnly() ? (uiMessage("design-system.artifactShell.restoreThemHereToKeep")) : (doc.saveMode() === "auto" ? (uiMessage("design-system.artifactShell.restorePutsThemBackOver")) : (uiMessage("design-system.artifactShell.restoreThemHereThenSave")))]}
+            {[uiMessage(unsavedMinutes === 1 ? "design-system.artifactShell.unsavedMinute" : "design-system.artifactShell.unsavedMinutes", { minutes: unsavedMinutes }), " ", doc.readOnly() ? (uiMessage("design-system.artifactShell.restoreThemHereToKeep")) : (doc.saveMode() === "auto" ? (uiMessage("design-system.artifactShell.restorePutsThemBackOver")) : (uiMessage("design-system.artifactShell.restoreThemHereThenSave")))]}
           </Callout>
         </div>) : (null)}
     </div>
@@ -116,18 +116,18 @@ function ArtifactShell<Seed>({
 }: ArtifactShellProps<Seed>) {
   useUiLocale();
   let [, value] = reactForUiDisclosure.useState(0),
-    [value2, value3] = reactForUiDisclosure.useState(doc.saveState());
+    [saveState, setSaveState] = reactForUiDisclosure.useState(doc.saveState());
   reactForUiDisclosure.useEffect(() => {
-    let value11 = doc.subscribe(() => value((input: number) => input + 1)),
-      value12 = doc.subscribeSave(value3);
-    value3(doc.saveState());
+    let unsubscribeContent = doc.subscribe(() => value((revision: number) => revision + 1)),
+      unsubscribeSave = doc.subscribeSave(setSaveState);
+    setSaveState(doc.saveState());
     return () => {
-      value11();
-      value12();
+      unsubscribeContent();
+      unsubscribeSave();
     };
   }, [doc]);
   reactForUiDisclosure.useEffect(() => {
-    let callback2 = (event: KeyboardEvent) => {
+    let onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) {
         return;
       }
@@ -140,42 +140,42 @@ function ArtifactShell<Seed>({
         doc.save();
       }
     };
-    window.addEventListener("keydown", callback2);
-    return () => window.removeEventListener("keydown", callback2);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [doc]);
   useUndoKeys(undo, undoShortcuts);
-  let value4 = doc.readOnly(),
-    value5 = doc.title(),
-    value6 = "loadState" in doc || doc.saveMode() === "auto",
+  let readOnly = doc.readOnly(),
+    title = doc.title(),
+    showSyncDot = "loadState" in doc || doc.saveMode() === "auto",
     status = doc.saveState().status,
-    value7 =
+    hideReadOnlyStatus =
       status === "readonly" &&
       toolbarQuietReadOnlyReason !== undefined &&
       doc.saveState().message === toolbarQuietReadOnlyReason;
   useHostSaveState(
-    !value7 && (value6 || status === "readonly") ? status : null,
+    !hideReadOnlyStatus && (showSyncDot || status === "readonly") ? status : null,
     () => void doc.save(),
   );
   reactForUiDisclosure.useEffect(() => {
-    if (value5 !== "") {
-      document.title = value5;
+    if (title !== "") {
+      document.title = title;
     }
-  }, [value5]);
-  let value8 = value2.status === "loading" && !value4,
-    callback = (input: React.ReactNode) =>
-      value8 && input != null ? (
+  }, [title]);
+  let isLoadingWritableDocument = saveState.status === "loading" && !readOnly,
+    disableWhileLoading = (controls: React.ReactNode) =>
+      isLoadingWritableDocument && controls != null ? (
         <fieldset
           disabled={true}
           aria-busy={"true"}
           title={uiMessage("design-system.artifactShell.loadingTheLatestContent")}
           className={"contents"}
         >
-          {input}
+          {controls}
         </fieldset>
       ) : (
-        input
+        controls
       ),
-    value9 =
+    tabBar =
       tabs !== undefined &&
       tabs.length > 0 &&
       tab !== undefined &&
@@ -187,31 +187,31 @@ function ArtifactShell<Seed>({
           label={uiMessage("design-system.artifactShell.editorMode")}
         />
       ) : null,
-    value10 = toolbarVariant === "floating" && value9 === null;
+    isFloatingToolbar = toolbarVariant === "floating" && tabBar === null;
   return (
     <AppDesignProvider>
       <ArtifactErrorBoundary>
         {[<PanedLayout
             leading={leading}
-            toolbarVariant={value10 ? "floating" : "docked"}
+            toolbarVariant={isFloatingToolbar ? "floating" : "docked"}
             toolbar={
               <jsxForUiArtifactShell.Fragment>
                 {[hideToolbar ? null : (
                     <ArtifactToolbar
                       title={doc.title()}
-                      saveState={value2}
+                      saveState={saveState}
                       saveMode={doc.saveMode()}
-                      syncDot={value6}
+                      syncDot={showSyncDot}
                       onSave={() => void doc.save()}
                       undo={undo}
                       extrasEnd={
-                        !value4 || alwaysShowExtras
-                          ? callback(toolbarExtrasEnd)
+                        !readOnly || alwaysShowExtras
+                          ? disableWhileLoading(toolbarExtrasEnd)
                           : null
                       }
                       pinned={
-                        !value4 || alwaysShowExtras
-                          ? callback(toolbarPinned)
+                        !readOnly || alwaysShowExtras
+                          ? disableWhileLoading(toolbarPinned)
                           : null
                       }
                       afterUndo={toolbarAfterUndo}
@@ -225,16 +225,16 @@ function ArtifactShell<Seed>({
                       undoButtons={toolbarUndoButtons}
                       density={toolbarDensity}
                       touchTargets={toolbarTouchTargets}
-                      readOnly={value4}
-                      variant={value10 ? "floating" : "docked"}
+                      readOnly={readOnly}
+                      variant={isFloatingToolbar ? "floating" : "docked"}
                     >
-                      {!value4 || alwaysShowExtras ? (callback(toolbarExtras)) : (null)}
+                      {!readOnly || alwaysShowExtras ? (disableWhileLoading(toolbarExtras)) : (null)}
                     </ArtifactToolbar>
-                  ), value9]}
+                  ), tabBar]}
               </jsxForUiArtifactShell.Fragment>
             }
           >
-            {[value10 ? (
+            {[isFloatingToolbar ? (
                 <div
                   data-tb-overlay-clear={""}
                   className={"flex shrink-0 flex-col"}
@@ -294,15 +294,15 @@ export function installUiArtifactShell(): () => void {
       state: {
         error?: string;
       } = {};
-      static getDerivedStateFromError(input: unknown) {
+      static getDerivedStateFromError(error: unknown) {
         return {
-          error: input instanceof Error ? input.message : String(input),
+          error: error instanceof Error ? error.message : String(error),
         };
       }
-      componentDidCatch(input: unknown) {
+      componentDidCatch(error: unknown) {
         try {
           if (typeof reportError === "function") {
-            reportError(input);
+            reportError(error);
           }
         } catch {}
       }

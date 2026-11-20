@@ -67,8 +67,8 @@ export const FONT_FACE_FORMAT_NAMES: Record<string, string> = {
   otf: "opentype",
 };
 
-export function isTokenObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+export function isTokenObject(candidate: unknown): candidate is Record<string, unknown> {
+  return typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
 }
 export const normalizeThemeColorValue: (value: unknown) => string | undefined =
   normalizeColorOrAlias;
@@ -88,10 +88,10 @@ let cachedGeneratedTokensCss: {
 export function defineOwnEnumerableProperty(
   target: object,
   key: PropertyKey,
-  value: unknown,
+  propertyValue: unknown,
 ): void {
   Object.defineProperty(target, key, {
-    value: value,
+    value: propertyValue,
     enumerable: true,
     writable: true,
     configurable: true,
@@ -116,28 +116,28 @@ export function isSafeFontStack(stack: string): boolean {
   }
   return quote === null;
 }
-export function isColorLiteral(value: unknown): boolean {
+export function isColorLiteral(candidate: unknown): boolean {
   return (
-    typeof value === "string" &&
-    (HEX_COLOR_PATTERN.test(value) ||
-      (COLOR_FUNCTION_PATTERN.test(value) &&
-        !/url|var|expression/.test(value)))
+    typeof candidate === "string" &&
+    (HEX_COLOR_PATTERN.test(candidate) ||
+      (COLOR_FUNCTION_PATTERN.test(candidate) &&
+        !/url|var|expression/.test(candidate)))
   );
 }
-export function isCssLength(value: unknown): boolean {
-  return typeof value === "string" && CSS_LENGTH_PATTERN.test(value);
+export function isCssLength(candidate: unknown): boolean {
+  return typeof candidate === "string" && CSS_LENGTH_PATTERN.test(candidate);
 }
-export function isSafeBoxShadow(value: unknown): boolean {
+export function isSafeBoxShadow(candidate: unknown): boolean {
   if (
-    typeof value !== "string" ||
-    !BOX_SHADOW_PATTERN.test(value) ||
-    /(?:url|var|expression|image|image-set|src)\s*\(/.test(value) ||
-    value.trim() === ""
+    typeof candidate !== "string" ||
+    !BOX_SHADOW_PATTERN.test(candidate) ||
+    /(?:url|var|expression|image|image-set|src)\s*\(/.test(candidate) ||
+    candidate.trim() === ""
   ) {
     return false;
   }
   let depth: number = 0;
-  for (const char of value) {
+  for (const char of candidate) {
     if (char === "(") {
       depth++;
     } else if (char === ")" && --depth < 0) {
@@ -146,41 +146,41 @@ export function isSafeBoxShadow(value: unknown): boolean {
   }
   return depth === 0;
 }
-export function normalizeBoxShadow(value: unknown): string | undefined {
-  if (typeof value !== "string") {
+export function normalizeBoxShadow(shadow: unknown): string | undefined {
+  if (typeof shadow !== "string") {
     return;
   }
-  let normalized = value.trim().toLowerCase().replace(/\s+/g, " ");
+  let normalized = shadow.trim().toLowerCase().replace(/\s+/g, " ");
   if (isSafeBoxShadow(normalized)) {
     return normalized;
   } else {
     return undefined;
   }
 }
-export function motionValueKind(value: string): string | undefined {
-  if (MOTION_DURATION_PATTERN.test(value)) {
+export function motionValueKind(motionValue: string): string | undefined {
+  if (MOTION_DURATION_PATTERN.test(motionValue)) {
     return "duration";
   } else {
-    if (MOTION_EASING_PATTERN.test(value)) {
+    if (MOTION_EASING_PATTERN.test(motionValue)) {
       return "easing";
     } else {
       return undefined;
     }
   }
 }
-export function normalizeMotionValue(value: unknown): string | undefined {
+export function normalizeMotionValue(motionValue: unknown): string | undefined {
   if (
-    typeof value === "number" &&
-    Number.isFinite(value) &&
-    value >= 0 &&
-    value < 1e6
+    typeof motionValue === "number" &&
+    Number.isFinite(motionValue) &&
+    motionValue >= 0 &&
+    motionValue < 1e6
   ) {
-    return String(Math.round(value)) + "ms";
+    return String(Math.round(motionValue)) + "ms";
   }
-  if (typeof value !== "string") {
+  if (typeof motionValue !== "string") {
     return;
   }
-  let normalized = value.trim().toLowerCase().replace(/\s+/g, " ");
+  let normalized = motionValue.trim().toLowerCase().replace(/\s+/g, " ");
   if (normalized.startsWith(".")) {
     normalized = "0" + normalized;
   }
@@ -190,18 +190,18 @@ export function normalizeMotionValue(value: unknown): string | undefined {
     return undefined;
   }
 }
-export function normalizeExtraTokenValue(value: unknown): string | undefined {
+export function normalizeExtraTokenValue(tokenValue: unknown): string | undefined {
   if (
-    typeof value === "number" &&
-    Number.isFinite(value) &&
-    Math.abs(value) < 1e6
+    typeof tokenValue === "number" &&
+    Number.isFinite(tokenValue) &&
+    Math.abs(tokenValue) < 1e6
   ) {
-    return String(value);
+    return String(tokenValue);
   }
-  if (typeof value !== "string") {
+  if (typeof tokenValue !== "string") {
     return;
   }
-  let normalized = value.trim().replace(/\s+/g, " ");
+  let normalized = tokenValue.trim().replace(/\s+/g, " ");
   if (
     !EXTRA_TOKEN_VALUE_PATTERN.test(normalized) ||
     /(?:url|var|expression|image|image-set|src)\s*\(/i.test(normalized)
@@ -222,61 +222,61 @@ export function normalizeExtraTokenValue(value: unknown): string | undefined {
     return undefined;
   }
 }
-export function normalizeScalarTokenValue(family: Core.ScalarKind, value: unknown) {
+export function normalizeScalarTokenValue(family: Core.ScalarKind, tokenValue: unknown) {
   if (family === "extra") {
-    return normalizeExtraTokenValue(value);
+    return normalizeExtraTokenValue(tokenValue);
   } else {
-    return normalizeCssLength(value, family === "radius");
+    return normalizeCssLength(tokenValue, family === "radius");
   }
 }
-export function colorAliasTarget(value: string | undefined) {
-  if (value === undefined) {
+export function colorAliasTarget(colorValue: string | undefined) {
+  if (colorValue === undefined) {
     return undefined;
   } else {
-    return COLOR_ALIAS_PATTERN.exec(value)?.[1];
+    return COLOR_ALIAS_PATTERN.exec(colorValue)?.[1];
   }
 }
-export function isColorOrAlias(value: unknown) {
+export function isColorOrAlias(candidate: unknown) {
   return (
-    isColorLiteral(value) ||
-    (typeof value === "string" && COLOR_ALIAS_PATTERN.test(value))
+    isColorLiteral(candidate) ||
+    (typeof candidate === "string" && COLOR_ALIAS_PATTERN.test(candidate))
   );
 }
-export function truncateTokenText(value: unknown, maxLength: number) {
-  if (typeof value !== "string") {
+export function truncateTokenText(text: unknown, maxLength: number) {
+  if (typeof text !== "string") {
     return "";
   }
-  let characters = Array.from(value);
+  let characters = Array.from(text);
   if (characters.length > maxLength) {
     return characters.slice(0, maxLength).join("");
   } else {
-    return value;
+    return text;
   }
 }
-export function asTokenArray(value: unknown): unknown[] {
-  if (Array.isArray(value)) {
-    return value;
+export function asTokenArray(candidate: unknown): unknown[] {
+  if (Array.isArray(candidate)) {
+    return candidate;
   } else {
     return [];
   }
 }
-export function normalizeColorOrAlias(value: unknown): string | undefined {
-  if (typeof value !== "string") {
+export function normalizeColorOrAlias(colorValue: unknown): string | undefined {
+  if (typeof colorValue !== "string") {
     return;
   }
-  let literal = value.trim().toLowerCase();
+  let literal = colorValue.trim().toLowerCase();
   if (isColorLiteral(literal)) {
     return literal;
   }
-  let alias = value.trim().replace(/^\{--/, "{");
+  let alias = colorValue.trim().replace(/^\{--/, "{");
   if (COLOR_ALIAS_PATTERN.test(alias)) {
     return alias;
   } else {
     return undefined;
   }
 }
-export function normalizeColorEditorInput(input: string) {
-  let trimmed = input.trim();
+export function normalizeColorEditorInput(rawColor: string) {
+  let trimmed = rawColor.trim();
   if (colorAliasTarget(trimmed) !== undefined) {
     return trimmed;
   }
@@ -288,23 +288,23 @@ export function normalizeColorEditorInput(input: string) {
   }
 }
 export function normalizeCssLength(
-  value: unknown,
+  length: unknown,
   allowFullRadius: boolean,
 ): string | undefined {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    if (Math.abs(value) >= 1e4) {
+  if (typeof length === "number" && Number.isFinite(length)) {
+    if (Math.abs(length) >= 1e4) {
       return;
     }
-    if (value === 0) {
+    if (length === 0) {
       return "0";
     } else {
-      return String(Math.round(value * 1000) / 1000) + "px";
+      return String(Math.round(length * 1000) / 1000) + "px";
     }
   }
-  if (typeof value !== "string") {
+  if (typeof length !== "string") {
     return;
   }
-  let normalized = value.trim().toLowerCase();
+  let normalized = length.trim().toLowerCase();
   if (allowFullRadius && normalized === "full") {
     return "9999px";
   }
@@ -314,19 +314,19 @@ export function normalizeCssLength(
     return undefined;
   }
 }
-export function normalizeFontWeight(value: unknown): string | undefined {
+export function normalizeFontWeight(fontWeight: unknown): string | undefined {
   if (
-    typeof value === "number" &&
-    Number.isInteger(value) &&
-    value >= 1 &&
-    value <= 1000
+    typeof fontWeight === "number" &&
+    Number.isInteger(fontWeight) &&
+    fontWeight >= 1 &&
+    fontWeight <= 1000
   ) {
-    return String(value);
+    return String(fontWeight);
   }
-  if (typeof value !== "string") {
+  if (typeof fontWeight !== "string") {
     return;
   }
-  let normalized = value.trim().replace(/\s+/g, " ");
+  let normalized = fontWeight.trim().replace(/\s+/g, " ");
   if (normalized === "normal") {
     return "400";
   }
@@ -339,23 +339,23 @@ export function normalizeFontWeight(value: unknown): string | undefined {
     return undefined;
   }
 }
-export function normalizeLineHeight(value: unknown): string | undefined {
+export function normalizeLineHeight(lineHeight: unknown): string | undefined {
   if (
-    typeof value === "number" &&
-    Number.isFinite(value) &&
-    value > 0 &&
-    value < 10
+    typeof lineHeight === "number" &&
+    Number.isFinite(lineHeight) &&
+    lineHeight > 0 &&
+    lineHeight < 10
   ) {
-    return String(Math.round(value * 1000) / 1000);
+    return String(Math.round(lineHeight * 1000) / 1000);
   }
-  if (typeof value === "string" && /^\d(?:\.\d{1,6})?$/.test(value.trim())) {
-    if (Number(value) > 0) {
-      return value.trim();
+  if (typeof lineHeight === "string" && /^\d(?:\.\d{1,6})?$/.test(lineHeight.trim())) {
+    if (Number(lineHeight) > 0) {
+      return lineHeight.trim();
     } else {
       return undefined;
     }
   }
-  return normalizeCssLength(value, false);
+  return normalizeCssLength(lineHeight, false);
 }
 export function normalizeTypographyProperty<K extends Core.TypographyProperty>(
   property: K,
@@ -364,10 +364,10 @@ export function normalizeTypographyProperty<K extends Core.TypographyProperty>(
 ): Model.TypographyStyle[K] | undefined;
 export function normalizeTypographyProperty(
   property: string,
-  value: unknown,
+  fontList: unknown,
   families: Record<string, string>,
 ) {
-  let trimmed = typeof value === "string" ? value.trim() : value;
+  let trimmed = typeof fontList === "string" ? fontList.trim() : fontList;
   switch (property) {
     case "fontSize":
       return normalizeCssLength(trimmed, false);
@@ -426,30 +426,30 @@ export function normalizeTypographyProperty(
  * 不合法的项被丢弃并记入 report.dropped，超限或不识别的内容记入 warnings 与 notes。
  */
 export function parseTokens(
-  input: unknown,
+  tokenSource: unknown,
   report: ParseReport = {
     dropped: [],
     warnings: [],
   },
 ): NormalizedTokens {
   let source: Record<string, unknown> = {};
-  if (typeof input === "string") {
+  if (typeof tokenSource === "string") {
     try {
-      const parsed: unknown = JSON.parse(input);
+      const parsed: unknown = JSON.parse(tokenSource);
       if (isTokenObject(parsed)) {
         source = parsed;
       } else {
         report.dropped.push("tokens.json: not a JSON object");
       }
     } catch (error) {
-      if (input.trim() !== "") {
+      if (tokenSource.trim() !== "") {
         report.dropped.push(
           "tokens.json: " + String((error as Error).message).slice(0, 120),
         );
       }
     }
-  } else if (isTokenObject(input)) {
-    source = input;
+  } else if (isTokenObject(tokenSource)) {
+    source = tokenSource;
   }
   // 颜色主题
   const sourceColor = isTokenObject(source.color) ? source.color : {};
@@ -845,11 +845,11 @@ export function parseTokens(
     }
     return themeValues;
   };
-  const spacing = parseScalarFamily(source.spacing, "spacing", (value) =>
-    normalizeCssLength(value, false),
+  const spacing = parseScalarFamily(source.spacing, "spacing", (spacingValue) =>
+    normalizeCssLength(spacingValue, false),
   );
-  const radius = parseScalarFamily(source.radius, "radius", (value) =>
-    normalizeCssLength(value, true),
+  const radius = parseScalarFamily(source.radius, "radius", (radiusValue) =>
+    normalizeCssLength(radiusValue, true),
   );
   const shadow = parseScalarFamily(source.shadow, "shadow", parseShadowValue);
   const extra: Model.ExtraTokenFamily[] = [];
@@ -907,8 +907,8 @@ export function parseTokens(
         sourceFamily,
         key,
         key === "motion"
-          ? (value) =>
-              normalizeMotionValue(value) ?? normalizeExtraTokenValue(value)
+          ? (tokenValue) =>
+              normalizeMotionValue(tokenValue) ?? normalizeExtraTokenValue(tokenValue)
           : normalizeExtraTokenValue,
       ),
     });
@@ -1262,7 +1262,7 @@ export function escapeTokenCssComment(usage: string) {
  */
 export function generateTokensCss(
   tokens: NormalizedTokens,
-  options: TokenCssOptions = {},
+  cssOptions: TokenCssOptions = {},
 ): string {
   const rules = [];
   const themes = tokens.color.themes;
@@ -1270,36 +1270,36 @@ export function generateTokensCss(
   const colors = allColorTokens(tokens);
   const shadows = tokens.shadow.tokens;
   const usageComment = (usage: string): string =>
-    options.usageComments === true && usage !== ""
+    cssOptions.usageComments === true && usage !== ""
       ? " /* " + escapeTokenCssComment(usage) + " */"
       : "";
   // 别名写成 var(--x)；withUsage 控制是否附上 usage 注释（只在基础主题块里附）
   const colorDeclaration = (
     token: Model.ColorToken,
-    value: string,
+    colorValue: string,
     withUsage: boolean,
   ): string => {
-    const aliasTarget = colorAliasTarget(value);
+    const aliasTarget = colorAliasTarget(colorValue);
     return (
       "  --" +
       escapeTokenCssIdentifier(token.name) +
       ": " +
       (aliasTarget !== undefined
         ? "var(--" + escapeTokenCssIdentifier(aliasTarget) + ")"
-        : value) +
+        : colorValue) +
       ";" +
       (withUsage ? usageComment(token.usage) : "")
     );
   };
   const scalarDeclaration = (
     token: Model.ScalarToken | Model.ShadowToken,
-    value: string,
+    tokenValue: string,
     withUsage: boolean,
   ): string =>
     "  --" +
     escapeTokenCssIdentifier(token.name) +
     ": " +
-    value +
+    tokenValue +
     ";" +
     (withUsage ? usageComment(token.usage) : "");
   if (colors.length > 0 || shadows.length > 0) {
@@ -1373,7 +1373,7 @@ export function generateTokensCss(
       "  --font-" + escapeTokenCssIdentifier(key) + ": " + stack + ";",
     );
   }
-  if (options.styleVars === true) {
+  if (cssOptions.styleVars === true) {
     const shorthandVariables = typographyShorthandVariables(tokens);
     for (const group of tokens.type.groups) {
       for (const style of group.styles) {
@@ -1437,8 +1437,8 @@ export function generateTokensCss(
       );
     }
   }
-  if (options.fontFaces !== false) {
-    rules.push(...generateFontFaceRules(tokens, options.fontSrc));
+  if (cssOptions.fontFaces !== false) {
+    rules.push(...generateFontFaceRules(tokens, cssOptions.fontSrc));
   }
   return rules.join("\n") + (rules.length > 0 ? "\n" : "");
 }

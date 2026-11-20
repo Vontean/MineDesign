@@ -58,10 +58,10 @@ function hashDocumentId(key: string): string {
 function encodeDocumentId(key: string): string {
   let encoded = "";
   for (let value of storedFileEncoder.encode(key)) {
-    let value2 = String.fromCharCode(value);
+    let character = String.fromCharCode(value);
     encoded +=
-      value < 128 && SAFE_DOCUMENT_ID_CHARACTER_PATTERN.test(value2)
-        ? value2
+      value < 128 && SAFE_DOCUMENT_ID_CHARACTER_PATTERN.test(character)
+        ? character
         : "~" + value.toString(16).padStart(2, "0");
   }
   if (encoded === "." || encoded === "..") {
@@ -106,8 +106,8 @@ function collectionAndIdForFilePath(path: string): {
   };
 }
 function documentPathForFile(path: string): string {
-  let location2 = collectionAndIdForFilePath(path);
-  return location2.collection + "/" + location2.id;
+  let location = collectionAndIdForFilePath(path);
+  return location.collection + "/" + location.id;
 }
 function validatedFilePathForDocument(
   documentPath: string,
@@ -219,12 +219,12 @@ function chooseStoredConversionRoute(
       contentType: mime ?? mimeTypeForPath(path),
     };
   }
-  let tooLarge = (input: string | null): Storage.StoredConversionRoute => ({
+  let tooLarge = (mimeType: string | null): Storage.StoredConversionRoute => ({
     to: "omit",
     carried:
       formatStoredFileKilobytes(bytes) +
       " is more than the " +
-      formatStoredFileKilobytes(storedFileByteLimit(input)) +
+      formatStoredFileKilobytes(storedFileByteLimit(mimeType)) +
       " a stored file can be, so it was left out",
   });
   if (
@@ -511,14 +511,14 @@ function addConversionUpload(
   path: string,
   mime: string,
   bytes: Uint8Array<ArrayBuffer>,
-  sha2562?: string,
+  digest?: string,
 ): void {
   let existing =
-    sha2562 === undefined
+    digest === undefined
       ? undefined
       : uploads.find(
-          (input: Storage.ConversionUpload) =>
-            input.sha256 === sha2562 && input.contentType === mime,
+          (upload: Storage.ConversionUpload) =>
+            upload.sha256 === digest && upload.contentType === mime,
         );
   if (existing !== undefined) {
     if (!existing.paths.includes(path)) {
@@ -534,9 +534,9 @@ function addConversionUpload(
     contentType: mime!,
     bytes: bytes,
     byteLength: bytes.length,
-    ...(sha2562 !== undefined
+    ...(digest !== undefined
       ? {
-          sha256: sha2562,
+          sha256: digest,
         }
       : {}),
   });
@@ -544,7 +544,7 @@ function addConversionUpload(
 function makeStoredSystemMetadata(
   title: string,
   files: Model.FileTable,
-  options: Pick<
+  metadataOptions: Pick<
     Storage.StoredSystemMetadata,
     "convertedFrom" | "snapshot"
   > = {},
@@ -581,11 +581,11 @@ function makeStoredSystemMetadata(
   if (lastChange !== undefined) {
     metadata.lastChange = lastChange;
   }
-  if (options.convertedFrom !== undefined) {
-    metadata.convertedFrom = options.convertedFrom;
+  if (metadataOptions.convertedFrom !== undefined) {
+    metadata.convertedFrom = metadataOptions.convertedFrom;
   }
-  if (options.snapshot !== undefined) {
-    metadata.snapshot = options.snapshot;
+  if (metadataOptions.snapshot !== undefined) {
+    metadata.snapshot = metadataOptions.snapshot;
   }
   return metadata;
 }
@@ -742,21 +742,21 @@ export function installModelStoredFileCodec(): () => void {
       FONTS_COLLECTION,
       API_COLLECTION,
     ];
-    formatStoredFileKilobytes = (input: number): string =>
-      String(Math.round(input / 1024)) + " KB";
-    fileKindDescription = (input: string): string =>
-      fileExtension(input) === ""
+    formatStoredFileKilobytes = (bytes: number): string =>
+      String(Math.round(bytes / 1024)) + " KB";
+    fileKindDescription = (path: string): string =>
+      fileExtension(path) === ""
         ? "files of this kind"
-        : "." + fileExtension(input) + " files";
+        : "." + fileExtension(path) + " files";
     BASE64_ALPHABETModelStoredFileCodec =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    storedPathBasename = (input: string) =>
-      input.slice(input.lastIndexOf("/") + 1);
-    rawDocumentPathForFile = (input: string) =>
-      input === DESIGN_SYSTEM_PATHS.tokens
+    storedPathBasename = (path: string) =>
+      path.slice(path.lastIndexOf("/") + 1);
+    rawDocumentPathForFile = (path: string) =>
+      path === DESIGN_SYSTEM_PATHS.tokens
         ? RAW_TOKENS_DOCUMENT_PATH
-        : documentPathForFile(input);
-    isPendingBlobId = (input: string) => input.startsWith("pending-");
+        : documentPathForFile(path);
+    isPendingBlobId = (blobId: string) => blobId.startsWith("pending-");
     FAILED_CONVERSION_UPLOAD_MESSAGE =
       "the store did not accept its upload, so it was left out";
   };

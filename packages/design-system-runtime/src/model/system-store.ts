@@ -82,22 +82,22 @@ async function isLegacyEnvelopeCurrent(
         return null;
       }
     }
-    let value2: unknown = (
+    let manifestText: unknown = (
       (await value.json()) as
         | { content?: { files?: Record<string, unknown> } }
         | null
         | undefined
     )?.content?.files?.[DESIGN_SYSTEM_PATHS.manifest];
     if (
-      typeof value2 !== "string" ||
-      Object.keys(parseManifest(value2)).length === 0
+      typeof manifestText !== "string" ||
+      Object.keys(parseManifest(manifestText)).length === 0
     ) {
       return null;
     }
-    let value3 = lastChangeFromManifest(value2)?.at;
+    let lastChangeAt = lastChangeFromManifest(manifestText)?.at;
     if (
-      value3 === undefined ||
-      Date.parse(value3) <= Date.parse(convertedAt)
+      lastChangeAt === undefined ||
+      Date.parse(lastChangeAt) <= Date.parse(convertedAt)
     ) {
       return true;
     } else {
@@ -113,10 +113,10 @@ function setAutosaveInstaller(
   autosaveInstaller = install;
 }
 function setDocumentBootOptions(
-  options: Partial<Host.DocumentOptions<Model.DesignSystemContent>>,
+  bootOptions: Partial<Host.DocumentOptions<Model.DesignSystemContent>>,
   flags: { instance?: boolean } = {},
 ): void {
-  documentBootOptions = options;
+  documentBootOptions = bootOptions;
   instanceUsesFilesPublisher = flags.instance === true;
 }
 function setFileSystemDocumentFactory(
@@ -177,10 +177,10 @@ function changedHeldFilePaths(
   }
   let changed = [];
   for (let value of Object.keys(beforeFiles)) {
-    let value2 = beforeFiles[value];
+    let oldPointer = beforeFiles[value];
     if (
-      isHeldFilePointer(value, value2) &&
-      afterFiles[value] !== value2 &&
+      isHeldFilePointer(value, oldPointer) &&
+      afterFiles[value] !== oldPointer &&
       !isGone(value)
     ) {
       changed.push(value);
@@ -197,10 +197,10 @@ function introducedHeldFilePaths(
   }
   let introduced = [];
   for (let value of Object.keys(afterFiles)) {
-    let value2 = afterFiles[value];
+    let newPointer = afterFiles[value];
     if (
-      isHeldFilePointer(value, value2) &&
-      beforeFiles[value] !== value2
+      isHeldFilePointer(value, newPointer) &&
+      beforeFiles[value] !== newPointer
     ) {
       introduced.push(value);
     }
@@ -208,28 +208,28 @@ function introducedHeldFilePaths(
   return introduced.sort();
 }
 function createDesignSystemCommands(
-  document2: Storage.SystemDocument,
+  document: Storage.SystemDocument,
   undoStack: Application.FileEditHistory,
   sharedUndoStack?: Application.FileEditHistory,
-  options: { readGivesUpMs?: number } = {},
+  commandOptions: { readGivesUpMs?: number } = {},
 ): Storage.SystemCommands {
-  let commands = commandCapableDocument(document2);
+  let commands = commandCapableDocument(document);
   if (commands !== null && sharedUndoStack !== undefined) {
     commands.bindUndoStack?.(sharedUndoStack);
   }
-  let refresh = (input: Model.DesignSystemContent) =>
-      refreshManifest(input, document2.title()),
+  let refresh = (content: Model.DesignSystemContent) =>
+      refreshManifest(content, document.title()),
     coalescedStep: Storage.CoalescedEdit | null = null,
     seal = (): void => {
       if (coalescedStep !== null) {
         let value = coalescedStep;
         coalescedStep = null;
-        let value2 = document2.content();
-        if (value2 === value.latest) {
-          let value3 = refresh(value2);
-          if (value3 !== value2) {
-            value.latest = value3;
-            document2.setContent(value3);
+        let content = document.content();
+        if (content === value.latest) {
+          let refreshedContent = refresh(content);
+          if (refreshedContent !== content) {
+            value.latest = refreshedContent;
+            document.setContent(refreshedContent);
           }
         }
       }
@@ -237,42 +237,42 @@ function createDesignSystemCommands(
     preparedBytes = new Map<string, Storage.PreparedHeldBytes>(),
     preparing: boolean = false,
     notUndoable: string[] = [],
-    basename = (input: string) => input.slice(input.lastIndexOf("/") + 1),
-    isGone = (input: string): boolean => commands?.heldGone?.(input) === true,
-    preparedStillValid = (input: string): boolean => {
-      let entry = preparedBytes.get(input);
+    basename = (path: string) => path.slice(path.lastIndexOf("/") + 1),
+    isGone = (path: string): boolean => commands?.heldGone?.(path) === true,
+    preparedStillValid = (path: string): boolean => {
+      let entry = preparedBytes.get(path);
       if (entry === undefined) {
         return false;
       }
       if (
         !isHeldFilePointer(
-          input,
-          document2.content().files[input] ?? "",
+          path,
+          document.content().files[path] ?? "",
         ) ||
-        commands?.heldStillGood?.(input, entry.witness) !== "good"
+        commands?.heldStillGood?.(path, entry.witness) !== "good"
       ) {
-        preparedBytes.delete(input);
+        preparedBytes.delete(path);
         return false;
       }
       return true;
     },
     bytesNeeded = (
-      input: Model.DesignSystemContent,
-      options2: Storage.ContentMutation,
+      content: Model.DesignSystemContent,
+      mutate: Storage.ContentMutation,
     ) => {
       if (
         commands?.heldBytes === undefined ||
-        !Object.values(input.files).includes("file:")
+        !Object.values(content.files).includes("file:")
       ) {
         return [];
       }
-      let value = options2(input);
-      if (value === input) {
+      let value = mutate(content);
+      if (value === content) {
         return [];
       } else {
         return changedHeldFilePaths(
-          input.files,
-          finalizeContentChange(input, value, document2.title())
+          content.files,
+          finalizeContentChange(content, value, document.title())
             .files,
           isGone,
         );
@@ -286,20 +286,20 @@ function createDesignSystemCommands(
       }
       return preparing;
     },
-    readTimeoutMs = options.readGivesUpMs ?? 120000,
+    readTimeoutMs = commandOptions.readGivesUpMs ?? 120000,
     maxImagePaths: number = 64,
     maxImageBytes: number = 67108864;
   return {
-    content: () => document2.content(),
+    content: () => document.content(),
     seal: seal,
     undo: {
-      exec(input: Application.FileEditStep): void {
+      exec(step: Application.FileEditStep): void {
         seal();
-        undoStack.exec(input);
+        undoStack.exec(step);
       },
-      seed(input: Application.FileEditStep): void {
+      seed(step: Application.FileEditStep): void {
         seal();
-        undoStack.seed(input);
+        undoStack.seed(step);
       },
       undo(): void {
         if (guardBusy()) {
@@ -322,17 +322,17 @@ function createDesignSystemCommands(
         seal();
         undoStack.clear();
       },
-      subscribe: (input: () => void) => undoStack.subscribe(input),
+      subscribe: (listener: () => void) => undoStack.subscribe(listener),
     },
-    needs(input: Storage.ContentMutation): string[] {
-      return bytesNeeded(document2.content(), input).filter(
-        (input2): boolean => !preparedStillValid(input2),
+    needs(mutate: Storage.ContentMutation): string[] {
+      return bytesNeeded(document.content(), mutate).filter(
+        (path): boolean => !preparedStillValid(path),
       );
     },
     busy: (): boolean => preparing,
     lastNotUndoable: () => notUndoable,
     async prepare(
-      input: Storage.ContentMutation,
+      mutate: Storage.ContentMutation,
     ): Promise<Storage.PreparedEditResult> {
       if (guardBusy()) {
         return {
@@ -341,90 +341,90 @@ function createDesignSystemCommands(
           tooMany: false,
         };
       }
-      let value = bytesNeeded(document2.content(), input);
-      for (let value3 of [...preparedBytes.keys()]) {
-        if (!value.includes(value3)) {
-          preparedBytes.delete(value3);
+      let requiredPaths = bytesNeeded(document.content(), mutate);
+      for (let path of [...preparedBytes.keys()]) {
+        if (!requiredPaths.includes(path)) {
+          preparedBytes.delete(path);
         }
       }
-      let value2 = value.filter(
-        (input2): boolean => !preparedStillValid(input2),
+      let pathsToRead = requiredPaths.filter(
+        (path): boolean => !preparedStillValid(path),
       );
-      if (value2.length === 0) {
+      if (pathsToRead.length === 0) {
         return {
           ok: true,
         };
       }
       if (
-        value2.filter(isExpensiveHeldImagePath).length > maxImagePaths
+        pathsToRead.filter(isExpensiveHeldImagePath).length > maxImagePaths
       ) {
         return {
           ok: false,
-          failed: value2,
+          failed: pathsToRead,
           tooMany: true,
         };
       }
       preparing = true;
       commands?.setPreparing?.(true);
       try {
-        let items: string[] = [],
-          index = 0,
-          value3 = Date.now() + readTimeoutMs;
+        let failedPaths: string[] = [],
+          imageBytes = 0,
+          deadline = Date.now() + readTimeoutMs;
         for (
-          let index2 = 0;
-          index2 < value2.length && index <= maxImageBytes;
-          index2 += 4
+          let batchStart = 0;
+          batchStart < pathsToRead.length && imageBytes <= maxImageBytes;
+          batchStart += 4
         ) {
-          if (Date.now() >= value3) {
-            items.push(...value2.slice(index2));
+          if (Date.now() >= deadline) {
+            failedPaths.push(...pathsToRead.slice(batchStart));
             break;
           }
           await Promise.all(
-            value2
-              .slice(index2, index2 + 4)
-              .map(async (input2): Promise<void> => {
-                let value4: ReturnType<typeof setTimeout> | undefined,
-                  value5 = await Promise.race([
-                    commands?.heldBytes?.(input2).catch((): null => null) ??
+            pathsToRead
+              .slice(batchStart, batchStart + 4)
+              .map(async (path): Promise<void> => {
+                let readTimer: ReturnType<typeof setTimeout> | undefined,
+                  readResult = await Promise.race([
+                    commands?.heldBytes?.(path).catch((): null => null) ??
                       null,
                     new Promise<Storage.PreparedHeldBytes | null>(
-                      (input3): void => {
-                        value4 = setTimeout(
-                          () => input3(null),
-                          Math.max(0, value3 - Date.now()),
+                      (resolve): void => {
+                        readTimer = setTimeout(
+                          () => resolve(null),
+                          Math.max(0, deadline - Date.now()),
                         );
                       },
                     ),
-                  ]).finally(() => clearTimeout(value4));
-                if (value5 === null) {
-                  items.push(input2);
+                  ]).finally(() => clearTimeout(readTimer));
+                if (readResult === null) {
+                  failedPaths.push(path);
                 } else if (
-                  (preparedBytes.set(input2, value5),
-                  isExpensiveHeldImagePath(input2))
+                  (preparedBytes.set(path, readResult),
+                  isExpensiveHeldImagePath(path))
                 ) {
-                  index += value5.value.length;
+                  imageBytes += readResult.value.length;
                 }
               }),
           );
         }
-        if (index > maxImageBytes) {
-          for (let value4 of value2) {
-            preparedBytes.delete(value4);
+        if (imageBytes > maxImageBytes) {
+          for (let path of pathsToRead) {
+            preparedBytes.delete(path);
           }
           return {
             ok: false,
-            failed: value2,
+            failed: pathsToRead,
             tooMany: true,
           };
         }
-        if (items.length === 0) {
+        if (failedPaths.length === 0) {
           return {
             ok: true,
           };
         } else {
           return {
             ok: false,
-            failed: items.sort(),
+            failed: failedPaths.sort(),
             tooMany: false,
           };
         }
@@ -433,58 +433,58 @@ function createDesignSystemCommands(
         commands?.setPreparing?.(false);
       }
     },
-    set(input: string, options2: Storage.ContentMutation): boolean {
-      if (coalescedStep !== null && coalescedStep.key !== input) {
+    set(editKey: string, mutate: Storage.ContentMutation): boolean {
+      if (coalescedStep !== null && coalescedStep.key !== editKey) {
         seal();
       }
-      let value = document2.content(),
-        value2 = finalizeContentChange(
-          value,
-          options2(value),
-          document2.title(),
+      let previousContent = document.content(),
+        nextContent = finalizeContentChange(
+          previousContent,
+          mutate(previousContent),
+          document.title(),
         );
-      if (value2 === value) {
+      if (nextContent === previousContent) {
         return false;
       }
       if (
         commands?.heldBytes !== undefined &&
-        (changedHeldFilePaths(value.files, value2.files, isGone).length > 0 ||
-          introducedHeldFilePaths(value.files, value2.files).length > 0)
+        (changedHeldFilePaths(previousContent.files, nextContent.files, isGone).length > 0 ||
+          introducedHeldFilePaths(previousContent.files, nextContent.files).length > 0)
       ) {
         return false;
       }
-      document2.setContent(value2);
-      let value3 = coalescedStep?.step,
-        value4 =
-          value3?.leavesAlone !== undefined &&
+      document.setContent(nextContent);
+      let previousStep = coalescedStep?.step,
+        changedUncoveredFile =
+          previousStep?.leavesAlone !== undefined &&
           [
             ...new Set([
-              ...Object.keys(value.files),
-              ...Object.keys(value2.files),
+              ...Object.keys(previousContent.files),
+              ...Object.keys(nextContent.files),
             ]),
           ].some(
-            (input2) =>
-              value.files[input2] !== value2.files[input2] &&
-              value3.leavesAlone?.(input2) === true,
+            (path) =>
+              previousContent.files[path] !== nextContent.files[path] &&
+              previousStep.leavesAlone?.(path) === true,
           );
       if (
         coalescedStep !== null &&
-        coalescedStep.key === input &&
+        coalescedStep.key === editKey &&
         coalescedStep.step?.dropped !== true &&
-        !value4
+        !changedUncoveredFile
       ) {
-        coalescedStep.latest = value2;
+        coalescedStep.latest = nextContent;
         coalescedStep.step?.touch();
       } else {
         let state: Storage.CoalescedEdit = {
-          key: input,
-          base: value,
-          latest: value2,
+          key: editKey,
+          base: previousContent,
+          latest: nextContent,
         };
         coalescedStep = state;
         if (commands !== null) {
-          let value5 = commands.stepCommand(
-            input,
+          let step = commands.stepCommand(
+            editKey,
             () => ({
               before: state.base,
               after: state.latest,
@@ -493,199 +493,199 @@ function createDesignSystemCommands(
               applied: true,
             },
           );
-          state.step = value5;
-          undoStack.seed(value5);
+          state.step = step;
+          undoStack.seed(step);
         } else {
           undoStack.seed({
-            label: input,
-            do: () => document2.setContent(state.latest),
-            undo: () => document2.setContent(state.base),
+            label: editKey,
+            do: () => document.setContent(state.latest),
+            undo: () => document.setContent(state.base),
           });
         }
       }
       return true;
     },
     exec(
-      input: string,
-      options2: Storage.ContentMutation,
-      context?: { withoutBytes?: string[] },
+      label: string,
+      mutate: Storage.ContentMutation,
+      editOptions?: { withoutBytes?: string[] },
     ): boolean {
       notUndoable = [];
       if (guardBusy()) {
         return false;
       }
       seal();
-      let value = document2.content(),
-        value2 = options2(value);
-      if (value2 === value) {
+      let currentContent = document.content(),
+        mutatedContent = mutate(currentContent);
+      if (mutatedContent === currentContent) {
         return false;
       }
-      let value3 = value,
-        value4 = finalizeContentChange(
-          value,
-          value2,
-          document2.title(),
+      let before = currentContent,
+        after = finalizeContentChange(
+          currentContent,
+          mutatedContent,
+          document.title(),
         ),
-        value5 =
+        changedHeldPaths =
           commands?.heldBytes !== undefined
-            ? changedHeldFilePaths(value.files, value4.files, isGone)
+            ? changedHeldFilePaths(currentContent.files, after.files, isGone)
             : [],
-        items = [],
-        flag: boolean = false;
-      if (value5.length > 0) {
+        nonUndoablePaths = [],
+        usesCarriedBytes: boolean = false;
+      if (changedHeldPaths.length > 0) {
         let state: Record<string, string> = {};
-        for (let value8 of value5) {
-          if (preparedStillValid(value8)) {
-            state[value8] = preparedBytes.get(value8)!.value;
+        for (let heldPath of changedHeldPaths) {
+          if (preparedStillValid(heldPath)) {
+            state[heldPath] = preparedBytes.get(heldPath)!.value;
           } else if (
-            context?.withoutBytes?.includes(value8) === true &&
-            !Object.hasOwn(value4.files, value8)
+            editOptions?.withoutBytes?.includes(heldPath) === true &&
+            !Object.hasOwn(after.files, heldPath)
           ) {
-            items.push(value8);
+            nonUndoablePaths.push(heldPath);
           } else {
             commands?.tell?.(
-              basename(value8) +
+              basename(heldPath) +
                 " was updated while the page was getting it ready, so nothing was changed. Try again.",
             );
-            for (let value9 of value5) {
-              preparedBytes.delete(value9);
+            for (let path of changedHeldPaths) {
+              preparedBytes.delete(path);
             }
             return false;
           }
         }
         if (Object.keys(state).length > 0) {
-          flag = true;
-          value3 = finalizeContentChange(
-            value,
+          usesCarriedBytes = true;
+          before = finalizeContentChange(
+            currentContent,
             {
-              ...value,
+              ...currentContent,
               files: Object.freeze({
-                ...value.files,
+                ...currentContent.files,
                 ...state,
               }),
             },
-            document2.title(),
+            document.title(),
           );
-          let value8 = options2(value3);
-          if (value8 === value3) {
-            for (let value9 of value5) {
-              preparedBytes.delete(value9);
+          let mutationWithBytes = mutate(before);
+          if (mutationWithBytes === before) {
+            for (let path of changedHeldPaths) {
+              preparedBytes.delete(path);
             }
             return false;
           }
-          value4 = finalizeContentChange(
-            value3,
-            value8,
-            document2.title(),
+          after = finalizeContentChange(
+            before,
+            mutationWithBytes,
+            document.title(),
           );
           if (
-            changedHeldFilePaths(value3.files, value4.files, isGone).some(
-              (input2): boolean => !items.includes(input2),
+            changedHeldFilePaths(before.files, after.files, isGone).some(
+              (path): boolean => !nonUndoablePaths.includes(path),
             )
           ) {
-            for (let value9 of value5) {
-              preparedBytes.delete(value9);
+            for (let path of changedHeldPaths) {
+              preparedBytes.delete(path);
             }
             return false;
           }
-          for (let [value9, value10] of Object.entries(state)) {
+          for (let [path, fileBytes] of Object.entries(state)) {
             if (
-              !Object.hasOwn(value4.files, value9) &&
-              commands?.sendProblem?.(value9, value10) !== undefined
+              !Object.hasOwn(after.files, path) &&
+              commands?.sendProblem?.(path, fileBytes) !== undefined
             ) {
-              items.push(value9);
+              nonUndoablePaths.push(path);
             }
           }
         }
       }
-      let value6 =
+      let introducedPointers =
         commands?.heldBytes !== undefined
-          ? introducedHeldFilePaths(value.files, value4.files)
+          ? introducedHeldFilePaths(currentContent.files, after.files)
           : [];
-      if (value6.length > 0) {
-        let value8 = Object.keys(value.files).filter(
-            (input2) =>
-              isHeldFilePointer(input2, value.files[input2]) &&
-              !Object.hasOwn(value4.files, input2),
+      if (introducedPointers.length > 0) {
+        let removedPointers = Object.keys(currentContent.files).filter(
+            (path) =>
+              isHeldFilePointer(path, currentContent.files[path]) &&
+              !Object.hasOwn(after.files, path),
           ),
-          value9 = value8.find(isGone) ?? value8[0] ?? value6[0];
+          missingPath = removedPointers.find(isGone) ?? removedPointers[0] ?? introducedPointers[0];
         commands?.tell?.(
-          basename(value9) +
+          basename(missingPath) +
             " is missing from the published system, so it cannot be renamed or moved. Remove it and add the file again.",
         );
-        for (let value10 of value5) {
-          preparedBytes.delete(value10);
+        for (let path of changedHeldPaths) {
+          preparedBytes.delete(path);
         }
         return false;
       }
-      if (commands?.editProblem?.(value3, value4) !== undefined) {
-        for (let value8 of value5) {
-          preparedBytes.delete(value8);
+      if (commands?.editProblem?.(before, after) !== undefined) {
+        for (let path of changedHeldPaths) {
+          preparedBytes.delete(path);
         }
         return false;
       }
       if (commands?.heldBytes !== undefined) {
-        for (let value8 of Object.keys(value.files)) {
+        for (let path of Object.keys(currentContent.files)) {
           if (
-            isHeldFilePointer(value8, value.files[value8]) &&
-            !Object.hasOwn(value4.files, value8) &&
-            isGone(value8)
+            isHeldFilePointer(path, currentContent.files[path]) &&
+            !Object.hasOwn(after.files, path) &&
+            isGone(path)
           ) {
-            items.push(value8);
+            nonUndoablePaths.push(path);
           }
         }
       }
-      let value7 = Object.keys({
-        ...value3.files,
-        ...value4.files,
+      let changedPaths = Object.keys({
+        ...before.files,
+        ...after.files,
       }).filter(
-        (input2) =>
-          input2 !== "manifest.json" &&
-          value3.files[input2] !== value4.files[input2],
+        (path) =>
+          path !== "manifest.json" &&
+          before.files[path] !== after.files[path],
       );
       if (
         commands !== null &&
-        value7.length > 0 &&
-        value7.every((input2) => items.includes(input2))
+        changedPaths.length > 0 &&
+        changedPaths.every((path) => nonUndoablePaths.includes(path))
       ) {
-        document2.setContent(value4);
-        notUndoable = [...new Set(items)].sort();
-        for (let value8 of value5) {
-          preparedBytes.delete(value8);
+        document.setContent(after);
+        notUndoable = [...new Set(nonUndoablePaths)].sort();
+        for (let path of changedHeldPaths) {
+          preparedBytes.delete(path);
         }
         return true;
       }
       if (commands !== null) {
-        let value8 = commands.stepCommand(input, () => ({
-          before: value3,
-          after: value4,
+        let step = commands.stepCommand(label, () => ({
+          before: before,
+          after: after,
         }));
-        if (items.length > 0) {
-          value8.dropPaths?.(new Set(items));
+        if (nonUndoablePaths.length > 0) {
+          step.dropPaths?.(new Set(nonUndoablePaths));
         }
-        if (flag) {
-          let value9 = value8.do.bind(value8),
-            value10 = value8.undo.bind(value8);
-          value8.do = (): void => {
+        if (usesCarriedBytes) {
+          let runStep = step.do.bind(step),
+            undoStep = step.undo.bind(step);
+          step.do = (): void => {
             commands.carrying?.();
-            value9();
+            runStep();
           };
-          value8.undo = (): void => {
+          step.undo = (): void => {
             commands.carrying?.();
-            value10();
+            undoStep();
           };
         }
-        undoStack.exec(value8);
-        notUndoable = [...new Set(items)].sort();
+        undoStack.exec(step);
+        notUndoable = [...new Set(nonUndoablePaths)].sort();
       } else {
         undoStack.exec({
-          label: input,
-          do: () => document2.setContent(value4),
-          undo: () => document2.setContent(value3),
+          label: label,
+          do: () => document.setContent(after),
+          undo: () => document.setContent(before),
         });
       }
-      for (let value8 of value5) {
-        preparedBytes.delete(value8);
+      for (let path of changedHeldPaths) {
+        preparedBytes.delete(path);
       }
       return true;
     },
@@ -732,12 +732,12 @@ export function installModelSystemStore(): () => void {
       beforeSave: (() => Promise<unknown>) | null = null;
       constructor(
         providedDocument?: Storage.SystemDocument,
-        options?: Storage.StoreOptions,
+        storeOptions?: Storage.StoreOptions,
       ) {
         let parserOptions = {
-          parseContent: (input: unknown) =>
+          parseContent: (rawContent: unknown) =>
             parseDesignSystemContent(
-              input,
+              rawContent,
               this.bootReport,
               storedSystemDocumentFactory !== undefined &&
                 providedDocument === undefined
@@ -759,8 +759,8 @@ export function installModelSystemStore(): () => void {
         ) {
           setUnboundedFileParsing(true);
           setProtectedFilePathPredicate(
-            (input: string): boolean =>
-              remoteTextEntry(input) !== undefined,
+            (path: string): boolean =>
+              remoteTextEntry(path) !== undefined,
           );
         }
         if (
@@ -775,9 +775,9 @@ export function installModelSystemStore(): () => void {
             storedSystemDocumentFactory === undefined
               ? fileSystemDocumentFactory?.({
                   ...parserOptions,
-                  parseContent: (input: unknown) =>
+                  parseContent: (rawContent: unknown) =>
                     parseDesignSystemContent(
-                      input,
+                      rawContent,
                       this.bootReport,
                       {
                         unbounded: true,
@@ -794,8 +794,8 @@ export function installModelSystemStore(): () => void {
             fileSystemDocument ??
             storedDocument ??
             createArtifactDocument({
-              parseContent: (input: unknown) =>
-                parseDesignSystemContent(input, this.bootReport),
+              parseContent: (rawContent: unknown) =>
+                parseDesignSystemContent(rawContent, this.bootReport),
               initialContent: parseDesignSystemContent(
                 EMPTY_DESIGN_SYSTEM_CONTENT,
               ),
@@ -808,19 +808,19 @@ export function installModelSystemStore(): () => void {
                     publish: reportPublisherOutcome(
                       instanceUsesFilesPublisher
                         ? createSystemFilesPublisher({
-                            onStale: (input: string) =>
-                              console.warn("[design-system] " + input),
+                            onStale: (message: string) =>
+                              console.warn("[design-system] " + message),
                           })
                         : createPageMirrorPublisher({
-                            onStale: (input: string) =>
+                            onStale: (message: string) =>
                               console.warn(
                                 "[design-system] saved the page alone; the files mirrored beside it were NOT updated (" +
-                                  input +
+                                  message +
                                   ") — the next save from a view that can, or a make.ts build, refreshes what agents read",
                               ),
                           }),
-                      (input: string): void => {
-                        this.publishEnd = input;
+                      (reason: string): void => {
+                        this.publishEnd = reason;
                       },
                     ),
                     publishWrapsFrame: true,
@@ -834,17 +834,17 @@ export function installModelSystemStore(): () => void {
               ...documentBootOptions,
             });
         this.by =
-          options?.by !== undefined
-            ? Promise.resolve(options.by)
+          storeOptions?.by !== undefined
+            ? Promise.resolve(storeOptions.by)
             : getCurrentUserName().then(
-                (input) => input ?? "someone",
+                (author) => author ?? "someone",
               );
-        this.by.then((input: string) => (this.byName = input));
-        let now = options?.now ?? (() => new Date().toISOString());
+        this.by.then((author: string) => (this.byName = author));
+        let now = storeOptions?.now ?? (() => new Date().toISOString());
         this.stampNow = now;
         this.synced = storedDocument !== undefined;
-        if (options?.legacyServed !== undefined) {
-          this.legacyProbe = options.legacyServed;
+        if (storeOptions?.legacyServed !== undefined) {
+          this.legacyProbe = storeOptions.legacyServed;
         }
         if (fileSystemDocument !== undefined) {
           this.doc = fileSystemDocument;
@@ -855,16 +855,16 @@ export function installModelSystemStore(): () => void {
         }
         if (storedDocument !== undefined) {
           setRemoteTextHydrator({
-            hydrate: (input: string, options2: string, context?: boolean) =>
+            hydrate: (path: string, text: string, onlyIfMissing?: boolean) =>
               this.update(
-                (input2) =>
-                  context === true && Object.hasOwn(input2.files, input)
-                    ? input2
+                (content) =>
+                  onlyIfMissing === true && Object.hasOwn(content.files, path)
+                    ? content
                     : {
-                        ...input2,
+                        ...content,
                         files: Object.freeze({
-                          ...input2.files,
-                          [input]: options2,
+                          ...content.files,
+                          [path]: text,
                         }),
                       },
                 {
@@ -874,10 +874,10 @@ export function installModelSystemStore(): () => void {
           });
           setRemoteTextUploadedCallback(() =>
             this.doc.updateContent(
-              (input) => ({
-                ...input,
+              (content) => ({
+                ...content,
                 files: Object.freeze({
-                  ...input.files,
+                  ...content.files,
                 }),
               }),
               {
@@ -921,26 +921,26 @@ export function installModelSystemStore(): () => void {
                   return baseDocument.save();
                 }
               }
-              let value2 = this.saveNote().trim();
+              let saveNote = this.saveNote().trim();
               this.update(
-                (input) =>
+                (content) =>
                   removeMissingStorageDigests(
-                    input,
-                    missingStoredBlobIds(input.files),
+                    content,
+                    missingStoredBlobIds(content.files),
                   ),
                 {
                   auto: true,
                 },
               );
               this.update(
-                (input) =>
-                  setLastChange(input, {
+                (content) =>
+                  setLastChange(content, {
                     by: value,
                     via: "page",
                     at: now(),
-                    ...(value2 !== ""
+                    ...(saveNote !== ""
                       ? {
-                          note: value2,
+                          note: saveNote,
                         }
                       : {}),
                   }),
@@ -950,16 +950,16 @@ export function installModelSystemStore(): () => void {
               );
               this.publishEnd = undefined;
               await baseDocument.save();
-              let value3: Storage.HealthEvent | null = saveHealthOutcome(
+              let healthEvent: Storage.HealthEvent | null = saveHealthOutcome(
                 baseDocument.saveState().status,
                 this.publishEnd,
               );
-              if (value3 !== null) {
-                artifactHealth.report(...value3);
+              if (healthEvent !== null) {
+                artifactHealth.report(...healthEvent);
               }
               if (
                 baseDocument.saveState().status !== "error" &&
-                (value2 !== "" || this.noteFor === null)
+                (saveNote !== "" || this.noteFor === null)
               ) {
                 this.setNote("");
               }
@@ -1015,11 +1015,11 @@ export function installModelSystemStore(): () => void {
             return;
           }
           if (legacyCleanupGate !== undefined) {
-            let value2 = await legacyCleanupGate();
-            if (value2 === "later") {
+            let canCleanUp = await legacyCleanupGate();
+            if (canCleanUp === "later") {
               return;
             }
-            if (!value2) {
+            if (!canCleanUp) {
               this.owedGaveUp = true;
               return;
             }
@@ -1028,10 +1028,10 @@ export function installModelSystemStore(): () => void {
               return;
             }
           }
-          for (let value2 of chunkPublishChanges(
+          for (let batch of chunkPublishChanges(
             obsoleteMirrorDeletions(this.doc.content().files),
           )) {
-            await value.publish(value2);
+            await value.publish(batch);
           }
           this.legacyServed = Promise.resolve(false);
         } catch (value: unknown) {
@@ -1078,10 +1078,10 @@ export function installModelSystemStore(): () => void {
           this.episodeStamped = false;
           requestStoredDerivedRegeneration();
           this.doc.updateContent(
-            (input) => ({
-              ...input,
+            (content) => ({
+              ...content,
               files: Object.freeze({
-                ...input.files,
+                ...content.files,
               }),
             }),
             {
@@ -1111,7 +1111,7 @@ export function installModelSystemStore(): () => void {
                 paths: new Set(paths),
                 values: new Set(Object.values(announcedFiles)),
                 asOf: files,
-                present: paths.some((input): boolean => input in files),
+                present: paths.some((path): boolean => path in files),
               }
             : null;
         this.note = note;
@@ -1130,11 +1130,11 @@ export function installModelSystemStore(): () => void {
         if (files === announcement.asOf) {
           return;
         }
-        for (let [value, value2] of Object.entries(files)) {
+        for (let [value, fileText] of Object.entries(files)) {
           if (announcement.paths.has(value)) {
-            announcement.values.add(value2);
+            announcement.values.add(fileText);
           } else if (
-            announcement.values.has(value2) &&
+            announcement.values.has(fileText) &&
             !(value in announcement.asOf)
           ) {
             announcement.paths.add(value);
@@ -1160,7 +1160,7 @@ export function installModelSystemStore(): () => void {
       }
       update(
         mutate: Storage.ContentMutation,
-        options?: { auto?: boolean },
+        updateOptions?: { auto?: boolean },
       ): void {
         let before = this.doc.content(),
           after = finalizeContentChange(
@@ -1171,7 +1171,7 @@ export function installModelSystemStore(): () => void {
         if (after === before) {
           return;
         }
-        if (options?.auto !== true) {
+        if (updateOptions?.auto !== true) {
           this.sawDirty = true;
           if (this.synced && !this.episodeStamped) {
             this.episodeStamped = true;
@@ -1182,7 +1182,7 @@ export function installModelSystemStore(): () => void {
             });
           }
         }
-        this.doc.updateContent(() => after, options);
+        this.doc.updateContent(() => after, updateOptions);
       }
       buildSnapshot(): Model.ParsedDesignSystem & { title: string } {
         let system = parsedDesignSystem(this.doc.content()),
@@ -1207,9 +1207,9 @@ export function installModelSystemStore(): () => void {
           this.lastTitle = title;
           if (!this.doc.readOnly()) {
             let value = this.doc.content(),
-              value2 = refreshNonemptyManifest(value, title);
-            if (value2 !== value) {
-              this.doc.updateContent(() => value2, {
+              refreshedContent = refreshNonemptyManifest(value, title);
+            if (refreshedContent !== value) {
+              this.doc.updateContent(() => refreshedContent, {
                 auto: true,
               });
               return;
@@ -1229,10 +1229,10 @@ export function installModelSystemStore(): () => void {
         }
       }
     };
-    commandCapableDocument = (document2: Storage.SystemDocument) =>
-      typeof (document2 as Partial<Storage.CommandDocument>)?.stepCommand ===
+    commandCapableDocument = (document: Storage.SystemDocument) =>
+      typeof (document as Partial<Storage.CommandDocument>)?.stepCommand ===
       "function"
-        ? (document2 as Storage.CommandDocument)
+        ? (document as Storage.CommandDocument)
         : null;
   };
 }

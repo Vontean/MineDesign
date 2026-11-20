@@ -13,17 +13,17 @@ var ANNOUNCEMENT_SETTLE_MS: number;
 var ANNOUNCEMENT_CLEAR_MS: number;
 var MAX_ANNOUNCEMENT_LENGTH: number;
 function announceLiveMessage(
-  input: C.AnnouncementMessage,
-  options: C.AnnouncementOptions = {},
+  message: C.AnnouncementMessage,
+  announcementOptions: C.AnnouncementOptions = {},
 ) {
   for (let value of liveAnnouncementListeners) {
-    value(input, options);
+    value(message, announcementOptions);
   }
 }
-function subscribeLiveAnnouncements(input: C.AnnouncementListener) {
-  liveAnnouncementListeners.add(input);
+function subscribeLiveAnnouncements(listener: C.AnnouncementListener) {
+  liveAnnouncementListeners.add(listener);
   return () => {
-    liveAnnouncementListeners.delete(input);
+    liveAnnouncementListeners.delete(listener);
   };
 }
 function LiveAnnouncer({
@@ -31,52 +31,52 @@ function LiveAnnouncer({
   clearMs = ANNOUNCEMENT_CLEAR_MS,
 }: C.LiveAnnouncerProps) {
   useUiLocale();
-  let [value, value2] = reactLC.useState("");
+  let [announcementText, setAnnouncementText] = reactLC.useState("");
   reactLC.useEffect(() => {
-    let value3: ReturnType<typeof setTimeout> | undefined,
-      flag = false,
-      value4: ReturnType<typeof setTimeout> | undefined,
-      value5 = subscribeLiveAnnouncements(
-        (input: C.AnnouncementMessage, options: C.AnnouncementOptions) => {
-          if (value3 !== undefined) {
-            if (options.ifIdle && !flag) {
+    let settleTimer: ReturnType<typeof setTimeout> | undefined,
+      pendingIfIdle = false,
+      clearTimer: ReturnType<typeof setTimeout> | undefined,
+      unsubscribe = subscribeLiveAnnouncements(
+        (message: C.AnnouncementMessage, announcementOptions: C.AnnouncementOptions) => {
+          if (settleTimer !== undefined) {
+            if (announcementOptions.ifIdle && !pendingIfIdle) {
               return;
             }
-            clearTimeout(value3);
+            clearTimeout(settleTimer);
           }
-          flag = options.ifIdle === true;
-          if (value4 !== undefined) {
-            clearTimeout(value4);
+          pendingIfIdle = announcementOptions.ifIdle === true;
+          if (clearTimer !== undefined) {
+            clearTimeout(clearTimer);
           }
-          value4 = undefined;
-          value2("");
-          value3 = setTimeout(() => {
-            value3 = undefined;
-            let value6 = typeof input === "function" ? input() : input;
-            if (value6 == null || value6 === "") {
+          clearTimer = undefined;
+          setAnnouncementText("");
+          settleTimer = setTimeout(() => {
+            settleTimer = undefined;
+            let resolvedMessage = typeof message === "function" ? message() : message;
+            if (resolvedMessage == null || resolvedMessage === "") {
               return;
             }
-            let value7 =
-              value6.length > MAX_ANNOUNCEMENT_LENGTH
-                ? value6
+            let displayText =
+              resolvedMessage.length > MAX_ANNOUNCEMENT_LENGTH
+                ? resolvedMessage
                     .slice(0, MAX_ANNOUNCEMENT_LENGTH - 1)
                     .replace(/[\uD800-\uDBFF]$/, "") + "…"
-                : value6;
-            value2(value7);
-            value4 = setTimeout(() => {
-              value4 = undefined;
-              value2("");
+                : resolvedMessage;
+            setAnnouncementText(displayText);
+            clearTimer = setTimeout(() => {
+              clearTimer = undefined;
+              setAnnouncementText("");
             }, clearMs);
           }, settleMs);
         },
       );
     return () => {
-      value5();
-      if (value3 !== undefined) {
-        clearTimeout(value3);
+      unsubscribe();
+      if (settleTimer !== undefined) {
+        clearTimeout(settleTimer);
       }
-      if (value4 !== undefined) {
-        clearTimeout(value4);
+      if (clearTimer !== undefined) {
+        clearTimeout(clearTimer);
       }
     };
   }, [settleMs, clearMs]);
@@ -88,7 +88,7 @@ function LiveAnnouncer({
       aria-atomic={"true"}
       data-kit={"live-announcer"}
     >
-      {value}
+      {announcementText}
     </span>
   );
 }

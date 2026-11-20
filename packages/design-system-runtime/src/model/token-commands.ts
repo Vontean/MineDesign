@@ -28,27 +28,27 @@ function setColorTokenValue(
   content: Model.DesignSystemContent,
   name: string,
   themeId: string,
-  value: unknown,
+  colorValue: unknown,
 ) {
-  let normalized = normalizeColorOrAlias(value);
+  let normalized = normalizeColorOrAlias(colorValue);
   if (normalized === undefined) {
     return content;
   }
-  return updateTokens(content, (input): boolean => {
+  return updateTokens(content, (tokens): boolean => {
     if (
-      !input.color.themes.some((input2): boolean => input2.id === themeId)
+      !tokens.color.themes.some((theme): boolean => theme.id === themeId)
     ) {
       return false;
     }
-    let value2 = colorAliasTarget(normalized);
+    let aliasTarget = colorAliasTarget(normalized);
     if (
-      value2 !== undefined &&
-      (value2 === name ||
-        !input.color.tokens.some(
-          (input2): boolean => input2.name === value2,
+      aliasTarget !== undefined &&
+      (aliasTarget === name ||
+        !tokens.color.tokens.some(
+          (token): boolean => token.name === aliasTarget,
         ) ||
         detectColorAliasCycle(
-          input,
+          tokens,
           name,
           themeId,
           normalized,
@@ -56,12 +56,12 @@ function setColorTokenValue(
     ) {
       return false;
     }
-    for (let value3 of input.color.tokens) {
-      if (value3.name === name) {
-        if (value3.value[themeId] === normalized) {
+    for (let token of tokens.color.tokens) {
+      if (token.name === name) {
+        if (token.value[themeId] === normalized) {
           return false;
         }
-        value3.value[themeId] = normalized;
+        token.value[themeId] = normalized;
         return true;
       }
     }
@@ -73,23 +73,23 @@ function clearColorThemeOverride(
   name: string,
   themeId: string,
 ) {
-  return updateTokens(content, (input): boolean => {
+  return updateTokens(content, (tokens): boolean => {
     if (
-      input.color.themes.length === 0 ||
-      input.color.themes[0]?.id === themeId
+      tokens.color.themes.length === 0 ||
+      tokens.color.themes[0]?.id === themeId
     ) {
       return false;
     }
     if (
-      !input.color.themes.some((input2): boolean => input2.id === themeId)
+      !tokens.color.themes.some((theme): boolean => theme.id === themeId)
     ) {
       return false;
     }
-    for (let value of input.color.tokens) {
+    for (let value of tokens.color.tokens) {
       if (value.name === name) {
         if (
           !Object.hasOwn(value.value, themeId) ||
-          detectColorAliasCycle(input, name, themeId, "") !==
+          detectColorAliasCycle(tokens, name, themeId, "") !==
             undefined
         ) {
           return false;
@@ -109,13 +109,13 @@ function setColorTokenUsage(
   let clampedUsage = Array.from(usage)
     .slice(0, MAX_TOKEN_USAGE_LENGTH)
     .join("");
-  return updateTokens(content, (input): boolean => {
-    for (let value of input.color.tokens) {
-      if (value.name === name) {
-        if (value.usage === clampedUsage) {
+  return updateTokens(content, (tokens): boolean => {
+    for (let token of tokens.color.tokens) {
+      if (token.name === name) {
+        if (token.usage === clampedUsage) {
           return false;
         }
-        value.usage = clampedUsage;
+        token.usage = clampedUsage;
         return true;
       }
     }
@@ -151,14 +151,14 @@ function setTokenUsage(
   let clampedUsage = Array.from(usage)
     .slice(0, MAX_TOKEN_USAGE_LENGTH)
     .join("");
-  return updateTokens(content, (input): boolean => {
-    let value = editableTokensForFamily(input, family).find(
-      (input2): boolean => input2.name === name,
+  return updateTokens(content, (tokens): boolean => {
+    let token = editableTokensForFamily(tokens, family).find(
+      (entry): boolean => entry.name === name,
     );
-    if (value === undefined || value.usage === clampedUsage) {
+    if (token === undefined || token.usage === clampedUsage) {
       return false;
     }
-    value.usage = clampedUsage;
+    token.usage = clampedUsage;
     return true;
   });
 }
@@ -166,25 +166,25 @@ function setShadowTokenValue(
   content: Model.DesignSystemContent,
   name: string,
   themeId: string,
-  value: unknown,
+  shadowValue: unknown,
 ) {
-  let normalized = normalizeBoxShadow(value);
+  let normalized = normalizeBoxShadow(shadowValue);
   if (normalized === undefined) {
     return content;
   }
-  return updateTokens(content, (input): boolean => {
+  return updateTokens(content, (tokens): boolean => {
     if (
-      !input.color.themes.some((input2): boolean => input2.id === themeId)
+      !tokens.color.themes.some((theme): boolean => theme.id === themeId)
     ) {
       return false;
     }
-    let value2 = input.shadow.tokens.find(
-      (input2): boolean => input2.name === name,
+    let token = tokens.shadow.tokens.find(
+      (entry): boolean => entry.name === name,
     );
-    if (value2 === undefined || value2.value[themeId] === normalized) {
+    if (token === undefined || token.value[themeId] === normalized) {
       return false;
     }
-    value2.value[themeId] = normalized;
+    token.value[themeId] = normalized;
     return true;
   });
 }
@@ -196,14 +196,14 @@ function setTypographyStyleUsage(
   let clampedUsage = Array.from(usage)
     .slice(0, MAX_TOKEN_USAGE_LENGTH)
     .join("");
-  return updateTokens(content, (input): boolean => {
-    for (let value of input.type.groups) {
-      for (let value2 of value.styles) {
-        if (value2.name === name) {
-          if (value2.usage === clampedUsage) {
+  return updateTokens(content, (tokens): boolean => {
+    for (let group of tokens.type.groups) {
+      for (let style of group.styles) {
+        if (style.name === name) {
+          if (style.usage === clampedUsage) {
             return false;
           }
-          value2.usage = clampedUsage;
+          style.usage = clampedUsage;
           return true;
         }
       }
@@ -220,11 +220,11 @@ function setTokenFamilyNote(
   let clampedNote = Array.from(note.replace(/\s+/g, " ").trim())
     .slice(0, MAX_TOKEN_NOTE_LENGTH)
     .join("");
-  return updateTokens(content, (input): boolean => {
+  return updateTokens(content, (tokens): boolean => {
     let value =
       family === "extra"
-        ? input.extra.find((input2): boolean => input2.key === extraFamily)
-        : input[family];
+        ? tokens.extra.find((familyEntry): boolean => familyEntry.key === extraFamily)
+        : tokens[family];
     if (value === undefined || value.note === clampedNote) {
       return false;
     }
@@ -236,20 +236,20 @@ function setScalarTokenValue(
   content: Model.DesignSystemContent,
   family: Core.ScalarKind,
   name: string,
-  value: unknown,
+  scalarValue: unknown,
 ) {
-  let normalized = normalizeScalarTokenValue(family, value);
+  let normalized = normalizeScalarTokenValue(family, scalarValue);
   if (normalized === undefined) {
     return content;
   }
-  return updateTokens(content, (input): boolean => {
-    let value2 = scalarTokensForFamily(input, family).find(
-      (input2): boolean => input2.name === name,
+  return updateTokens(content, (tokens): boolean => {
+    let token = scalarTokensForFamily(tokens, family).find(
+      (entry): boolean => entry.name === name,
     );
-    if (value2 === undefined || value2.value === normalized) {
+    if (token === undefined || token.value === normalized) {
       return false;
     }
-    value2.value = normalized;
+    token.value = normalized;
     return true;
   });
 }
@@ -261,17 +261,17 @@ function findFontFamilyKey(
   if (normalizedName === "") {
     return;
   }
-  for (let [value, value2] of Object.entries(families)) {
-    let value3 = /^\s*(?:"([^"]{1,80})"|'([^']{1,80})'|([^,'"]{1,80}))/.exec(
-      value2,
+  for (let [familyKey, fontStack] of Object.entries(families)) {
+    let firstFamilyMatch = /^\s*(?:"([^"]{1,80})"|'([^']{1,80})'|([^,'"]{1,80}))/.exec(
+      fontStack,
     );
     if (
-      (value3?.[1] ?? value3?.[2] ?? value3?.[3] ?? "")
+      (firstFamilyMatch?.[1] ?? firstFamilyMatch?.[2] ?? firstFamilyMatch?.[3] ?? "")
         .trim()
         .toLowerCase() === normalizedName ||
-      value === normalizedName
+      familyKey === normalizedName
     ) {
-      return value;
+      return familyKey;
     }
   }
   return;
@@ -293,14 +293,14 @@ function pruneUnusedFontFamily(
   }
   if (
     tokens.type.groups.some(
-      (input) =>
-        input.family === key ||
-        input.styles.some((input2): boolean => input2.family === key),
+      (group) =>
+        group.family === key ||
+        group.styles.some((style): boolean => style.family === key),
     ) ||
     tokens.type.fonts.some(
-      (input) =>
-        input.family.trim().toLowerCase() === fontName.toLowerCase() ||
-        findFontFamilyKey(tokens.type.families, input.family) === key,
+      (face) =>
+        face.family.trim().toLowerCase() === fontName.toLowerCase() ||
+        findFontFamilyKey(tokens.type.families, face.family) === key,
     )
   ) {
     return;
@@ -345,14 +345,14 @@ function setTypographyFontFamily(
   fontName: string,
 ) {
   let normalized = fontName.replace(/\s+/g, " ").trim();
-  return updateTokens(content, (input): boolean => {
-    if (validateNewFontFamily(normalized, input.type.families) !== null) {
+  return updateTokens(content, (tokens): boolean => {
+    if (validateNewFontFamily(normalized, tokens.type.families) !== null) {
       return false;
     }
-    let value = findFontFamilyKey(input.type.families, normalized);
-    if (value === undefined) {
-      let value2 = defaultFontFamilyStack(normalized),
-        value3 =
+    let familyKey = findFontFamilyKey(tokens.type.families, normalized);
+    if (familyKey === undefined) {
+      let fontStack = defaultFontFamilyStack(normalized),
+        baseFamilyKey =
           (
             normalized
               .toLowerCase()
@@ -361,30 +361,30 @@ function setTypographyFontFamily(
           )
             .slice(0, 48)
             .replace(/-+$/, "") || "font";
-      value = value3;
+      familyKey = baseFamilyKey;
       for (
         let count: number = 2;
-        Object.hasOwn(input.type.families, value);
+        Object.hasOwn(tokens.type.families, familyKey);
         count++
       ) {
-        value = value3 + "-" + String(count);
+        familyKey = baseFamilyKey + "-" + String(count);
       }
-      if (!TOKEN_NAME_PATTERN.test(value)) {
+      if (!TOKEN_NAME_PATTERN.test(familyKey)) {
         return false;
       }
-      input.type.families[value] = value2;
-      autoCreatedFontFamilyKeys.add(value);
+      tokens.type.families[familyKey] = fontStack;
+      autoCreatedFontFamilyKeys.add(familyKey);
     }
-    for (let value2 of input.type.groups) {
-      for (let value3 of value2.styles) {
-        if (value3.name === styleName) {
-          if (value3.family === value) {
+    for (let group of tokens.type.groups) {
+      for (let style of group.styles) {
+        if (style.name === styleName) {
+          if (style.family === familyKey) {
             return false;
           }
-          let family = value3.family;
-          value3.family = value;
-          if (family !== value) {
-            pruneUnusedFontFamily(input, family);
+          let family = style.family;
+          style.family = familyKey;
+          if (family !== familyKey) {
+            pruneUnusedFontFamily(tokens, family);
           }
           return true;
         }
@@ -397,27 +397,27 @@ function setTypographyProperty<K extends Core.TypographyProperty>(
   content: Model.DesignSystemContent,
   styleName: string,
   property: K,
-  value: unknown,
+  propertyValue: unknown,
 ) {
-  return updateTokens(content, (input): boolean => {
-    let value2 = normalizeTypographyProperty(
+  return updateTokens(content, (tokens): boolean => {
+    let normalizedProperty = normalizeTypographyProperty(
       property,
-      value,
-      input.type.families,
+      propertyValue,
+      tokens.type.families,
     );
-    if (value2 === undefined) {
+    if (normalizedProperty === undefined) {
       return false;
     }
-    for (let value3 of input.type.groups) {
-      for (let value4 of value3.styles) {
-        if (value4.name === styleName) {
-          if (value4[property] === value2) {
+    for (let group of tokens.type.groups) {
+      for (let style of group.styles) {
+        if (style.name === styleName) {
+          if (style[property] === normalizedProperty) {
             return false;
           }
-          let family = value4.family;
-          value4[property] = value2;
+          let family = style.family;
+          style[property] = normalizedProperty;
           if (property === "family") {
-            pruneUnusedFontFamily(input, family);
+            pruneUnusedFontFamily(tokens, family);
           }
           return true;
         }
@@ -428,9 +428,9 @@ function setTypographyProperty<K extends Core.TypographyProperty>(
 }
 function typographyStyleByName(tokens: Model.NormalizedTokens, name: string) {
   for (let value of tokens.type.groups) {
-    for (let value2 of value.styles) {
-      if (value2.name === name) {
-        return value2;
+    for (let style of value.styles) {
+      if (style.name === name) {
+        return style;
       }
     }
   }
@@ -487,15 +487,15 @@ function renameColorTokensAtomically(
   renames: [string, string][],
 ) {
   let working = content;
-  for (let [value, value2] of renames) {
-    if (value === value2) {
+  for (let [oldName, newName] of renames) {
+    if (oldName === newName) {
       continue;
     }
-    let value3 = renameToken(working, "color", value, value2);
-    if (value3 === working) {
+    let renamedContent = renameToken(working, "color", oldName, newName);
+    if (renamedContent === working) {
       return content;
     }
-    working = value3;
+    working = renamedContent;
   }
   return working;
 }
@@ -505,22 +505,22 @@ function renameTokenInTokens(
   oldName: string,
   newName: string,
 ) {
-  return updateTokens(content, (input): boolean => {
-    if (conflictingTokenNames(input, family).includes(newName)) {
+  return updateTokens(content, (tokens): boolean => {
+    if (conflictingTokenNames(tokens, family).includes(newName)) {
       return false;
     }
     if (family === "color") {
-      let value2 = input.color.tokens.find(
-        (input2): boolean => input2.name === oldName,
+      let renamedToken = tokens.color.tokens.find(
+        (token): boolean => token.name === oldName,
       );
-      if (value2 === undefined) {
+      if (renamedToken === undefined) {
         return false;
       }
-      value2.name = newName;
-      for (let value3 of input.color.tokens) {
-        for (let value4 of Object.keys(value3.value)) {
-          if (value3.value[value4] === "{" + oldName + "}") {
-            value3.value[value4] = "{" + newName + "}";
+      renamedToken.name = newName;
+      for (let token of tokens.color.tokens) {
+        for (let themeId of Object.keys(token.value)) {
+          if (token.value[themeId] === "{" + oldName + "}") {
+            token.value[themeId] = "{" + newName + "}";
           }
         }
       }
@@ -528,9 +528,9 @@ function renameTokenInTokens(
     }
     let value =
       family === "type"
-        ? typographyStyleByName(input, oldName)
-        : editableTokensForFamily(input, family).find(
-            (input2): boolean => input2.name === oldName,
+        ? typographyStyleByName(tokens, oldName)
+        : editableTokensForFamily(tokens, family).find(
+            (token): boolean => token.name === oldName,
           );
     if (value === undefined) {
       return false;
@@ -549,15 +549,15 @@ function resolveAliasesBeforeTokenDeletion(
     }
     let state: Record<string, string | undefined> = {},
       flag: boolean = false;
-    for (let value2 of tokens.color.themes) {
-      let value3 = colorAliasTarget(
-        colorValueForThemeModelTokens(value, value2.id, tokens),
+    for (let theme of tokens.color.themes) {
+      let aliasTarget = colorAliasTarget(
+        colorValueForThemeModelTokens(value, theme.id, tokens),
       );
-      if (value3 !== undefined && deletedNames.has(value3)) {
+      if (aliasTarget !== undefined && deletedNames.has(aliasTarget)) {
         flag = true;
-        state[value2.id] = resolveColorTokenValue(
+        state[theme.id] = resolveColorTokenValue(
           value,
-          value2.id,
+          theme.id,
           tokens,
         );
       }
@@ -565,11 +565,11 @@ function resolveAliasesBeforeTokenDeletion(
     if (!flag) {
       continue;
     }
-    for (let [value2, value3] of Object.entries(state)) {
-      if (value3 !== undefined) {
-        value.value[value2] = value3;
+    for (let [themeId, resolvedValue] of Object.entries(state)) {
+      if (resolvedValue !== undefined) {
+        value.value[themeId] = resolvedValue;
       } else {
-        delete value.value[value2];
+        delete value.value[themeId];
       }
     }
   }
@@ -579,20 +579,20 @@ function deleteColorTokens(
   names: string[],
 ) {
   let deletedNames = new Set(
-    names.filter((input) =>
+    names.filter((name) =>
       tokenNamesForFamily(
         parsedDesignSystem(content).tokens,
         "color",
-      ).includes(input),
+      ).includes(name),
     ),
   );
   if (deletedNames.size === 0) {
     return content;
   }
-  return updateTokens(content, (input): boolean => {
-    resolveAliasesBeforeTokenDeletion(input, deletedNames);
-    input.color.tokens = input.color.tokens.filter(
-      (input2): boolean => !deletedNames.has(input2.name),
+  return updateTokens(content, (tokens): boolean => {
+    resolveAliasesBeforeTokenDeletion(tokens, deletedNames);
+    tokens.color.tokens = tokens.color.tokens.filter(
+      (token): boolean => !deletedNames.has(token.name),
     );
     return true;
   });
@@ -606,57 +606,57 @@ function deleteToken(
   if (!tokenNamesForFamily(tokens, family).includes(name)) {
     return content;
   }
-  return updateTokens(content, (input): boolean => {
+  return updateTokens(content, (editableTokens): boolean => {
     if (family === "color") {
-      resolveAliasesBeforeTokenDeletion(input, new Set([name]));
-      let length = input.color.tokens.length;
-      input.color.tokens = input.color.tokens.filter(
-        (input2): boolean => input2.name !== name,
+      resolveAliasesBeforeTokenDeletion(editableTokens, new Set([name]));
+      let length = editableTokens.color.tokens.length;
+      editableTokens.color.tokens = editableTokens.color.tokens.filter(
+        (token): boolean => token.name !== name,
       );
-      return input.color.tokens.length !== length;
+      return editableTokens.color.tokens.length !== length;
     }
     if (family === "type") {
-      for (let value3 of input.type.groups) {
-        let value4 = value3.styles.findIndex(
-          (input2): boolean => input2.name === name,
+      for (let group of editableTokens.type.groups) {
+        let styleIndex = group.styles.findIndex(
+          (style): boolean => style.name === name,
         );
-        if (value4 >= 0) {
-          value3.styles.splice(value4, 1);
-          if (value3.styles.length === 0) {
-            input.type.groups = input.type.groups.filter(
-              (input2): boolean => input2 !== value3,
+        if (styleIndex >= 0) {
+          group.styles.splice(styleIndex, 1);
+          if (group.styles.length === 0) {
+            editableTokens.type.groups = editableTokens.type.groups.filter(
+              (otherGroup): boolean => otherGroup !== group,
             );
           }
-          pruneUnusedFontFamilies(input);
+          pruneUnusedFontFamilies(editableTokens);
           return true;
         }
       }
       return false;
     }
     if (family === "extra") {
-      for (let value3 of input.extra) {
-        let value4 = value3.tokens.findIndex(
-          (input2): boolean => input2.name === name,
+      for (let extraFamily of editableTokens.extra) {
+        let extraTokenIndex = extraFamily.tokens.findIndex(
+          (token): boolean => token.name === name,
         );
-        if (value4 < 0) {
+        if (extraTokenIndex < 0) {
           continue;
         }
-        value3.tokens.splice(value4, 1);
-        if (value3.tokens.length === 0) {
-          input.extra = input.extra.filter(
-            (input2): boolean => input2 !== value3,
+        extraFamily.tokens.splice(extraTokenIndex, 1);
+        if (extraFamily.tokens.length === 0) {
+          editableTokens.extra = editableTokens.extra.filter(
+            (otherFamily): boolean => otherFamily !== extraFamily,
           );
         }
         return true;
       }
       return false;
     }
-    let value = editableTokensForFamily(input, family),
-      value2 = value.findIndex((input2): boolean => input2.name === name);
-    if (value2 < 0) {
+    let value = editableTokensForFamily(editableTokens, family),
+      tokenIndex = value.findIndex((token): boolean => token.name === name);
+    if (tokenIndex < 0) {
       return false;
     }
-    value.splice(value2, 1);
+    value.splice(tokenIndex, 1);
     return true;
   });
 }
@@ -692,7 +692,7 @@ export {
 };
 export function installModelTokenCommands(): () => void {
   return () => {
-    defaultFontFamilyStack = (input): string => "'" + input + "', sans-serif";
+    defaultFontFamilyStack = (familyName): string => "'" + familyName + "', sans-serif";
     autoCreatedFontFamilyKeys = new Set();
   };
 }

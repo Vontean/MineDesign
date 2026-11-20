@@ -26,9 +26,9 @@ var counterVariantClasses: Record<Exclude<C.BadgeVariant, "pro">, string>;
 var counterFillClasses: Record<Exclude<C.BadgeVariant, "pro">, string>;
 var Counter: C.ForwardComponent<HTMLSpanElement, C.CounterProps>;
 function isBadgeVariant(
-  input: C.BadgeVariant | C.AccentColor,
-): input is C.BadgeVariant {
-  return Object.hasOwn(badgeVariantClasses, input);
+  variant: C.BadgeVariant | C.AccentColor,
+): variant is C.BadgeVariant {
+  return Object.hasOwn(badgeVariantClasses, variant);
 }
 export {
   Badge,
@@ -132,32 +132,32 @@ export function installUiBadges(): () => void {
           children: children,
           ...props
         }: C.BadgeProps,
-        options: React.ForwardedRef<HTMLSpanElement>,
+        ref: React.ForwardedRef<HTMLSpanElement>,
       ) => {
         let value = variant ?? "accent",
-          value2: string = useTranslation(
+          defaultRemoveLabel: string = useTranslation(
             "removeItem",
             uiMessage("design-system.badges.removeItem", { item: typeof children === "string" ? children : uiMessage("design-system.badges.item") }),
             {
               item: typeof children === "string" ? children : "item",
             },
           ),
-          value3: C.Density = useDensity(),
-          value4 = badgeSizeByDensity[value3][size ?? "base"],
+          density: C.Density = useDensity(),
+          iconSize = badgeSizeByDensity[density][size ?? "base"],
           length = reactzV.Children.toArray(children).length,
-          value5 =
+          iconClasses =
             !iconOnly &&
             (length > 0 || onRemove !== undefined || removeRender !== undefined)
-              ? badgeIconSpacingClasses[value4]
+              ? badgeIconSpacingClasses[iconSize]
               : "shrink-0",
-          value6 =
+          labelClasses =
             (size === "xxs"
               ? 1
-              : getDensitySizeIndex(value3, size)) === 1
+              : getDensitySizeIndex(density, size)) === 1
               ? badgeLineHeightClasses
               : "pb-[0.05em]",
-          value7 = removeLabel || value2,
-          value8 = clsx(
+          removeButtonLabel = removeLabel || defaultRemoveLabel,
+          badgeClassName = clsx(
             "cds-reset relative inline-flex shrink-0 items-center justify-center",
             "before:absolute before:left-[-2px] before:top-1/2 before:-translate-y-1/2 before:content-['']",
             "before:h-[max(24px,100%)] before:w-[max(24px,calc(100%+2px))]",
@@ -173,14 +173,14 @@ export function installUiBadges(): () => void {
             "focus-visible:shadow-focus",
           ),
           {
-            className: value9,
-            ...value10
+            className: customClassName,
+            ...slotProps
           }: React.ComponentPropsWithoutRef<"button"> = Object.fromEntries(
             Object.entries<unknown>(removeRender?.props ?? {}).filter(
-              ([, input]: [string, unknown]) => input !== undefined,
+              ([, propertyValue]: [string, unknown]) => propertyValue !== undefined,
             ),
           ),
-          value11 = (
+          badgeContent = (
             <Icon
               name={"X"}
               size={"xs"}
@@ -190,58 +190,58 @@ export function installUiBadges(): () => void {
               }}
             />
           ),
-          value12 =
+          removeButton =
             removeRender !== undefined
               ? reactzV.cloneElement(
                   removeRender,
                   baseMergeProps(
                     {
-                      className: cn(value8, value9),
-                      "aria-label": value7,
-                      children: value11,
+                      className: cn(badgeClassName, customClassName),
+                      "aria-label": removeButtonLabel,
+                      children: badgeContent,
                     },
-                    value10,
+                    slotProps,
                   ),
                 )
               : onRemove !== undefined && (
                   <button
                     type={"button"}
-                    aria-label={value7}
-                    onClick={(input: React.MouseEvent<HTMLButtonElement>) => {
-                      input.stopPropagation();
+                    aria-label={removeButtonLabel}
+                    onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                      event.stopPropagation();
                       onRemove();
                     }}
                     onKeyDown={(
-                      input: React.KeyboardEvent<HTMLButtonElement>,
+                      event: React.KeyboardEvent<HTMLButtonElement>,
                     ) => {
-                      if (input.key === "Enter" || input.key === " ") {
-                        input.stopPropagation();
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.stopPropagation();
                       }
                     }}
                     onKeyUp={(
-                      input: React.KeyboardEvent<HTMLButtonElement>,
+                      event: React.KeyboardEvent<HTMLButtonElement>,
                     ) => {
-                      if (input.key === "Enter" || input.key === " ") {
-                        input.stopPropagation();
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.stopPropagation();
                       }
                     }}
-                    className={value8}
+                    className={badgeClassName}
                   >
-                    {value11}
+                    {badgeContent}
                   </button>
                 ),
-          value13 = isBadgeVariant(value),
-          value14 =
+          usesNamedVariant = isBadgeVariant(value),
+          variantClassName =
             bold === true
-              ? value13
+              ? usesNamedVariant
                 ? solidBadgeVariantClasses[value as C.BadgeVariant]
                 : solidBadgeColorClasses[value as C.AccentColor]
-              : value13
+              : usesNamedVariant
                 ? badgeVariantClasses[value as C.BadgeVariant]
                 : tintedBadgeColorClasses[value as C.AccentColor];
         return (
           <span
-            ref={options}
+            ref={ref}
             data-cds={"Badge"}
             role={iconOnly ? "img" : undefined}
             {...(size === "xxs"
@@ -257,35 +257,35 @@ export function installUiBadges(): () => void {
                 : "px-sm",
               "font-sans text-caption font-medium leading-[round(1.25em,1px)]",
               truncate ? "min-w-0" : "shrink-0",
-              value14,
+              variantClassName,
               className,
             )}
           >
             {[typeof icon !== "number" &&
                 icon &&
                 (isIconName(icon) ? (
-                  <Icon name={icon} size={value4} className={value5} />
+                  <Icon name={icon} size={iconSize} className={iconClasses} />
                 ) : (
                   <span
                     aria-hidden={true}
-                    className={cn("inline-flex", value5)}
+                    className={cn("inline-flex", iconClasses)}
                   >
                     {icon}
                   </span>
                 )), truncate ? (
                 <span
                   className={cn(
-                    value6,
+                    labelClasses,
                     "min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap",
                   )}
                 >
                   {children}
                 </span>
               ) : length === 1 ? (
-                <span className={value6}>{children}</span>
+                <span className={labelClasses}>{children}</span>
               ) : (
                 children
-              ), value12]}
+              ), removeButton]}
           </span>
         );
       },
@@ -315,7 +315,7 @@ export function installUiBadges(): () => void {
     Counter = reactForUiBadges.forwardRef(
       (
         {
-          value: value,
+          value: count,
           max = 99,
           showZero = false,
           dot = false,
@@ -324,12 +324,12 @@ export function installUiBadges(): () => void {
           className: className,
           ...props
         }: C.CounterProps,
-        options: React.ForwardedRef<HTMLSpanElement>,
+        ref: React.ForwardedRef<HTMLSpanElement>,
       ) => {
         if (dot) {
           return (
             <span
-              ref={options}
+              ref={ref}
               data-cds={"Counter"}
               aria-hidden={"true"}
               {...props}
@@ -341,24 +341,24 @@ export function installUiBadges(): () => void {
             />
           );
         }
-        if (!Number.isFinite(value)) {
+        if (!Number.isFinite(count)) {
           return null;
         }
-        let value2 = Math.max(0, Math.floor(value));
-        if (value2 === 0 && !showZero) {
+        let roundedCount = Math.max(0, Math.floor(count));
+        if (roundedCount === 0 && !showZero) {
           return null;
         }
-        let value3 = value2 > max ? `${max}+` : `${value2}`;
+        let displayCount = roundedCount > max ? `${max}+` : `${roundedCount}`;
         return (
           <span
-            ref={options}
+            ref={ref}
             data-cds={"Counter"}
             {...getControlSizeAttributes(size)}
             {...props}
             className={cn(
               "inline-flex shrink-0 items-center justify-center align-middle",
               "h-control-nested min-w-[var(--cds-h-control-nested)] rounded-full",
-              value3.length === 1
+              displayCount.length === 1
                 ? "px-0"
                 : "px-[calc(var(--cds-h-control-nested)*0.3)]",
               "font-sans text-caption font-medium proportional-nums",
@@ -366,7 +366,7 @@ export function installUiBadges(): () => void {
               className,
             )}
           >
-            {value3}
+            {displayCount}
           </span>
         );
       },

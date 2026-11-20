@@ -41,9 +41,9 @@ function readBoundProperty(this: object, property: PropertyKey): unknown {
 function replaceExportGetter(
   this: ExportGetters,
   property: string,
-  value: unknown,
+  exportedValue: unknown,
 ): void {
-  this[property] = identity.bind(null, value);
+  this[property] = identity.bind(null, exportedValue);
 }
 export {
   accentColorNames,
@@ -65,9 +65,9 @@ export {
   toCommonJSNamespace,
   toModuleNamespace,
 };
-export function set_accentColorNames(value: any): any {
-  accentColorNames = value;
-  return value;
+export function set_accentColorNames(names: any): any {
+  accentColorNames = names;
+  return names;
 }
 export function installModuleHelpers(): () => void {
   return () => {
@@ -167,7 +167,7 @@ export function installModuleHelpers(): () => void {
           );
         return moduleRecord!.exports;
       };
-    identity = <Value>(value?: Value): Value | undefined => value;
+    identity = <Value>(item?: Value): Value | undefined => item;
     defineLiveExports = (target: object, exports: ExportGetters): void => {
       for (var property in exports) {
         defineProperty(target, property, {
@@ -187,23 +187,23 @@ export function installModuleHelpers(): () => void {
         initializer && (result = initializer((initializer = 0)));
         return result;
       };
-    dynamicRequire = ((input: RequireFunction): RequireFunction =>
+    dynamicRequire = ((requireFunction: RequireFunction): RequireFunction =>
       typeof require !== "undefined"
         ? require
         : typeof Proxy !== "undefined"
-          ? new Proxy(input, {
-              get: (input2: RequireFunction, options: PropertyKey): unknown =>
+          ? new Proxy(requireFunction, {
+              get: (target: RequireFunction, property: PropertyKey): unknown =>
                 (
                   (typeof require !== "undefined"
                     ? require
-                    : input2) as unknown as Record<PropertyKey, unknown>
-                )[options],
+                    : target) as unknown as Record<PropertyKey, unknown>
+                )[property],
             })
-          : input)(function (this: unknown, input: string): unknown {
+          : requireFunction)(function (this: unknown, moduleName: string): unknown {
       if (typeof require !== "undefined") {
         return (require as unknown as RequireFunction).apply(this, arguments);
       }
-      throw Error('Dynamic require of "' + input + '" is not supported');
+      throw Error('Dynamic require of "' + moduleName + '" is not supported');
     });
   };
 }

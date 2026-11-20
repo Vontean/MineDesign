@@ -5,14 +5,14 @@ import { loadReactNamespace } from "../dependencies";
 import { toModuleNamespace } from "../module-helpers";
 
 var reactForPlatformFrameChrome: typeof React;
-var reactForPlatformFrameChrome2: typeof React;
+var reactForFrameChrome: typeof React;
 var OPEN_OVERLAY_SELECTOR: string;
 var MENU_POPOVER_OPEN_SELECTORS: string;
 export {
   MENU_POPOVER_OPEN_SELECTORS,
   OPEN_OVERLAY_SELECTOR,
   reactForPlatformFrameChrome,
-  reactForPlatformFrameChrome2,
+  reactForFrameChrome as reactForPlatformFrameChrome2,
 };
 export function installPlatformFrameChrome(): () => void {
   return () => {
@@ -20,7 +20,7 @@ export function installPlatformFrameChrome(): () => void {
       loadReactNamespace(),
       1,
     );
-    reactForPlatformFrameChrome2 = toModuleNamespace(
+    reactForFrameChrome = toModuleNamespace(
       loadReactNamespace(),
       1,
     );
