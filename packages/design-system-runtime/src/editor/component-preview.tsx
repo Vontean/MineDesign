@@ -439,7 +439,7 @@ function ComponentPreview({
             pageW={staticPageWidth}
             pageH={effectiveHeight}
             fitWidth={staticPageWidth}
-            title={uiMessage("design-system.componentPreview.staticPreview", { value1: String(title) })}
+            title={uiMessage("design-system.componentPreview.staticPreview", { subject: String(title) })}
           />, onStaticNote === undefined ? (
             <p
               className={

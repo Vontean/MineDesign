@@ -12,10 +12,10 @@ var SheetsLayoutDisableAnchorTrackingCollisionAvoidanceConfig: Pick<
 >;
 var SheetsLayoutConstant: number;
 var SheetsLayoutCss: string;
-var SheetsLayoutCss_2: string;
+var overshootHeightViewportCss: string;
 var ComfortableValue: string;
 var halfHeightFraction: number;
-var SheetsLayoutCss_3: string;
+var halfHeightViewportCss: string;
 var initializeSheetsLayout: () => void;
 function getSheetFixedPosition(frameState?: SheetFrameState | null): DesignStyle {
   let value = frameState?.keyboard?.inset ?? 0;
@@ -39,7 +39,7 @@ function getSheetFrameStyle(
   let keyboard = frameState?.keyboard ?? null,
     minHeight =
       floor === "half"
-        ? `min(${SheetsLayoutCss_3}, ${SheetsLayoutCss})`
+        ? `min(${halfHeightViewportCss}, ${SheetsLayoutCss})`
         : "0px";
   return {
     "--available-height": SheetsLayoutCss,
@@ -61,7 +61,7 @@ function getSheetFrameStyle(
       keyboard !== null
         ? `${Math.max(0, keyboard.visible - 8)}px`
         : frameState?.height !== undefined
-          ? SheetsLayoutCss_2
+          ? overshootHeightViewportCss
           : floor === "half"
             ? minHeight
             : SheetsLayoutCss,
@@ -79,10 +79,10 @@ export {
   getSheetFrameStyle,
   initializeSheetsLayout,
   SheetsLayoutConstant,
-  halfHeightFraction as SheetsLayoutConstant_2,
+  halfHeightFraction,
   SheetsLayoutCss,
-  SheetsLayoutCss_2,
-  SheetsLayoutCss_3,
+  overshootHeightViewportCss,
+  halfHeightViewportCss,
   SheetsLayoutDisableAnchorTrackingCollisionAvoidanceConfig,
   SheetsLayoutPositionTopRightConfig,
 };
@@ -110,10 +110,10 @@ export function installCdsSheetsLayout(): () => void {
       };
       SheetsLayoutConstant = 0.9;
       SheetsLayoutCss = `${SheetsLayoutConstant * 100}dvh`;
-      SheetsLayoutCss_2 = `${(SheetsLayoutConstant + 0.09999999999999998 * sheetGestureConstants.overshootRoom) * 100}dvh`;
+      overshootHeightViewportCss = `${(SheetsLayoutConstant + 0.09999999999999998 * sheetGestureConstants.overshootRoom) * 100}dvh`;
       ComfortableValue = "comfortable";
       halfHeightFraction = 0.5;
-      SheetsLayoutCss_3 = `${halfHeightFraction * 100}dvh`;
+      halfHeightViewportCss = `${halfHeightFraction * 100}dvh`;
     });
   };
 }

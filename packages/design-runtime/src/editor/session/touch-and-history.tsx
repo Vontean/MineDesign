@@ -11,7 +11,7 @@ import { toModuleNamespace } from "../../module-helpers";
 var jsxSessionTouchAndHistory: Dynamic;
 var SessionTouchAndHistoryJsx: Dynamic;
 var SessionTouchAndHistoryJsxValue: Dynamic;
-var SessionTouchAndHistoryJsxValue_2: Dynamic;
+var frameToolGlyph: Dynamic;
 function longTouchHandler(onLongTouch?: Dynamic): Dynamic {
   let value: Dynamic = null;
   return {
@@ -77,7 +77,7 @@ export {
   longTouchHandler,
   SessionTouchAndHistoryJsx,
   SessionTouchAndHistoryJsxValue,
-  SessionTouchAndHistoryJsxValue_2,
+  frameToolGlyph,
 };
 export function installEditorSessionTouchAndHistory(): () => void {
   return () => {
@@ -90,7 +90,7 @@ export function installEditorSessionTouchAndHistory(): () => void {
       <Icon name={iconName} size={"auto"} className={"shrink-0"} />
     );
     SessionTouchAndHistoryJsxValue = SessionTouchAndHistoryJsx("TextT");
-    SessionTouchAndHistoryJsxValue_2 = SessionTouchAndHistoryJsx("FrameHash");
+    frameToolGlyph = SessionTouchAndHistoryJsx("FrameHash");
     initializeCdsIndex();
     initializeInspectorContext();
   };

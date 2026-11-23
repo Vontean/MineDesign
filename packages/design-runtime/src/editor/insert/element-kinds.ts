@@ -7,7 +7,7 @@ import { inspectSvgArrow } from "../svg/arrows";
 
 var InsertElementKindsSubscribers: Dynamic;
 var InsertElementKindsSvgRectCircleSet: Dynamic;
-var InsertElementKindsSubscribers_2: Dynamic;
+var containerTags: Dynamic;
 var InsertElementKindsPathLinePolylineSet: Dynamic;
 var InsertElementKindsEvery: Dynamic;
 function classifyElementStyleKind(tagName?: Dynamic): Dynamic {
@@ -20,14 +20,14 @@ function classifyElementStyleKind(tagName?: Dynamic): Dynamic {
         ? "line"
         : InsertElementKindsSvgRectCircleSet.has(lowerTagName)
           ? "shape"
-          : InsertElementKindsSubscribers_2.has(lowerTagName)
+          : containerTags.has(lowerTagName)
             ? "box"
             : "other";
 }
 function isTextCapableElement(element?: Dynamic, allowContainerText?: Dynamic): Dynamic {
   let lowerTagName: Dynamic = element.tagName.toLowerCase();
   return InsertElementKindsSubscribers.has(lowerTagName) ||
-    (InsertElementKindsSubscribers_2.has(lowerTagName) && allowContainerText) ||
+    (containerTags.has(lowerTagName) && allowContainerText) ||
     (lowerTagName === "div" &&
       element.children.length === 1 &&
       /^(ul|ol)$/i.test(element.children[0].tagName) &&
@@ -49,7 +49,7 @@ function isTextCapableElement(element?: Dynamic, allowContainerText?: Dynamic): 
         ? "line"
         : InsertElementKindsSvgRectCircleSet.has(lowerTagName)
           ? "shape"
-          : InsertElementKindsSubscribers_2.has(lowerTagName)
+          : containerTags.has(lowerTagName)
             ? "box"
             : "other";
 }
@@ -58,7 +58,7 @@ export {
   InsertElementKindsEvery,
   InsertElementKindsPathLinePolylineSet,
   InsertElementKindsSubscribers,
-  InsertElementKindsSubscribers_2,
+  containerTags,
   InsertElementKindsSvgRectCircleSet,
   isTextCapableElement,
 };
@@ -93,7 +93,7 @@ export function installEditorInsertElementKinds(): () => void {
       "ellipse",
       "polygon",
     ]);
-    InsertElementKindsSubscribers_2 = new Set([
+    containerTags = new Set([
       "div",
       "section",
       "article",

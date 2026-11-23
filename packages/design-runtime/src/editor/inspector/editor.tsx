@@ -4,7 +4,7 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { reactCanvasShape_2 } from "../../canvas/shape";
+import { canvasShapeReact as React } from "../../canvas/shape";
 import { cn } from "../../cds/theme/class-names";
 import { load_react_jsx_runtime } from "../../dependencies";
 import { textContrastContext } from "../accessibility/announcements";
@@ -12,7 +12,7 @@ import { utf16SafeSlice } from "../code/unified-diff";
 import { isEditablePropMetadata } from "../components/prop-validation";
 import { normalizeFontWeight, normalizePixelValue } from "./computed-data";
 import { initializeInspectorLinkPopover, linkPopoverExports } from "./link-popover";
-import { InspectorPropertySchemaItems_2 as propertySpecs } from "./property-schema";
+import { propertySpecifications as propertySpecs } from "./property-schema";
 import { PropertiesInspectorFieldNameComponentFromSet } from "../properties/inspector-field";
 import { HostValue } from "../selection/canvas-selection";
 import { toModuleNamespace } from "../../module-helpers";
@@ -20,27 +20,27 @@ import { toModuleNamespace } from "../../module-helpers";
 var jsxInspectorEditor: Dynamic;
 var InspectorEditorLazyComponent: Dynamic;
 var TextListValue: Dynamic;
-var InspectorEditorConstant: Dynamic;
-var InspectorEditorConstant_2: Dynamic;
-var InspectorEditorItems: Dynamic;
-var InspectorEditorItems_2: Dynamic;
-var InspectorEditorSubscribers: Dynamic;
-var InspectorEditorConstant_3: Dynamic;
-var InspectorEditorLabel: Dynamic;
-var InspectorEditorResolvedValue: Dynamic;
-var InspectorEditorMetaControlShiftSet: Dynamic;
-var InspectorEditorSubscribers_2: Dynamic;
-var InspectorEditorEvery: Dynamic;
-var InspectorEditorKeys: Dynamic;
-var InspectorEditorSubscribers_3: Dynamic;
-var InspectorEditorReplace: Dynamic;
+var maxFallbackColorTokens: Dynamic;
+var maxArtboardColorTokens: Dynamic;
+var noDesignColorTokens: Dynamic;
+var emptyArtboardColors: Dynamic;
+var emptyDefinedVars: Dynamic;
+var toastDedupeWindowMs: Dynamic;
+var editorStillLoadingMessage: Dynamic;
+var maxPastedTextLength: Dynamic;
+var modifierOnlyKeys: Dynamic;
+var pickerInteractionListeners: Dynamic;
+var sameTidList: Dynamic;
+var collectEditablePropNames: Dynamic;
+var inspectorPropertyRowRefKeys: Dynamic;
+var kebabToCamel: Dynamic;
 var InspectorEditorFontFamilyFontWeightFontSizeSet: Dynamic;
-var InspectorEditorSubscribers_4: Dynamic;
-var InspectorEditorResolvedValue_2: Dynamic;
+var contrastAffectingProperties: Dynamic;
+var pickerFollowedSelectionKey: Dynamic;
 var InspectorEditorPropLabelSpecConfig: Dynamic;
-var InspectorEditorLabel_2: Dynamic;
-var InspectorEditorLabel_3: Dynamic;
-var InspectorEditorLabel_4: Dynamic;
+var selectOneElementForPngMessage: Dynamic;
+var selectOneElementForSvgMessage: Dynamic;
+var contentSizedReason: Dynamic;
 var inspectorSingleSelectionMessage: Dynamic;
 function markBlockedDragElements(
   model?: Dynamic,
@@ -69,7 +69,7 @@ function foreignArtboardPasteContext(payload?: Dynamic): Dynamic {
 }
 function boundedPasteText(payload?: Dynamic): Dynamic {
   return typeof payload.text == "string"
-    ? utf16SafeSlice(payload.text, InspectorEditorResolvedValue)
+    ? utf16SafeSlice(payload.text, maxPastedTextLength)
     : "";
 }
 function textContrastGround(ground?: Dynamic, computed?: Dynamic): Dynamic {
@@ -105,28 +105,28 @@ function InspectorEmptyState(props?: Dynamic): Dynamic {
 export {
   boundedPasteText,
   foreignArtboardPasteContext,
-  InspectorEditorConstant,
-  InspectorEditorConstant_2,
-  InspectorEditorConstant_3,
-  InspectorEditorEvery,
+  maxFallbackColorTokens,
+  maxArtboardColorTokens,
+  toastDedupeWindowMs,
+  sameTidList,
   InspectorEditorFontFamilyFontWeightFontSizeSet,
-  InspectorEditorItems,
-  InspectorEditorItems_2,
-  InspectorEditorKeys,
-  InspectorEditorLabel,
-  InspectorEditorLabel_2,
-  InspectorEditorLabel_3,
-  InspectorEditorLabel_4,
+  noDesignColorTokens,
+  emptyArtboardColors,
+  collectEditablePropNames,
+  editorStillLoadingMessage,
+  selectOneElementForPngMessage,
+  selectOneElementForSvgMessage,
+  contentSizedReason,
   InspectorEditorLazyComponent,
-  InspectorEditorMetaControlShiftSet,
+  modifierOnlyKeys,
   InspectorEditorPropLabelSpecConfig,
-  InspectorEditorReplace,
-  InspectorEditorResolvedValue,
-  InspectorEditorResolvedValue_2,
-  InspectorEditorSubscribers,
-  InspectorEditorSubscribers_2,
-  InspectorEditorSubscribers_3,
-  InspectorEditorSubscribers_4,
+  kebabToCamel,
+  maxPastedTextLength,
+  pickerFollowedSelectionKey,
+  emptyDefinedVars,
+  pickerInteractionListeners,
+  inspectorPropertyRowRefKeys,
+  contrastAffectingProperties,
   InspectorEmptyState,
   inspectorSingleSelectionMessage,
   jsxInspectorEditor,
@@ -141,7 +141,7 @@ export function installEditorInspectorEditor(): () => void {
       load_react_jsx_runtime(),
       1,
     );
-    InspectorEditorLazyComponent = (0, reactCanvasShape_2.lazy)(
+    InspectorEditorLazyComponent = (0, React.lazy)(
       (): Dynamic =>
         Promise.resolve()
           .then(
@@ -157,44 +157,44 @@ export function installEditorInspectorEditor(): () => void {
           ),
     );
     TextListValue = "text:list";
-    InspectorEditorConstant = 12;
-    InspectorEditorConstant_2 = 48;
-    InspectorEditorItems = [];
-    InspectorEditorItems_2 = [];
-    InspectorEditorSubscribers = new Set();
-    InspectorEditorConstant_3 = 5e3;
-    InspectorEditorLabel =
+    maxFallbackColorTokens = 12;
+    maxArtboardColorTokens = 48;
+    noDesignColorTokens = [];
+    emptyArtboardColors = [];
+    emptyDefinedVars = new Set();
+    toastDedupeWindowMs = 5e3;
+    editorStillLoadingMessage =
       uiMessage("inspector.editor.editorIsStillLoadingTry");
-    InspectorEditorResolvedValue = 2 * 1024 * 1024;
-    InspectorEditorMetaControlShiftSet = new Set([
+    maxPastedTextLength = 2 * 1024 * 1024;
+    modifierOnlyKeys = new Set([
       "Meta",
       "Control",
       "Shift",
       "Alt",
       "CapsLock",
     ]);
-    InspectorEditorSubscribers_2 = new Set();
+    pickerInteractionListeners = new Set();
     if (typeof window !== "undefined") {
       let notifyListeners: Dynamic = (): Dynamic =>
-        InspectorEditorSubscribers_2.forEach(
+        pickerInteractionListeners.forEach(
           (listener?: Dynamic): Dynamic => listener(),
         );
       (window as Dynamic).addEventListener("pointerdown", notifyListeners, true);
       (window as Dynamic).addEventListener(
         "keydown",
         (keyEvent?: Dynamic): Dynamic => {
-          InspectorEditorMetaControlShiftSet.has(keyEvent.key) || notifyListeners();
+          modifierOnlyKeys.has(keyEvent.key) || notifyListeners();
         },
         true,
       );
     }
-    InspectorEditorEvery = (listA?: Dynamic, listB?: Dynamic): Dynamic =>
+    sameTidList = (listA?: Dynamic, listB?: Dynamic): Dynamic =>
       listA.length === listB.length &&
       listA.every(
         (itemA?: Dynamic, index?: Dynamic): Dynamic =>
           itemA === listB[index],
       );
-    InspectorEditorKeys = (metadata?: Dynamic, excludeInspectorFields: Dynamic = true): Dynamic =>
+    collectEditablePropNames = (metadata?: Dynamic, excludeInspectorFields: Dynamic = true): Dynamic =>
       new Set(
         Object.keys(metadata ?? {}).filter(
           (propName?: Dynamic): Dynamic =>
@@ -204,8 +204,8 @@ export function installEditorInspectorEditor(): () => void {
             ) && isEditablePropMetadata(metadata?.[propName]),
         ),
       );
-    InspectorEditorSubscribers_3 = new Set();
-    InspectorEditorReplace = (cssProperty?: Dynamic): Dynamic =>
+    inspectorPropertyRowRefKeys = new Set();
+    kebabToCamel = (cssProperty?: Dynamic): Dynamic =>
       cssProperty.replace(
         /-([a-z])/g,
         (matchText?: Dynamic, letter?: Dynamic): Dynamic => letter.toUpperCase(),
@@ -217,7 +217,7 @@ export function installEditorInspectorEditor(): () => void {
       "line-height",
       "letter-spacing",
     ]);
-    InspectorEditorSubscribers_4 = new Set([
+    contrastAffectingProperties = new Set([
       "color",
       "font-size",
       "font-weight",
@@ -232,7 +232,7 @@ export function installEditorInspectorEditor(): () => void {
       "backdrop-filter",
       "mix-blend-mode",
     ]);
-    InspectorEditorResolvedValue_2 = HostValue + "followed";
+    pickerFollowedSelectionKey = HostValue + "followed";
     InspectorEditorPropLabelSpecConfig = {
       prop: "background",
       get label() { return uiMessage("inspector.editor.background"); },
@@ -244,9 +244,9 @@ export function installEditorInspectorEditor(): () => void {
       },
       value: null,
     };
-    InspectorEditorLabel_2 = uiMessage("inspector.editor.selectJustOneElementTo");
-    InspectorEditorLabel_3 = uiMessage("inspector.editor.selectJustOneElementTo2");
-    InspectorEditorLabel_4 =
+    selectOneElementForPngMessage = uiMessage("inspector.editor.selectJustOneElementTo");
+    selectOneElementForSvgMessage = uiMessage("inspector.editor.selectJustOneElementTo2");
+    contentSizedReason =
       uiMessage("inspector.editor.sizedByItsContentDouble");
     inspectorSingleSelectionMessage =
       uiMessage("inspector.editor.onePageAtTheFrame");

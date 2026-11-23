@@ -18,16 +18,16 @@ import type {
 } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { CollisionPaddingProvider, initializeComponentsIcon_3, popupSurfaceClassName } from "../components/icon";
+import { CollisionPaddingProvider, initializeIconContext, popupSurfaceClassName } from "../components/icon";
 import { initializeDomRefComposition, useMergedRefs } from "../dom/ref-composition";
-import { asElement, initializeHooksStableCallback, initializeHooksStableCallback_2, useOptionalStableCallback } from "../hooks/stable-callback";
+import { asElement, initializeHooksStableCallback, initializeStableCallbackReact, useOptionalStableCallback } from "../hooks/stable-callback";
 import { PopupScrollArea } from "./configuration";
-import { FocusOutValue, MenuPassiveOpenGateArrowDownArrowUpHomeSet, MenuPassiveOpenGateDefaultText, MenuPassiveOpenGateHandler, MenuPassiveOpenGateHandler_2, MenuPassiveOpenGateRegistry, MenuPassiveOpenGateSubscribers, MenuPassiveOpenGateTabIndexConfig, PassiveOpenCellContext, PassiveOpenDisabledContext, reactDomMenuPassiveOpenGate, reactMenuPassiveOpenGate, TriggerHoverValue } from "./passive-open-gate";
+import { FocusOutValue, MenuPassiveOpenGateArrowDownArrowUpHomeSet, MenuPassiveOpenGateDefaultText, MenuPassiveOpenGateHandler, passThroughPopupProps, MenuPassiveOpenGateRegistry, MenuPassiveOpenGateSubscribers, MenuPassiveOpenGateTabIndexConfig, PassiveOpenCellContext, PassiveOpenDisabledContext, reactDomMenuPassiveOpenGate, reactMenuPassiveOpenGate, TriggerHoverValue } from "./passive-open-gate";
 import { initializeOverlaysLayers, LayerBaseContext, useDefaultLayer } from "../overlays/layers";
-import { initializePlatformRootFontSize_2, PopupSurface } from "../platform/root-font-size";
+import { initializeRootFontSizeHooks, PopupSurface } from "../platform/root-font-size";
 import { initializeSheetsKeyboardViewport, isTextInputElement } from "../sheets/keyboard-viewport";
 import { initializeSheetsPopupStack, ResetSheetContext } from "../sheets/popup-stack";
-import { initializeSheetsScrollArea, initializeSheetsScrollArea_2, initializeSheetsScrollArea_3, initializeSheetsScrollArea_6, initializeSheetsScrollArea_8, normalizeFocusRelatedTarget, SheetsScrollAreaLabel_2 as scrollAreaSelector, useKeyboardContextMenuFocus, useMenuInnerOverlay, useOpenerReturn } from "../sheets/scroll-area";
+import { initializeSheetsScrollArea, initializeScrollAreaElementCache, initializeEditableElementSelector, initializeFocusHooks, initializeMenuInnerOverlay, normalizeFocusRelatedTarget, editableElementSelector as scrollAreaSelector, useKeyboardContextMenuFocus, useMenuInnerOverlay, useOpenerReturn } from "../sheets/scroll-area";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { initializeThemeSurfaces, surfaceBackgroundTokens } from "../theme/surfaces";
 import { initializeNpm__base_ui_react_jhe, load_react, load_react_jsx_runtime, npm_ContextMenu_Ex } from "../../dependencies";
@@ -38,13 +38,13 @@ var jsxMenuPopup: typeof import("react/jsx-runtime");
 var MenuPopupCss: string;
 var ContextMenuPopupFrame: ForwardComponent<HTMLDivElement, MenuPopupProps>;
 var initializeMenuPopup: () => void;
-var reactMenuPopup_2: typeof React;
-var MenuPopupCss_2: string;
-var initializeMenuPopup_2: () => void;
+var reactForUseClickToFocus: typeof React;
+var interactiveElementSelector: string;
+var initializeMenuPopupInteractiveSelector: () => void;
 var MenuPopupLabel: string;
 var SelectValue: string;
 var DraggableTrueValue: string;
-var initializeMenuPopup_3: () => void;
+var initializeMenuPopupInputSelectors: () => void;
 function scrollbarWidth(
   outerSize: number,
   innerSize: number,
@@ -94,7 +94,7 @@ function useClickToFocus(
     shouldIgnoreTargetCallback = useOptionalStableCallback(value);
   return {
     clickToFocusProps: {
-      onMouseDown: (0, reactMenuPopup_2.useCallback)(
+      onMouseDown: (0, reactForUseClickToFocus.useCallback)(
         (event: React.MouseEvent<HTMLElement>) => {
           if (event.button !== 0 || isReadOnly || isDisabled) return;
           let target = event.target as HTMLElement,
@@ -102,7 +102,7 @@ function useClickToFocus(
           if (!currentTarget.contains(target)) return;
           if (target !== currentTarget) {
             if (shouldIgnoreTargetCallback?.(target)) return;
-            let ancestor = target.closest(MenuPopupCss_2);
+            let ancestor = target.closest(interactiveElementSelector);
             if (
               ancestor &&
               ancestor !== currentTarget &&
@@ -452,7 +452,7 @@ function PassiveOpenGate({
       {effectiveLevel === "declared" && !nested && cell !== null ? (<PassiveOpenTypingWatcher cell={cell} />) : (null)}
       {children(
         cell === null || effectiveLevel === "off"
-          ? MenuPassiveOpenGateHandler_2
+          ? passThroughPopupProps
           : effectiveLevel === "hover"
             ? (popupProps) => ({
                 ...popupProps,
@@ -540,20 +540,20 @@ export {
   DraggableTrueValue,
   focusPopupAfterMicrotask,
   initializeMenuPopup,
-  initializeMenuPopup_2,
-  initializeMenuPopup_3,
+  initializeMenuPopupInteractiveSelector,
+  initializeMenuPopupInputSelectors,
   isInsidePopup,
   isInteractivePressTarget,
   isScrollbarPointerEvent,
   jsxMenuPopup,
   MenuPopupCss,
-  MenuPopupCss_2,
+  interactiveElementSelector,
   MenuPopupLabel,
   PassiveOpenGate,
   passiveOpenInputKind,
   PassiveOpenTypingWatcher,
   reactMenuPopup,
-  reactMenuPopup_2,
+  reactForUseClickToFocus,
   resolveInitialFocusTarget,
   scrollbarWidth,
   SelectValue,
@@ -570,13 +570,13 @@ export function installCdsMenuPopup(): () => void {
       initializeClassNames();
       initializeOverlaysLayers();
       initializeDomRefComposition();
-      initializePlatformRootFontSize_2();
-      initializeComponentsIcon_3();
+      initializeRootFontSizeHooks();
+      initializeIconContext();
       initializeThemeSurfaces();
       initializeSheetsPopupStack();
-      initializeSheetsScrollArea_2();
-      initializeSheetsScrollArea_6();
-      initializeSheetsScrollArea_8();
+      initializeScrollAreaElementCache();
+      initializeFocusHooks();
+      initializeMenuInnerOverlay();
       initializeSheetsScrollArea();
       reactMenuPopup = toModuleNamespace(
         load_react(),
@@ -657,19 +657,19 @@ export function installCdsMenuPopup(): () => void {
       );
       ContextMenuPopupFrame.displayName = "ContextMenuPopupFrame";
     });
-    initializeMenuPopup_2 = initializeOnce(() => {
+    initializeMenuPopupInteractiveSelector = initializeOnce(() => {
       "use client";
 
-      initializeSheetsScrollArea_3();
-      initializeHooksStableCallback_2();
-      reactMenuPopup_2 = toModuleNamespace(
+      initializeEditableElementSelector();
+      initializeStableCallbackReact();
+      reactForUseClickToFocus = toModuleNamespace(
         load_react(),
       );
-      MenuPopupCss_2 = `button,a[href],label,[role="button"],select,[tabindex]:not([tabindex="-1"]),${scrollAreaSelector}`;
+      interactiveElementSelector = `button,a[href],label,[role="button"],select,[tabindex]:not([tabindex="-1"]),${scrollAreaSelector}`;
     });
-    initializeMenuPopup_3 = initializeOnce(() => {
+    initializeMenuPopupInputSelectors = initializeOnce(() => {
       initializeHooksStableCallback();
-      initializeMenuPopup_2();
+      initializeMenuPopupInteractiveSelector();
       initializeSheetsKeyboardViewport();
       MenuPopupLabel =
         'input[type="range"], select, input[readonly], textarea[readonly]';

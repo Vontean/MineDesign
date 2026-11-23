@@ -15,7 +15,7 @@ var FlipIndicatorContext: React.Context<FlipIndicatorState | null>;
 var CdsStashedAttribute: string;
 var TabsMenuTriggerValue: string;
 var TabsMenuLabelValue: string;
-var initializeSwitchContext_2: () => void;
+var initializeFlipIndicatorContext: () => void;
 function animateFlipIndicator(
   indicator: HTMLElement,
   container: Element,
@@ -161,7 +161,7 @@ export {
   hasRunningAnimations,
   HeldValue,
   initializeSwitchContext,
-  initializeSwitchContext_2,
+  initializeFlipIndicatorContext,
   isFlipIndicatorEntering,
   preventRepeatedEnter,
   reactSwitchContext,
@@ -182,7 +182,7 @@ export function installCdsSwitchContext(): () => void {
       SwitchContextConstant = 1e3;
       SwitchContextElementCache = new WeakMap();
     });
-    initializeSwitchContext_2 = initializeOnce(() => {
+    initializeFlipIndicatorContext = initializeOnce(() => {
       "use client";
 
       reactSwitchContext = toModuleNamespace(

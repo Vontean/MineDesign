@@ -3,7 +3,7 @@ import {
   type Dynamic,
 } from "../runtime-types";
 import { DcTplAttribute } from "../editor/html/authoring";
-import { PlatformFileContentTest_3 as asBlobAssetUrl } from "../platform/file-content";
+import { parseAnnotationVideoUrl as asBlobAssetUrl } from "../platform/file-content";
 
 var textExtractionExcludedTags: Dynamic;
 var artboardTextSnapshotLimit: Dynamic;

@@ -475,10 +475,10 @@ export {
   TypographyCensusH1H2H3Config,
   TypographyCensusHeadingPattern,
   TypographyCensusItems,
-  TEXT_ROLE_DISPLAY_ORDER as TypographyCensusItems_2,
+  TEXT_ROLE_DISPLAY_ORDER,
   TypographyCensusPattern,
-  CSS_VARIABLE_REFERENCE_PATTERN as TypographyCensusPattern_2,
-  HEX_COLOR_PATTERN as TypographyCensusPattern_3,
+  CSS_VARIABLE_REFERENCE_PATTERN,
+  HEX_COLOR_PATTERN,
   TypographyCensusRgbaPattern,
   TypographyCensusSubscribers,
 };

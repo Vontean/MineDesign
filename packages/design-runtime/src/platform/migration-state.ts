@@ -25,7 +25,7 @@ var REOPEN_FALLBACK_DELAY_MS: Dynamic;
 var lastMigrationEventAt: Dynamic;
 var markMigrationEvent: Dynamic;
 var wasMigrationEventRecent: Dynamic;
-var PlatformMigrationStateHandler_2: Dynamic;
+var getSessionStorageOrUndefined: Dynamic;
 var restartFallbackListeners: Dynamic;
 var migrationRestartHandlerInstalled: Dynamic;
 function updateMovedToFilesState(metadata?: Dynamic): Dynamic {
@@ -113,7 +113,7 @@ function installMigrationRestartHandler(restartOptions: Dynamic = {}): Dynamic {
       restartOptions.say ??
       ((message?: Dynamic): Dynamic => announce(message)),
     reopenTimers: Dynamic = timers,
-    storage: Dynamic = restartOptions.store ?? PlatformMigrationStateHandler_2(),
+    storage: Dynamic = restartOptions.store ?? getSessionStorageOrUndefined(),
     waitingForSave: Dynamic = false,
     requestedFlush: Dynamic = false,
     reopenAfterSaving: Dynamic = (): Dynamic => {
@@ -183,7 +183,7 @@ function installMigrationRestartHandler(restartOptions: Dynamic = {}): Dynamic {
 }
 function announceMigrationReopen(reopenOptions?: Dynamic): Dynamic {
   return announceReopenedArtifact({
-    store: reopenOptions.store ?? PlatformMigrationStateHandler_2(),
+    store: reopenOptions.store ?? getSessionStorageOrUndefined(),
     now: reopenOptions.now ?? Date.now(),
     say:
       reopenOptions.say ??
@@ -203,22 +203,18 @@ export {
   migrationStateLoaded,
   MovedToFilesValue,
   PlatformMigrationStateAlias,
-  lastMigrationEventAt as PlatformMigrationStateAlias_2,
   SAVE_DRAIN_POLL_MS as PlatformMigrationStateConstant,
-  REOPEN_FALLBACK_DELAY_MS as PlatformMigrationStateConstant_2,
   PlatformMigrationStateHandler,
-  PlatformMigrationStateHandler_2,
+  getSessionStorageOrUndefined,
   markMigrationEvent as PlatformMigrationStateNow,
-  wasMigrationEventRecent as PlatformMigrationStateNow_2,
+  wasMigrationEventRecent,
   PlatformMigrationStateSubscribers,
-  restartFallbackListeners as PlatformMigrationStateSubscribers_2,
   subscribeMigrationRestart,
   subscribeMovedToFiles,
   ThatChangeIsSavedThisCanvasMessage,
   ThisCanvasIsOpenAgainMessage,
   ThisCanvasIsOpenAgainYouMessage,
   ThisCanvasNowSavesInAMessage,
-  MIGRATION_REOPENING_MESSAGE as ThisCanvasNowSavesInAMessage_2,
   updateMovedToFilesState,
   YourLastChangeIsNotSavedMessage,
 };
@@ -248,7 +244,7 @@ export function installPlatformMigrationState(): () => void {
     };
     wasMigrationEventRecent = (now: Dynamic = Date.now()): Dynamic =>
       now - lastMigrationEventAt < 1500;
-    PlatformMigrationStateHandler_2 = (): Dynamic => {
+    getSessionStorageOrUndefined = (): Dynamic => {
       try {
         return typeof sessionStorage === "undefined"
           ? undefined

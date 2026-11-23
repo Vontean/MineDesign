@@ -25,7 +25,7 @@ var ThisVideoDoesnTSayHowLongMessage: Dynamic;
 var seekDisabledReason: Dynamic;
 var playDisabledReason: Dynamic;
 var reactMediaPlaybackControls: Dynamic;
-var reactMediaPlaybackControls_2: Dynamic;
+var reactForInspectorLayoutSection: Dynamic;
 var jsxMediaPlaybackControls: Dynamic;
 var PropertiesInheritedFieldValueAlias: Dynamic;
 var PropertiesInheritedFieldMixedAlias: Dynamic;
@@ -158,7 +158,7 @@ function VideoPlayControl({
         />
       }
       aria-label={label}
-      title={disabledReason ?? (uiMessage("inspector.playbackControls.video", { value1: String(label) }))}
+      title={disabledReason ?? (uiMessage("inspector.playbackControls.video", { label: String(label) }))}
       disabled={disabledReason !== undefined}
       onClick={togglePlayback}
     />
@@ -229,13 +229,13 @@ export {
   findPreviewMediaElement,
   jsxMediaPlaybackControls,
   seekDisabledReason as MediaPlaybackControlsFound,
-  playDisabledReason as MediaPlaybackControlsFound_2,
+  playDisabledReason,
   notLoadedMessage as MediaPlaybackControlsLabel,
   unavailableVideoReason as MediaPlaybackControlsQuerySelector,
   PropertiesInheritedFieldMixedAlias,
   PropertiesInheritedFieldValueAlias,
   reactMediaPlaybackControls,
-  reactMediaPlaybackControls_2,
+  reactForInspectorLayoutSection,
   ThisVideoCouldnTBeLoadedMessage,
   ThisVideoCouldnTBeLoadedSoMessage,
   ThisVideoDoesnTSayHowLongMessage,
@@ -295,7 +295,7 @@ export function installEditorMediaPlaybackControls(): () => void {
       load_react(),
       1,
     );
-    reactMediaPlaybackControls_2 = toModuleNamespace(
+    reactForInspectorLayoutSection = toModuleNamespace(
       load_react(),
       1,
     );

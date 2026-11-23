@@ -1,29 +1,21 @@
-import { CanvasWorkingStateConstant_8 as dragDropLockKind } from "../working-state";
-import { PlatformFileContentConstant_17 as minArtboardSize } from "../../platform/file-content";
-import { PlatformFileContentConstant_18 as maxArtboardOffset } from "../../platform/file-content";
+import { travelCommitTimeoutMs as dragDropLockKind } from "../working-state";
+import { minFramelessArtboardDimension as minArtboardSize } from "../../platform/file-content";
+import { maxCanvasCoordinate as maxArtboardOffset } from "../../platform/file-content";
 import { PlatformFileContentFilesValue } from "../../platform/file-content";
-import { PlatformFileContentHandler_4 } from "../../platform/file-content";
-import { PlatformFileContentLimit_6 as maxArtboardSize } from "../../platform/file-content";
-import { PreviewBuildDocumentResolvedValue_3 as ghostSrcdoc } from "../../preview/build-document";
+import { projectFileKey } from "../../platform/file-content";
+import { maxCanvasItemDimension as maxArtboardSize } from "../../platform/file-content";
 import { buildDcDocument } from "../../editor/clipboard/html-placement";
-import { buildPreviewDocument } from "../../preview/build-document";
 import { canFreezeSinglePaste } from "../../editor/insert/drop-targets";
-import { collectProjectDependencyFiles } from "../../preview/dependency-graph";
-import { createLinkedFileScript } from "../../preview/module-cache";
 import { emptyCanvasSelection } from "../../editor/selection/canvas-selection";
 import { filterSelectedAnnotations } from "../../editor/selection/canvas-selection";
 import { filterSelectedArtboards } from "../../editor/selection/canvas-selection";
 import { getKvClient } from "../../platform/file-content";
 import { keyboardShortcutLabel } from "../../editor/keyboard/shortcuts";
-import { mergeDesignSystemFileOverlay } from "../../design-system/file-overlay";
-import { normalizeProjectBlobPaths } from "../../preview/blob-paths";
 import { pastedElementGeometry } from "../../editor/insert/drop-targets";
 import { pastedRootElementCount } from "../../editor/insert/drop-targets";
 import { positionPastedHtml } from "../../editor/clipboard/html-placement";
 import { randomSessionToken } from "../working-state";
 import { replaceSelectedElements } from "../../editor/selection/canvas-selection";
-import { runtimeModuleBlobs } from "../../preview/module-cache";
-import { runtimeModuleUrls } from "../../preview/module-cache";
 import { selectionFromArtboards } from "../../editor/selection/canvas-selection";
 import { selectionFromBoards } from "../../editor/selection/canvas-selection";
 import { selectionFromElements } from "../../editor/selection/canvas-selection";
@@ -32,17 +24,17 @@ import { type Dynamic } from "../../runtime-types";
 import { uiMessage } from "@minedesign/contracts/ui-messages";
 import { uniqueArtboardFile } from "../../platform/file-content";
 import { uniqueElementArtboardTitle } from "../../platform/file-content";
-import { dragGhostFilename, emptyCanvasSelectionFiles } from "../design-canvas";
+import { emptyCanvasSelectionFiles } from "./shared";
 
 /** 跨画板拖动携带 pieces（元素被拖出到空白画布）时运行：把拖出的元素生成为新画板或画布图形，处理复制/移动、只读与中断，返回写入与被拒结果。 */
-export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectionGesture: Dynamic; readonly callback2: Dynamic; readonly callback3: Dynamic; readonly doc: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly setShownFrameSelection: Dynamic; readonly supportsLoadState: Dynamic; readonly value127: Dynamic; readonly value141: Dynamic; readonly value142: Dynamic; readonly value143: Dynamic; readonly value144: Dynamic; readonly value153: Dynamic; readonly value177: Dynamic; readonly value189: Dynamic; readonly value19: Dynamic; readonly value224: Dynamic; readonly value396: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value98: Dynamic }, pieceDrag?: Dynamic): Promise<Dynamic> {
+export async function commitPieceDragOntoCanvas(deps: { readonly target: { readonly getArtboardTitle: Dynamic; readonly artboardEntries: Dynamic; readonly componentName: Dynamic }; readonly session: { readonly dragSessions: Dynamic; readonly editing: Dynamic; readonly waitForBoundOperation: Dynamic }; readonly history: { readonly boundRecordMergers: Dynamic; readonly boundSelections: Dynamic; readonly boundMoveRecords: Dynamic; readonly recordManifestHistory: Dynamic; readonly inlineHistory: Dynamic }; readonly document: { readonly savePageSelection: Dynamic; readonly doc: Dynamic; readonly supportsLoadState: Dynamic; readonly manifest: Dynamic; readonly persistManifest: Dynamic; readonly markArtboardDropped: Dynamic }; readonly selection: { readonly abandonGesture: Dynamic; readonly focusedFile: Dynamic; readonly current: Dynamic; readonly setSelection: Dynamic; readonly setShownFrameSelection: Dynamic; readonly clearFramePick: Dynamic }; readonly feedback: { readonly clearToast: Dynamic; readonly showToast: Dynamic } }, pieceDrag?: Dynamic): Promise<Dynamic> {
       let { token: dragToken, travel: travel }: Dynamic = pieceDrag,
-        selectionAtStart: Dynamic = deps.selectionRef.current,
+        selectionAtStart: Dynamic = deps.selection.current.current,
         pieces: Dynamic = travel?.pieces ?? [],
         items: Dynamic = [...pieceDrag.unanswered],
         cancelHomeMoves: Dynamic = (): Dynamic => {
           for (let file of pieceDrag.plans.keys() as Dynamic) {
-            let entry: Dynamic = deps.value177.current.get(file);
+            let entry: Dynamic = deps.target.artboardEntries.current.get(file);
             entry?.moveCancel(dragToken);
             entry?.moveSettle();
           }
@@ -58,13 +50,13 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
         refuseWithMessage: Dynamic = async (message?: Dynamic): Promise<Dynamic> => {
           let pendingFlush: Dynamic =
               pieceDrag.copy && pieceDrag.canvasMoved
-                ? deps.value144(dragToken)
+                ? deps.session.waitForBoundOperation(dragToken)
                 : Promise.resolve(),
             canvasResult: Dynamic = pieceDrag.canvas();
           for (let traveller of (travel?.travellers ?? []) as Dynamic)
             travel?.endHome(traveller.file, false);
           await pendingFlush;
-          deps.value448.current(
+          deps.feedback.showToast.current(
             canvasResult === false
               ? uiMessage("canvas.designCanvas.nothing") +
                   (pieceDrag.copy ? "copied" : "moved") +
@@ -73,15 +65,15 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
           );
           pieceDrag.copy &&
             pieceDrag.canvasMoved &&
-            (deps.value142.current.has(dragToken)
+            (deps.history.boundSelections.current.has(dragToken)
               ? Promise.resolve()
-              : deps.value144(dragToken)
+              : deps.session.waitForBoundOperation(dragToken)
             ).then((): Dynamic => {
-              let entry: Dynamic = deps.value142.current.get(dragToken);
-              deps.value142.current.delete(dragToken);
+              let entry: Dynamic = deps.history.boundSelections.current.get(dragToken);
+              deps.history.boundSelections.current.delete(dragToken);
               entry &&
                 (entry.files.size > 0 || entry.notes.size > 0) &&
-                deps.setSelection(
+                deps.selection.setSelection(
                   selectionFromBoards({
                     files: entry.files,
                     notes: entry.notes,
@@ -95,7 +87,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
           uiMessage("canvas.designCanvas.nothing") + (pieceDrag.copy ? "copied" : "moved") + ".",
         );
       cancelHomeMoves();
-      let files: Dynamic = deps.doc.content().files;
+      let files: Dynamic = deps.document.doc.content().files;
       if (
         Object.keys(files).length + pieces.length >
         PlatformFileContentFilesValue
@@ -117,10 +109,10 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
         promise: Dynamic = new Promise((resolve?: Dynamic): Dynamic => {
           resolveAdded = resolve;
         });
-      deps.value143.current.set(dragToken, (nextMoveRecord?: Dynamic): Dynamic => {
+      deps.history.boundMoveRecords.current.set(dragToken, (nextMoveRecord?: Dynamic): Dynamic => {
         state = nextMoveRecord;
       });
-      deps.value141.current.set(dragToken, (source?: Dynamic): Dynamic => {
+      deps.history.boundRecordMergers.current.set(dragToken, (source?: Dynamic): Dynamic => {
         source.kind === "add"
           ? addedBatches.push({
               entries: source.entries,
@@ -134,13 +126,13 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
         resolveAdded();
       });
       let canvasMoveFlush: Dynamic = pieceDrag.canvasMoved
-          ? deps.value144(dragToken)
+          ? deps.session.waitForBoundOperation(dragToken)
           : Promise.resolve(),
         canvasMoveResult: Dynamic;
       try {
         canvasMoveResult = pieceDrag.canvas();
       } finally {
-        deps.value143.current.delete(dragToken);
+        deps.history.boundMoveRecords.current.delete(dragToken);
       }
       travel.copy &&
         pieceDrag.canvasMoved &&
@@ -149,8 +141,8 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
           canvasMoveFlush,
           new Promise((resolve?: Dynamic): Dynamic => setTimeout(resolve, 2e3)),
         ]));
-      deps.value141.current.delete(dragToken);
-      deps.value142.current.delete(dragToken);
+      deps.history.boundRecordMergers.current.delete(dragToken);
+      deps.history.boundSelections.current.delete(dragToken);
       let addedRecords: Dynamic = {
         entries: addedBatches.flatMap(
           (batch?: Dynamic): Dynamic => batch.entries,
@@ -160,7 +152,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
       if (pieceDrag.canvasMoved && canvasMoveResult === false) {
         for (let traveller of travel.travellers as Dynamic)
           travel.endHome(traveller.file, false);
-        deps.value448.current(
+        deps.feedback.showToast.current(
           uiMessage("canvas.designCanvas.nothing") +
             (travel.copy ? "copied" : "moved") +
             " \u2014 the drag was interrupted; try it again.",
@@ -169,7 +161,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
       }
       let recordHistory: Dynamic = (): Dynamic => {
         (state.moves.length > 0 || state.annMoves.length > 0) &&
-          deps.value396.current(
+          deps.history.recordManifestHistory.current(
             {
               kind: "move",
               moves: state.moves,
@@ -184,7 +176,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
             dragToken,
           );
         (addedRecords.entries.length > 0 || addedRecords.anns.length > 0) &&
-          deps.value396.current(
+          deps.history.recordManifestHistory.current(
             {
               kind: "add",
               entries: addedRecords.entries,
@@ -202,13 +194,13 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
           );
       };
       if (
-        Object.keys(deps.doc.content().files).length + pieces.length >
+        Object.keys(deps.document.doc.content().files).length + pieces.length >
         PlatformFileContentFilesValue
       ) {
         recordHistory();
         for (let traveller of travel.travellers as Dynamic)
           travel.endHome(traveller.file, false);
-        deps.value448.current(
+        deps.feedback.showToast.current(
           (pieceDrag.canvasMoved
             ? uiMessage("canvas.designCanvas.theRest") + (travel.copy ? "copied" : "moved") + "; "
             : "") +
@@ -222,7 +214,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
         entries: Dynamic = new Map(),
         draftDocument: Dynamic = {
           files: {
-            ...deps.doc.content().files,
+            ...deps.document.doc.content().files,
             ...Object.fromEntries(
               addedRecords.entries.map(
                 (addedEntry?: Dynamic): Dynamic => [addedEntry.file, addedEntry.src],
@@ -230,13 +222,13 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
             ),
           },
           artboards: [
-            ...deps.value73.current.artboards,
+            ...deps.document.manifest.current.artboards,
             ...addedRecords.entries.map((addedEntry?: Dynamic): Dynamic => addedEntry.spec),
           ],
         };
       try {
         for (let piece of pieces as Dynamic) {
-          let entry: Dynamic = deps.value177.current.get(piece.file);
+          let entry: Dynamic = deps.target.artboardEntries.current.get(piece.file);
           if (!entry || (await entry.travellerHtml(piece.tid)) === null)
             continue;
           let serialized: Dynamic = entry.serializeSelection([piece.tid], {
@@ -250,14 +242,14 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
           await entry.flushPending();
           let homeSource: Dynamic =
               (await getKvClient().get(
-                PlatformFileContentHandler_4(piece.file),
+                projectFileKey(piece.file),
               )) ??
               files[piece.file] ??
               "",
             newFile: Dynamic = uniqueArtboardFile(
               draftDocument.files,
               "Piece",
-              deps.supportsLoadState,
+              deps.document.supportsLoadState,
             ),
             newDocument: Dynamic = buildDcDocument(
               serialized,
@@ -302,7 +294,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
                 draftDocument.artboards,
               ),
               frameless: true,
-              ...deps.callback3(),
+              ...deps.document.savePageSelection(),
             };
           draftDocument.files[newFile] = newDocument;
           draftDocument.artboards.push(newSpec);
@@ -323,7 +315,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
         for (let traveller of travel.travellers as Dynamic)
           travel.endHome(traveller.file, false);
         console.error("set pieces:", error);
-        deps.value448.current(
+        deps.feedback.showToast.current(
           pieceDrag.canvasMoved
             ? uiMessage("canvas.designCanvas.theRest") +
                 (travel.copy ? "copied" : "moved") +
@@ -338,7 +330,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
         recordHistory();
         for (let traveller of travel.travellers as Dynamic)
           travel.endHome(traveller.file, false);
-        deps.value448.current(
+        deps.feedback.showToast.current(
           (pieceDrag.canvasMoved
             ? uiMessage("canvas.designCanvas.theRest") +
               (travel.copy ? "copied" : "moved") +
@@ -350,11 +342,11 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
         );
         return refuseAll();
       }
-      if (!deps.value224.current) {
+      if (!deps.session.editing.current) {
         recordHistory();
         for (let traveller of travel.travellers as Dynamic)
           travel.endHome(traveller.file, false);
-        deps.value448.current(
+        deps.feedback.showToast.current(
           (pieceDrag.canvasMoved
             ? uiMessage("canvas.designCanvas.theRest") +
               (travel.copy ? "copied" : "moved") +
@@ -375,7 +367,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
         ),
         ...addedRecords.entries,
       ];
-      deps.value396.current(
+      deps.history.recordManifestHistory.current(
         {
           kind: "add",
           entries: addedEntries,
@@ -402,25 +394,25 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
       try {
         for (let createdPiece of newPieces as Dynamic) {
           await getKvClient().set(
-            PlatformFileContentHandler_4(createdPiece.file),
+            projectFileKey(createdPiece.file),
             createdPiece.src,
           );
-          deps.value127.current.set(createdPiece.file, Date.now());
+          deps.document.markArtboardDropped(createdPiece.file);
         }
       } catch (error: Dynamic) {
         for (let traveller of travel.travellers as Dynamic)
           travel.endHome(traveller.file, false);
         console.error("set pieces:", error);
-        deps.value448.current(
+        deps.feedback.showToast.current(
           uiMessage("canvas.designCanvas.couldnTFinishTheDrop") +
             keyboardShortcutLabel("Z") +
             " takes back what was made.",
         );
         return refuseAll();
       }
-      deps.value98({
+      deps.document.persistManifest({
         artboards: [
-          ...deps.value73.current.artboards.filter(
+          ...deps.document.manifest.current.artboards.filter(
             (artboard?: Dynamic): Dynamic =>
               !newPieces.some(
                 (createdPiece?: Dynamic): Dynamic => createdPiece.file === artboard.file,
@@ -433,7 +425,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
       cancelHomeMoves();
       let historyGroup: Dynamic = travel.copy
           ? undefined
-          : deps.value432.current?.group(sourceFiles, {
+          : deps.history.inlineHistory.current?.group(sourceFiles, {
               bound: dragToken,
               atomic: true,
             }),
@@ -446,7 +438,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
             travel.endHome(file, false);
             return;
           }
-          let entry: Dynamic = deps.value177.current.get(file),
+          let entry: Dynamic = deps.target.artboardEntries.current.get(file),
             movedTids: Dynamic = entries.get(file) ?? [],
             remainingTids: Dynamic = (
               selectionAtStart.elements.get(file)?.tids ?? []
@@ -470,7 +462,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
         sourceFiles.includes(traveller.file) ||
           travel.endHome(traveller.file, false);
       for (let writtenFile of writtenFiles as Dynamic)
-        deps.value153.current.set(writtenFile, Date.now());
+        deps.session.dragSessions.current.set(writtenFile, Date.now());
       let bothPlacesFiles: Dynamic = sourceFiles.filter(
           (file?: Dynamic): Dynamic => refusedFiles.includes(file),
         ),
@@ -491,8 +483,8 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
             " and " +
             names[names.length - 1];
       if (bothPlacesFiles.length > 0) {
-        let artboardNames: Dynamic = bothPlacesFiles.map(deps.callback2);
-        deps.value448.current(
+        let artboardNames: Dynamic = bothPlacesFiles.map(deps.target.getArtboardTitle);
+        deps.feedback.showToast.current(
           uiMessage("canvas.designCanvas.movedOntoTheCanvasBut") +
             joinNames(artboardNames) +
             " kept what was dragged, so it is now in both places. Check " +
@@ -501,23 +493,23 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
         );
       } else
         staysByFile.size > 0
-          ? deps.value189(
+          ? deps.feedback.clearToast(
               (travel.copy ? "Copied" : "Moved") +
                 " " +
                 String(newPieces.length) +
                 (newPieces.length === 1 ? " element" : " elements") +
                 " onto the canvas. The rest stayed in " +
-                joinNames([...staysByFile.keys()].map(deps.callback2)) +
+                joinNames([...staysByFile.keys()].map(deps.target.getArtboardTitle)) +
                 " \u2014 repeated, nested or locked elements stay with their artboard.",
             )
-          : deps.value189(
+          : deps.feedback.clearToast(
               (travel.copy ? "Copied" : "Moved") +
                 (newPieces.length === 1
                   ? ""
                   : " " + String(newPieces.length) + " elements") +
                 " onto the canvas",
             );
-      deps.abandonSelectionGesture();
+      deps.selection.abandonGesture();
       let nextElements: Dynamic = new Map();
       if (!travel.copy) {
         for (let [file, elements] of selectionAtStart.elements as Dynamic)
@@ -539,10 +531,10 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
               });
         }
       }
-      let focusedFile: Dynamic = deps.focusedFileRef.current;
+      let focusedFile: Dynamic = deps.selection.focusedFile.current;
       (focusedFile == null ||
         nextElements.get(focusedFile) !== selectionAtStart.elements.get(focusedFile)) &&
-        deps.value62();
+        deps.selection.clearFramePick();
       let nextSelection: Dynamic = replaceSelectedElements(
         selectionFromArtboards(
           new Set(newPieces.map((createdPiece?: Dynamic): Dynamic => createdPiece.file)),
@@ -550,7 +542,7 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
         nextElements,
         null,
       );
-      deps.setSelection(nextSelection);
+      deps.selection.setSelection(nextSelection);
       for (let file of [
         ...new Set([
           ...sourceFiles,
@@ -560,20 +552,20 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
           ),
         ]),
       ] as Dynamic)
-        deps.value177.current.get(file)?.moveSettle();
+        deps.target.artboardEntries.current.get(file)?.moveSettle();
       (window as Dynamic).setTimeout((): Dynamic => {
         for (let file of new Set([
           ...writtenFiles,
           ...nextElements.keys(),
         ]) as Dynamic) {
           let tids: Dynamic = nextElements.get(file)?.tids ?? null;
-          file === deps.focusedFileRef.current
-            ? deps.setShownFrameSelection(file, tids)
-            : deps.value177.current
+          file === deps.selection.focusedFile.current
+            ? deps.selection.setShownFrameSelection(file, tids)
+            : deps.target.artboardEntries.current
                 .get(file)
                 ?.setShownSelection(
                   tids,
-                  tids ? deps.value19(file) : null,
+                  tids ? deps.target.componentName(file) : null,
                 );
         }
       }, 80);
@@ -584,9 +576,9 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
       unmovedFiles.length > 0 &&
         bothPlacesFiles.length === 0 &&
         staysByFile.size === 0 &&
-        deps.value448.current(
+        deps.feedback.showToast.current(
           uiMessage("canvas.designCanvas.nothingMovedInside") +
-            joinNames(unmovedFiles.map(deps.callback2)) +
+            joinNames(unmovedFiles.map(deps.target.getArtboardTitle)) +
             "; the rest " +
             (travel.copy ? "copied" : "moved") +
             ".",
@@ -599,18 +591,18 @@ export async function commitPieceDragOntoCanvas(deps: { readonly abandonSelectio
     }
 
 /** 元素拖动松手后的提交：把元素移动或复制到目标画板（landTravellers/moveElements），失败时回滚并合并历史，返回写入与被拒结果；含 pieces 时转交 commitPieceDragOntoCanvas。 */
-export async function commitElementMoveAcrossArtboards(deps: { readonly applyCanvasSelection: Dynamic; readonly callback2: Dynamic; readonly callback4: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly setShownFrameSelection: Dynamic; readonly value142: Dynamic; readonly value144: Dynamic; readonly value153: Dynamic; readonly value177: Dynamic; readonly value19: Dynamic; readonly value25: Dynamic; readonly value432: Dynamic; readonly value448: Dynamic }, elementDrag?: Dynamic): Promise<Dynamic> {
+export async function commitElementMoveAcrossArtboards(deps: { readonly target: { readonly getArtboardTitle: Dynamic; readonly artboardEntries: Dynamic; readonly componentName: Dynamic }; readonly session: { readonly commitPieceDrag: Dynamic; readonly dragSessions: Dynamic; readonly waitForBoundOperation: Dynamic }; readonly history: { readonly boundSelections: Dynamic; readonly inlineHistory: Dynamic }; readonly selection: { readonly apply: Dynamic; readonly focusedFile: Dynamic; readonly current: Dynamic; readonly setShownFrameSelection: Dynamic; readonly ignoreClearFromFile: Dynamic }; readonly feedback: { readonly showToast: Dynamic } }, elementDrag?: Dynamic): Promise<Dynamic> {
       let {
         token: dragToken,
         plans: plans,
         unanswered: unansweredFiles,
         travel: travel,
       }: Dynamic = elementDrag;
-      if (travel?.pieces) return deps.callback4(elementDrag);
+      if (travel?.pieces) return deps.session.commitPieceDrag(elementDrag);
       elementDrag.canvas();
       let items: Dynamic = [...plans.keys()],
-        selectionAtStart: Dynamic = deps.selectionRef.current,
-        focusedFile: Dynamic = deps.focusedFileRef.current,
+        selectionAtStart: Dynamic = deps.selection.current.current,
+        focusedFile: Dynamic = deps.selection.focusedFile.current,
         refusedFiles: Dynamic = [...unansweredFiles],
         entries: Dynamic = new Map(selectionAtStart.elements),
         writtenFiles: Dynamic = [],
@@ -628,7 +620,7 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
           landingItems: Dynamic = [],
           leftoverTidsByFile: Dynamic = new Map();
         for (let traveller of travel.travellers as Dynamic) {
-          let entry: Dynamic = deps.value177.current.get(traveller.file),
+          let entry: Dynamic = deps.target.artboardEntries.current.get(traveller.file),
             leftoverTids: Dynamic = [];
           for (let member of traveller.members as Dynamic) {
             let landing: Dynamic = travel.plan.landing.find(
@@ -657,7 +649,7 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
           involvedFiles: Dynamic = isCopy
             ? [target, ...otherFiles]
             : [...new Set([target, ...canvasSourceFiles, ...otherFiles])],
-          historyGroup: Dynamic = deps.value432.current?.group(
+          historyGroup: Dynamic = deps.history.inlineHistory.current?.group(
             involvedFiles,
             isCopy
               ? {
@@ -675,8 +667,8 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
         try {
           focusedFile != null &&
             involvedFiles.includes(focusedFile) &&
-            (deps.value25.current = focusedFile);
-          let entry: Dynamic = deps.value177.current.get(target),
+            (deps.selection.ignoreClearFromFile.current = focusedFile);
+          let entry: Dynamic = deps.target.artboardEntries.current.get(target),
             targetOwnTids: Dynamic =
               isCopy && canvasSourceFiles.includes(target)
                 ? []
@@ -700,14 +692,14 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
             landedFiles: Dynamic = [],
             revertLandings: Dynamic = async (): Promise<Dynamic> => {
               for (let landedFile of [...landedFiles].reverse() as Dynamic) {
-                let frameEntry: Dynamic = deps.value177.current.get(landedFile),
+                let frameEntry: Dynamic = deps.target.artboardEntries.current.get(landedFile),
                   discardHistory: Dynamic = frameEntry
                     ? (historyGroup?.discard(landedFile) ?? null)
                     : null;
                 if (!frameEntry || !discardHistory) return false;
                 if (
                   !(await frameEntry
-                    .applyHistory(deps.value19(landedFile), "undo")
+                    .applyHistory(deps.target.componentName(landedFile), "undo")
                     .catch((): Dynamic => false))
                 ) {
                   discardHistory();
@@ -729,8 +721,8 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
           if (landResult === "failed") {
             refusedFiles.push(target);
             target === focusedFile &&
-              deps.value25.current === focusedFile &&
-              (deps.value25.current = null);
+              deps.selection.ignoreClearFromFile.current === focusedFile &&
+              (deps.selection.ignoreClearFromFile.current = null);
             for (let traveller of travel.travellers as Dynamic)
               leftoverTidsByFile.set(
                 traveller.file,
@@ -766,7 +758,7 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
             otherFiles.map(
               (file?: Dynamic): Dynamic =>
                 (
-                  deps.value177.current
+                  deps.target.artboardEntries.current
                     .get(file)
                     ?.moveElements(plans.get(file) ?? []) ??
                   Promise.resolve("failed")
@@ -782,8 +774,8 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
               (moveResult === "refused" || moveResult === "failed") &&
                 refusedFiles.push(file);
               file === focusedFile &&
-                deps.value25.current === focusedFile &&
-                (deps.value25.current = null);
+                deps.selection.ignoreClearFromFile.current === focusedFile &&
+                (deps.selection.ignoreClearFromFile.current = null);
               return;
             }
             entries.set(file, {
@@ -794,7 +786,7 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
             });
             writtenFiles.push(file);
           });
-          let fileLabel: Dynamic = deps.callback2,
+          let fileLabel: Dynamic = deps.target.getArtboardTitle,
             joinNames: Dynamic = (names?: Dynamic): Dynamic =>
               names.length <= 1
                 ? (names[0] ?? "")
@@ -813,7 +805,7 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
                 entries.delete(traveller.file);
               continue;
             }
-            let frameEntry: Dynamic = deps.value177.current.get(traveller.file),
+            let frameEntry: Dynamic = deps.target.artboardEntries.current.get(traveller.file),
               landedTids: Dynamic = landedTidsByFile.get(traveller.file) ?? [],
               remainingTids: Dynamic = (
                 selectionAtStart.elements.get(traveller.file)?.tids ?? []
@@ -851,8 +843,8 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
             } else noLandingFiles.push(traveller.file);
             traveller.file === focusedFile &&
               !didRemove &&
-              deps.value25.current === focusedFile &&
-              (deps.value25.current = null);
+              deps.selection.ignoreClearFromFile.current === focusedFile &&
+              (deps.selection.ignoreClearFromFile.current = null);
             historyGroup?.settled(traveller.file);
             travel.endHome(traveller.file, didRemove);
             let previousEntry: Dynamic = selectionAtStart.elements.get(traveller.file);
@@ -873,7 +865,7 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
             ),
             verb: Dynamic = isCopy ? "copy" : "move";
           revertState?.how === "reverted"
-            ? deps.value448.current(
+            ? deps.feedback.showToast.current(
                 uiMessage("canvas.designCanvas.couldnT") +
                   verb +
                   " to " +
@@ -885,7 +877,7 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
                   " were removed.",
               )
             : partialFiles.length > 0
-              ? deps.value448.current(
+              ? deps.feedback.showToast.current(
                   uiMessage("canvas.designCanvas.theMoveLandedIn") +
                     fileLabel(target) +
                     " but could not leave " +
@@ -895,7 +887,7 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
                       : ". Check both artboards."),
                 )
               : noLandingFiles.length > 0 && landResult !== "failed"
-                ? deps.value448.current(
+                ? deps.feedback.showToast.current(
                     uiMessage("canvas.designCanvas.nowhereToLandIn") +
                       fileLabel(target) +
                       " for " +
@@ -904,7 +896,7 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
                       (isCopy ? uiMessage("canvas.designCanvas.nothingOfItWasCopied") : uiMessage("canvas.designCanvas.itStayed")),
                   )
                 : partlyStayedFiles.length > 0 &&
-                  deps.value448.current(
+                  deps.feedback.showToast.current(
                     uiMessage("canvas.designCanvas.partOf") +
                       joinNames(partlyStayedFiles.map(fileLabel)) +
                       "'s selection could not land in " +
@@ -926,7 +918,7 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
                     count: targetNewTids.length,
                   }
                 : {
-                    name: deps.value19(target),
+                    name: deps.target.componentName(target),
                     tids: targetNewTids,
                     rect: null,
                     count: targetNewTids.length,
@@ -936,25 +928,25 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
           }
           if (revertState?.how !== "reverted")
             for (let file of [target, ...canvasSourceFiles] as Dynamic)
-              deps.value153.current.set(file, Date.now());
+              deps.session.dragSessions.current.set(file, Date.now());
         } finally {
           historyGroup?.end();
         }
       } else {
         let historyGroup: Dynamic =
           items.length > 0
-            ? deps.value432.current?.group(items, {
+            ? deps.history.inlineHistory.current?.group(items, {
                 bound: dragToken,
               })
             : undefined;
         focusedFile != null &&
           items.includes(focusedFile) &&
-          (deps.value25.current = focusedFile);
+          (deps.selection.ignoreClearFromFile.current = focusedFile);
         let moveResults: Dynamic = await Promise.all(
           items.map(
             (file?: Dynamic): Dynamic =>
               (
-                deps.value177.current
+                deps.target.artboardEntries.current
                   .get(file)
                   ?.moveElements(plans.get(file) ?? []) ??
                 Promise.resolve("failed")
@@ -971,8 +963,8 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
             (moveResult === "refused" || moveResult === "failed") &&
               refusedFiles.push(file);
             file === focusedFile &&
-              deps.value25.current === focusedFile &&
-              (deps.value25.current = null);
+              deps.selection.ignoreClearFromFile.current === focusedFile &&
+              (deps.selection.ignoreClearFromFile.current = null);
             return;
           }
           entries.set(file, {
@@ -988,16 +980,16 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
         );
       }
       elementDrag.canvasDropped &&
-        deps.value448.current(
+        deps.feedback.showToast.current(
           uiMessage("canvas.designCanvas.theArtboardsAndNotesIn") +
             (elementDrag.copy ? "copy" : "move") +
             " \u2014 the drag was interrupted; try it again.",
         );
       let baseSelection: Dynamic = selectionAtStart;
       if (elementDrag.copy && elementDrag.canvasMoved && !elementDrag.canvasDropped) {
-        deps.value142.current.has(dragToken) || (await deps.value144(dragToken));
-        let entry: Dynamic = deps.value142.current.get(dragToken);
-        deps.value142.current.delete(dragToken);
+        deps.history.boundSelections.current.has(dragToken) || (await deps.session.waitForBoundOperation(dragToken));
+        let entry: Dynamic = deps.history.boundSelections.current.get(dragToken);
+        deps.history.boundSelections.current.delete(dragToken);
         baseSelection = entry
           ? selectionFromBoards({
               files: entry.files,
@@ -1018,7 +1010,7 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
         entries,
         primary,
       );
-      deps.applyCanvasSelection(nextSelection);
+      deps.selection.apply(nextSelection);
       let finalSelection: Dynamic = nextSelection,
         touchedFiles: Dynamic = [
           ...new Set([
@@ -1036,28 +1028,28 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
       for (let file of touchedFiles as Dynamic)
         !writtenFiles.includes(file) &&
           !revertedFiles.includes(file) &&
-          deps.value177.current.get(file)?.moveSettle();
+          deps.target.artboardEntries.current.get(file)?.moveSettle();
       for (let file of unansweredFiles as Dynamic)
-        deps.value177.current.get(file)?.moveSettle();
+        deps.target.artboardEntries.current.get(file)?.moveSettle();
       (window as Dynamic).setTimeout((): Dynamic => {
         for (let file of [
           ...new Set([...writtenFiles, ...revertedFiles]),
         ] as Dynamic) {
           let tids: Dynamic =
-            deps.selectionRef.current.elements.get(file)?.tids ?? null;
-          file === deps.focusedFileRef.current
-            ? deps.setShownFrameSelection(file, tids)
-            : deps.value177.current
+            deps.selection.current.current.elements.get(file)?.tids ?? null;
+          file === deps.selection.focusedFile.current
+            ? deps.selection.setShownFrameSelection(file, tids)
+            : deps.target.artboardEntries.current
                 .get(file)
                 ?.setShownSelection(
                   tids,
-                  tids ? deps.value19(file) : null,
+                  tids ? deps.target.componentName(file) : null,
                 );
-          deps.value177.current.get(file)?.moveSettle();
+          deps.target.artboardEntries.current.get(file)?.moveSettle();
         }
       }, 80);
       if (refusedFiles.length > 0) {
-        let refusedLabels: Dynamic = refusedFiles.map(deps.callback2),
+        let refusedLabels: Dynamic = refusedFiles.map(deps.target.getArtboardTitle),
           refusedText: Dynamic =
             refusedLabels.length === 1
               ? refusedLabels[0]
@@ -1065,7 +1057,7 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
                 " and " +
                 refusedLabels[refusedLabels.length - 1],
           nothingMoved: Dynamic = writtenFiles.length === 0;
-        deps.value448.current(
+        deps.feedback.showToast.current(
           nothingMoved && !elementDrag.canvasMoved
             ? uiMessage("canvas.designCanvas.nothingMoved")
             : nothingMoved
@@ -1080,253 +1072,34 @@ export async function commitElementMoveAcrossArtboards(deps: { readonly applyCan
       };
     }
 
-/** 开始拖出元素时运行：把选中元素序列化成独立的 dc 文档并构建预览 srcdoc，作为拖动中跟随指针的幽灵预览。 */
-export function buildDragGhostPreview(deps: { readonly assets: Dynamic; readonly doc: Dynamic; readonly value177: Dynamic; readonly value195: Dynamic; readonly value196: Dynamic }, dragStart?: Dynamic): Dynamic {
-        if (!dragStart.box || deps.value196.current?.key === dragStart.key) return;
-        deps.value196.current = {
-          key: dragStart.key,
-          ghost: null,
-        };
-        let entry: Dynamic = deps.value177.current.get(dragStart.file),
-          box: Dynamic = dragStart.box;
-        if (entry)
-          try {
-            entry
-              .renderDefaults()
-              .then((renderDefaults?: Dynamic): Dynamic => {
-                if (deps.value196.current?.key !== dragStart.key) return;
-                let ghostMarkup: Dynamic = entry.serializeSelection(dragStart.tids, {
-                  bakeProps: true,
-                  lift: box,
-                  vals: renderDefaults,
-                });
-                if (!ghostMarkup || ghostMarkup.length > 2e5) return;
-                let files: Dynamic = deps.doc.content().files,
-                  state: Dynamic = {
-                    ...mergeDesignSystemFileOverlay(files),
-                    [dragGhostFilename]: buildDcDocument(
-                      ghostMarkup,
-                      files[dragStart.file] ?? "",
-                      {
-                        logic: false,
-                      },
-                    ),
-                  },
-                  projectFiles: Dynamic = normalizeProjectBlobPaths(
-                    collectProjectDependencyFiles(
-                      state,
-                      dragGhostFilename,
-                    ),
-                  ),
-                  { doc: previewDoc, parts: previewParts }: Dynamic = buildPreviewDocument(
-                    projectFiles,
-                    dragGhostFilename,
-                    deps.assets,
-                    new Set(),
-                    {
-                      frameless: true,
-                      fileUrlFor: createLinkedFileScript,
-                    },
-                  ),
-                  ghost: Dynamic =
-                    Object.keys(previewParts).length > 0
-                      ? {
-                          srcdoc: ghostSrcdoc,
-                          boot: {
-                            doc: previewDoc,
-                            parts: runtimeModuleBlobs(previewParts),
-                            urls: runtimeModuleUrls(previewParts),
-                          },
-                        }
-                      : {
-                          srcdoc: previewDoc,
-                          boot: null,
-                        };
-                deps.value196.current.ghost = ghost;
-                deps.value195(
-                  (dragState?: Dynamic): Dynamic =>
-                    dragState && {
-                      ...dragState,
-                      ghost: ghost,
-                    },
-                );
-              })
-              .catch((): Dynamic => {});
-          } catch {}
-      }
-
-/** 画布对象悬停在目标画板上时运行：在目标画板中计算落点计划（dropPlanAt）并显示插入预览，请求进行中时只保留最新坐标排队。 */
-export function requestDropPlanPreview(deps: { readonly value177: Dynamic; readonly value203: Dynamic; readonly value206: Dynamic; readonly value87: Dynamic }, event?: Dynamic,
-        target?: Dynamic,
-        pointX?: Dynamic,
-        pointY?: Dynamic,
-        placementMode?: Dynamic): Dynamic {
-        if (event.inFlight) {
-          event.pending = {
-            cx: pointX,
-            cy: pointY,
-            mode: placementMode,
-          };
-          return;
-        }
-        let html: Dynamic = event.html,
-          member: Dynamic = event.member;
-        if (!html || !member) return;
-        let entry: Dynamic = deps.value177.current.get(target.file),
-          artboard: Dynamic = deps.value87.current.artboards.find(
-            (candidate?: Dynamic): Dynamic => candidate.file === target.file,
-          );
-        if (!entry || !artboard) return;
-        let isLaidOutPromise: Dynamic = event.laidOut.get(target.file);
-        isLaidOutPromise ||
-          ((isLaidOutPromise = entry.isFreeCanvas(html).then(
-            (isFree?: Dynamic): Dynamic => !isFree,
-            (): Dynamic => false,
-          )),
-          event.laidOut.set(target.file, isLaidOutPromise));
-        event.inFlight = Promise.all([target.opened, isLaidOutPromise])
-          .then(
-            ([isOpened, isLaidOut]: Dynamic): Dynamic =>
-              isOpened && isLaidOut
-                ? entry.dropPlanAt(
-                    event.token,
-                    {
-                      x: pointX - artboard.x,
-                      y: pointY - artboard.y,
-                    },
-                    [member],
-                    placementMode,
-                  )
-                : null,
-          )
-          .then(
-            (plan?: Dynamic): Dynamic => {
-              event.target === target &&
-                (!plan ||
-                  !plan.landing.some(
-                    (landingItem?: Dynamic): Dynamic => landingItem.tid === 0,
-                  )) &&
-                entry.dropPlanClear(event.token);
-            },
-            (): Dynamic => {},
-          )
-          .finally((): Dynamic => {
-            event.inFlight = null;
-            let pending: Dynamic = event.pending;
-            event.pending = null;
-            pending &&
-              event.target &&
-              deps.value203.current === event &&
-              deps.value206(
-                event,
-                event.target,
-                pending.cx,
-                pending.cy,
-                pending.mode,
-              );
-          });
-      }
-
-/** 把画布对象（说明、图形或无框画板）拖过其他画板时运行：建立拖动会话、打开目标画板的移动宿主，并刷新落点预览。 */
-export function trackObjectHoverOverArtboard(deps: { readonly value177: Dynamic; readonly value202: Dynamic; readonly value203: Dynamic; readonly value204: Dynamic; readonly value206: Dynamic; readonly value211: Dynamic; readonly value271: Dynamic; readonly value345: Dynamic }, event?: Dynamic): Dynamic {
-        let session: Dynamic = deps.value203.current;
-        session &&
-          session.gestureKey !== event.key &&
-          (deps.value204(), (session = null));
-        let isOtherGestureActive: Dynamic = deps.value202.current || deps.value345.current;
-        if (!session) {
-          if (!event.target || isOtherGestureActive) return;
-          let state: Dynamic = {
-              ew: event.at.w,
-              eh: event.at.h,
-              ox: 0,
-              oy: 0,
-              gx: event.point.x - event.at.x,
-              gy: event.point.y - event.at.y,
-            },
-            newSession: Dynamic = {
-              gestureKey: event.key,
-              token: randomSessionToken(),
-              html: null,
-              member: null,
-              laidOut: new Map(),
-              target: null,
-              closing: new Map(),
-              inFlight: null,
-              pending: null,
-            };
-          deps.value203.current = newSession;
-          session = newSession;
-          deps.value211(event.object)
-            .then((objectHtml?: Dynamic): Dynamic => {
-              deps.value203.current === newSession &&
-                ((newSession.html = objectHtml),
-                (newSession.member = objectHtml
-                  ? pastedElementGeometry(objectHtml, state)
-                  : null));
-            })
-            .catch((): Dynamic => {});
-        }
-        let hoverTarget: Dynamic =
-          event.target &&
-          !isOtherGestureActive &&
-          event.target !== deps.value271.current &&
-          event.target !== ("file" in event.object ? event.object.file : null)
-            ? event.target
-            : null;
-        session.target && session.target.file !== hoverTarget && deps.value204();
-        if (!!hoverTarget) {
-          if (!session.target) {
-            let entry: Dynamic = deps.value177.current.get(hoverTarget),
-              sessionAtOpen: Dynamic = session;
-            session.target = {
-              file: hoverTarget,
-              opened: (session.closing.get(hoverTarget) ?? Promise.resolve())
-                .then(
-                  (): Dynamic =>
-                    entry?.moveHost(sessionAtOpen.token, "open") ?? false,
-                )
-                .catch((): Dynamic => false),
-            };
-          }
-          deps.value206(
-            session,
-            session.target,
-            event.point.x,
-            event.point.y,
-            event.ctrl ? "keep" : "flow",
-          );
-        }
-      }
-
 /** 画布对象在某画板上松手时运行（onDropObjectInto）：把说明、图片或无框画板内容作为元素插入目标画板，处理超时、只读与失败提示。 */
-export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic; readonly callback7: Dynamic; readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly setShownFrameSelection: Dynamic; readonly showToast: Dynamic; readonly value144: Dynamic; readonly value155: Dynamic; readonly value157: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value189: Dynamic; readonly value19: Dynamic; readonly value202: Dynamic; readonly value203: Dynamic; readonly value204: Dynamic; readonly value213: Dynamic; readonly value271: Dynamic; readonly value276: Dynamic; readonly value345: Dynamic; readonly value432: Dynamic; readonly value459: Dynamic; readonly value73: Dynamic; readonly value87: Dynamic }, objectDrop?: Dynamic): Dynamic {
+export function dropCanvasObjectIntoArtboard(deps: { readonly target: { readonly getArtboardTitle: Dynamic; readonly artboardEntries: Dynamic; readonly componentName: Dynamic; readonly playingFile: Dynamic; readonly fullscreenActive: Dynamic; readonly recordDropTarget: Dynamic; readonly pageContents: Dynamic }; readonly session: { readonly dropInProgress: Dynamic; readonly hoverSession: Dynamic; readonly closeHoverTarget: Dynamic; readonly pendingSelectionCommands: Dynamic; readonly waitForBoundOperation: Dynamic }; readonly history: { readonly waitForDropHistory: Dynamic; readonly inlineHistory: Dynamic }; readonly document: { readonly annotationToHtml: Dynamic; readonly dropCanvasObject: Dynamic; readonly deleteCanvasObjects: Dynamic; readonly manifest: Dynamic }; readonly selection: { readonly focusedFile: Dynamic; readonly current: Dynamic; readonly setSelection: Dynamic; readonly setShownFrameSelection: Dynamic }; readonly feedback: { readonly showToast: Dynamic; readonly showDragToast: Dynamic; readonly clearDragToast: Dynamic } }, objectDrop?: Dynamic): Dynamic {
         let {
           target: targetFile,
           point: dropPoint,
           at: objectBox,
           ctrl: isKeepMode,
         }: Dynamic = objectDrop;
-        if (deps.value345.current || targetFile === deps.value271.current) return false;
-        let targetArtboard: Dynamic = deps.value87.current.artboards.find(
+        if (deps.target.fullscreenActive.current || targetFile === deps.target.playingFile.current) return false;
+        let targetArtboard: Dynamic = deps.target.pageContents.current.artboards.find(
             (candidate?: Dynamic): Dynamic => candidate.file === targetFile,
           ),
-          entry: Dynamic = deps.value177.current.get(targetFile);
+          entry: Dynamic = deps.target.artboardEntries.current.get(targetFile);
         if (
           !targetArtboard ||
           targetArtboard.frameless ||
           !entry ||
-          deps.value202.current ||
-          deps.value155.current > 0
+          deps.session.dropInProgress.current ||
+          deps.session.pendingSelectionCommands.current > 0
         )
           return false;
         let loadMarkup: Dynamic, movedSelection: Dynamic, objectKind: Dynamic;
         if ("note" in objectDrop.object) {
-          let note: Dynamic = (deps.value73.current.annotations ?? []).find(
+          let note: Dynamic = (deps.document.manifest.current.annotations ?? []).find(
             (annotation?: Dynamic): Dynamic => annotation.id === objectDrop.object.note,
           );
           if (!note) return false;
-          let noteMarkup: Dynamic = deps.callback7(note);
+          let noteMarkup: Dynamic = deps.document.annotationToHtml(note);
           if (!noteMarkup) return false;
           loadMarkup = async (): Promise<Dynamic> => noteMarkup;
           movedSelection = {
@@ -1336,10 +1109,10 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
           objectKind = note.kind === "image" ? "image" : "note";
         } else {
           let file: Dynamic = objectDrop.object.file,
-            pieceEntry: Dynamic = deps.value177.current.get(file);
+            pieceEntry: Dynamic = deps.target.artboardEntries.current.get(file);
           if (
             !pieceEntry ||
-            !deps.value73.current.artboards.find(
+            !deps.document.manifest.current.artboards.find(
               (candidate?: Dynamic): Dynamic => candidate.file === file,
             )?.frameless
           )
@@ -1352,14 +1125,14 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
           objectKind = "piece";
         }
         let hoverSession: Dynamic =
-            deps.value203.current?.gestureKey === objectDrop.key
-              ? deps.value203.current
+            deps.session.hoverSession.current?.gestureKey === objectDrop.key
+              ? deps.session.hoverSession.current
               : null,
           isHoverTarget: Dynamic =
             !!hoverSession?.target && hoverSession.target.file === targetFile;
-        hoverSession && !isHoverTarget && deps.value204();
-        deps.value203.current = null;
-        deps.value202.current = true;
+        hoverSession && !isHoverTarget && deps.session.closeHoverTarget();
+        deps.session.hoverSession.current = null;
+        deps.session.dropInProgress.current = true;
         (async (): Promise<Dynamic> => {
           try {
             let objectHtml: Dynamic =
@@ -1373,7 +1146,7 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
                 hoverSession.target.opened.then(
                   (): Dynamic => entry.moveHost(hoverSession.token, "close"),
                 );
-              deps.value188(
+              deps.feedback.showDragToast(
                 objectHtml
                   ? uiMessage("canvas.designCanvas.nothingMovedThisPieceHolds") +
                       String(rootCount) +
@@ -1464,9 +1237,9 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
                         )
                       : openResult;
                 if (dropPlan === timedOutMarker) {
-                  deps.value188(
+                  deps.feedback.showDragToast(
                     uiMessage("canvas.designCanvas.nothingMoved2") +
-                      deps.callback2(targetFile) +
+                      deps.target.getArtboardTitle(targetFile) +
                       " did not answer; try the drag again.",
                   );
                   return;
@@ -1478,7 +1251,7 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
                   : null;
                 if (dropPlan && landingItem) {
                   didCommitViaPlan = true;
-                  let commitResult: Dynamic = await deps.value157({
+                  let commitResult: Dynamic = await deps.document.dropCanvasObject({
                     token: dragToken,
                     plans: new Map(),
                     unanswered: [],
@@ -1523,7 +1296,7 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
             if (!didLand && didCommitViaPlan) return;
             let insertedTids: Dynamic = null;
             if (!didLand) {
-              let historyGroup: Dynamic = deps.value432.current?.group([targetFile], {
+              let historyGroup: Dynamic = deps.history.inlineHistory.current?.group([targetFile], {
                 bound: dragToken,
               });
               try {
@@ -1538,7 +1311,7 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
                 didLand = newTids.length > 0;
                 didLand &&
                   ((insertedTids = newTids),
-                  entry.setShownSelection(newTids, deps.value19(targetFile)));
+                  entry.setShownSelection(newTids, deps.target.componentName(targetFile)));
               } finally {
                 historyGroup?.settled(targetFile);
                 historyGroup?.end();
@@ -1554,21 +1327,18 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
               }
             }
             if (!didLand) {
-              deps.value188(uiMessage("canvas.designCanvas.couldNotMoveNothingChanged"));
+              deps.feedback.showDragToast(uiMessage("canvas.designCanvas.couldNotMoveNothingChanged"));
               return;
             }
-            deps.value276.current = {
-              file: targetFile,
-              at: Date.now(),
-            };
+            deps.target.recordDropTarget(targetFile);
             let selectionAfter: Dynamic = insertedTids
                 ? selectionFromElements(targetFile, {
-                    name: deps.value19(targetFile),
+                    name: deps.target.componentName(targetFile),
                     tids: insertedTids,
                     rect: null,
                     count: insertedTids.length,
                   })
-                : (planSelection ?? deps.selectionRef.current),
+                : (planSelection ?? deps.selection.current.current),
               filteredSelection: Dynamic = filterSelectedAnnotations(
                 filterSelectedArtboards(
                   selectionAfter,
@@ -1577,39 +1347,39 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
                 (noteId?: Dynamic): Dynamic => !movedSelection.notes.has(noteId),
               ),
               flushPromise: Dynamic =
-                movedSelection.files.size > 0 ? deps.value144(dragToken) : null;
-            if (!deps.value459.current(movedSelection, dragToken)) {
-              await deps.value213(targetFile, dragToken, objectKind);
-              deps.value188(
+                movedSelection.files.size > 0 ? deps.session.waitForBoundOperation(dragToken) : null;
+            if (!deps.document.deleteCanvasObjects.current(movedSelection, dragToken)) {
+              await deps.history.waitForDropHistory(targetFile, dragToken, objectKind);
+              deps.feedback.showDragToast(
                 uiMessage("canvas.designCanvas.nothingMovedThe") +
                   objectKind +
                   " could not leave the canvas.",
               );
               return;
             }
-            deps.value189(uiMessage("canvas.designCanvas.movedInto") + deps.callback2(targetFile));
+            deps.feedback.clearDragToast(uiMessage("canvas.designCanvas.movedInto") + deps.target.getArtboardTitle(targetFile));
             if (flushPromise) {
-              deps.value155.current++;
+              deps.session.pendingSelectionCommands.current++;
               try {
                 await flushPromise;
               } finally {
-                deps.value155.current--;
+                deps.session.pendingSelectionCommands.current--;
               }
             }
-            deps.setSelection(filteredSelection);
+            deps.selection.setSelection(filteredSelection);
             (window as Dynamic).setTimeout((): Dynamic => {
-              deps.setSelection(filteredSelection);
+              deps.selection.setSelection(filteredSelection);
               let shownTids: Dynamic =
                 filteredSelection.elements.get(targetFile)?.tids ?? null;
-              targetFile === deps.focusedFileRef.current
-                ? deps.setShownFrameSelection(targetFile, shownTids)
+              targetFile === deps.selection.focusedFile.current
+                ? deps.selection.setShownFrameSelection(targetFile, shownTids)
                 : entry.setShownSelection(
                     shownTids,
-                    shownTids ? deps.value19(targetFile) : null,
+                    shownTids ? deps.target.componentName(targetFile) : null,
                   );
             }, 160);
           } catch (error: Dynamic) {
-            deps.showToast(
+            deps.feedback.showToast(
               uiMessage("canvas.designCanvas.couldnTFinishTheDrop2") + String(error),
               "error",
             );
@@ -1621,26 +1391,26 @@ export function dropCanvasObjectIntoArtboard(deps: { readonly callback2: Dynamic
                 .catch((): Dynamic => false);
             }
           } finally {
-            deps.value202.current = false;
+            deps.session.dropInProgress.current = false;
           }
         })();
         return true;
       }
 
 /** 从聚焦画板拖出的元素松手时运行：落在空白处则新建画板，落在另一画板则移动或复制进去，失败时回滚并提示。 */
-export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGesture: Dynamic; readonly callback2: Dynamic; readonly callback3: Dynamic; readonly doc: Dynamic; readonly setSelection: Dynamic; readonly showToast: Dynamic; readonly supportsLoadState: Dynamic; readonly value125: Dynamic; readonly value127: Dynamic; readonly value155: Dynamic; readonly value156: Dynamic; readonly value157: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value189: Dynamic; readonly value19: Dynamic; readonly value202: Dynamic; readonly value203: Dynamic; readonly value271: Dynamic; readonly value276: Dynamic; readonly value345: Dynamic; readonly value396: Dynamic; readonly value432: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value87: Dynamic; readonly value98: Dynamic }, elementDrag?: Dynamic,
+export function dropElementDragAtCanvasPoint(deps: { readonly target: { readonly getArtboardTitle: Dynamic; readonly activeArtboard: Dynamic; readonly artboardEntries: Dynamic; readonly componentName: Dynamic; readonly playingFile: Dynamic; readonly fullscreenActive: Dynamic; readonly recordDropTarget: Dynamic; readonly pageContents: Dynamic }; readonly session: { readonly dropInProgress: Dynamic; readonly hoverSession: Dynamic; readonly pendingSelectionCommands: Dynamic; readonly runSelectionCommand: Dynamic }; readonly history: { readonly recordManifestHistory: Dynamic; readonly inlineHistory: Dynamic }; readonly document: { readonly savePageSelection: Dynamic; readonly doc: Dynamic; readonly supportsLoadState: Dynamic; readonly manifest: Dynamic; readonly persistManifest: Dynamic; readonly markArtboardDropped: Dynamic; readonly dropCanvasObject: Dynamic }; readonly selection: { readonly abandonGesture: Dynamic; readonly setSelection: Dynamic; readonly clearFramePick: Dynamic }; readonly feedback: { readonly showToast: Dynamic; readonly showDragToast: Dynamic; readonly clearDragToast: Dynamic } }, elementDrag?: Dynamic,
         dropX?: Dynamic,
         dropY?: Dynamic,
         isCopy?: Dynamic): Dynamic {
         let hoverSession: Dynamic =
-          deps.value203.current?.gestureKey === elementDrag.key
-            ? deps.value203.current
+          deps.session.hoverSession.current?.gestureKey === elementDrag.key
+            ? deps.session.hoverSession.current
             : null;
-        deps.value203.current = null;
+        deps.session.hoverSession.current = null;
         let closeHoverTarget: Dynamic = (keepFile?: Dynamic): Dynamic => {
           let hoverTarget: Dynamic = hoverSession?.target;
           if (!hoverSession || !hoverTarget || hoverTarget.file === keepFile) return;
-          let targetEntry: Dynamic = deps.value177.current.get(hoverTarget.file);
+          let targetEntry: Dynamic = deps.target.artboardEntries.current.get(hoverTarget.file);
           targetEntry?.dropPlanClear(hoverSession.token);
           hoverSession.closing.set(
             hoverTarget.file,
@@ -1650,35 +1420,35 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
           );
           hoverSession.target = null;
         };
-        if (deps.value345.current) {
+        if (deps.target.fullscreenActive.current) {
           closeHoverTarget();
-          deps.value188(
+          deps.feedback.showDragToast(
             uiMessage("canvas.designCanvas.nothingMovedOnlyThisArtboard"),
           );
           return;
         }
-        let targetArtboard: Dynamic = [...deps.value87.current.artboards]
+        let targetArtboard: Dynamic = [...deps.target.pageContents.current.artboards]
           .reverse()
           .find(
             (candidate?: Dynamic): Dynamic =>
-              !(candidate.frameless && candidate.file !== deps.value125.current) &&
+              !(candidate.frameless && candidate.file !== deps.target.activeArtboard.current) &&
               dropX >= candidate.x &&
               dropX <= candidate.x + candidate.w &&
               dropY >= candidate.y &&
               dropY <= candidate.y + candidate.h,
           );
         closeHoverTarget(targetArtboard?.file);
-        if (targetArtboard != null && targetArtboard.file === deps.value271.current) {
+        if (targetArtboard != null && targetArtboard.file === deps.target.playingFile.current) {
           closeHoverTarget();
-          deps.value188(
+          deps.feedback.showDragToast(
             uiMessage("canvas.designCanvas.nothingMovedThatArtboardIs"),
           );
           return;
         }
         if (!targetArtboard) {
-          let sourceEntry: Dynamic = deps.value177.current.get(elementDrag.file);
-          if (!sourceEntry || deps.value202.current || deps.value155.current > 0) return;
-          deps.value202.current = true;
+          let sourceEntry: Dynamic = deps.target.artboardEntries.current.get(elementDrag.file);
+          if (!sourceEntry || deps.session.dropInProgress.current || deps.session.pendingSelectionCommands.current > 0) return;
+          deps.session.dropInProgress.current = true;
           let releaseLock: Dynamic;
           (async (): Promise<Dynamic> => {
             try {
@@ -1696,17 +1466,17 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                   lift: liftBox,
                 });
               if (!markup) {
-                deps.value188(
+                deps.feedback.showDragToast(
                   uiMessage("canvas.designCanvas.nothingMovedRepeatedOrRoot"),
                 );
                 return;
               }
-              let files: Dynamic = deps.doc.content().files;
+              let files: Dynamic = deps.document.doc.content().files;
               if (
                 Object.keys(files).length >=
                 PlatformFileContentFilesValue
               ) {
-                deps.showToast(
+                deps.feedback.showToast(
                   uiMessage("canvas.designCanvas.couldnTMakeANew") +
                     String(PlatformFileContentFilesValue) +
                     "-file limit; delete something first",
@@ -1717,24 +1487,24 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
               await sourceEntry.flushPending();
               let homeSource: Dynamic =
                   (await getKvClient().get(
-                    PlatformFileContentHandler_4(elementDrag.file),
+                    projectFileKey(elementDrag.file),
                   )) ??
                   files[elementDrag.file] ??
                   "",
                 newFile: Dynamic = uniqueArtboardFile(
                   files,
                   "Piece",
-                  deps.supportsLoadState,
+                  deps.document.supportsLoadState,
                 ),
                 newDocument: Dynamic = buildDcDocument(
                   markup,
                   typeof homeSource == "string" ? homeSource : "",
                 );
               await getKvClient().set(
-                PlatformFileContentHandler_4(newFile),
+                projectFileKey(newFile),
                 newDocument,
               );
-              deps.value127.current.set(newFile, Date.now());
+              deps.document.markArtboardDropped(newFile);
               let state: Dynamic = {
                   file: newFile,
                   x: Math.round(dropX - liftBox.gx),
@@ -1755,17 +1525,17 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                   ),
                   title: uniqueElementArtboardTitle(
                     elementDrag.label,
-                    deps.value73.current.artboards,
+                    deps.document.manifest.current.artboards,
                   ),
                   frameless: true,
-                  ...deps.callback3(),
+                  ...deps.document.savePageSelection(),
                 },
                 historyToken: Dynamic = isCopy
                   ? undefined
                   : randomSessionToken();
               isCopy ||
-                (releaseLock = deps.value156(dragDropLockKind));
-              deps.value396.current(
+                (releaseLock = deps.session.runSelectionCommand(dragDropLockKind));
+              deps.history.recordManifestHistory.current(
                 {
                   kind: "add",
                   entries: [
@@ -1780,16 +1550,16 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                 undefined,
                 historyToken,
               );
-              deps.value98({
+              deps.document.persistManifest({
                 artboards: [
-                  ...deps.value73.current.artboards.filter(
+                  ...deps.document.manifest.current.artboards.filter(
                     (candidate?: Dynamic): Dynamic => candidate.file !== newFile,
                   ),
                   state,
                 ],
               });
               if (!isCopy) {
-                let historyGroup: Dynamic = deps.value432.current?.group(
+                let historyGroup: Dynamic = deps.history.inlineHistory.current?.group(
                     [elementDrag.file],
                     {
                       bound: historyToken,
@@ -1803,43 +1573,43 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                   historyGroup?.end();
                 }
                 if (!didRemove) {
-                  deps.value188(
+                  deps.feedback.showDragToast(
                     uiMessage("canvas.designCanvas.copiedOntoTheCanvasThe"),
                   );
                   return;
                 }
               }
-              deps.value189((isCopy ? "Copied" : "Moved") + " onto the canvas");
-              deps.abandonSelectionGesture();
-              deps.value62();
-              deps.setSelection(
+              deps.feedback.clearDragToast((isCopy ? "Copied" : "Moved") + " onto the canvas");
+              deps.selection.abandonGesture();
+              deps.selection.clearFramePick();
+              deps.selection.setSelection(
                 selectionFromArtboards(new Set([newFile])),
               );
             } catch (error: Dynamic) {
-              deps.showToast(
+              deps.feedback.showToast(
                 uiMessage("canvas.designCanvas.couldnTFinishTheDrop2") + String(error),
                 "error",
               );
             } finally {
               releaseLock?.();
-              deps.value202.current = false;
+              deps.session.dropInProgress.current = false;
             }
           })();
           return;
         }
         if (targetArtboard.file === elementDrag.file) {
-          deps.value188(
+          deps.feedback.showDragToast(
             uiMessage("canvas.designCanvas.releasedOverTheSameArtboard"),
           );
           return;
         }
-        let entry: Dynamic = deps.value177.current.get(elementDrag.file),
-          targetFrameEntry: Dynamic = deps.value177.current.get(targetArtboard.file);
-        if (!entry || !targetFrameEntry || deps.value202.current || deps.value155.current > 0) {
+        let entry: Dynamic = deps.target.artboardEntries.current.get(elementDrag.file),
+          targetFrameEntry: Dynamic = deps.target.artboardEntries.current.get(targetArtboard.file);
+        if (!entry || !targetFrameEntry || deps.session.dropInProgress.current || deps.session.pendingSelectionCommands.current > 0) {
           closeHoverTarget();
           return;
         }
-        deps.value202.current = true;
+        deps.session.dropInProgress.current = true;
         (async (): Promise<Dynamic> => {
           let isHoverTarget: Dynamic = hoverSession?.target?.file === targetArtboard.file,
             historyGroup: Dynamic,
@@ -1850,7 +1620,7 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
               vals: await entry.renderDefaults(),
             });
             if (!markup) {
-              deps.value188(
+              deps.feedback.showDragToast(
                 uiMessage("canvas.designCanvas.nothingMovedRepeatedOrRoot"),
               );
               return;
@@ -1924,9 +1694,9 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                         )
                       : openResult;
                 if (dropPlan === timedOutMarker) {
-                  deps.value188(
+                  deps.feedback.showDragToast(
                     uiMessage("canvas.designCanvas.nothingMoved2") +
-                      deps.callback2(targetArtboard.file) +
+                      deps.target.getArtboardTitle(targetArtboard.file) +
                       " did not answer; try the drag again.",
                   );
                   return;
@@ -1938,7 +1708,7 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                   : null;
                 useAbsolutePosition = !landingItem;
                 if (dropPlan && landingItem) {
-                  let commitResult: Dynamic = await deps.value157({
+                  let commitResult: Dynamic = await deps.document.dropCanvasObject({
                     token: dragSessionToken,
                     plans: new Map(),
                     unanswered: [],
@@ -1963,15 +1733,12 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                       endHome: (): Dynamic => {},
                     },
                   });
-                  deps.value276.current = {
-                    file: targetArtboard.file,
-                    at: Date.now(),
-                  };
+                  deps.target.recordDropTarget(targetArtboard.file);
                   didCommit = commitResult.written.includes(targetArtboard.file);
                   didCommit && targetFrameEntry.dropPlanClear(dragSessionToken, true);
                   didCommit &&
                     commitResult.written.includes(elementDrag.file) &&
-                    deps.value189(uiMessage("canvas.designCanvas.movedTo") + deps.callback2(targetArtboard.file));
+                    deps.feedback.clearDragToast(uiMessage("canvas.designCanvas.movedTo") + deps.target.getArtboardTitle(targetArtboard.file));
                   return;
                 }
               } finally {
@@ -1995,7 +1762,7 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                   oy: localY,
                 };
             isCopy ||
-              ((historyGroup = deps.value432.current?.group(
+              ((historyGroup = deps.history.inlineHistory.current?.group(
                 [targetArtboard.file, elementDrag.file],
                 {
                   atomic: true,
@@ -2003,23 +1770,20 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                   waiting: [elementDrag.file],
                 },
               )),
-              (releaseLock = deps.value156(dragDropLockKind)));
+              (releaseLock = deps.session.runSelectionCommand(dragDropLockKind)));
             let insertedTids: Dynamic = useAbsolutePosition
               ? await targetFrameEntry.insertHtml(
                   positionPastedHtml(markup, pasteOffset),
                   "root-end",
                 )
               : await targetFrameEntry.insertHtml(markup, "root-end", pasteOffset);
-            deps.value276.current = {
-              file: targetArtboard.file,
-              at: Date.now(),
-            };
+            deps.target.recordDropTarget(targetArtboard.file);
             if (insertedTids.length === 0) {
-              deps.value188(uiMessage("canvas.designCanvas.couldNotMoveNothingChanged"));
+              deps.feedback.showDragToast(uiMessage("canvas.designCanvas.couldNotMoveNothingChanged"));
               return;
             }
             if (isCopy)
-              deps.value189(
+              deps.feedback.clearDragToast(
                 uiMessage("canvas.designCanvas.copiedTo") + targetArtboard.file.replace(/\.dc\.html$/, ""),
               );
             else {
@@ -2030,27 +1794,27 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                     historyGroup?.discard(targetArtboard.file) ?? null,
                   didUndo: Dynamic = discardHistory
                     ? await targetFrameEntry
-                        .applyHistory(deps.value19(targetArtboard.file), "undo")
+                        .applyHistory(deps.target.componentName(targetArtboard.file), "undo")
                         .catch((): Dynamic => false)
                     : false;
                 discardHistory && !didUndo && discardHistory();
                 didUndo && targetFrameEntry.dropRedo();
-                deps.value188(
+                deps.feedback.showDragToast(
                   didUndo
                     ? uiMessage("canvas.designCanvas.couldNotMoveReverted")
                     : uiMessage("canvas.designCanvas.moveFailedHalfwayCheckBoth"),
                 );
                 return;
               }
-              deps.value189(uiMessage("canvas.designCanvas.movedTo") + deps.callback2(targetArtboard.file));
+              deps.feedback.clearDragToast(uiMessage("canvas.designCanvas.movedTo") + deps.target.getArtboardTitle(targetArtboard.file));
             }
-            deps.abandonSelectionGesture();
-            deps.setSelection(
+            deps.selection.abandonGesture();
+            deps.selection.setSelection(
               setCanvasElementSelection(
                 emptyCanvasSelection,
                 targetArtboard.file,
                 {
-                  name: deps.value19(targetArtboard.file),
+                  name: deps.target.componentName(targetArtboard.file),
                   tids: insertedTids,
                   rect: null,
                   count: insertedTids.length,
@@ -2058,7 +1822,7 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                 false,
               ),
             );
-            targetFrameEntry.setShownSelection(insertedTids, deps.value19(targetArtboard.file));
+            targetFrameEntry.setShownSelection(insertedTids, deps.target.componentName(targetArtboard.file));
           } finally {
             historyGroup?.end();
             releaseLock?.();
@@ -2074,29 +1838,29 @@ export function dropElementDragAtCanvasPoint(deps: { readonly abandonSelectionGe
                   .catch((): Dynamic => false),
               );
             }
-            deps.value202.current = false;
+            deps.session.dropInProgress.current = false;
           }
         })();
       }
 
 /** 画板 iframe 上报元素拖动事件（arm/move/exit/finish/cancel）时运行：维护拖出会话状态，松手时调用 dropElementDragAtCanvasPoint。 */
-export function handleFrameElementDragEvent(deps: { readonly focusedFileRef: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value193: Dynamic; readonly value195: Dynamic; readonly value197: Dynamic; readonly value198: Dynamic; readonly value200: Dynamic; readonly value201: Dynamic; readonly value205: Dynamic; readonly value207: Dynamic; readonly value208: Dynamic; readonly value209: Dynamic; readonly value210: Dynamic; readonly value215: Dynamic; readonly value216: Dynamic; readonly value217: Dynamic; readonly value218: Dynamic; readonly value67: Dynamic }, file?: Dynamic, dragEvent?: Dynamic): Dynamic {
-        let activeDrag: Dynamic = deps.value193.current;
+export function handleFrameElementDragEvent(deps: { readonly target: { readonly focusedFile: Dynamic; readonly artboardEntries: Dynamic }; readonly session: { readonly frameDrag: Dynamic; readonly setStreamDragFile: Dynamic; readonly dragTimer: Dynamic; readonly startHoverSession: Dynamic; readonly updateHoverTarget: Dynamic; readonly clearFrameDrag: Dynamic; readonly finishDragSession: Dynamic; readonly cancelFrameDrag: Dynamic; readonly handleElementDrag: Dynamic; readonly draggedArtboard: Dynamic; readonly hostGesturing: Dynamic }; readonly preview: { readonly setDragPreview: Dynamic; readonly describeDragPreview: Dynamic; readonly prepareDragGhost: Dynamic }; readonly selection: { readonly describeSelection: Dynamic }; readonly document: { readonly manifest: Dynamic }; readonly feedback: { readonly showDragToast: Dynamic } }, file?: Dynamic, dragEvent?: Dynamic): Dynamic {
+        let activeDrag: Dynamic = deps.session.frameDrag.current;
         if (dragEvent.type === "arm") {
           if (
-            file !== deps.focusedFileRef.current ||
-            deps.value218.current ||
+            file !== deps.target.focusedFile.current ||
+            deps.session.hostGesturing.current ||
             (activeDrag &&
               activeDrag.file === file &&
               activeDrag.key !== dragEvent.key &&
-              deps.value208(),
-            deps.value209(),
+              deps.session.clearFrameDrag(),
+            deps.session.finishDragSession(),
             !dragEvent.tids)
           )
             return;
-          let pickedSelection: Dynamic = deps.value217(file, dragEvent.tids);
+          let pickedSelection: Dynamic = deps.selection.describeSelection(file, dragEvent.tids);
           if (!pickedSelection) return;
-          deps.value216.current = {
+          deps.session.draggedArtboard.current = {
             key: dragEvent.key,
             file: file,
             tids: pickedSelection.tids,
@@ -2104,42 +1868,42 @@ export function handleFrameElementDragEvent(deps: { readonly focusedFileRef: Dyn
             box: dragEvent.box,
             label: pickedSelection.label,
           };
-          deps.value198(deps.value216.current);
-          deps.value205(deps.value216.current);
-          deps.value200(file);
-          deps.value201.current && clearTimeout(deps.value201.current);
-          deps.value201.current = setTimeout(deps.value209, 6e4);
+          deps.preview.prepareDragGhost(deps.session.draggedArtboard.current);
+          deps.session.startHoverSession(deps.session.draggedArtboard.current);
+          deps.session.setStreamDragFile(file);
+          deps.session.dragTimer.current && clearTimeout(deps.session.dragTimer.current);
+          deps.session.dragTimer.current = setTimeout(deps.session.finishDragSession, 6e4);
           return;
         }
         if (dragEvent.type === "disarm") {
-          let armedDrag: Dynamic = deps.value216.current;
+          let armedDrag: Dynamic = deps.session.draggedArtboard.current;
           armedDrag &&
             armedDrag.file === file &&
             armedDrag.key === dragEvent.key &&
-            deps.value209();
+            deps.session.finishDragSession();
           activeDrag && activeDrag.file === file && activeDrag.key === dragEvent.key
             ? (activeDrag.pendingDrop &&
-                deps.value188(
+                deps.feedback.showDragToast(
                   uiMessage("canvas.designCanvas.nothingMovedTheArtboardEnded"),
                 ),
-              deps.value208())
-            : !activeDrag && !deps.value216.current && deps.value200(null);
+              deps.session.clearFrameDrag())
+            : !activeDrag && !deps.session.draggedArtboard.current && deps.session.setStreamDragFile(null);
           return;
         }
         if (dragEvent.type === "exit") {
-          if (file !== deps.focusedFileRef.current) return;
+          if (file !== deps.target.focusedFile.current) return;
           if (activeDrag) {
             if (activeDrag.file === file) {
               if (activeDrag.key !== dragEvent.key) return;
               activeDrag.echoed = true;
               let pendingDrop: Dynamic = activeDrag.pendingDrop;
               if (!pendingDrop) {
-                deps.value198(activeDrag);
+                deps.preview.prepareDragGhost(activeDrag);
                 return;
               }
-              deps.value208(true);
-              deps.value177.current.get(file)?.hostDrag("finish", activeDrag.key);
-              deps.value215(
+              deps.session.clearFrameDrag(true);
+              deps.target.artboardEntries.current.get(file)?.hostDrag("finish", activeDrag.key);
+              deps.session.handleElementDrag(
                 activeDrag,
                 pendingDrop.cx,
                 pendingDrop.cy,
@@ -2147,12 +1911,12 @@ export function handleFrameElementDragEvent(deps: { readonly focusedFileRef: Dyn
               );
               return;
             }
-            deps.value208();
+            deps.session.clearFrameDrag();
           }
-          if (deps.value218.current) return;
-          let pickedSelection: Dynamic = deps.value217(file, dragEvent.tids);
+          if (deps.session.hostGesturing.current) return;
+          let pickedSelection: Dynamic = deps.selection.describeSelection(file, dragEvent.tids);
           if (!pickedSelection) return;
-          deps.value193.current = {
+          deps.session.frameDrag.current = {
             key: dragEvent.key,
             file: file,
             tids: pickedSelection.tids,
@@ -2166,10 +1930,10 @@ export function handleFrameElementDragEvent(deps: { readonly focusedFileRef: Dyn
             echoed: true,
             pendingDrop: null,
           };
-          deps.value198(deps.value193.current);
-          deps.value200(file);
-          deps.value201.current && clearTimeout(deps.value201.current);
-          deps.value201.current = setTimeout(deps.value210, 3e4);
+          deps.preview.prepareDragGhost(deps.session.frameDrag.current);
+          deps.session.setStreamDragFile(file);
+          deps.session.dragTimer.current && clearTimeout(deps.session.dragTimer.current);
+          deps.session.dragTimer.current = setTimeout(deps.session.cancelFrameDrag, 3e4);
           return;
         }
         if (
@@ -2179,10 +1943,10 @@ export function handleFrameElementDragEvent(deps: { readonly focusedFileRef: Dyn
         )
           return;
         if (dragEvent.type === "cancel") {
-          deps.value208();
+          deps.session.clearFrameDrag();
           return;
         }
-        let artboard: Dynamic = deps.value67.artboards.find(
+        let artboard: Dynamic = deps.document.manifest.artboards.find(
           (candidate?: Dynamic): Dynamic => candidate.file === file,
         );
         if (!artboard) return;
@@ -2200,41 +1964,41 @@ export function handleFrameElementDragEvent(deps: { readonly focusedFileRef: Dyn
           )
             activeDrag.moves.shift();
           activeDrag.moves.length > 120 && (activeDrag.latched = true);
-          deps.value201.current && clearTimeout(deps.value201.current);
-          deps.value201.current = setTimeout(deps.value210, 3e4);
+          deps.session.dragTimer.current && clearTimeout(deps.session.dragTimer.current);
+          deps.session.dragTimer.current = setTimeout(deps.session.cancelFrameDrag, 3e4);
           activeDrag.latched ||
-            deps.value195(deps.value197(activeDrag, canvasX, canvasY, dragEvent.alt));
+            deps.preview.setDragPreview(deps.preview.describeDragPreview(activeDrag, canvasX, canvasY, dragEvent.alt));
           activeDrag.ctrl = dragEvent.ctrl;
-          deps.value207(activeDrag, canvasX, canvasY, dragEvent.alt);
+          deps.session.updateHoverTarget(activeDrag, canvasX, canvasY, dragEvent.alt);
           return;
         }
         let hasMoved: Dynamic = activeDrag.moves.length > 0;
-        deps.value208(hasMoved);
+        deps.session.clearFrameDrag(hasMoved);
         hasMoved &&
           ((activeDrag.ctrl = dragEvent.ctrl),
-          deps.value215(activeDrag, canvasX, canvasY, dragEvent.alt));
+          deps.session.handleElementDrag(activeDrag, canvasX, canvasY, dragEvent.alt));
       }
 
 /** 外壳侧指针接管元素拖动后运行（onHostDrag：stale/move/exit/cancel/finish）：更新拖出会话与幽灵位置，松手时提交落点。 */
-export function handleHostElementDragEvent(deps: { readonly focusedFileRef: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value193: Dynamic; readonly value195: Dynamic; readonly value197: Dynamic; readonly value201: Dynamic; readonly value207: Dynamic; readonly value208: Dynamic; readonly value209: Dynamic; readonly value210: Dynamic; readonly value215: Dynamic; readonly value216: Dynamic }, eventType?: Dynamic,
+export function handleHostElementDragEvent(deps: { readonly target: { readonly focusedFile: Dynamic; readonly artboardEntries: Dynamic }; readonly session: { readonly frameDrag: Dynamic; readonly dragTimer: Dynamic; readonly updateHoverTarget: Dynamic; readonly clearFrameDrag: Dynamic; readonly finishDragSession: Dynamic; readonly cancelFrameDrag: Dynamic; readonly handleElementDrag: Dynamic; readonly draggedArtboard: Dynamic }; readonly preview: { readonly setDragPreview: Dynamic; readonly describeDragPreview: Dynamic }; readonly feedback: { readonly showDragToast: Dynamic } }, eventType?: Dynamic,
         pointX?: Dynamic,
         pointY?: Dynamic,
         isAlt?: Dynamic,
         isCtrl: Dynamic = false): Dynamic {
-        let activeDrag: Dynamic = deps.value193.current,
-          armedDrag: Dynamic = deps.value216.current,
+        let activeDrag: Dynamic = deps.session.frameDrag.current,
+          armedDrag: Dynamic = deps.session.draggedArtboard.current,
           dragSession: Dynamic = activeDrag ?? armedDrag,
           frameEntry: Dynamic = dragSession
-            ? deps.value177.current.get(dragSession.file)
+            ? deps.target.artboardEntries.current.get(dragSession.file)
             : undefined;
         if (!activeDrag?.pendingDrop) {
           if (eventType === "stale") {
-            deps.value210();
+            deps.session.cancelFrameDrag();
             return;
           }
           if (eventType === "move") {
             if (!activeDrag) {
-              if (!armedDrag || armedDrag.file !== deps.focusedFileRef.current)
+              if (!armedDrag || armedDrag.file !== deps.target.focusedFile.current)
                 return;
               activeDrag = {
                 ...armedDrag,
@@ -2246,26 +2010,26 @@ export function handleHostElementDragEvent(deps: { readonly focusedFileRef: Dyna
                 echoed: false,
                 pendingDrop: null,
               };
-              deps.value193.current = activeDrag;
+              deps.session.frameDrag.current = activeDrag;
               frameEntry?.hostDrag("exit", armedDrag.key, isAlt);
             }
             activeDrag.moves.push(Date.now());
             activeDrag.moves.length > 240 && activeDrag.moves.shift();
-            deps.value201.current && clearTimeout(deps.value201.current);
-            deps.value201.current = setTimeout(deps.value210, 3e4);
-            deps.value195(deps.value197(activeDrag, pointX, pointY, isAlt));
+            deps.session.dragTimer.current && clearTimeout(deps.session.dragTimer.current);
+            deps.session.dragTimer.current = setTimeout(deps.session.cancelFrameDrag, 3e4);
+            deps.preview.setDragPreview(deps.preview.describeDragPreview(activeDrag, pointX, pointY, isAlt));
             activeDrag.ctrl = isCtrl;
-            deps.value207(activeDrag, pointX, pointY, isAlt);
+            deps.session.updateHoverTarget(activeDrag, pointX, pointY, isAlt);
             return;
           }
-          deps.value209();
+          deps.session.finishDragSession();
           if (!activeDrag) {
             armedDrag && frameEntry?.hostDrag("cancel", armedDrag.key);
             return;
           }
           activeDrag.ctrl = isCtrl;
           if (eventType === "cancel" || activeDrag.moves.length === 0) {
-            deps.value208();
+            deps.session.clearFrameDrag();
             frameEntry?.hostDrag("cancel", activeDrag.key);
             return;
           }
@@ -2275,19 +2039,19 @@ export function handleHostElementDragEvent(deps: { readonly focusedFileRef: Dyna
               cy: pointY,
               alt: isAlt,
             };
-            deps.value195(null);
-            deps.value201.current && clearTimeout(deps.value201.current);
-            deps.value201.current = setTimeout((): Dynamic => {
-              deps.value193.current?.pendingDrop &&
-                deps.value188(
+            deps.preview.setDragPreview(null);
+            deps.session.dragTimer.current && clearTimeout(deps.session.dragTimer.current);
+            deps.session.dragTimer.current = setTimeout((): Dynamic => {
+              deps.session.frameDrag.current?.pendingDrop &&
+                deps.feedback.showDragToast(
                   uiMessage("canvas.designCanvas.nothingMovedTheArtboardDid"),
                 );
-              deps.value210();
+              deps.session.cancelFrameDrag();
             }, 1500);
             return;
           }
-          deps.value208(true);
+          deps.session.clearFrameDrag(true);
           frameEntry?.hostDrag("finish", activeDrag.key);
-          deps.value215(activeDrag, pointX, pointY, isAlt);
+          deps.session.handleElementDrag(activeDrag, pointX, pointY, isAlt);
         }
       }

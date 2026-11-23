@@ -144,7 +144,7 @@ function PendingUploadFiles({
                   size={"sm"}
                   iconOnly={true}
                   icon={"X"}
-                  aria-label={uiMessage("design-system.fileDrop.remove2", { value1: String(file.name) })}
+                  aria-label={uiMessage("design-system.fileDrop.remove2", { subject: String(file.name) })}
                   tooltip={uiMessage("design-system.fileDrop.remove")}
                   onClick={() => onRemove(fileIndex)}
                   data-testid={testid + "-remove-" + String(fileIndex)}

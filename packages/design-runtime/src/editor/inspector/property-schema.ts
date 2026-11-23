@@ -11,8 +11,8 @@ var InspectorPropertySchemaItems: Dynamic;
 var InspectorPropertySchemaTextPattern: Dynamic;
 var InspectorPropertySchemaBackdropFilterConfig: Dynamic;
 var InspectorPropertySchemaHandler: Dynamic;
-var InspectorPropertySchemaHandler_2: Dynamic;
-var InspectorPropertySchemaItems_2: Dynamic;
+var selectPropertySpec: Dynamic;
+var propertySpecifications: Dynamic;
 var InspectorPropertySchemaCache: Dynamic;
 var InspectorPropertySchemaCursorPointerEventsObjectFitValues: Dynamic;
 function hasTextBackgroundClip(getValue?: Dynamic): Dynamic {
@@ -53,9 +53,9 @@ export {
   InspectorPropertySchemaCache,
   InspectorPropertySchemaCursorPointerEventsObjectFitValues,
   InspectorPropertySchemaHandler,
-  InspectorPropertySchemaHandler_2,
+  selectPropertySpec,
   InspectorPropertySchemaItems,
-  InspectorPropertySchemaItems_2,
+  propertySpecifications,
   InspectorPropertySchemaTextPattern,
   normalizePropertyNumber,
 };
@@ -93,7 +93,7 @@ export function installEditorInspectorPropertySchema(): () => void {
       unit: "px",
       ...extraSpec,
     });
-    InspectorPropertySchemaHandler_2 = (
+    selectPropertySpec = (
       prop?: Dynamic,
       defaultLabel?: Dynamic,
       section?: Dynamic,
@@ -107,7 +107,7 @@ export function installEditorInspectorPropertySchema(): () => void {
       options: choices,
       ...extraSpec,
     });
-    InspectorPropertySchemaItems_2 = [
+    propertySpecifications = [
       {
         prop: "font-family",
         get label() { return uiMessage("inspector.propertySchema.font"); },
@@ -173,7 +173,7 @@ export function installEditorInspectorPropertySchema(): () => void {
         options: ["left", "center", "right", "justify"],
         defaultValue: "left",
       },
-      InspectorPropertySchemaHandler_2(
+      selectPropertySpec(
         "text-transform",
         "Case",
         "typography",
@@ -204,7 +204,7 @@ export function installEditorInspectorPropertySchema(): () => void {
         options: ["row", "column", "row-reverse", "column-reverse"],
         defaultValue: "row",
       },
-      InspectorPropertySchemaHandler_2(
+      selectPropertySpec(
         "flex-wrap",
         "Wrap",
         "layout",
@@ -287,7 +287,7 @@ export function installEditorInspectorPropertySchema(): () => void {
         max: 12,
         get hint() { return uiMessage("inspector.propertySchema.trackCountEqualRowsUnsetLetsRowsSizeToContent"); },
       },
-      InspectorPropertySchemaHandler_2(
+      selectPropertySpec(
         "position",
         "",
         "position",
@@ -519,7 +519,7 @@ export function installEditorInspectorPropertySchema(): () => void {
           defaultValue: "0px",
         },
       ),
-      InspectorPropertySchemaHandler_2(
+      selectPropertySpec(
         "border-style",
         uiMessage("inspector.propertySchema.borderStyle"),
         "border",
@@ -534,7 +534,7 @@ export function installEditorInspectorPropertySchema(): () => void {
         editor: "color",
         section: "border",
       },
-      InspectorPropertySchemaHandler_2(
+      selectPropertySpec(
         "overflow",
         "Overflow",
         "advanced",
@@ -582,7 +582,7 @@ export function installEditorInspectorPropertySchema(): () => void {
       },
     ];
     InspectorPropertySchemaCache = new Map(
-      InspectorPropertySchemaItems_2.map(
+      propertySpecifications.map(
         (spec?: Dynamic): Dynamic => [spec.prop, spec],
       ),
     );

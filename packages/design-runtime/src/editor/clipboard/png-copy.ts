@@ -6,7 +6,7 @@ import { dataUrlToBytes } from "../../export/capture-warnings";
 import { downloadsCapabilityDeclared } from "../../export/downloads";
 import { capabilityTimeoutMs, hasCapabilityLoader, requestHostCapability } from "../../platform/host-capabilities";
 
-var HttpWwwW3Org2000SvgValue_2: Dynamic;
+var svgNamespaceUriForCopy: Dynamic;
 var HttpWwwW3Org1999XlinkValue: Dynamic;
 var HttpWwwW3OrgXML1998NamespaceValue: Dynamic;
 var HttpWwwW3Org2000XmlnsValue: Dynamic;
@@ -96,9 +96,9 @@ export {
   ClipboardPngCopyDataImagePattern,
   ClipboardPngCopyPattern,
   ClipboardPngCopySubscribers,
-  ClipboardPngCopyUrlAttributeSet as ClipboardPngCopySubscribers_2,
+  ClipboardPngCopyUrlAttributeSet,
   HttpWwwW3Org1999XlinkValue,
-  HttpWwwW3Org2000SvgValue_2,
+  svgNamespaceUriForCopy,
   HttpWwwW3Org2000XmlnsValue,
   HttpWwwW3OrgXML1998NamespaceValue,
   pngDataUrlToBlob,
@@ -107,7 +107,7 @@ export {
 };
 export function installEditorClipboardPngCopy(): () => void {
   return () => {
-    HttpWwwW3Org2000SvgValue_2 = "http://www.w3.org/2000/svg";
+    svgNamespaceUriForCopy = "http://www.w3.org/2000/svg";
     HttpWwwW3Org1999XlinkValue = "http://www.w3.org/1999/xlink";
     HttpWwwW3OrgXML1998NamespaceValue = "http://www.w3.org/XML/1998/namespace";
     HttpWwwW3Org2000XmlnsValue = "http://www.w3.org/2000/xmlns/";

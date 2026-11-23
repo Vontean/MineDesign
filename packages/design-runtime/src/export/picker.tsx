@@ -121,7 +121,7 @@ function describeExportScaleOption(
   if (value === undefined)
     return {
       offered: true,
-      get title() { return uiMessage("canvas.picker.exportAt", { value1: String(String(scale)) }); },
+      get title() { return uiMessage("canvas.picker.exportAt", { scale: String(String(scale)) }); },
     };
   if (artboards.length > 1) {
     let unsupportedArtboard: Dynamic = artboards.find(

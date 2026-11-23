@@ -7,7 +7,7 @@ import type {
 } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { Icon, initializeComponentsIcon_2 } from "./icon";
+import { Icon, initializeIconSizeMetrics } from "./icon";
 import { initializeDomSelectionPrevention, withSelectionPrevention } from "../dom/selection-prevention";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { initializeNpm__base_ui_react_iqe, initializeNpm_clsx_xh, load_react, load_react_jsx_runtime, npm_clsx_Ea, npm_Collapsible_a1 } from "../../dependencies";
@@ -49,7 +49,7 @@ export function installCdsComponentsCollapsible(): () => void {
 
       initializeClassNames();
       initializeDomSelectionPrevention();
-      initializeComponentsIcon_2();
+      initializeIconSizeMetrics();
       reactComponentsCollapsible = toModuleNamespace(
         load_react(),
       );

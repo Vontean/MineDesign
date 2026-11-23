@@ -18,75 +18,75 @@ function createDraftEmitter(
   path?: Dynamic,
   now: Dynamic = Date.now,
 ): Dynamic {
-  let value: Dynamic,
-    flag: Dynamic = false,
-    index: Dynamic = 0,
-    text: Dynamic = "",
-    value2: Dynamic = null,
-    index2: Dynamic = 0,
-    count: Dynamic = 250,
-    value3: Dynamic,
-    flag2: Dynamic = false;
-  resolveDraftChannel().then((input?: Dynamic): Dynamic => {
-    value = input;
-    input === null || typeof input.emit != "function"
-      ? (flag = true)
-      : value4(0);
+  let channel: Dynamic,
+    disabled: Dynamic = false,
+    sequence: Dynamic = 0,
+    draftText: Dynamic = "",
+    lastSentText: Dynamic = null,
+    lastSentAt: Dynamic = 0,
+    emitIntervalMs: Dynamic = 250,
+    timer: Dynamic,
+    ended: Dynamic = false;
+  resolveDraftChannel().then((resolvedChannel?: Dynamic): Dynamic => {
+    channel = resolvedChannel;
+    resolvedChannel === null || typeof resolvedChannel.emit != "function"
+      ? (disabled = true)
+      : scheduleEmit(0);
   });
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
-    value
-      ?.emit?.(DRAFT_EVENT_NAME, input)
-      .catch((input2?: Dynamic): Dynamic => {
-        input2?.code !== "upstream_error" && (flag = true);
+  let emit: Dynamic = (payload?: Dynamic): Dynamic => {
+    channel
+      ?.emit?.(DRAFT_EVENT_NAME, payload)
+      .catch((error?: Dynamic): Dynamic => {
+        error?.code !== "upstream_error" && (disabled = true);
       });
   };
-  function value4(input?: Dynamic): Dynamic {
-    flag ||
-      flag2 ||
-      value3 !== undefined ||
-      value === undefined ||
-      (value3 = setTimeout(
+  function scheduleEmit(delayMs?: Dynamic): Dynamic {
+    disabled ||
+      ended ||
+      timer !== undefined ||
+      channel === undefined ||
+      (timer = setTimeout(
         (): Dynamic => {
-          value3 = undefined;
-          if (flag || flag2) return;
-          if (text === value2 && now() - index2 < DRAFT_INITIAL_TIMEOUT_MS)
-            return value4(DRAFT_INITIAL_TIMEOUT_MS - (now() - index2));
-          let value5: Dynamic = text.match(/[\s\S]{1,1000}/g) ?? [""],
-            value6: Dynamic = Math.min(value5.length, DRAFT_EMIT_MIN_CHARS),
-            value7: Dynamic = index++;
-          value2 = text;
-          index2 = now();
-          count = Math.max(250, 200 * value6);
-          value5.slice(0, value6).forEach(
-            (input2?: Dynamic, options?: Dynamic): Dynamic =>
-              callback({
+          timer = undefined;
+          if (disabled || ended) return;
+          if (draftText === lastSentText && now() - lastSentAt < DRAFT_INITIAL_TIMEOUT_MS)
+            return scheduleEmit(DRAFT_INITIAL_TIMEOUT_MS - (now() - lastSentAt));
+          let chunks: Dynamic = draftText.match(/[\s\S]{1,1000}/g) ?? [""],
+            chunkCount: Dynamic = Math.min(chunks.length, DRAFT_EMIT_MIN_CHARS),
+            frameSequence: Dynamic = sequence++;
+          lastSentText = draftText;
+          lastSentAt = now();
+          emitIntervalMs = Math.max(250, 200 * chunkCount);
+          chunks.slice(0, chunkCount).forEach(
+            (chunk?: Dynamic, chunkIndex?: Dynamic): Dynamic =>
+              emit({
                 s: path,
-                n: value7,
-                i: options,
-                k: value6,
-                h: input2,
+                n: frameSequence,
+                i: chunkIndex,
+                k: chunkCount,
+                h: chunk,
               }),
           );
-          value4();
+          scheduleEmit();
         },
-        input ?? Math.max(0, count - (now() - index2)),
+        delayMs ?? Math.max(0, emitIntervalMs - (now() - lastSentAt)),
       ));
   }
   return {
-    frame(input: Dynamic): Dynamic {
-      text = input.slice(0, DRAFT_EMIT_MIN_GAP_MS * DRAFT_EMIT_MIN_CHARS);
-      value3 !== undefined &&
-        text !== value2 &&
-        (clearTimeout(value3), (value3 = undefined));
-      value4();
+    frame(nextText: Dynamic): Dynamic {
+      draftText = nextText.slice(0, DRAFT_EMIT_MIN_GAP_MS * DRAFT_EMIT_MIN_CHARS);
+      timer !== undefined &&
+        draftText !== lastSentText &&
+        (clearTimeout(timer), (timer = undefined));
+      scheduleEmit();
     },
     end(): Dynamic {
-      flag2 ||
-        ((flag2 = true),
-        value3 !== undefined && clearTimeout(value3),
-        !flag &&
-          index > 0 &&
-          callback({
+      ended ||
+        ((ended = true),
+        timer !== undefined && clearTimeout(timer),
+        !disabled &&
+          sequence > 0 &&
+          emit({
             s: path,
             end: 1,
           }));
@@ -127,10 +127,10 @@ function subscribeDraftPreviews(
   resolveChannel().then((input?: Dynamic): Dynamic => {
     if (!(flag || input === null || typeof input.on != "function"))
       try {
-        value = input.on(DRAFT_EVENT_NAME, (input2?: Dynamic): Dynamic => {
-          let data: Dynamic = input2.data;
+        value = input.on(DRAFT_EVENT_NAME, (event?: Dynamic): Dynamic => {
+          let data: Dynamic = event.data;
           if (
-            input2.sameTab === true ||
+            event.sameTab === true ||
             data === null ||
             typeof data != "object" ||
             typeof data.s != "string" ||
@@ -140,24 +140,24 @@ function subscribeDraftPreviews(
               activePreviews.size >= DRAFT_MAX_ACTIVE_FILES)
           )
             return;
-          let value2: Dynamic =
-              typeof input2.peer == "string" ? input2.peer : "",
-            value3: Dynamic =
-              typeof input2.by == "string" && input2.by !== ""
-                ? "u:" + input2.by
-                : "p:" + value2,
-            entry: Dynamic = tombstones.get(value3 + "\0" + data.s);
+          let peer: Dynamic =
+              typeof event.peer == "string" ? event.peer : "",
+            sender: Dynamic =
+              typeof event.by == "string" && event.by !== ""
+                ? "u:" + event.by
+                : "p:" + peer,
+            entry: Dynamic = tombstones.get(sender + "\0" + data.s);
           if (entry !== undefined) {
             if (now() < entry) return;
-            tombstones.delete(value3 + "\0" + data.s);
+            tombstones.delete(sender + "\0" + data.s);
           }
           if (data.end !== undefined) {
-            activePreviews.get(data.s)?.peer === value2 &&
+            activePreviews.get(data.s)?.peer === peer &&
               (activePreviews.delete(data.s),
               onPreview({
                 path: data.s,
                 html: null,
-                peer: value2,
+                peer: peer,
               }));
             return;
           }
@@ -173,56 +173,56 @@ function subscribeDraftPreviews(
             data.h.length > DRAFT_EMIT_MIN_GAP_MS
           )
             return;
-          let entry2: Dynamic = activePreviews.get(data.s);
+          let preview: Dynamic = activePreviews.get(data.s);
           if (
-            entry2 !== undefined &&
-            entry2.who === value3 &&
-            now() - entry2.since >= DRAFT_MAX_LIFETIME_MS
+            preview !== undefined &&
+            preview.who === sender &&
+            now() - preview.since >= DRAFT_MAX_LIFETIME_MS
           ) {
-            expirePreview(data.s, entry2);
+            expirePreview(data.s, preview);
             return;
           }
           if (
-            (entry2 !== undefined &&
-              entry2.peer !== value2 &&
-              now() - entry2.seen < DRAFT_HEARTBEAT_MS) ||
-            ((entry2 === undefined || entry2.peer !== value2) &&
-              ((entry2 = {
-                peer: value2,
-                who: value3,
+            (preview !== undefined &&
+              preview.peer !== peer &&
+              now() - preview.seen < DRAFT_HEARTBEAT_MS) ||
+            ((preview === undefined || preview.peer !== peer) &&
+              ((preview = {
+                peer: peer,
+                who: sender,
                 n: -1,
                 parts: new Map(),
                 k: 0,
                 seen: now(),
                 moved: now(),
                 since:
-                  entry2 !== undefined && entry2.who === value3
-                    ? entry2.since
+                  preview !== undefined && preview.who === sender
+                    ? preview.since
                     : now(),
                 last: "\0",
               }),
-              activePreviews.set(data.s, entry2)),
-            (entry2.seen = now()),
-            data.n < entry2.n) ||
-            (data.n > entry2.n &&
-              ((entry2.n = data.n),
-              (entry2.parts = new Map()),
-              (entry2.k = data.k),
-              (entry2.moved = now())),
-            entry2.parts.set(data.i, data.h),
-            entry2.parts.size < entry2.k)
+              activePreviews.set(data.s, preview)),
+            (preview.seen = now()),
+            data.n < preview.n) ||
+            (data.n > preview.n &&
+              ((preview.n = data.n),
+              (preview.parts = new Map()),
+              (preview.k = data.k),
+              (preview.moved = now())),
+            preview.parts.set(data.i, data.h),
+            preview.parts.size < preview.k)
           )
             return;
           let text: Dynamic = "";
-          for (let index: Dynamic = 0; index < entry2.k; index++)
-            text += entry2.parts.get(index) ?? "";
-          text !== entry2.last &&
-            ((entry2.last = text),
-            (entry2.moved = now()),
+          for (let index: Dynamic = 0; index < preview.k; index++)
+            text += preview.parts.get(index) ?? "";
+          text !== preview.last &&
+            ((preview.last = text),
+            (preview.moved = now()),
             onPreview({
               path: data.s,
               html: text,
-              peer: value2,
+              peer: peer,
             }));
         });
       } catch {}
@@ -237,8 +237,8 @@ function subscribeDraftPreviews(
       return entry !== undefined && callback(entry);
     },
     sweep(): Dynamic {
-      for (let [value2, value3] of [...activePreviews] as Dynamic)
-        callback(value3) || expirePreview(value2, value3);
+      for (let [path, preview] of [...activePreviews] as Dynamic)
+        callback(preview) || expirePreview(path, preview);
       return activePreviews.size > 0;
     },
     stop(): Dynamic {

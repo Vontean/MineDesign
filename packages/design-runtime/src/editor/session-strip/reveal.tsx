@@ -9,8 +9,8 @@ import { toModuleNamespace } from "../../module-helpers";
 var SessionStripRevealConstant: Dynamic;
 var reactSessionStripReveal: Dynamic;
 var jsxSessionStripReveal: Dynamic;
-var reactSessionStripReveal_2: Dynamic;
-var jsxSessionStripReveal_2: Dynamic;
+var reactForDocumentLoadGate: Dynamic;
+var jsxForDocumentLoadGate: Dynamic;
 function getSessionStripScrollRow(element?: Dynamic): Dynamic {
   return element.querySelector("[data-mc-row]") ?? element;
 }
@@ -31,9 +31,9 @@ function revealSessionStripControl(
 export {
   getSessionStripScrollRow,
   jsxSessionStripReveal,
-  jsxSessionStripReveal_2,
+  jsxForDocumentLoadGate,
   reactSessionStripReveal,
-  reactSessionStripReveal_2,
+  reactForDocumentLoadGate,
   revealSessionStripControl,
   SessionStripRevealConstant,
 };
@@ -49,12 +49,12 @@ export function installEditorSessionStripReveal(): () => void {
       load_react_jsx_runtime(),
       1,
     );
-    reactSessionStripReveal_2 = toModuleNamespace(
+    reactForDocumentLoadGate = toModuleNamespace(
       load_react(),
       1,
     );
     initializeCdsIndex();
-    jsxSessionStripReveal_2 = toModuleNamespace(
+    jsxForDocumentLoadGate = toModuleNamespace(
       load_react_jsx_runtime(),
       1,
     );

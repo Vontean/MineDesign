@@ -7,7 +7,7 @@ import { CanvasPanZoomRound } from "../canvas/pan-zoom";
 import { parseDcHtmlDocument } from "../editor/html/dc-document";
 import { DcEditorModel } from "../editor/model/dc-editor-model";
 import { NotesBlocksHandler, parseNoteBlocks } from "../editor/notes/blocks";
-import { NotesDomHandler_2 } from "../editor/notes/dom";
+import { unescapeNoteText } from "../editor/notes/dom";
 import { applyFindHighlights, clearFindHighlights } from "./highlights";
 import { classifyTextRangeVisibility, rangeCanvasRect, revealTextRange } from "./scroll-reveal";
 import { collapseFindWhitespace, findRenderedTextRanges, findTextOffsets } from "./text-ranges";
@@ -37,7 +37,7 @@ function normalizedElementBox(element?: Dynamic, box?: Dynamic): Dynamic {
 }
 function annotationTextLines(annotation?: Dynamic): Dynamic {
   if (annotation.kind === "title1")
-    return NotesDomHandler_2(annotation.text).split(`
+    return unescapeNoteText(annotation.text).split(`
 `);
   let callback: Dynamic = (note?: Dynamic): Dynamic =>
     NotesBlocksHandler(note)

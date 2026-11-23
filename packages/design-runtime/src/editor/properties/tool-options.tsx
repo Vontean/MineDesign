@@ -5,11 +5,11 @@ import {
 import { Icon } from "../../cds/components/icon";
 import { initializeCdsIndex } from "../../cds/index";
 import { load_react } from "../../dependencies";
-import { PropertiesTooltipColorGradientConfig, reactPropertiesTooltip_3 } from "./tooltip";
+import { PropertiesTooltipColorGradientConfig, reactForToolSegmentOption } from "./tooltip";
 import { toModuleNamespace } from "../../module-helpers";
 
 var reactPropertiesToolOptions: Dynamic;
-var reactPropertiesToolOptions_2: Dynamic;
+var reactForUseNumericScrub: Dynamic;
 function toolSegmentOption(
   optionValue?: Dynamic,
   tooltipText?: Dynamic,
@@ -37,16 +37,16 @@ function toolSegmentOption(
       }
     : {
         ...baseOption,
-        label: (0, reactPropertiesTooltip_3.createElement)(
-          reactPropertiesTooltip_3.Fragment,
+        label: (0, reactForToolSegmentOption.createElement)(
+          reactForToolSegmentOption.Fragment,
           null,
-          (0, reactPropertiesTooltip_3.createElement)(
+          (0, reactForToolSegmentOption.createElement)(
             PropertyOptionIcon,
             {
               icon: optionIcon,
             },
           ),
-          (0, reactPropertiesTooltip_3.createElement)(
+          (0, reactForToolSegmentOption.createElement)(
             "span",
             {
               className: "sr-only",
@@ -62,12 +62,12 @@ function PropertyOptionIcon({
 }: Dynamic): Dynamic {
   let iconClassName: Dynamic = className ?? "shrink-0";
   return typeof icon == "string"
-    ? (0, reactPropertiesTooltip_3.createElement)(Icon, {
+    ? (0, reactForToolSegmentOption.createElement)(Icon, {
         name: icon,
         size: "auto",
         className: iconClassName,
       })
-    : (0, reactPropertiesTooltip_3.createElement)(Icon, {
+    : (0, reactForToolSegmentOption.createElement)(Icon, {
         customIcon: icon,
         size: "auto",
         className: iconClassName,
@@ -76,7 +76,7 @@ function PropertyOptionIcon({
 export {
   PropertyOptionIcon,
   reactPropertiesToolOptions,
-  reactPropertiesToolOptions_2,
+  reactForUseNumericScrub,
   toolSegmentOption,
 };
 export function installEditorPropertiesToolOptions(): () => void {
@@ -86,7 +86,7 @@ export function installEditorPropertiesToolOptions(): () => void {
       1,
     );
     initializeCdsIndex();
-    reactPropertiesToolOptions_2 = toModuleNamespace(
+    reactForUseNumericScrub = toModuleNamespace(
       load_react(),
       1,
     );

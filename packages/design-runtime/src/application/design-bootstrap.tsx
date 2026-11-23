@@ -13,7 +13,7 @@ import { recordPublishedVersion, removePublishedFiles, resetPublishedFileIndex, 
 import { clearPendingFileOverlay, setPublishedFileReferences } from "../design-system/type-declarations";
 import { closeEditorToast, showEditorActionToast, showEditorToast } from "../editor/chrome/pending-toasts";
 import { setEditorOwnsUndoProbe, setUndoGestureObserver } from "../editor/history-ownership";
-import { ModelHistoryRebaseHandler, ModelHistoryRebaseHandler_4 } from "../editor/model/history-rebase";
+import { ModelHistoryRebaseHandler, getCapturedHistoryRebaseNow } from "../editor/model/history-rebase";
 import { artboardStorePath, currentEditingArtboardPath } from "../editor/session/artboard-state";
 import { toModuleNamespace } from "../module-helpers";
 import { listWritableFiles, retryAccessFailure } from "../platform/access-retry";
@@ -143,7 +143,7 @@ function showOverwrittenEditNotice(edit?: Dynamic): Dynamic {
   let title: Dynamic = edit.file.replace(/\.dc\.html$/, ""),
     noticeId: Dynamic = 0;
   noticeId = showEditorActionToast(
-    uiMessage("canvas.designBootstrap.value1WasSavedOverBy", { value1: String(title) }),
+    uiMessage("canvas.designBootstrap.savedChangeOverwritten", { title: String(title) }),
     <Button
       type={"button"}
       variant={"primary"}
@@ -316,7 +316,7 @@ function shouldDeferDesignRestart(): Dynamic {
     performance.now() -
       Math.max(
         lastDesignInteractionAt,
-        ModelHistoryRebaseHandler_4(),
+        getCapturedHistoryRebaseNow(),
       ) <
     1500
   );

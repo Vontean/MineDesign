@@ -19,9 +19,9 @@ import { ChromeToolIconsColumnRowTextConfig, ChromeToolIconsNoteTitleRectConfig 
 import { OutlineValue } from "../inspector/modes";
 import { isContextMenuShortcut, reactKeyboardEditActions } from "../keyboard/edit-actions";
 import { DcKeyBrowsedAttribute } from "../keyboard/find";
-import { CanTReadThisArtboardSFileAskMessage, OutlineElementGlyph, OutlineGlyphsClassNames_2, OutlineGlyphsClassNames_3, OutlineGlyphsClassNames_4, OutlineGlyphsColorConfig, OutlineGlyphsConstant, OutlineGlyphsConstant_2 as layersListMaxSize, OutlineGlyphsConstant_3 as layersListDefaultSize, OutlineGlyphsConstant_4 as treeRowBaseIndent, OutlineGlyphsConstant_5 as treeIndentPerLevel, OutlineGlyphsConstant_6 as treeToggleColumnWidth, OutlineGlyphsLabel, OutlineGlyphsNativeEvent, OutlineGlyphsResolvedValue, OutlineGlyphsResolvedValue_2 as selectedRowClasses, OutlineGlyphsResolvedValue_3 as selectedRowSecondaryClasses, OutlineGlyphsScForScIfDcImportSet, OutlineGlyphsSubscribers, OutlineIconGlyph } from "./glyphs";
+import { CanTReadThisArtboardSFileAskMessage, OutlineElementGlyph, outlineRowClassName, outlineSelectedRowForcedColorsClassName, outlineGhostButtonClassName, OutlineGlyphsColorConfig, OutlineGlyphsConstant, layersListMaxSize, layersListDefaultSize, treeRowBaseIndent, treeIndentPerLevel, treeToggleColumnWidth, OutlineGlyphsLabel, OutlineGlyphsNativeEvent, OutlineGlyphsResolvedValue, selectedRowClasses, selectedRowSecondaryClasses, OutlineGlyphsScForScIfDcImportSet, OutlineGlyphsSubscribers, OutlineIconGlyph } from "./glyphs";
 import { OutlineRenameInput, OutlineRenameLimit } from "./rename";
-import { flattenOutlineRows, outlineAncestorMap, OutlineTreeHandler, OutlineTreeHandler_2, OutlineTreeHandler_3, scrollOutlineRowIntoView } from "./tree";
+import { flattenOutlineRows, outlineAncestorMap, OutlineTreeHandler, outlineObjectRowKey, outlineElementRowKey, scrollOutlineRowIntoView } from "./tree";
 import { CdsIsland, initializePlatformCdsIsland } from "../../platform/cds-island";
 
 var OutlineDcOutlineConstant: Dynamic;
@@ -268,13 +268,13 @@ function DcOutline({
       if (cursorKey != null && values.has(cursorKey)) return cursorKey;
       let selectedKey: Dynamic =
         selectedTids.length > 0
-          ? OutlineTreeHandler_3(focusedArtboard, selectedTids[0])
+          ? outlineElementRowKey(focusedArtboard, selectedTids[0])
           : null;
       if (selectedKey != null && values.has(selectedKey)) return selectedKey;
       let selectedObject: Dynamic = artboards?.objects.find(
         (objectItem?: Dynamic): Dynamic => artboards.selectedObjects.has(objectItem.id),
       );
-      if (selectedObject) return OutlineTreeHandler_2(selectedObject.id);
+      if (selectedObject) return outlineObjectRowKey(selectedObject.id);
       let selectedRow: Dynamic = artboards?.rows.find(
         (artboardRow?: Dynamic): Dynamic => artboards.selected.has(artboardRow.file),
       );
@@ -516,7 +516,7 @@ function DcOutline({
       let treeKey: Dynamic = artboardKey ?? focusedArtboard,
         isOpen: Dynamic = getExpanded(treeKey).has(node.tid),
         hasChildren: Dynamic = node.children.length > 0,
-        rowKey: Dynamic = OutlineTreeHandler_3(
+        rowKey: Dynamic = outlineElementRowKey(
           treeKey,
           node.tid,
         ),
@@ -586,10 +586,10 @@ function DcOutline({
               tabIndex={rowKey === tabStopKey ? 0 : -1}
               data-row-key={rowKey}
               className={cn(
-                OutlineGlyphsClassNames_2,
+                outlineRowClassName,
                 isHighlighted
                   ? selectedRowClasses
-                  : OutlineGlyphsClassNames_4,
+                  : outlineGhostButtonClassName,
               )}
               style={{
                 paddingLeft:
@@ -631,7 +631,7 @@ function DcOutline({
                   setContextMenu({
                     ...OutlineGlyphsNativeEvent(event),
                     items: menuItems.map(OutlineGlyphsLabel),
-                    get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(node)) }); },
+                    get label() { return uiMessage("inspector.dcOutline.actions", { node: String(uiNodeLabel(node)) }); },
                   });
               }}
               onMouseEnter={(): Dynamic => {
@@ -781,7 +781,7 @@ function DcOutline({
                 />) : (<span
                   className={cn(
                     "min-w-0 flex-initial truncate",
-                    OutlineGlyphsClassNames_3,
+                    outlineSelectedRowForcedColorsClassName,
                     OutlineGlyphsScForScIfDcImportSet.has(
                       node.tag,
                     ) &&
@@ -809,7 +809,7 @@ function DcOutline({
               {renamingTid !== node.tid && (<span
                   className={cn(
                     "mx-1.5 min-w-0 flex-auto shrink-[9999] truncate",
-                    OutlineGlyphsClassNames_3,
+                    outlineSelectedRowForcedColorsClassName,
                     !isComponent && "text-muted",
                     isDimmed
                       ? "opacity-50"
@@ -888,7 +888,7 @@ function DcOutline({
     },
     renderObjectRow: Dynamic = (objectItem?: Dynamic, index?: Dynamic): Dynamic => {
       if (!artboards) return null;
-      let rowKey: Dynamic = OutlineTreeHandler_2(objectItem.id),
+      let rowKey: Dynamic = outlineObjectRowKey(objectItem.id),
         isSelected: Dynamic = artboards.selectedObjects.has(objectItem.id);
       return (() => {
         const ObjectRowTag = "div";
@@ -904,10 +904,10 @@ function DcOutline({
           tabIndex: rowKey === tabStopKey ? 0 : -1,
           "data-row-key": rowKey,
           className: cn(
-            OutlineGlyphsClassNames_2,
+            outlineRowClassName,
             isSelected
               ? selectedRowClasses
-              : OutlineGlyphsClassNames_4,
+              : outlineGhostButtonClassName,
           ),
           style: {
             paddingLeft: treeRowBaseIndent,
@@ -935,7 +935,7 @@ function DcOutline({
               setContextMenu({
                 ...OutlineGlyphsNativeEvent(event),
                 items: menuItems.map(OutlineGlyphsLabel),
-                get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(objectItem)) }); },
+                get label() { return uiMessage("inspector.dcOutline.actions", { node: String(uiNodeLabel(objectItem)) }); },
               });
           },
           onMouseEnter: (): Dynamic => onHover(null),
@@ -955,7 +955,7 @@ function DcOutline({
             <span
               className={cn(
                 "min-w-0 flex-initial truncate",
-                OutlineGlyphsClassNames_3,
+                outlineSelectedRowForcedColorsClassName,
               )}
             >
               {uiNodeLabel(objectItem)}
@@ -963,7 +963,7 @@ function DcOutline({
             <span
               className={cn(
                 "mx-1.5 min-w-0 flex-auto shrink-[9999] truncate text-muted",
-                OutlineGlyphsClassNames_3,
+                outlineSelectedRowForcedColorsClassName,
               )}
               title={objectItem.detailTitle}
             >
@@ -1096,10 +1096,10 @@ function DcOutline({
                         tabIndex={rowKey === tabStopKey ? 0 : -1}
                         data-row-key={rowKey}
                         className={cn(
-                          OutlineGlyphsClassNames_2,
+                          outlineRowClassName,
                           artboards.selected.has(artboardRow.file)
                             ? selectedRowSecondaryClasses
-                            : OutlineGlyphsClassNames_4,
+                            : outlineGhostButtonClassName,
                         )}
                         style={{
                           paddingLeft: treeRowBaseIndent,
@@ -1134,7 +1134,7 @@ function DcOutline({
                             setContextMenu({
                               ...OutlineGlyphsNativeEvent(event),
                               items: menuItems.map(OutlineGlyphsLabel),
-                              get label() { return uiMessage("inspector.dcOutline.actions", { value1: String(uiNodeLabel(artboardRow)) }); },
+                              get label() { return uiMessage("inspector.dcOutline.actions", { node: String(uiNodeLabel(artboardRow)) }); },
                             });
                         }}
                         data-testid={`dc-outline-artboard-${artboardRow.file}`}
@@ -1203,7 +1203,7 @@ function DcOutline({
                             />) : (<span
                               className={cn(
                                 "min-w-0 flex-auto truncate",
-                                OutlineGlyphsClassNames_3,
+                                outlineSelectedRowForcedColorsClassName,
                               )}
                               style={
                                 isComponent
@@ -1219,7 +1219,7 @@ function DcOutline({
                               data-testid={"dc-outline-cover"}
                               className={cn(
                                 "mx-1.5 shrink-0 text-muted",
-                                OutlineGlyphsClassNames_3,
+                                outlineSelectedRowForcedColorsClassName,
                               )}
                             />)}
                           {unreadableId != null && (<span id={unreadableId} hidden={true}>
@@ -1292,7 +1292,7 @@ export {
   DcOutline,
   nativeContextMenuTimeout,
   OutlineDcOutlineConstant,
-  OutlineDcOutlineLongSuppressDelay as OutlineDcOutlineConstant_2,
+  OutlineDcOutlineLongSuppressDelay,
   OutlineDcOutlineHandler,
   OutlineDcOutlineRemoveEventListener,
   OutlineDcOutlineTarget,

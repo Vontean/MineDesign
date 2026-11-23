@@ -1,7 +1,7 @@
 import type { KeyboardInset } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { asElement, initializeHooksStableCallback, initializeHooksStableCallback_2, useStableCallback } from "../hooks/stable-callback";
+import { asElement, initializeHooksStableCallback, initializeStableCallbackReact, useStableCallback } from "../hooks/stable-callback";
 import { initializeCdsRoot, useCdsWindow } from "../theme/root";
 import { load_react } from "../../dependencies";
 import { initializeOnce, toModuleNamespace } from "../../module-helpers";
@@ -118,7 +118,7 @@ export function installCdsSheetsKeyboardViewport(): () => void {
 
       initializeCdsRoot();
       initializeHooksStableCallback();
-      initializeHooksStableCallback_2();
+      initializeStableCallbackReact();
       reactSheetsKeyboardViewport = toModuleNamespace(
         load_react(),
       );

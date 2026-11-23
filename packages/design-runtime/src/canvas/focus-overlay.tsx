@@ -5,7 +5,7 @@ import {
 import { isCanvasReservedShortcut } from "./interaction-geometry";
 import { buttonKeyboardActivation } from "./keyboard-activation";
 import { joinClassNames } from "../editor/chrome/overlay-state";
-import { reactVectorToolState_2 } from "../editor/vector/tool-state";
+import { vectorToolStateReact as React } from "../editor/vector/tool-state";
 
 var ArtboardFocusOverlay: Dynamic;
 export {
@@ -13,7 +13,7 @@ export {
 };
 export function installCanvasFocusOverlay(): () => void {
   return () => {
-    ArtboardFocusOverlay = (0, reactVectorToolState_2.memo)(function ({
+    ArtboardFocusOverlay = (0, React.memo)(function ({
       file: file,
       title: title,
       name: name,

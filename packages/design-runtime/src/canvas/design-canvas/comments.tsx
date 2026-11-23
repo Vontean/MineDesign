@@ -2,11 +2,33 @@ import { designPageId } from "../../platform/file-content";
 import { isCanvasPageMatch } from "../page-operations";
 import { recallCanvasView } from "../viewport-memory";
 import { type Dynamic } from "../../runtime-types";
-import { artboardIsNotExpandedFill, defaultCanvasCamera } from "../design-canvas";
+import { artboardIsNotExpandedFill, defaultCanvasCamera } from "./playback";
 
 /** 在评论面板点击某条评论时运行（onRevealComment）：切换到评论所在页面并定位到对应画板或画布说明。 */
-export function revealCommentTarget(deps: { readonly editing: Dynamic; readonly readOnly: Dynamic; readonly value105: Dynamic; readonly value273: Dynamic; readonly value291: Dynamic; readonly value297: Dynamic; readonly value298: Dynamic; readonly value345: Dynamic; readonly value346: Dynamic; readonly value348: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic; readonly value99: Dynamic }, source?: Dynamic): Dynamic {
-                      let canvasState: Dynamic = deps.value73.current,
+interface RevealCommentContext {
+  readonly view: {
+    readonly editing: Dynamic;
+    readonly readOnly: Dynamic;
+    readonly camera: Dynamic;
+    readonly needsPageFit: Dynamic;
+    readonly restoreCamera: Dynamic;
+    readonly fullscreenActive: Dynamic;
+    readonly fullscreenFile: Dynamic;
+    readonly setFullscreenView: Dynamic;
+    readonly phoneCanvas: Dynamic;
+  };
+  readonly navigation: {
+    readonly focusArtboard: Dynamic;
+    readonly resolvePageArtboard: Dynamic;
+  };
+  readonly document: {
+    readonly manifest: Dynamic;
+    readonly activePage: Dynamic;
+  };
+}
+
+export function revealCommentTarget(deps: RevealCommentContext, source?: Dynamic): Dynamic {
+                      let canvasState: Dynamic = deps.document.manifest.current,
                         targetPageId: Dynamic = null,
                         targetFile: Dynamic = null,
                         targetArtboard: Dynamic;
@@ -54,25 +76,25 @@ export function revealCommentTarget(deps: { readonly editing: Dynamic; readonly 
                       }
                       if (targetPageId == null) return false;
                       if (
-                        deps.value99 &&
+                        deps.view.phoneCanvas &&
                         targetArtboard &&
                         source.kind === "artboard" &&
                         !source.boards
                       ) {
-                        let isPageChange: Dynamic = targetPageId !== deps.value80.current;
+                        let isPageChange: Dynamic = targetPageId !== deps.document.activePage.current;
                         isPageChange &&
-                          (deps.value298(targetPageId, targetArtboard.file),
-                          (deps.value291.current = false));
+                          (deps.navigation.resolvePageArtboard(targetPageId, targetArtboard.file),
+                          (deps.view.needsPageFit.current = false));
                         let previousCamera: Dynamic = isPageChange
                             ? (recallCanvasView(targetPageId) ??
                               defaultCanvasCamera)
-                            : deps.value105.get(),
+                            : deps.view.camera.get(),
                           state: Dynamic = {
                             file: targetArtboard.file,
                             fit: artboardIsNotExpandedFill(targetArtboard),
                           };
-                        state.file !== deps.value346.current &&
-                          deps.value348(
+                        state.file !== deps.view.fullscreenFile.current &&
+                          deps.view.setFullscreenView(
                             (previousFocus?: Dynamic): Dynamic => ({
                               ...state,
                               prev: previousFocus?.prev ?? previousCamera,
@@ -80,14 +102,14 @@ export function revealCommentTarget(deps: { readonly editing: Dynamic; readonly 
                           );
                         return true;
                       }
-                      deps.value345.current && deps.value297.current();
+                      deps.view.fullscreenActive.current && deps.view.restoreCamera.current();
                       let fileToFocus: Dynamic =
-                        targetFile != null && (deps.editing || deps.readOnly)
+                        targetFile != null && (deps.view.editing || deps.view.readOnly)
                           ? targetFile
                           : undefined;
-                      targetPageId !== deps.value80.current
-                        ? (deps.value298(targetPageId, fileToFocus),
-                          (deps.value291.current = false))
-                        : fileToFocus !== undefined && deps.value273(fileToFocus);
+                      targetPageId !== deps.document.activePage.current
+                        ? (deps.navigation.resolvePageArtboard(targetPageId, fileToFocus),
+                          (deps.view.needsPageFit.current = false))
+                        : fileToFocus !== undefined && deps.navigation.focusArtboard(fileToFocus);
                       return true;
                     }

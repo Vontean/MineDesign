@@ -9,8 +9,8 @@ import { ColorValue } from "../color/contrast-copy";
 import { classifyStyleValue, describeColorValue } from "../css/values";
 import { useInspectorContext } from "../inspector/context-part-2";
 import { mergeDesignSystemSwatches } from "./color-swatches";
-import { PropertiesDropShadowEditorTest, reactPropertiesDropShadowEditor_2 } from "./drop-shadow-editor";
-import { inspectorFieldDisplay, Value_6 } from "./inherited-field";
+import { PropertiesDropShadowEditorTest, reactForPropertyInspectorField } from "./drop-shadow-editor";
+import { inspectorFieldDisplay, emDashPlaceholder } from "./inherited-field";
 import { PropertyRow } from "./row";
 import { PropertyColorRow } from "./rows";
 import { artboardColorSwatchGroup, editorColorSwatches, matchArtboardColorToken, matchAuthoredColorToken, resolveColorSwatchValue } from "./token-color-picker";
@@ -68,7 +68,7 @@ function PropertyCssColorRow({
       ? undefined
       : (state.varSource ?? (displayText || displayPlaceholder)) || undefined,
     tokenLookupValue: Dynamic = state.varPartial ? displayText || displayPlaceholder : authoredValue,
-    artboardTokenName: Dynamic = (0, reactPropertiesDropShadowEditor_2.useMemo)(
+    artboardTokenName: Dynamic = (0, reactForPropertyInspectorField.useMemo)(
       (): Dynamic =>
         matchArtboardColorToken(tokenLookupValue, dsColorTokens, iframeDefinedVars),
       [tokenLookupValue, dsColorTokens, iframeDefinedVars],
@@ -76,8 +76,8 @@ function PropertyCssColorRow({
     isUnset: Dynamic =
       !!state.inheritedFrom || !(state.varSource ?? state.value ?? "").trim(),
     [designSystemSwatches, setDesignSystemSwatches]: Dynamic = (0,
-    reactPropertiesDropShadowEditor_2.useState)(undefined),
-    mergedSwatches: Dynamic = (0, reactPropertiesDropShadowEditor_2.useMemo)(
+    reactForPropertyInspectorField.useState)(undefined),
+    mergedSwatches: Dynamic = (0, reactForPropertyInspectorField.useMemo)(
       (): Dynamic =>
         mergeDesignSystemSwatches(
           designSystemSwatches,
@@ -85,7 +85,7 @@ function PropertyCssColorRow({
         ),
       [designSystemSwatches, dsColorTokens],
     ),
-    currentSwatch: Dynamic = (0, reactPropertiesDropShadowEditor_2.useMemo)(
+    currentSwatch: Dynamic = (0, reactForPropertyInspectorField.useMemo)(
       (): Dynamic =>
         matchAuthoredColorToken(authoredValue, mergedSwatches, iframeDefinedVars),
       [authoredValue, mergedSwatches, iframeDefinedVars],
@@ -108,7 +108,7 @@ function PropertyCssColorRow({
         clearLabel={
           describeColorValue(displayText) ||
           describeColorValue(displayPlaceholder) ||
-          Value_6
+          emDashPlaceholder
         }
         unset={isUnset}
         valueName={artboardTokenName ?? null}

@@ -15,7 +15,7 @@ import { PropertyActions } from "./primitives";
 import { PropertySection } from "./section";
 import { PropertySegmentsRow } from "./segments";
 import { PropertyCornersRow, PropertySidesRow } from "./sides";
-import { PropertiesTooltipNameViewBoxPathsConfig_6 as PropertiesTooltipSolidBorderGlyph, PropertiesTooltipNameViewBoxPathsConfig_7 as PropertiesTooltipDashedBorderGlyph, PropertiesTooltipNameViewBoxPathsConfig_8 as PropertiesTooltipDottedBorderGlyph } from "./tooltip";
+import { strokeSolidIcon as PropertiesTooltipSolidBorderGlyph, strokeDashedIcon as PropertiesTooltipDashedBorderGlyph, strokeDottedIcon as PropertiesTooltipDottedBorderGlyph } from "./tooltip";
 import { TypographyCensusBorderBorderWidthBorderStyleValues } from "../typography/census";
 import { toModuleNamespace } from "../../module-helpers";
 import { PlatformFileContentBackgroundBackgroundColorOpacityValues } from "../../platform/file-content";
@@ -28,8 +28,7 @@ var PropertiesAppearanceSectionBorderTopLeftRadiusBorderTopRightRadiusBorderBott
 var PropertiesAppearanceSectionBorderTopWidthBorderRightWidthBorderBottomWidthValues: Dynamic;
 var PropertiesAppearanceSectionItems: Dynamic;
 var PropertiesAppearanceSectionMapValue: Dynamic;
-var jsxPropertiesAppearanceSection_2: Dynamic;
-var jsxPropertiesAppearanceSection_3: Dynamic;
+var jsxForUseVisibleInspectorProperties: Dynamic;
 var PropertiesAppearanceSectionSubscribers: Dynamic;
 var PropertiesAppearanceSectionFillProperties: Dynamic;
 var PropertiesAppearanceSectionLabel: Dynamic;
@@ -764,7 +763,7 @@ function useVisibleInspectorProperties(config?: Dynamic): Dynamic {
     ): Dynamic => {
       let visibleRows: Dynamic = rowsToRender.filter(isRowShown);
       return visibleRows.length === 0 && !footer ? null : (
-        <jsxPropertiesAppearanceSection_2.Fragment>
+        <jsxForUseVisibleInspectorProperties.Fragment>
           {visibleRows.map(
             (row?: Dynamic): Dynamic =>
               renderRow(row, {
@@ -772,7 +771,7 @@ function useVisibleInspectorProperties(config?: Dynamic): Dynamic {
               }),
           )}
           {footer}
-        </jsxPropertiesAppearanceSection_2.Fragment>
+        </jsxForUseVisibleInspectorProperties.Fragment>
       );
     },
   };
@@ -919,8 +918,7 @@ export {
   InspectorAppearanceSection,
   isLongTailPropertyVisible,
   jsxPropertiesAppearanceSection,
-  jsxPropertiesAppearanceSection_2,
-  jsxPropertiesAppearanceSection_3,
+  jsxForUseVisibleInspectorProperties,
   PropertiesAppearanceSectionBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues,
   PropertiesAppearanceSectionBorderTopWidthBorderRightWidthBorderBottomWidthValues,
   PropertiesAppearanceSectionBoxShadowFilterBackdropFilterSet,
@@ -930,22 +928,22 @@ export {
   PropertiesAppearanceSectionImageRectOvalConfig,
   PropertiesAppearanceSectionImageVideoRectConfig,
   PropertiesAppearanceSectionItems,
-  PropertiesAppearanceSectionFontStyleOptions as PropertiesAppearanceSectionItems_2,
+  PropertiesAppearanceSectionFontStyleOptions,
   PropertiesAppearanceSectionLabel,
-  PropertiesAppearanceSectionFixedSizeMessage as PropertiesAppearanceSectionLabel_2,
-  PropertiesAppearanceSectionNoteHeightMessage as PropertiesAppearanceSectionLabel_3,
-  PropertiesAppearanceSectionTitleSizeMessage as PropertiesAppearanceSectionLabel_4,
-  PropertiesAppearanceSectionOvalRoundMessage as PropertiesAppearanceSectionLabel_5,
-  PropertiesAppearanceSectionFillOnlyMessage as PropertiesAppearanceSectionLabel_6,
-  PropertiesAppearanceSectionReplaceVideoMessage as PropertiesAppearanceSectionLabel_7,
+  PropertiesAppearanceSectionFixedSizeMessage,
+  PropertiesAppearanceSectionNoteHeightMessage,
+  PropertiesAppearanceSectionTitleSizeMessage,
+  PropertiesAppearanceSectionOvalRoundMessage,
+  PropertiesAppearanceSectionFillOnlyMessage,
+  PropertiesAppearanceSectionReplaceVideoMessage,
   PropertiesAppearanceSectionMapValue,
   PropertiesAppearanceSectionNoteTitle1Config,
   PropertiesAppearanceSectionSubscribers,
-  PropertiesAppearanceSectionFillProperties as PropertiesAppearanceSectionSubscribers_2,
-  PropertiesAppearanceSectionImageProperties as PropertiesAppearanceSectionSubscribers_3,
+  PropertiesAppearanceSectionFillProperties,
+  PropertiesAppearanceSectionImageProperties,
   PropertiesAppearanceSectionWidthHeightPositionSet,
-  hasInheritedFieldMixed as PropertiesInheritedFieldMixedAlias_2,
-  hasInheritedFieldValue as PropertiesInheritedFieldValueAlias_2,
+  hasInheritedFieldMixed,
+  hasInheritedFieldValue,
   PropertyBorderSection,
   PropertyCornerRadius,
   useVisibleInspectorProperties,
@@ -1015,11 +1013,7 @@ export function installEditorPropertiesAppearanceSection(): () => void {
           value: null,
         }),
       );
-    jsxPropertiesAppearanceSection_2 = toModuleNamespace(
-      load_react_jsx_runtime(),
-      1,
-    );
-    jsxPropertiesAppearanceSection_3 = toModuleNamespace(
+    jsxForUseVisibleInspectorProperties = toModuleNamespace(
       load_react_jsx_runtime(),
       1,
     );

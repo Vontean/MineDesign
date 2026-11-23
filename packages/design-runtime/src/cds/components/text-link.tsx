@@ -3,15 +3,15 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { initializeComponentsCounter_6, LinkElement, TextLinkIcon } from "./counter";
-import { initializeComponentsIcon_2 } from "./icon";
+import { initializeLinkElement, LinkElement, TextLinkIcon } from "./counter";
+import { initializeIconSizeMetrics } from "./icon";
 import { DialogDialogCurrentState } from "../dialog/dialog";
-import { DisabledContext, initializeDomRefComposition_5 } from "../dom/ref-composition";
+import { DisabledContext, initializeDisabledContext } from "../dom/ref-composition";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
 import { asElement } from "../hooks/stable-callback";
-import { getLinkRel, initializeCdsLinks, initializeCdsLinks_2, initializeLinkRouter, isBlockedHref, isNewBrowsingContext, sanitizeHref } from "../links";
+import { getLinkRel, initializeCdsLinks, initializeLinkTargetPatterns, initializeLinkRouter, isBlockedHref, isNewBrowsingContext, sanitizeHref } from "../links";
 import { initializeSheetsKeyboardViewport, isTextInputElement, useKeyboardViewport } from "../sheets/keyboard-viewport";
-import { initializeSheetsStyles_2, useLabel } from "../sheets/styles";
+import { initializeLabelsProviderContext, useLabel } from "../sheets/styles";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { initializeNpm_clsx_xh, load_react, load_react_jsx_runtime, npm_clsx_Ea } from "../../dependencies";
 import { initializeOnce, toModuleNamespace } from "../../module-helpers";
@@ -20,22 +20,22 @@ import { set_DialogDialogCurrentState } from "../dialog/dialog";
 var reactComponentsTextLink: Dynamic;
 var jsxComponentsTextLink: Dynamic;
 var ComponentsTextLinkClassNames: Dynamic;
-var ComponentsTextLinkClassNames_2: Dynamic;
+var textLinkUnderlineClassName: Dynamic;
 var ComponentsTextLinkCss: Dynamic;
-var ComponentsTextLinkClassNames_3: Dynamic;
-var ComponentsTextLinkClassNames_4: Dynamic;
-var ComponentsTextLinkCss_2: Dynamic;
+var textLinkTransitionClassName: Dynamic;
+var textLinkColorTransitionClassName: Dynamic;
+var inlineTextLinkClassName: Dynamic;
 var ComponentsTextLinkClassNamesAlias: Dynamic;
 var TextLink: Dynamic;
 var initializeComponentsTextLink: Dynamic;
-var reactComponentsTextLink_2: Dynamic;
+var reactForUseDialogKeyboardViewport: Dynamic;
 var ComponentsTextLinkConstant: Dynamic;
-var ComponentsTextLinkCss_3: Dynamic;
+var dialogBottomInsetCss: Dynamic;
 var ComponentsTextLinkLimit: Dynamic;
 var ComponentsTextLinkTopMaxHeightMinHeightValues: Dynamic;
 var ComponentsTextLinkBottomInsetTranslateValues: Dynamic;
 var ComponentsTextLinkTopValues: Dynamic;
-var initializeComponentsTextLink_2: Dynamic;
+var initializeDialogKeyboardViewport: Dynamic;
 function readStyleProperty(style?: Dynamic, property?: Dynamic): Dynamic {
   return {
     value: style.getPropertyValue(property),
@@ -63,11 +63,11 @@ function restoreOwnedDialogStyles(owned?: Dynamic): Dynamic {
     }
 }
 function useDialogKeyboardViewport(isEnabled?: Dynamic): Dynamic {
-  let [dialogNode, setDialogNode]: Dynamic = (0, reactComponentsTextLink_2.useState)(
+  let [dialogNode, setDialogNode]: Dynamic = (0, reactForUseDialogKeyboardViewport.useState)(
       null,
     ),
-    [viewport, setViewport]: Dynamic = (0, reactComponentsTextLink_2.useState)(null),
-    subscribeToFocus: Dynamic = (0, reactComponentsTextLink_2.useCallback)(
+    [viewport, setViewport]: Dynamic = (0, reactForUseDialogKeyboardViewport.useState)(null),
+    subscribeToFocus: Dynamic = (0, reactForUseDialogKeyboardViewport.useCallback)(
       (onChange?: Dynamic): Dynamic =>
         !isEnabled || dialogNode === null
           ? (): Dynamic => {}
@@ -80,7 +80,7 @@ function useDialogKeyboardViewport(isEnabled?: Dynamic): Dynamic {
       [isEnabled, dialogNode],
     ),
     getIsInputFocused: Dynamic = (0,
-    reactComponentsTextLink_2.useCallback)((): Dynamic => {
+    reactForUseDialogKeyboardViewport.useCallback)((): Dynamic => {
       if (!isEnabled || dialogNode === null) return false;
       let activeElement: Dynamic = dialogNode.ownerDocument.activeElement;
       return (
@@ -88,7 +88,7 @@ function useDialogKeyboardViewport(isEnabled?: Dynamic): Dynamic {
         isTextInputElement(activeElement)
       );
     }, [isEnabled, dialogNode]),
-    isInputFocused: Dynamic = (0, reactComponentsTextLink_2.useSyncExternalStore)(
+    isInputFocused: Dynamic = (0, reactForUseDialogKeyboardViewport.useSyncExternalStore)(
       subscribeToFocus,
       getIsInputFocused,
       (): Dynamic => false,
@@ -97,11 +97,11 @@ function useDialogKeyboardViewport(isEnabled?: Dynamic): Dynamic {
     isEnabled && (isInputFocused || viewport !== null),
     setViewport,
   );
-  let keyboardFrame: Dynamic = (0, reactComponentsTextLink_2.useMemo)(
+  let keyboardFrame: Dynamic = (0, reactForUseDialogKeyboardViewport.useMemo)(
       (): Dynamic => dialogKeyboardFrame(viewport),
       [viewport],
     ),
-    ownedStylesRef: Dynamic = (0, reactComponentsTextLink_2.useRef)(null);
+    ownedStylesRef: Dynamic = (0, reactForUseDialogKeyboardViewport.useRef)(null);
   useIsomorphicLayoutEffect((): Dynamic => {
     let staleOwned: Dynamic = ownedStylesRef.current;
     staleOwned !== null &&
@@ -184,8 +184,8 @@ function useDialogKeyboardViewport(isEnabled?: Dynamic): Dynamic {
 function dialogKeyboardFrame(viewport?: Dynamic): Dynamic {
   if (!(viewport === null || viewport.visible < ComponentsTextLinkLimit))
     return {
-      top: `calc(${viewport.offset + (viewport.visible + ComponentsTextLinkConstant) / 2}px - ${ComponentsTextLinkCss_3} / 2)`,
-      maxHeight: `calc(${viewport.visible - ComponentsTextLinkConstant}px - ${ComponentsTextLinkCss_3})`,
+      top: `calc(${viewport.offset + (viewport.visible + ComponentsTextLinkConstant) / 2}px - ${dialogBottomInsetCss} / 2)`,
+      maxHeight: `calc(${viewport.visible - ComponentsTextLinkConstant}px - ${dialogBottomInsetCss})`,
     };
 }
 function scrollDialogInputIntoView(
@@ -273,26 +273,26 @@ function preserveDialogFocus(event?: Dynamic): Dynamic {
 export {
   ComponentsTextLinkBottomInsetTranslateValues,
   ComponentsTextLinkClassNames,
-  ComponentsTextLinkClassNames_2,
-  ComponentsTextLinkClassNames_3,
-  ComponentsTextLinkClassNames_4,
+  textLinkUnderlineClassName,
+  textLinkTransitionClassName,
+  textLinkColorTransitionClassName,
   ComponentsTextLinkClassNamesAlias,
   ComponentsTextLinkConstant,
   ComponentsTextLinkCss,
-  ComponentsTextLinkCss_2,
-  ComponentsTextLinkCss_3,
+  inlineTextLinkClassName,
+  dialogBottomInsetCss,
   ComponentsTextLinkLimit,
   ComponentsTextLinkTopMaxHeightMinHeightValues,
   ComponentsTextLinkTopValues,
   dialogKeyboardFrame,
   initializeComponentsTextLink,
-  initializeComponentsTextLink_2,
+  initializeDialogKeyboardViewport,
   isOwnedImportantStyle,
   jsxComponentsTextLink,
   preserveDialogFocus,
   preventDialogMouseSelection,
   reactComponentsTextLink,
-  reactComponentsTextLink_2,
+  reactForUseDialogKeyboardViewport,
   readStyleProperty,
   restoreOwnedDialogStyles,
   scrollDialogInputIntoView,
@@ -305,13 +305,13 @@ export function installCdsComponentsTextLink(): () => void {
       "use client";
 
       initializeClassNames();
-      initializeSheetsStyles_2();
+      initializeLabelsProviderContext();
       initializeCdsLinks();
-      initializeCdsLinks_2();
+      initializeLinkTargetPatterns();
       initializeLinkRouter();
-      initializeDomRefComposition_5();
-      initializeComponentsIcon_2();
-      initializeComponentsCounter_6();
+      initializeDisabledContext();
+      initializeIconSizeMetrics();
+      initializeLinkElement();
       reactComponentsTextLink = toModuleNamespace(
         load_react(),
       );
@@ -320,14 +320,14 @@ export function installCdsComponentsTextLink(): () => void {
         load_react_jsx_runtime(),
       );
       ComponentsTextLinkClassNames = "cds-reset cds-text-link";
-      ComponentsTextLinkClassNames_2 = "cds-text-link-underline";
-      ComponentsTextLinkCss = `${ComponentsTextLinkClassNames} ${ComponentsTextLinkClassNames_2} inline`;
-      ComponentsTextLinkClassNames_3 =
+      textLinkUnderlineClassName = "cds-text-link-underline";
+      ComponentsTextLinkCss = `${ComponentsTextLinkClassNames} ${textLinkUnderlineClassName} inline`;
+      textLinkTransitionClassName =
         "text-inherit [transition-property:text-decoration-color,box-shadow]";
-      ComponentsTextLinkClassNames_4 =
+      textLinkColorTransitionClassName =
         "[transition-property:text-decoration-color]";
-      ComponentsTextLinkCss_2 = `${ComponentsTextLinkClassNames} inline-flex items-baseline`;
-      ComponentsTextLinkClassNamesAlias = ComponentsTextLinkClassNames_2;
+      inlineTextLinkClassName = `${ComponentsTextLinkClassNames} inline-flex items-baseline`;
+      ComponentsTextLinkClassNamesAlias = textLinkUnderlineClassName;
       TextLink = (0, reactComponentsTextLink.forwardRef)(
         (
           {
@@ -380,14 +380,14 @@ export function installCdsComponentsTextLink(): () => void {
             iconName: Dynamic =
               icon || (externalMode === "with-icon" ? "ArrowUpRight" : undefined),
             hasIcon: Dynamic = !!iconName,
-            linkClassName: Dynamic = `${cn(hasIcon ? npm_clsx_Ea(ComponentsTextLinkCss_2, icon ? "gap-[0.25em]" : "gap-0") : ComponentsTextLinkCss, shouldInheritColor && ComponentsTextLinkClassNames_3)}`,
+            linkClassName: Dynamic = `${cn(hasIcon ? npm_clsx_Ea(inlineTextLinkClassName, icon ? "gap-[0.25em]" : "gap-0") : ComponentsTextLinkCss, shouldInheritColor && textLinkTransitionClassName)}`,
             linkBody: Dynamic = hasIcon ? (
               <jsxComponentsTextLink.Fragment>
                 {iconPosition === "start" && (TextLinkIcon(iconName))}
                 <span
                   className={npm_clsx_Ea(
                     ComponentsTextLinkClassNamesAlias,
-                    shouldInheritColor && ComponentsTextLinkClassNames_4,
+                    shouldInheritColor && textLinkColorTransitionClassName,
                   )}
                 >
                   {children}
@@ -447,17 +447,17 @@ export function installCdsComponentsTextLink(): () => void {
       );
       TextLink.displayName = "TextLink";
     });
-    initializeComponentsTextLink_2 = initializeOnce(
+    initializeDialogKeyboardViewport = initializeOnce(
       (): Dynamic => {
         "use client";
 
         initializeHooksLayoutEffect();
         initializeSheetsKeyboardViewport();
-        reactComponentsTextLink_2 = toModuleNamespace(
+        reactForUseDialogKeyboardViewport = toModuleNamespace(
           load_react(),
         );
         ComponentsTextLinkConstant = 8;
-        ComponentsTextLinkCss_3 = `max(${ComponentsTextLinkConstant}px, env(safe-area-inset-bottom, 0px))`;
+        dialogBottomInsetCss = `max(${ComponentsTextLinkConstant}px, env(safe-area-inset-bottom, 0px))`;
         ComponentsTextLinkLimit = 240;
         ComponentsTextLinkTopMaxHeightMinHeightValues = [
           "top",

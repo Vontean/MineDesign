@@ -4,18 +4,18 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { initializeButtonContext, useButtonGroup } from "../button/context";
-import { elementInnerWidth, flexContentBounds, flexRowWidth, initializeButtonGroup_3, isSingleRowFlex } from "../button/group";
+import { elementInnerWidth, flexContentBounds, flexRowWidth, initializeButtonGroupObserver, isSingleRowFlex } from "../button/group";
 import { initializeTabsListMenu, TabsListMenu } from "../components/number-input";
 import { getInertProps, initializeDomInert } from "../dom/inert";
-import { initializeDomRefComposition, initializeDomRefComposition_2, isHtmlElement, useMergedRefs } from "../dom/ref-composition";
+import { initializeDomRefComposition, initializeXmlNamespaceUris, isHtmlElement, useMergedRefs } from "../dom/ref-composition";
 import { initializeDomSelectionPrevention, withSelectionPrevention } from "../dom/selection-prevention";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
-import { CdsStashedAttribute, FlipIndicatorContext, initializeSwitchContext_2, useFlipIndicatorContext } from "../switch/context";
+import { CdsStashedAttribute, FlipIndicatorContext, initializeFlipIndicatorContext, useFlipIndicatorContext } from "../switch/context";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { getSizeAttribute, initializeCdsRoot } from "../theme/root";
 import { DisabledReasonDescription, hasDisabledReason, initializeTooltipDisabledReason } from "../tooltip/disabled-reason";
 import { initializeTooltipTooltip, Tooltip } from "../tooltip/tooltip";
-import { getResizeObserver, initializeTooltipTrigger_2 } from "../tooltip/trigger";
+import { getResizeObserver, initializeTooltipTriggerPlaceholder } from "../tooltip/trigger";
 import { initializeNpm__base_ui_react_oQe, load_react, load_react_jsx_runtime, npm_Tabs_C1 } from "../../dependencies";
 import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 
@@ -25,7 +25,7 @@ var TabsTabsClassNames: Dynamic;
 var DataOrientationHorizontalRoleTabFirstChildBefValue: Dynamic;
 var DataOrientationHorizontalRoleTabLastChildBefoValue: Dynamic;
 var MlPadMdValue: Dynamic;
-var TabsTabsClassNames_2: Dynamic;
+var hiddenMeasureClassName: Dynamic;
 var TabsTabsLimit: Dynamic;
 var TabsList: Dynamic;
 var tabsListClasses: Dynamic;
@@ -201,7 +201,7 @@ export {
   TabsRoot,
   TabsTab,
   TabsTabsClassNames,
-  TabsTabsClassNames_2,
+  hiddenMeasureClassName,
   TabsTabsLimit,
   TabsTabsRootListTabConfig,
   useResponsiveTabList,
@@ -215,15 +215,15 @@ export function installCdsTabsTabs(): () => void {
       initializeClassNames();
       initializeCdsRoot();
       initializeDomSelectionPrevention();
-      initializeDomRefComposition_2();
+      initializeXmlNamespaceUris();
       initializeDomRefComposition();
-      initializeTooltipTrigger_2();
+      initializeTooltipTriggerPlaceholder();
       initializeTooltipDisabledReason();
       initializeTooltipTooltip();
       initializeButtonContext();
       initializeDomInert();
-      initializeButtonGroup_3();
-      initializeSwitchContext_2();
+      initializeButtonGroupObserver();
+      initializeFlipIndicatorContext();
       initializeTabsListMenu();
       reactTabsTabs = toModuleNamespace(load_react());
       jsxTabsTabs = toModuleNamespace(
@@ -236,7 +236,7 @@ export function installCdsTabsTabs(): () => void {
       DataOrientationHorizontalRoleTabLastChildBefoValue =
         "data-[orientation=horizontal]:[&>[role=tab]:last-child]:before:end-0";
       MlPadMdValue = "-ml-pad-md";
-      TabsTabsClassNames_2 =
+      hiddenMeasureClassName =
         "invisible absolute size-0 min-h-0 min-w-0 max-w-none overflow-hidden";
       TabsTabsLimit = 500;
       TabsList = (0, reactTabsTabs.forwardRef)(
@@ -293,7 +293,7 @@ export function installCdsTabsTabs(): () => void {
                   DataOrientationHorizontalRoleTabLastChildBefoValue,
                   flush ? MlPadMdValue : "",
                   className,
-                  isCollapsed && TabsTabsClassNames_2,
+                  isCollapsed && hiddenMeasureClassName,
                 )}
               />
               {isCollapsed ? (<TabsListMenu

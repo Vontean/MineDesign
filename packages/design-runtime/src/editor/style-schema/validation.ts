@@ -3,7 +3,7 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { StyleSchemaNodeTypesStartsWith } from "./node-types";
-import { StyleSchemaValuesItems_3 as supportedStyleProperties, StyleSchemaValuesRegistry, StyleSchemaValuesSubscribers_2 as effectProperties, StyleSchemaValuesSubscribers_3 as animatableProperties, StyleSchemaValuesSubscribers_4 as hoverProperties } from "./values";
+import { supportedStyleProperties, StyleSchemaValuesRegistry, effectProperties, animatableProperties, hoverProperties } from "./values";
 
 var styleSchema: Dynamic;
 var StyleSchemaValidationTableTableCellTableHeaderValues: Dynamic;
@@ -105,7 +105,7 @@ export {
   styleSchema,
   StyleSchemaValidationExpressionImageSetPattern,
   StyleSchemaValidationLabel,
-  cssWhitespacePatternSource as StyleSchemaValidationLabel_2,
+  cssWhitespacePatternSource,
   StyleSchemaValidationLimit,
   StyleSchemaValidationPattern,
   StyleSchemaValidationSubscribers,

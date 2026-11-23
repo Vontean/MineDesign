@@ -5,7 +5,7 @@ import {
 } from "../../runtime-types";
 import { focusCanvasDocument } from "../../canvas/focus";
 import { load_react_jsx_runtime } from "../../dependencies";
-import { reactHooksLatestCallback_3 } from "../hooks/latest-callback";
+import { reactForVectorPathEditor } from "../hooks/latest-callback";
 import { hasBlockingEditorOverlay } from "../text/typing-target";
 import { VectorAnnotationPenEditorOverflowTouchActionConfig } from "./annotation-pen-editor";
 import { VectorPathControls } from "./path-controls";
@@ -30,13 +30,13 @@ function VectorPathEditor({
 }: Dynamic): Dynamic {
   useUiLocale();
   let [value, setSelected]: Dynamic = (0,
-    reactHooksLatestCallback_3.useState)(undefined),
-    editorRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
-    pathRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(path);
+    reactForVectorPathEditor.useState)(undefined),
+    editorRef: Dynamic = (0, reactForVectorPathEditor.useRef)(null),
+    pathRef: Dynamic = (0, reactForVectorPathEditor.useRef)(path);
   pathRef.current = path;
-  let livePathRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
-    committedPathRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
-    hoveredPointRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
+  let livePathRef: Dynamic = (0, reactForVectorPathEditor.useRef)(null),
+    committedPathRef: Dynamic = (0, reactForVectorPathEditor.useRef)(null),
+    hoveredPointRef: Dynamic = (0, reactForVectorPathEditor.useRef)(null),
     selectedPoint: Dynamic = value,
     selectedAnchor: Dynamic = selectedPoint
       ? path.contours[selectedPoint.contour]?.anchors[selectedPoint.anchor]
@@ -88,11 +88,11 @@ function VectorPathEditor({
       }
     : null;
   committedPathRef.current = path;
-  let viewportRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)({
+  let viewportRef: Dynamic = (0, reactForVectorPathEditor.useRef)({
       left: 0,
       top: 0,
     }),
-    viewTransform: Dynamic = (0, reactHooksLatestCallback_3.useMemo)(
+    viewTransform: Dynamic = (0, reactForVectorPathEditor.useMemo)(
       (): Dynamic => ({
         scale: scale,
         toScreen: (point?: Dynamic): Dynamic => ({
@@ -113,8 +113,8 @@ function VectorPathEditor({
       }),
       [scale, origin.x, origin.y],
     ),
-    interactionRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)({});
-  (0, reactHooksLatestCallback_3.useEffect)((): Dynamic => {
+    interactionRef: Dynamic = (0, reactForVectorPathEditor.useRef)({});
+  (0, reactForVectorPathEditor.useEffect)((): Dynamic => {
     let handleSelectionChange: Dynamic = (selection?: Dynamic): Dynamic => {
       selection.detail !== interactionRef.current && setSelected(undefined);
     };
@@ -153,8 +153,8 @@ function VectorPathEditor({
       controls: "selected",
     }),
     { handles: pointerHandlers }: Dynamic = editorSession,
-    gestureRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
-    interactionHandlers: Dynamic = (0, reactHooksLatestCallback_3.useRef)({
+    gestureRef: Dynamic = (0, reactForVectorPathEditor.useRef)(null),
+    interactionHandlers: Dynamic = (0, reactForVectorPathEditor.useRef)({
       onCancel: onCancel,
       onGesture: onGesture,
     });
@@ -162,11 +162,11 @@ function VectorPathEditor({
     onCancel: onCancel,
     onGesture: onGesture,
   };
-  (0, reactHooksLatestCallback_3.useEffect)(
+  (0, reactForVectorPathEditor.useEffect)(
     (): Dynamic => (): Dynamic => gestureRef.current?.end("cancel"),
     [],
   );
-  (0, reactHooksLatestCallback_3.useEffect)((): Dynamic => {
+  (0, reactForVectorPathEditor.useEffect)((): Dynamic => {
     let activeSelection: Dynamic = selectedPointState;
     if (!activeSelection) return;
     let handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
@@ -378,7 +378,7 @@ export {
   jsxVectorPathEditor,
   VectorPathEditor,
   VectorPathEditorConstant,
-  TOUCH_CONTROL_PADDING_PX as VectorPathEditorConstant_2,
+  TOUCH_CONTROL_PADDING_PX,
 };
 export function installEditorVectorPathEditor(): () => void {
   return () => {

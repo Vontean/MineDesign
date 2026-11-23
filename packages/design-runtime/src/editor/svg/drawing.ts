@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { createArrowHeadId, defaultArrowHeadDefs, shortenLineEnd, SvgArrowsConstant_3 as arrowHeadTipInset } from "./arrows";
+import { createArrowHeadId, defaultArrowHeadDefs, shortenLineEnd, arrowHeadTipInset } from "./arrows";
 
 var SvgDrawingConstant: Dynamic;
 var minSvgBoundingBoxSize: Dynamic;
@@ -109,11 +109,11 @@ function constrainLineAngle(startPoint?: Dynamic, endPoint?: Dynamic): Dynamic {
     distance: Dynamic = Math.hypot(value, deltaY),
     octant: Dynamic =
       ((Math.round(Math.atan2(deltaY, value) / (Math.PI / 4)) % 8) + 8) % 8,
-    SQRT1_2: Dynamic = Math.SQRT1_2,
-    directionX: Dynamic = [1, SQRT1_2, 0, -SQRT1_2, -1, -SQRT1_2, 0, SQRT1_2][
+    reciprocalSqrt2: Dynamic = Math.SQRT1_2,
+    directionX: Dynamic = [1, reciprocalSqrt2, 0, -reciprocalSqrt2, -1, -reciprocalSqrt2, 0, reciprocalSqrt2][
       octant
     ],
-    directionY: Dynamic = [0, SQRT1_2, 1, SQRT1_2, 0, -SQRT1_2, -1, -SQRT1_2][
+    directionY: Dynamic = [0, reciprocalSqrt2, 1, reciprocalSqrt2, 0, -reciprocalSqrt2, -1, -reciprocalSqrt2][
       octant
     ];
   return {
@@ -128,7 +128,7 @@ export {
   lineDrawingHtml,
   lineDrawingInset,
   SvgDrawingConstant,
-  minSvgBoundingBoxSize as SvgDrawingConstant_2,
+  minSvgBoundingBoxSize,
   svgStrokeHtml,
 };
 export function installEditorSvgDrawing(): () => void {

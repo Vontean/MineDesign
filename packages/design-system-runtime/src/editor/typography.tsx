@@ -18,6 +18,7 @@ import { RemoveSectionButton } from "./section-card";
 import { SectionAddButton, SectionHeader } from "./section-headers";
 import { UsageNoteEditor } from "./usage-notes";
 import { normalizeTypographyProperty } from "../model/tokens";
+import { clampTypographyNumber, initializeTypographyPreview, parseTypographyLength, typeStylePreviewStyle } from "./typography-preview";
 import { toModuleNamespace } from "../module-helpers";
 import { Button } from "../ui/buttons";
 import { TooltipWrapper } from "../ui/color/gradient-stops";
@@ -31,11 +32,6 @@ import { TextInput } from "../ui/text-input";
 
 var jsxTypographyEditors: typeof import("react/jsx-runtime");
 var FONT_WEIGHT_LABELS: [number, string][];
-var clampTypographyNumber: (
-  value: number,
-  minimum: number,
-  maximum: number,
-) => number;
 var DEFAULT_TYPE_SAMPLE: string;
 var fontFileDisplayPath: (path: string) => string;
 var fontFileSlantLabel: (style: string) => string;
@@ -45,60 +41,6 @@ var CUSTOM_FONT_FAMILY_SENTINEL: string;
 var MAX_TYPE_SAMPLE_LENGTH: number;
 var TYPE_CARD_KEY_PREFIX: string;
 var TYPOGRAPHY_SECTION_LABEL: string;
-function parseTypographyLength(fontValue: string, fallback: number): number {
-  let fontValueA = /^(\d{1,4}(?:\.\d{1,6})?)(px|rem|em|%)?$/.exec(fontValue.trim());
-  if (fontValueA === null) {
-    return fallback;
-  }
-  let fontState: number = Number(fontValueA[1] ?? String(fallback));
-  if (fontValueA[2] === "rem" || fontValueA[2] === "em") {
-    return fontState * 16;
-  } else {
-    return fontState;
-  }
-}
-function typeStylePreviewStyle(
-  style: Token.TypographyPreviewStyle,
-  fontFamily: string,
-): React.CSSProperties {
-  let value = clampTypographyNumber(
-      parseTypographyLength(style.fontSize, 14),
-      6,
-      160,
-    ),
-    fontValueB = style.lineHeight.trim(),
-    fontStateA = /[a-z%]/.test(fontValueB)
-      ? clampTypographyNumber(
-          parseTypographyLength(fontValueB, value * 1.3),
-          6,
-          400,
-        ) + "px"
-      : clampTypographyNumber(Number(fontValueB), 0.5, 4),
-    fontWeight =
-      typeof style.fontWeight === "number"
-        ? clampTypographyNumber(Math.round(style.fontWeight), 1, 1000)
-        : clampTypographyNumber(
-            parseInt(String(style.fontWeight), 10),
-            1,
-            1000,
-          ),
-    state: React.CSSProperties = {
-      fontFamily: fontFamily,
-      fontSize: value,
-      lineHeight: fontStateA,
-      fontWeight: fontWeight,
-      letterSpacing: style.letterSpacing,
-      fontStyle: style.fontStyle === "italic" ? "italic" : "normal",
-    };
-  if (style.opticalSize !== undefined && Number.isFinite(style.opticalSize)) {
-    state.fontVariationSettings =
-      '"opsz" ' +
-      String(clampTypographyNumber(style.opticalSize as number, 1, 144));
-  } else {
-    state.fontVariationSettings = "normal";
-  }
-  return state;
-}
 function fontWeightLabel(weight: string | number): string { return uiFontWeight(weight); }
 function groupFontsByFamily(
   fonts: Token.EditorFont[],
@@ -137,11 +79,11 @@ function MissingFontNotice({
           ) : undefined
         }
       >
-        {[value ? (uiMessage("design-system.typography.aFontFileIs")) : (uiMessage("design-system.typography.fontFilesAre", { value1: String(String(missing.length)) })), uiMessage("design-system.typography.referencedButNotUploaded"), <span className={"font-mono"}>
+        {[value ? (uiMessage("design-system.typography.aFontFileIs")) : (uiMessage("design-system.typography.fontFilesAre", { subject: String(String(missing.length)) })), uiMessage("design-system.typography.referencedButNotUploaded"), <span className={"font-mono"}>
             {missing
               .map((fontInput) => fontFileDisplayPath(fontInput.path))
               .join(", ")}
-          </span>, edit !== undefined ? (uiMessage("design-system.typography.addWithUploadFont", { value1: String(value ? (uiMessage("design-system.typography.it")) : (uiMessage("design-system.typography.them"))) })) : (uiMessage("design-system.typography.anEditorCanUpload", { value1: String(value ? (uiMessage("design-system.typography.it")) : (uiMessage("design-system.typography.them"))) }))]}
+          </span>, edit !== undefined ? (uiMessage("design-system.typography.addWithUploadFont", { subject: String(value ? (uiMessage("design-system.typography.it")) : (uiMessage("design-system.typography.them"))) })) : (uiMessage("design-system.typography.anEditorCanUpload", { subject: String(value ? (uiMessage("design-system.typography.it")) : (uiMessage("design-system.typography.them"))) }))]}
       </Callout>
     </div>
   );
@@ -803,7 +745,7 @@ function TypeStyleSpecimen({
         onOpenChange={fontValueP}
         trigger={
           <PropertyPopoverTrigger
-            label={uiMessage("design-system.typography.edit", { value1: String(s.name) })}
+            label={uiMessage("design-system.typography.edit", { subject: String(s.name) })}
             text={fontStateD}
             onClick={(fontInputa: React.MouseEvent<HTMLButtonElement>): void => {
               ref.current = fontInputa.detail === 0;
@@ -818,7 +760,7 @@ function TypeStyleSpecimen({
         {value ? (<CdsRoot density={"compact"} className={"contents"}>
             <div
               role={"group"}
-              aria-label={uiMessage("design-system.typography.textStyle", { value1: String(s.name) })}
+              aria-label={uiMessage("design-system.typography.textStyle", { subject: String(s.name) })}
               {...commentTargetProps(
                 "editor",
                 "style/" + s.name,
@@ -964,7 +906,7 @@ function TypeStyleRow({
               data-testid={"ds-style-usage-" + s.name}
             />, edit !== undefined ? (
               <RemoveRowButton
-                label={uiMessage("design-system.typography.remove", { value1: String(s.name) })}
+                label={uiMessage("design-system.typography.remove", { subject: String(s.name) })}
                 onRemove={() => edit.remove(s.name)}
                 data-testid={"ds-style-remove-" + s.name}
               />
@@ -980,7 +922,7 @@ function TypeStyleRow({
               ? {
                   rename: callback,
                   remove: () => edit.remove(s.name),
-                  get removeLabel() { return uiMessage("design-system.typography.remove", { value1: String(s.name) }); },
+                  get removeLabel() { return uiMessage("design-system.typography.remove", { subject: String(s.name) }); },
                 }
               : {}),
             copy: s.fontSize + " / " + s.lineHeight,
@@ -1142,7 +1084,7 @@ function TypographySection({
                         size={"sm"}
                         iconOnly={true}
                         icon={"Add"}
-                        aria-label={uiMessage("design-system.typography.addATypeStyleTo", { value1: String(state.title) })}
+                        aria-label={uiMessage("design-system.typography.addATypeStyleTo", { subject: String(state.title) })}
                         tooltip={uiMessage("design-system.typography.addStyle")}
                         onClick={() => edit.add?.(fontInputl.name)}
                         data-testid={"ds-style-add-" + fontInputl.name}
@@ -1272,14 +1214,7 @@ export function installEditorTypography(): () => void {
       [700, "Bold"],
       [800, "Heavy"],
     ];
-    clampTypographyNumber = (
-      numericValue: number,
-      minimum: number,
-      maximum: number,
-    ) =>
-      Number.isFinite(numericValue)
-        ? Math.min(maximum, Math.max(minimum, numericValue))
-        : minimum;
+    initializeTypographyPreview();
     DEFAULT_TYPE_SAMPLE = "The quick brown fox jumps over the lazy dog";
     fontFileDisplayPath = (path: string) =>
       path.replace(/^(?:fonts|assets)\//, "");

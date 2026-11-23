@@ -5,7 +5,7 @@ import {
 import { FAST_EDIT_ARTBOARD_ID_PATTERN } from "./artboard-operations";
 import { closeHistoryTurn, createFastEditHistory, MAX_LISTED_HISTORY_TURN_IDS, summarizeTurnIds } from "./history";
 import { SAFE_PROMPT_HTML_TAGS, truncateLargeDataUris } from "./prompt-context";
-import { splitCssDeclarations_2 } from "./template-validation";
+import { splitStyleDeclarations } from "./template-validation";
 import { sanitizeUntrustedText } from "./untrusted-content";
 
 var MAX_JOURNAL_CHANGE_LINES: Dynamic;
@@ -95,7 +95,7 @@ function isDecorativeElement(element?: Dynamic): Dynamic {
 }
 function parseJournalStyle(style?: Dynamic): Dynamic {
   let properties: Dynamic = new Map();
-  for (let value of splitCssDeclarations_2(
+  for (let value of splitStyleDeclarations(
     style ?? "",
   ) as Dynamic) {
     let colonIndex: Dynamic = value.indexOf(":");

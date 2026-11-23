@@ -11,11 +11,11 @@ import { EditorPopover } from "../chrome/popover";
 import { hsvaToRgbaCss, parseHsvaColor } from "../color/picker-primitives";
 import { ColorPickerLabel } from "../color/picker";
 import { NumericInput } from "./numeric-input";
-import { PropertiesPrimitivesClassNames_3, PropertyColorWell, PropertyPickerButton } from "./primitives";
+import { propertyGutterClassName, PropertyColorWell, PropertyPickerButton } from "./primitives";
 import { PropertyRow } from "./row";
 import { PropertiesSelectMin, PropertySelect } from "./select";
 import { PropertyOptionIcon } from "./tool-options";
-import { PropertiesTooltipNameViewBoxPathsConfig_13 as angleIcon, reactPropertiesTooltip_2 } from "./tooltip";
+import { angleIcon, reactForGradientEditor } from "./tooltip";
 import { toModuleNamespace } from "../../module-helpers";
 
 var PropertiesGradientEditorHandler: Dynamic;
@@ -23,7 +23,7 @@ var PropertiesGradientEditorTest: Dynamic;
 var PropertiesGradientEditorAttrCalcPattern: Dynamic;
 var PropertiesGradientEditorPattern: Dynamic;
 var WrittenByHandInAFormMessage: Dynamic;
-var PropertiesGradientEditorHandler_2: Dynamic;
+var gradientTypeOptions: Dynamic;
 var jsxPropertiesGradientEditor: Dynamic;
 var PropertiesGradientEditorColorMixPattern: Dynamic;
 var PropertiesGradientEditorImageCrossFadePattern: Dynamic;
@@ -78,9 +78,9 @@ function GradientEditor({
 }: Dynamic): Dynamic {
   useUiLocale();
   let [liveStops, setLiveStops]: Dynamic = (0,
-    reactPropertiesTooltip_2.useState)(null),
+    reactForGradientEditor.useState)(null),
     currentStops: Dynamic = liveStops ?? stops,
-    hasLiveEditRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(false),
+    hasLiveEditRef: Dynamic = (0, reactForGradientEditor.useRef)(false),
     sortedPositions: Dynamic = normalizedGradientStops(currentStops),
     positions: Dynamic =
       hasLiveEditRef.current || liveStops !== null
@@ -95,7 +95,7 @@ function GradientEditor({
       stop.swatch ?? stop.color,
     colorSignature: Dynamic = currentStops.map(stopColor).join("\0"),
     resolveColor: Dynamic = (0,
-    reactPropertiesTooltip_2.useMemo)((): Dynamic => {
+    reactForGradientEditor.useMemo)((): Dynamic => {
       let entries: Dynamic = new Map();
       for (let color of colorSignature.split("\0") as Dynamic)
         entries.has(color) ||
@@ -114,10 +114,10 @@ function GradientEditor({
       0,
       Math.max(0, currentStops.length - 1),
     ),
-    barRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(null),
-    containerRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(null),
-    stopIdsRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)([]),
-    nextStopIdRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(0);
+    barRef: Dynamic = (0, reactForGradientEditor.useRef)(null),
+    containerRef: Dynamic = (0, reactForGradientEditor.useRef)(null),
+    stopIdsRef: Dynamic = (0, reactForGradientEditor.useRef)([]),
+    nextStopIdRef: Dynamic = (0, reactForGradientEditor.useRef)(0);
   stopIdsRef.current.length !== currentStops.length &&
     (stopIdsRef.current = currentStops.map((): Dynamic => nextStopIdRef.current++));
   let stopIds: Dynamic = stopIdsRef.current,
@@ -125,15 +125,15 @@ function GradientEditor({
       containerRef.current?.closest('[data-mc-popover], [role="dialog"]') ??
       containerRef.current,
     [openPickerId, setOpenPickerId]: Dynamic = (0,
-    reactPropertiesTooltip_2.useState)(null),
+    reactForGradientEditor.useState)(null),
     [shouldFocusPicker, setShouldFocusPicker]: Dynamic = (0,
-    reactPropertiesTooltip_2.useState)(false),
+    reactForGradientEditor.useState)(false),
     openPickerIndex: Dynamic =
       openPickerId !== null && stopIds.includes(openPickerId)
         ? stopIds.indexOf(openPickerId)
         : null,
-    dragRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(null),
-    latestPropsRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)({
+    dragRef: Dynamic = (0, reactForGradientEditor.useRef)(null),
+    latestPropsRef: Dynamic = (0, reactForGradientEditor.useRef)({
       stops: stops,
       onStopsLive: onStopsLive,
       onLiveEnd: onLiveEnd,
@@ -166,14 +166,14 @@ function GradientEditor({
       );
     latestOnLiveEnd?.();
   };
-  (0, reactPropertiesTooltip_2.useEffect)(
+  (0, reactForGradientEditor.useEffect)(
     (): Dynamic => (): Dynamic => {
       let drag: Dynamic = dragRef.current;
       drag?.moved && revertDrag(drag);
     },
     [],
   );
-  let suppressClickRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(false),
+  let suppressClickRef: Dynamic = (0, reactForGradientEditor.useRef)(false),
     withNormalizedPositions: Dynamic = (stopList?: Dynamic): Dynamic =>
       stopList.map(
         (stop?: Dynamic, index?: Dynamic): Dynamic =>
@@ -236,7 +236,7 @@ function GradientEditor({
           (): Dynamic => container.querySelectorAll(focusSelector)[index]?.focus(),
         );
     },
-    reorderCountRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(0),
+    reorderCountRef: Dynamic = (0, reactForGradientEditor.useRef)(0),
     commitStops: Dynamic = (nextStops?: Dynamic, movedIndex?: Dynamic): Dynamic => {
       let hasLocked: Dynamic = nextStops.some(
           (stop?: Dynamic): Dynamic => stop.locked === true,
@@ -350,7 +350,7 @@ function GradientEditor({
       ]);
       onSelect(insertIndex);
     },
-    trackRef: Dynamic = (0, reactPropertiesTooltip_2.useRef)(null),
+    trackRef: Dynamic = (0, reactForGradientEditor.useRef)(null),
     pointerToPercent: Dynamic = (event?: Dynamic): Dynamic => {
       let bounds: Dynamic = (
         trackRef.current ?? barRef.current
@@ -484,7 +484,7 @@ function GradientEditor({
           <div className={"min-w-0 flex-1"}>
             <PropertySelect
               aria-label={uiMessage("inspector.gradientEditor.gradientStyle")}
-              items={PropertiesGradientEditorHandler_2(
+              items={gradientTypeOptions(
                 onRadial !== undefined,
               )}
               value={radial ? "radial" : "linear"}
@@ -536,7 +536,7 @@ function GradientEditor({
       </PropertyRow>
       <div
         className={joinClassNames(
-          PropertiesPrimitivesClassNames_3,
+          propertyGutterClassName,
           "pt-3 pb-4",
         )}
       >
@@ -561,7 +561,7 @@ function GradientEditor({
                   const _props = {
                     type: "button",
                     role: "slider",
-                    get "aria-label"() { return uiMessage("inspector.gradientEditor.stopPosition", { value1: String(String(index + 1)) }); },
+                    get "aria-label"() { return uiMessage("inspector.gradientEditor.stopPosition", { index: String(String(index + 1)) }); },
                     "aria-valuemin": 0,
                     "aria-valuemax": 100,
                     "aria-valuenow": Math.round(positions[index]),
@@ -616,7 +616,7 @@ function GradientEditor({
             icon={"Add"}
             aria-label={uiMessage("inspector.gradientEditor.addStop")}
             disabled={isDisabled || currentStops.length >= maxStops}
-            disabledReason={uiMessage("inspector.gradientEditor.stopsAtMost", { value1: String(String(maxStops)) })}
+            disabledReason={uiMessage("inspector.gradientEditor.stopsAtMost", { limit: String(String(maxStops)) })}
             onClick={addStop}
           />
         </div>
@@ -625,7 +625,7 @@ function GradientEditor({
         role={"list"}
         aria-label={uiMessage("inspector.gradientEditor.stops")}
         className={joinClassNames(
-          PropertiesPrimitivesClassNames_3,
+          propertyGutterClassName,
           "mt-1 flex flex-col gap-2",
         )}
       >
@@ -641,7 +641,7 @@ function GradientEditor({
               children: [
                 <div className={"w-[3.75rem] shrink-0"}>
                   <NumericInput
-                    aria-label={uiMessage("inspector.gradientEditor.stopPosition", { value1: String(String(index + 1)) })}
+                    aria-label={uiMessage("inspector.gradientEditor.stopPosition", { index: String(String(index + 1)) })}
                     value={Math.round(positions[index])}
                     unit={"%"}
                     min={0}
@@ -678,7 +678,7 @@ function GradientEditor({
                     trigger={
                       <PropertyPickerButton
                         aria-label={
-                          uiMessage("inspector.gradientEditor.stopColor", { value1: String(String(index + 1)), value2: String(PropertiesGradientEditorTest(stop.color)) })
+                          uiMessage("inspector.gradientEditor.stopColor", { index: String(String(index + 1)), color: String(PropertiesGradientEditorTest(stop.color)) })
                         }
                         data-selected={index === selectedIndex ? "" : undefined}
                         disabled={isDisabled}
@@ -719,7 +719,7 @@ function GradientEditor({
                     size={"sm"}
                     iconOnly={true}
                     icon={"Minus"}
-                    aria-label={uiMessage("inspector.gradientEditor.removeStop", { value1: String(String(index + 1)) })}
+                    aria-label={uiMessage("inspector.gradientEditor.removeStop", { index: String(String(index + 1)) })}
                     disabled={!canRemoveStop(index)}
                     disabledReason={
                       (("A gradient needs ") + (String(minStops))) + (" color stops.")
@@ -744,7 +744,7 @@ export {
   PropertiesGradientEditorAttrCalcPattern,
   PropertiesGradientEditorColorMixPattern,
   PropertiesGradientEditorHandler,
-  PropertiesGradientEditorHandler_2,
+  gradientTypeOptions,
   PropertiesGradientEditorImageCrossFadePattern,
   PropertiesGradientEditorLabel,
   PropertiesGradientEditorPattern,
@@ -764,7 +764,7 @@ export function installEditorPropertiesGradientEditor(): () => void {
     PropertiesGradientEditorPattern = /^\s*-?[\d.]+[a-z%]*\s*$/i;
     WrittenByHandInAFormMessage =
       uiMessage("inspector.gradientEditor.writtenByHandInA");
-    PropertiesGradientEditorHandler_2 = (canChooseRadial?: Dynamic): Dynamic => [
+    gradientTypeOptions = (canChooseRadial?: Dynamic): Dynamic => [
       {
         value: "linear",
         get label() { return uiMessage("inspector.gradientEditor.linear"); },

@@ -4,7 +4,7 @@ import {
   type Dynamic,
 } from "../runtime-types";
 import { SelectionRing } from "../cds/components/selection-ring";
-import { peerCollaboratorIndex, reactCollaborationPeerCursors_2 } from "./peer-cursors";
+import { peerCollaboratorIndex, reactForUsePeerSelectionGroups } from "./peer-cursors";
 import { load_react_jsx_runtime } from "../dependencies";
 import { toModuleNamespace } from "../module-helpers";
 import { roomPeersStore } from "../platform/file-content";
@@ -70,7 +70,7 @@ function getPeerSelectionGroups(
 }
 function usePeerSelectionGroups(scopeFilter?: Dynamic, listKeys?: Dynamic): Dynamic {
   let peers: Dynamic = (0,
-  reactCollaborationPeerCursors_2.useSyncExternalStore)(
+  reactForUsePeerSelectionGroups.useSyncExternalStore)(
     roomPeersStore.subscribe,
     roomPeersStore.getSnapshot,
     roomPeersStore.getSnapshot,

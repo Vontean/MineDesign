@@ -6,7 +6,7 @@ import {
 } from "../../runtime-types";
 import { useButtonAnimation } from "../button/context";
 import { Icon } from "./icon";
-import { AspectSquareValue, ComponentsSelectionRingClassNames, ComponentsSelectionRingClassNames_2, ComponentsSelectionRingClassNames_3, ComponentsSelectionRingClassNames_4, ComponentsSelectionRingClassNames_5, ComponentsSelectionRingClassNames_6, ComponentsSelectionRingConstant, ComponentsSelectionRingConstant_2 as ComponentsSelectionRingUnscaledStillFrames, ComponentsSelectionRingLabel, ComponentsSelectionRingLabel_2 as thumbShadowClasses, ComponentsSelectionRingLimit, HFullValue, reactComponentsSelectionRing, selectionRingClasses } from "./selection-ring";
+import { AspectSquareValue, ComponentsSelectionRingClassNames, flexGrowClassName, mutedTextClassName, segmentIdleHoverClassName, segmentedThumbClassName, segmentedOutlineClassName, ComponentsSelectionRingConstant, unscaledStillFrames as ComponentsSelectionRingUnscaledStillFrames, ComponentsSelectionRingLabel, thumbShadowClasses, ComponentsSelectionRingLimit, HFullValue, reactComponentsSelectionRing, selectionRingClasses } from "./selection-ring";
 import { getConnectedOwnerWindow, getOwnerWindow } from "../dom/owner-window";
 import { withSelectionPrevention } from "../dom/selection-prevention";
 import { isInsideField } from "../field/context";
@@ -203,7 +203,7 @@ function SegmentedControl({
         >
           <div
             ref={indicatorRef}
-            className={`${ComponentsSelectionRingClassNames_5} ${isContained ? thumbShadowClasses : ComponentsSelectionRingClassNames_6}`}
+            className={`${segmentedThumbClassName} ${isContained ? thumbShadowClasses : segmentedOutlineClassName}`}
           />
         </div>
         {segments.map((segment?: Dynamic): Dynamic => {
@@ -224,7 +224,7 @@ function SegmentedControl({
                 disabled={segment.disabled}
                 aria-label={isIconOnly ? (ariaLabelText) : (undefined)}
                 onMouseDown={withSelectionPrevention(undefined)}
-                className={`${selectionRingClasses} ${isContained ? ComponentsSelectionRingClassNames_3 : ComponentsSelectionRingClassNames_4} ${isIconOnly ? AspectSquareValue : ComponentsSelectionRingClassNames}${fullWidth ? " flex-1" : ""}`}
+                className={`${selectionRingClasses} ${isContained ? mutedTextClassName : segmentIdleHoverClassName} ${isIconOnly ? AspectSquareValue : ComponentsSelectionRingClassNames}${fullWidth ? " flex-1" : ""}`}
               >
                 {iconNode && segment.indicator ? (<span className={"grid"}>
                     <span
@@ -255,7 +255,7 @@ function SegmentedControl({
                   hoverable={false}
                   wrapperClassName={
                     fullWidth
-                      ? `${HFullValue} ${isIconOnly ? ComponentsSelectionRingClassNames_2 : ComponentsSelectionRingLabel}`
+                      ? `${HFullValue} ${isIconOnly ? flexGrowClassName : ComponentsSelectionRingLabel}`
                       : HFullValue
                   }
                 >
@@ -363,7 +363,6 @@ function elementBorderBoxWidth(element?: Dynamic): Dynamic {
 export {
   ComponentsSelectionPointsComponent,
   ComponentsSelectionPointsConstant,
-  ComponentsSelectionPointsShiftStep as ComponentsSelectionPointsConstant_2,
   ComponentsSelectionPointsInlineStartInlineEndTopConfig,
   ComponentsSelectionPointsLimit,
   elementBorderBoxWidth,

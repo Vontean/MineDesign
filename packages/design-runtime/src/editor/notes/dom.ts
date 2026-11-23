@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { NotesBlocksHandler, NotesBlocksPattern_3 as escapedMarkerPattern, NotesBlocksReplace, parseNoteBlocks } from "./blocks";
+import { NotesBlocksHandler, escapedMarkerPattern, NotesBlocksReplace, parseNoteBlocks } from "./blocks";
 import { escapeMarkdownInline } from "./inline-markdown";
 
 var NotesDomRepeat: Dynamic;
@@ -12,7 +12,7 @@ var NotesDomBLOCKQUOTESECTIONPattern: Dynamic;
 var NotesDomHttpsPattern: Dynamic;
 var NotesDomJoin: Dynamic;
 var NotesDomReplace: Dynamic;
-var NotesDomHandler_2: Dynamic;
+var unescapeNoteText: Dynamic;
 function createNoteInlineDom(
   doc?: Dynamic,
   markdown?: Dynamic,
@@ -340,7 +340,7 @@ export {
   NotesDomBLOCKQUOTESECTIONPattern,
   NotesDomBSTRONGIConfig,
   NotesDomHandler,
-  NotesDomHandler_2,
+  unescapeNoteText,
   NotesDomHttpsPattern,
   NotesDomJoin,
   NotesDomRepeat,
@@ -409,7 +409,7 @@ export function installEditorNotesDom(): () => void {
 `,
         )
         .replace(/\\([*\u0060[\]\\])/g, "$1");
-    NotesDomHandler_2 = (text?: Dynamic): Dynamic => {
+    unescapeNoteText = (text?: Dynamic): Dynamic => {
       let unescapedText: Dynamic = NotesDomReplace(text);
       return NotesDomJoin(unescapedText) === text ? unescapedText : text;
     };

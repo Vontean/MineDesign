@@ -7,7 +7,7 @@ import {
 import { ComponentsSelectionRingPointPointStrokeGripHitConfig } from "../../cds/components/selection-ring";
 import { announce } from "../accessibility/announcer";
 import { cropIntoFrame, imageCropRect, resizeImageCropCorner, resizeImageCropFrame, sameImageCrop, translateImageCrop, zoomImageCrop } from "./crop-geometry";
-import { PropertiesSidesArrowLeftArrowRightArrowUpConfig, PropertiesSidesConstant as wheelZoomSensitivity, PropertiesSidesConstant_2 as dimmedMediaOpacity, PropertiesSidesConstant_3 as keyboardZoomFactor, PropertiesSidesNESConfig, PropertiesSidesNESValues, PropertiesSidesNSEConfig, PropertiesSidesNwNeSeConfig, PropertiesSidesNwNeSeValues, reactPropertiesSides, RESIZE_EDGE_MIN_LENGTH_PX, RESIZE_HANDLE_HIT_SIZE_PX, RESIZE_HANDLE_LENGTH_PX, RESIZE_HANDLE_THICKNESS_PX } from "../properties/sides";
+import { PropertiesSidesArrowLeftArrowRightArrowUpConfig, PropertiesSidesConstant as wheelZoomSensitivity, dimmedMediaOpacity, keyboardZoomFactor, PropertiesSidesNESConfig, PropertiesSidesNESValues, PropertiesSidesNSEConfig, PropertiesSidesNwNeSeConfig, PropertiesSidesNwNeSeValues, reactPropertiesSides, RESIZE_EDGE_MIN_LENGTH_PX, RESIZE_HANDLE_HIT_SIZE_PX, RESIZE_HANDLE_LENGTH_PX, RESIZE_HANDLE_THICKNESS_PX } from "../properties/sides";
 
 function blurBeforeCrop(): Dynamic {
   let activeElement: Dynamic = (document as Dynamic).activeElement;
@@ -633,7 +633,7 @@ function MediaCropEditor({
               data-media-crop-side={side}
               role={"img"}
               aria-label={
-                uiMessage("inspector.cropEditor.cropHandle", { value1: String(PropertiesSidesNESConfig[side]) })
+                uiMessage("inspector.cropEditor.cropHandle", { side: String(PropertiesSidesNESConfig[side]) })
               }
               title={disabledReason ?? (uiMessage("inspector.cropEditor.dragToCrop"))}
               aria-disabled={disabledReason !== undefined || undefined}
@@ -705,7 +705,7 @@ function MediaCropEditor({
               data-media-crop-handle={corner}
               role={"img"}
               aria-label={
-                uiMessage("inspector.cropEditor.zoomHandle", { value1: String(PropertiesSidesNwNeSeConfig[corner]) })
+                uiMessage("inspector.cropEditor.zoomHandle", { corner: String(PropertiesSidesNwNeSeConfig[corner]) })
               }
               title={zoomDisabledReason ?? (uiMessage("inspector.cropEditor.dragToZoom"))}
               aria-disabled={isZoomLocked || undefined}

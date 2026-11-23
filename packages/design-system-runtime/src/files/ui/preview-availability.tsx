@@ -193,7 +193,7 @@ function FluidComponentPreview({
           fromProps={previewSource.fromProps}
           head={ph.head}
           height={previewHeight}
-          title={uiMessage("design-system.previewAvailability.preview", { value1: String(c.name) })}
+          title={uiMessage("design-system.previewAvailability.preview", { subject: String(c.name) })}
           {...(previewSource.staticReason !== undefined
             ? {
                 staticReason: previewSource.staticReason,
@@ -229,7 +229,7 @@ function ScaledComponentPreview({
               fromProps={previewSource.fromProps}
               head={ph.head}
               height={height}
-              title={uiMessage("design-system.previewAvailability.preview", { value1: String(c.name) })}
+              title={uiMessage("design-system.previewAvailability.preview", { subject: String(c.name) })}
               {...(previewSource.staticReason !== undefined
                 ? {
                     staticReason: previewSource.staticReason,

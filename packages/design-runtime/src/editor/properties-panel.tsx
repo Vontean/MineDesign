@@ -4,7 +4,7 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../runtime-types";
-import { reactCanvasShape_2, reactDomCanvasShape_2 } from "../canvas/shape";
+import { canvasShapeReact as React, reactDomForAnchoredDesignProperties } from "../canvas/shape";
 import { activeDesignColorTokens } from "../canvas/working-state";
 import { cn } from "../cds/theme/class-names";
 import { InspectorPanelShell, useInspectorPosture } from "./chrome/inspector-sheet";
@@ -16,7 +16,7 @@ import { useElementById } from "./hooks/element-and-dismissal";
 import { AnnotationInspector } from "./inspector/annotation";
 import { InspectorContext } from "./inspector/context-part-2";
 import { inspectorPanelId, useInspectorOpen } from "./inspector/context";
-import { InspectorEditorItems, InspectorEditorItems_2 as emptyArtboardColors } from "./inspector/editor";
+import { noDesignColorTokens, emptyArtboardColors } from "./inspector/editor";
 import { CdsIsland } from "../platform/cds-island";
 
 function DesignPropertiesSidebar({ children: children }: Dynamic): Dynamic {
@@ -47,7 +47,7 @@ function AnchoredDesignProperties({
     panelHost: Dynamic = useElementById(inspectorPanelId),
     [isInspectorOpen]: Dynamic = useInspectorOpen(),
     colorTokenSet: Dynamic = useDesignColorTokens("appifact"),
-    inspectorContextValue: Dynamic = (0, reactCanvasShape_2.useMemo)(
+    inspectorContextValue: Dynamic = (0, React.useMemo)(
       (): Dynamic => ({
         dsColorTokens: activeDesignColorTokens(
           colorTokenSet.tokens,
@@ -55,7 +55,7 @@ function AnchoredDesignProperties({
           undefined,
         ),
         artboardColors: emptyArtboardColors,
-        designColorTokens: InspectorEditorItems,
+        designColorTokens: noDesignColorTokens,
         setOverlayHidden: (): Dynamic => {},
         setScrubbing: (): Dynamic => {},
         editsAreUndoSteps: true,
@@ -79,7 +79,7 @@ function AnchoredDesignProperties({
       </div>
     </InspectorContext.Provider>
   );
-  return (0, reactDomCanvasShape_2.createPortal)(
+  return (0, reactDomForAnchoredDesignProperties.createPortal)(
     <CdsIsland density={"compact"} className={"contents"}>
       {inspectorPosture === "wide" ? (<DesignPropertiesSidebar>{inspectorContent}</DesignPropertiesSidebar>) : (<InspectorPanelShell
           posture={"sheet"}

@@ -3,7 +3,7 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { nativeContextMenuTimeout, OutlineDcOutlineConstant, OutlineDcOutlineConstant_2 as OutlineDcOutlineLongSuppressDelay, OutlineDcOutlineRemoveEventListener, OutlineDcOutlineTarget } from "./dc-outline";
+import { nativeContextMenuTimeout, OutlineDcOutlineConstant, OutlineDcOutlineLongSuppressDelay, OutlineDcOutlineRemoveEventListener, OutlineDcOutlineTarget } from "./dc-outline";
 
 import { set_nativeContextMenuTimeout } from "./dc-outline";
 var OutlineNativeMenuTitle1RectOvalConfig: Dynamic;
@@ -29,7 +29,7 @@ function suppressNativeContextMenu(isLongSuppress?: Dynamic): Dynamic {
 }
 export {
   OutlineNativeMenuLabelGlyphConfig,
-  OutlineNativeMenuVideoLabelGlyphConfig as OutlineNativeMenuLabelGlyphConfig_2,
+  OutlineNativeMenuVideoLabelGlyphConfig,
   OutlineNativeMenuLimit,
   OutlineNativeMenuReplace,
   OutlineNativeMenuSlice,

@@ -10,19 +10,6 @@ import { load_react } from "../dependencies";
 import { toModuleNamespace } from "../module-helpers";
 
 var reactCanvasMeasurements: Dynamic;
-var reactCanvasMeasurements_2: Dynamic;
-var SaveNowValue: Dynamic;
-var OpenFindValue: Dynamic;
-var CanvasMeasurementsPattern: Dynamic;
-var CanvasMeasurementsIsSafeInteger: Dynamic;
-var CanvasMeasurementsConstant: Dynamic;
-var shortSlugPattern: Dynamic;
-var eightLimitSecond: Dynamic;
-var CanvasMeasurementsAZaZPattern: Dynamic;
-var shortSlugPatternCopy: Dynamic;
-var eightLimitThird: Dynamic;
-var maxValueNines: Dynamic;
-var hexColorPattern: Dynamic;
 /** 测距叠层：在画板坐标里画线段与数值标注，线宽和字号按画布缩放反向补偿。 */
 function MeasurementOverlay({ m: m, scale: scale }: { m: ChromeMeasure; scale: number }): Dynamic {
   useUiLocale();
@@ -100,21 +87,8 @@ function MeasurementOverlay({ m: m, scale: scale }: { m: ChromeMeasure; scale: n
   );
 }
 export {
-  CanvasMeasurementsAZaZPattern,
-  CanvasMeasurementsConstant,
-  eightLimitSecond as CanvasMeasurementsConstant_2,
-  eightLimitThird as CanvasMeasurementsConstant_3,
-  maxValueNines as CanvasMeasurementsConstant_4,
-  CanvasMeasurementsIsSafeInteger,
-  CanvasMeasurementsPattern,
-  shortSlugPattern as CanvasMeasurementsPattern_2,
-  shortSlugPatternCopy as CanvasMeasurementsPattern_3,
-  hexColorPattern as CanvasMeasurementsPattern_4,
   MeasurementOverlay,
-  OpenFindValue,
   reactCanvasMeasurements,
-  reactCanvasMeasurements_2,
-  SaveNowValue,
 };
 export function installCanvasMeasurements(): () => void {
   return () => {
@@ -123,27 +97,6 @@ export function installCanvasMeasurements(): () => void {
       1,
     );
     initializeCdsIndex();
-    reactCanvasMeasurements_2 = toModuleNamespace(
-      load_react(),
-      1,
-    );
-    SaveNowValue = "save_now";
-    OpenFindValue = "open_find";
-    CanvasMeasurementsPattern = /^[a-z0-9]{1,8}$/;
-    CanvasMeasurementsIsSafeInteger = (durationMs?: Dynamic): Dynamic =>
-      typeof durationMs == "number" &&
-      Number.isSafeInteger(durationMs) &&
-      durationMs > 5e3 &&
-      durationMs <= 15 * 6e4
-        ? durationMs
-        : undefined;
-    CanvasMeasurementsConstant = 8;
-    shortSlugPattern = /^[a-z][a-z0-9_-]{0,31}$/;
-    eightLimitSecond = 8;
-    CanvasMeasurementsAZaZPattern = /^[A-Za-z0-9_-]{16,64}$/;
-    shortSlugPatternCopy = /^[a-z][a-z0-9_-]{0,31}$/;
-    eightLimitThird = 8;
-    maxValueNines = 9999;
-    hexColorPattern = /^#[0-9a-f]{6}$/;
+
   };
 }

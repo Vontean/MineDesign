@@ -8,8 +8,8 @@ import { Button } from "../../cds/button/button";
 import { MenuMenuAssignValue } from "../../cds/menu/menu";
 import { joinClassNames } from "../chrome/overlay-state";
 import { ColorContrastCopyLabel, ResetValue } from "../color/contrast-copy";
-import { reactInspectorContext_4 } from "../inspector/context-part-2";
-import { isNestedPropertyControl, PropertiesPrimitivesClassNames_3, PropertiesPrimitivesClassNames_4 } from "./primitives";
+import { reactForPropertyRow } from "../inspector/context-part-2";
+import { isNestedPropertyControl, propertyGutterClassName, secondaryIconButtonClassName } from "./primitives";
 
 function PropertyRow({
   label: label,
@@ -30,10 +30,10 @@ function PropertyRow({
 }: Dynamic): Dynamic {
   useUiLocale();
   let labelText: Dynamic = typeof label == "string" ? label : undefined,
-    contentRef: Dynamic = (0, reactInspectorContext_4.useRef)(null),
-    descriptionId: Dynamic = (0, reactInspectorContext_4.useId)(),
-    hadDescriptionRef: Dynamic = (0, reactInspectorContext_4.useRef)(false);
-  (0, reactInspectorContext_4.useLayoutEffect)((): Dynamic => {
+    contentRef: Dynamic = (0, reactForPropertyRow.useRef)(null),
+    descriptionId: Dynamic = (0, reactForPropertyRow.useId)(),
+    hadDescriptionRef: Dynamic = (0, reactForPropertyRow.useRef)(false);
+  (0, reactForPropertyRow.useLayoutEffect)((): Dynamic => {
     if (!description && !hadDescriptionRef.current) return;
     let rowElement: Dynamic = contentRef.current;
     if (!rowElement) return;
@@ -52,11 +52,11 @@ function PropertyRow({
     hadDescriptionRef.current = !!description;
   });
   let [isActionsOpen, setIsActionsOpen]: Dynamic = (0,
-    reactInspectorContext_4.useState)(defaultActionsOpen),
+    reactForPropertyRow.useState)(defaultActionsOpen),
     menuActions: Dynamic =
       actions !== undefined && actions.length > 0 ? actions : undefined;
   menuActions === undefined && isActionsOpen && setIsActionsOpen(false);
-  let isTouchPressRef: Dynamic = (0, reactInspectorContext_4.useRef)(false);
+  let isTouchPressRef: Dynamic = (0, reactForPropertyRow.useRef)(false);
   return (
     <div
       data-property-row={""}
@@ -74,7 +74,7 @@ function PropertyRow({
       }
       className={joinClassNames(
         "group/row grid min-w-0 shrink-0 items-center gap-x-sm py-px",
-        PropertiesPrimitivesClassNames_3,
+        propertyGutterClassName,
         label !== undefined
           ? "grid-cols-[var(--pp-label-w,80px)_minmax(0,1fr)] pointer-coarse:grid-cols-[calc(var(--pp-label-w,80px)*13/12)_minmax(0,1fr)]"
           : "grid-cols-[minmax(0,1fr)]",
@@ -176,7 +176,7 @@ function PropertyRow({
             data-kit={"row-trailing"}
             className={joinClassNames(
               "-ml-1 pointer-coarse:ml-0 flex w-[var(--pp-iconcol,auto)] shrink-0 items-center justify-center",
-              PropertiesPrimitivesClassNames_4,
+              secondaryIconButtonClassName,
             )}
           >
             {trailing}

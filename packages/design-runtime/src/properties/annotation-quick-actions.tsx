@@ -12,7 +12,7 @@ import { keyboardShortcutLabel } from "../editor/keyboard/shortcuts";
 import { MediaPlaybackControlsQuerySelector, VideoPlayControl } from "../editor/media/playback-controls";
 import { VideoMp4VideoWebmVideoQuicktimeMovValue } from "../editor/media/video-upload";
 import { getNoteFormattingState, noteFormattingRefusal, NotesFormattingGetSelection, toggleNoteFormatting, toggleNoteList } from "../editor/notes/formatting";
-import { NotesLinkEditingHandler, NotesLinkEditingHandler_2 } from "../editor/notes/link-editing";
+import { NotesLinkEditingHandler, resolveAnnotationTextColor } from "../editor/notes/link-editing";
 import { NumericInput } from "../editor/properties/numeric-input";
 import { PropertyOptionIcon } from "../editor/properties/tool-options";
 import { CropValue } from "../editor/properties/tooltip";
@@ -20,7 +20,7 @@ import { SessionActionsPopover, SessionChoicePopup, SessionTypographyPopup } fro
 import { SessionStripButton, SessionStripDivider, SessionStripGroup } from "../editor/session-strip/session-strip";
 import { SessionArtboardStateEscape } from "../editor/session/artboard-state";
 import { toModuleNamespace } from "../module-helpers";
-import { annotationTextStyle, PlatformFileContentConstant_3 as minNoteFontSize, PlatformFileContentConstant_4 as maxNoteFontSize, PlatformFileContentGrayRedOrangeValues, PlatformFileContentGrayRedOrangeValuesAlias, PlatformFileContentSMLConfig } from "../platform/file-content";
+import { annotationTextStyle, minAnnotationFontSize as minNoteFontSize, maxAnnotationFontSize as maxNoteFontSize, PlatformFileContentGrayRedOrangeValues, PlatformFileContentGrayRedOrangeValuesAlias, PlatformFileContentSMLConfig } from "../platform/file-content";
 import { ImageQuickPanel } from "./quick-panel-bindings";
 
 var react_RB: Dynamic;
@@ -100,7 +100,7 @@ function NoteTypographyQuickActions({
     ].map(
       (inkName?: Dynamic): Dynamic => ({
         name: inkName,
-        color: NotesLinkEditingHandler_2(textStyle.kind, inkName),
+        color: resolveAnnotationTextColor(textStyle.kind, inkName),
         get label() { return inkName === "default" ? (uiMessage("inspector.annotationQuickActions.defaultInk")) : (inkName[0].toUpperCase() + inkName.slice(1)); },
       }),
     ),
@@ -182,7 +182,7 @@ function NoteTypographyQuickActions({
       <SessionActionsPopover
         testid={"mega-note-color"}
         title={uiMessage("inspector.annotationQuickActions.ink")}
-        paint={NotesLinkEditingHandler_2(
+        paint={resolveAnnotationTextColor(
           textStyle.kind,
           textStyle.color,
         )}
@@ -356,7 +356,7 @@ function EditingNoteQuickActions({
         <SessionChoicePopup
           testid={"mega-note-list"}
           title={
-            uiMessage("inspector.annotationQuickActions.list", { value1: String(listKind === "none" ? (uiMessage("inspector.annotationQuickActions.none")) : (listKind === "bullet" ? (uiMessage("inspector.annotationQuickActions.bulletedList")) : (uiMessage("inspector.annotationQuickActions.numberedList")))) })
+            uiMessage("inspector.annotationQuickActions.list", { listKind: String(listKind === "none" ? (uiMessage("inspector.annotationQuickActions.none")) : (listKind === "bullet" ? (uiMessage("inspector.annotationQuickActions.bulletedList")) : (uiMessage("inspector.annotationQuickActions.numberedList")))) })
           }
           face={listKind === "number" ? "ListNumbered" : "ListBullet"}
           value={listKind}
@@ -571,7 +571,7 @@ function CanvasObjectQuickActions({
               data-testid={"mega-note-comment"}
               icon={"ChatAdd"}
               title={
-                isImage ? (uiMessage("inspector.annotationQuickActions.commentOnThis", { value1: String(spec.kind === "image" && spec.video !== undefined ? (uiMessage("inspector.annotationQuickActions.video")) : (uiMessage("inspector.annotationQuickActions.picture"))) })) : (uiMessage("inspector.annotationQuickActions.commentOnThisShape"))
+                isImage ? (uiMessage("inspector.annotationQuickActions.commentOnThis", { mediaKind: String(spec.kind === "image" && spec.video !== undefined ? (uiMessage("inspector.annotationQuickActions.video")) : (uiMessage("inspector.annotationQuickActions.picture"))) })) : (uiMessage("inspector.annotationQuickActions.commentOnThisShape"))
               }
               aria-label={uiMessage("inspector.annotationQuickActions.comment")}
               onClick={(event?: Dynamic): Dynamic =>
@@ -586,7 +586,7 @@ function CanvasObjectQuickActions({
             <SessionStripButton
               data-testid={"mega-note-delete"}
               title={
-                uiMessage("inspector.annotationQuickActions.undoRestoresIt", { value1: String(isImage ? (spec.kind === "image" && spec.video !== undefined ? (uiMessage("inspector.annotationQuickActions.deleteVideo")) : (uiMessage("inspector.annotationQuickActions.deletePicture"))) : (uiMessage("inspector.annotationQuickActions.deleteShape"))) })
+                uiMessage("inspector.annotationQuickActions.undoRestoresIt", { action: String(isImage ? (spec.kind === "image" && spec.video !== undefined ? (uiMessage("inspector.annotationQuickActions.deleteVideo")) : (uiMessage("inspector.annotationQuickActions.deletePicture"))) : (uiMessage("inspector.annotationQuickActions.deleteShape"))) })
               }
               aria-label={uiMessage("inspector.annotationQuickActions.delete")}
               icon={"Trash"}

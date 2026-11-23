@@ -6,7 +6,7 @@ import { initializeNpm_usehooks_ts_p0, load_react, load_react_dom } from "../../
 import { toModuleNamespace } from "../../module-helpers";
 
 var reactVectorToolState: Dynamic;
-var reactVectorToolState_2: Dynamic;
+var React: Dynamic;
 var reactDomVectorToolState: Dynamic;
 function useVectorToolReset(
   toolKind?: Dynamic,
@@ -26,7 +26,7 @@ function useVectorToolReset(
 export {
   reactDomVectorToolState,
   reactVectorToolState,
-  reactVectorToolState_2,
+  React as vectorToolStateReact,
   useVectorToolReset,
 };
 export function installEditorVectorToolState(): () => void {
@@ -35,7 +35,7 @@ export function installEditorVectorToolState(): () => void {
       load_react(),
       1,
     );
-    reactVectorToolState_2 = toModuleNamespace(
+    React = toModuleNamespace(
       load_react(),
       1,
     );

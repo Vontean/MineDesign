@@ -2,7 +2,7 @@ import type { OverlayPresentation } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
-import { getMediaQueryStore, HooksMediaQueryHandler, HooksMediaQueryHandler_2, initializeHooksMediaQuery, mobileSheetMediaQuery, useWindowMediaQuery } from "../hooks/media-query";
+import { getMediaQueryStore, HooksMediaQueryHandler, getMediaQueryFallbackSnapshot, initializeHooksMediaQuery, mobileSheetMediaQuery, useWindowMediaQuery } from "../hooks/media-query";
 import { initializeSheetsKeyboardViewport, textInputSelector } from "./keyboard-viewport";
 import { initializeCdsRoot, useCdsWindow } from "../theme/root";
 import { load_react } from "../../dependencies";
@@ -42,7 +42,7 @@ function useTouchOverlay(): boolean {
           "(pointer: coarse)",
         )?.getSnapshot() ??
           false),
-      HooksMediaQueryHandler_2,
+      getMediaQueryFallbackSnapshot,
     );
   return value === "sheet" || isCoarsePointer;
 }

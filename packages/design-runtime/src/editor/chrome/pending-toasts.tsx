@@ -117,7 +117,7 @@ export {
   ChromePendingToastsCurrentState,
   ChromePendingToastsFilterValue,
   ChromePendingToastsSubscribers,
-  pinnedStateListeners as ChromePendingToastsSubscribers_2,
+  pinnedStateListeners,
   closeEditorToast,
   notifyPendingToasts,
   PendingEditorToasts,

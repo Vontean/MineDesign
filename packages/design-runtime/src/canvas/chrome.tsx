@@ -4,7 +4,6 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../runtime-types";
-import { artboardTweaksRowHeight } from "./artboard-tweaks";
 import { MeasurementOverlay } from "./measurements";
 import { distanceBetweenRects } from "./preview-mounting";
 import { useViewport, useViewportStore } from "./viewport-store";
@@ -16,7 +15,7 @@ import { DisabledReasonTooltip, Tooltip } from "../cds/tooltip/tooltip";
 import { joinClassNames } from "../editor/chrome/overlay-state";
 import { ViewOnlyYouCanInspectThisMessage } from "../editor/outline/annotations";
 import { toolbarOverlayHeight } from "../editor/toolbar/layout";
-import { reactDomVectorToolState, reactVectorToolState_2 } from "../editor/vector/tool-state";
+import { reactDomVectorToolState, vectorToolStateReact as React } from "../editor/vector/tool-state";
 import { CdsIsland } from "../platform/cds-island";
 import { SelectionQuickActions } from "../properties/selection-quick-actions";
 
@@ -39,7 +38,7 @@ function ConditionalPortal({
     : children;
 }
 function RunWhenSeen({ seen: seen, then: then }: Dynamic): Dynamic {
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
+  (0, React.useEffect)((): Dynamic => {
     seen && then();
   });
   return null;
@@ -63,7 +62,7 @@ function CanvasRectVisibility({
       );
     };
   return children(
-    (0, reactVectorToolState_2.useSyncExternalStore)(
+    (0, React.useSyncExternalStore)(
       viewportStore.subscribe,
       isRectVisible,
       isRectVisible,
@@ -151,11 +150,11 @@ function CanvasAnchoredPopover({
   let viewport: Dynamic = useViewport(),
     screenX: Dynamic = (x - viewport.x) * viewport.scale,
     screenY: Dynamic = Math.max(40, (y - viewport.y) * viewport.scale + dy2),
-    popoverRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    [measuredSize, setMeasuredSize]: Dynamic = (0, reactVectorToolState_2.useState)(
+    popoverRef: Dynamic = (0, React.useRef)(null),
+    [measuredSize, setMeasuredSize]: Dynamic = (0, React.useState)(
       null,
     );
-  (0, reactVectorToolState_2.useLayoutEffect)((): Dynamic => {
+  (0, React.useLayoutEffect)((): Dynamic => {
     let current: Dynamic = popoverRef.current;
     if (!current) return;
     let callback: Dynamic = (): Dynamic => {
@@ -235,8 +234,6 @@ function focusedArtboardContentRect(
   artboards?: Dynamic,
   focusedFile?: Dynamic,
   fullscreenBox?: Dynamic,
-  showTweaks?: Dynamic,
-  propsByFile?: Dynamic,
 ): Dynamic {
   let focusedArtboard: Dynamic =
     focusedFile == null
@@ -248,9 +245,7 @@ function focusedArtboardContentRect(
   let contentBox: Dynamic = artboardContentBox(
     focusedArtboard,
     fullscreenBox,
-    showTweaks && propsByFile?.[focusedArtboard.file]
-      ? artboardTweaksRowHeight
-      : 0,
+    0,
   );
   return {
     file: focusedArtboard.file,
@@ -411,7 +406,7 @@ export function installCanvasChrome(): () => void {
       h: 28,
     };
     maxCanvasOverlayZIndex = 1e5;
-    PositionedSelectionQuickActions = (0, reactVectorToolState_2.memo)(
+    PositionedSelectionQuickActions = (0, React.memo)(
       function ({ at: at, ...props }: Dynamic): Dynamic {
         return <SelectionQuickActions {...props} />;
       },
@@ -421,13 +416,13 @@ export function installCanvasChrome(): () => void {
     hideProblemAtNarrowHeaderClass = "@max-[12.125rem]/hdr:hidden";
     hideTweaksAtNarrowHeaderClass = "@max-[10.5rem]/hdr:hidden";
     hideDownloadAtNarrowHeaderClass = "@max-[8.75rem]/hdr:hidden";
-    ArtboardHeaderActions = (0, reactVectorToolState_2.memo)(function (
+    ArtboardHeaderActions = (0, React.memo)(function (
       props?: Dynamic,
     ): Dynamic {
       let { file: artboardFile, title: artboardTitle }: Dynamic = props,
-        containerRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-        focusedElementRef: Dynamic = (0, reactVectorToolState_2.useRef)(null);
-      (0, reactVectorToolState_2.useLayoutEffect)((): Dynamic => {
+        containerRef: Dynamic = (0, React.useRef)(null),
+        focusedElementRef: Dynamic = (0, React.useRef)(null);
+      (0, React.useLayoutEffect)((): Dynamic => {
         let current: Dynamic = focusedElementRef.current;
         !current ||
           current.isConnected ||
@@ -472,7 +467,7 @@ export function installCanvasChrome(): () => void {
                 data-mega-chrome={"problem"}
                 data-testid={"mega-artboard-problem-" + artboardFile}
                 tabIndex={props.inert ? -1 : undefined}
-                aria-label={uiMessage("canvas.chrome.showErrorNoticeOnArtboard", { value1: String(artboardTitle) })}
+                aria-label={uiMessage("canvas.chrome.showErrorNoticeOnArtboard", { artboardTitle: String(artboardTitle) })}
                 tooltip={props.problem}
                 icon={<Icon name={"Warning"} size={"sm"} />}
                 className={joinClassNames(
@@ -498,7 +493,7 @@ export function installCanvasChrome(): () => void {
                   data-mega-chrome={"tweaks-open"}
                   data-testid={"mega-artboard-tweaks-open-" + artboardFile}
                   tabIndex={props.inert ? -1 : undefined}
-                  aria-label={uiMessage("canvas.chrome.tweaksForArtboard", { value1: String(artboardTitle) })}
+                  aria-label={uiMessage("canvas.chrome.tweaksForArtboard", { artboardTitle: String(artboardTitle) })}
                   tooltip={
                     props.tweaksOpen ? (uiMessage("canvas.chrome.hideThisArtboardSTweaks")) : (uiMessage("canvas.chrome.showThisArtboardSTweaks"))
                   }
@@ -534,7 +529,7 @@ export function installCanvasChrome(): () => void {
                           data-mega-chrome={"download"}
                           data-testid={"mega-artboard-download-" + artboardFile}
                           tabIndex={props.inert ? -1 : undefined}
-                          aria-label={uiMessage("canvas.chrome.exportArtboard", { value1: String(artboardTitle) })}
+                          aria-label={uiMessage("canvas.chrome.exportArtboard", { artboardTitle: String(artboardTitle) })}
                           tooltip={false}
                           disabled={props.exportDisabledReason !== undefined}
                           icon={<Icon name={"Download"} size={"sm"} />}
@@ -556,7 +551,7 @@ export function installCanvasChrome(): () => void {
                 data-mega-chrome={"expand"}
                 data-testid={"mega-artboard-expand-" + artboardFile}
                 tabIndex={props.inert ? -1 : undefined}
-                aria-label={uiMessage("canvas.chrome.openArtboardFullWindow", { value1: String(artboardTitle) })}
+                aria-label={uiMessage("canvas.chrome.openArtboardFullWindow", { artboardTitle: String(artboardTitle) })}
                 tooltip={uiMessage("canvas.chrome.openFullWindow")}
                 icon={<Icon name={"Expand"} size={"sm"} />}
                 className={artboardHeaderButtonClass}
@@ -572,7 +567,7 @@ export function installCanvasChrome(): () => void {
                       data-mega-chrome={"play"}
                       data-testid={"mega-artboard-play-" + artboardFile}
                       tabIndex={props.inert ? -1 : undefined}
-                      aria-label={uiMessage("canvas.chrome.playPrototype2", { value1: String(artboardTitle) })}
+                      aria-label={uiMessage("canvas.chrome.playPrototypeForArtboard", { artboardTitle: String(artboardTitle) })}
                       tooltip={uiMessage("canvas.chrome.playPrototype")}
                       icon={<Icon name={"Play"} size={"sm"} />}
                       className={artboardHeaderButtonClass}

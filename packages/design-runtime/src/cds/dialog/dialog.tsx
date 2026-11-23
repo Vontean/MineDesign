@@ -20,15 +20,15 @@ import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
 import { Button, initializeButtonButton } from "../button/button";
 import { popupSurfaceClassName } from "../components/icon";
-import { initializeComponentsTextLink_2, preserveDialogFocus, preventDialogMouseSelection, useDialogKeyboardViewport } from "../components/text-link";
-import { ActivityBoundary, initializeDomRefComposition, initializeDomRefComposition_3, useMergedRefs } from "../dom/ref-composition";
+import { initializeDialogKeyboardViewport, preserveDialogFocus, preventDialogMouseSelection, useDialogKeyboardViewport } from "../components/text-link";
+import { ActivityBoundary, initializeDomRefComposition, initializeActivityVisibilityContext, useMergedRefs } from "../dom/ref-composition";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
 import { initializeHooksStableCallback } from "../hooks/stable-callback";
 import { initializeOverlaysImperativeHandle, useOverlayImperativeHandle } from "../overlays/imperative-handle";
 import { initializeOverlaysLayers, LayerBaseContext, useDefaultLayer } from "../overlays/layers";
-import { initializePlatformRootFontSize_2, PopupSurface } from "../platform/root-font-size";
-import { initializeOverlayAttributes, initializeSheetsScrollArea_6, overlayAttribute, useFinalFocus } from "../sheets/scroll-area";
-import { initializeSheetsStyles_2, useLabel } from "../sheets/styles";
+import { initializeRootFontSizeHooks, PopupSurface } from "../platform/root-font-size";
+import { initializeOverlayAttributes, initializeFocusHooks, overlayAttribute, useFinalFocus } from "../sheets/scroll-area";
+import { initializeLabelsProviderContext, useLabel } from "../sheets/styles";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { initializeCdsRoot, useOverlayRoot } from "../theme/root";
 import { initializeThemeSurfaces, surfaceBackgroundTokens } from "../theme/surfaces";
@@ -40,16 +40,16 @@ var reactDialogDialog: typeof React;
 var jsxDialogDialog: typeof import("react/jsx-runtime");
 var DialogDialogCss: string;
 var DialogDialogClassNames: string;
-var DialogDialogCss_2: string;
-var DialogDialogClassNames_2: string;
+var dialogPopupClassName: string;
+var dialogBodyClassName: string;
 var dialogBackdropClasses: string;
-var DialogDialogClassNames_3: string;
+var dialogBackdropClassName: string;
 var StartingOpacity0Value: string;
 var DialogDialogCurrentState: AbortController | null;
 var DialogDialogHeightWebkitAppRegionConfig: React.CSSProperties & {
   WebkitAppRegion: string;
 };
-var DialogDialogClassNames_4: string;
+var dialogNestedOverlayClassName: string;
 var DataNestedDialogOpenBlur2pxValue: string;
 var DialogDialogSmMdLgConfig: {
   sm: string;
@@ -61,16 +61,16 @@ var DialogDialogSmMdLgConfig: {
 };
 var DialogDialogPattern: RegExp;
 var DialogDialogContext: React.Context<boolean | "trap-focus" | undefined>;
-var DialogDialogContext_2: React.Context<boolean>;
-var DialogDialogClassNames_5: string;
-var DialogDialogClassNames_6: string;
+var alertDialogContext: React.Context<boolean>;
+var dialogHeadingTextClassName: string;
+var dialogTitleTextClassName: string;
 var Mt05Value: string;
 var Mt1Value: string;
-var DialogDialogClassNames_7: string;
-var DialogDialogContext_3: React.Context<
+var dialogDescriptionClassName: string;
+var dialogTriggerElementRefContext: React.Context<
   React.RefObject<HTMLButtonElement | null> | undefined
 >;
-var DialogDialogContext_4: React.Context<boolean>;
+var dialogPointerDismissalContext: React.Context<boolean>;
 var DialogTrigger: ForwardComponent<
   HTMLButtonElement,
   import("@base-ui/react/dialog").Dialog.Trigger.Props<void>
@@ -242,7 +242,7 @@ function DialogHeader({
   children: children,
 }: DialogHeaderProps): React.ReactElement {
   useUiLocale();
-  let isAlertDialog = (0, reactDialogDialog.useContext)(DialogDialogContext_2);
+  let isAlertDialog = (0, reactDialogDialog.useContext)(alertDialogContext);
   return (
     <div
       className={cn(
@@ -299,10 +299,10 @@ function DialogRoot<Payload = void>({
   let resolvedDisablePointerDismissal =
     disablePointerDismissal ?? (dismissible === false ? true : undefined);
   return (
-    <DialogDialogContext_2.Provider value={false}>
+    <alertDialogContext.Provider value={false}>
       <DialogDialogContext.Provider value={props.modal}>
-        <DialogDialogContext_3.Provider value={triggerRef}>
-          <DialogDialogContext_4.Provider value={!resolvedDisablePointerDismissal}>
+        <dialogTriggerElementRefContext.Provider value={triggerRef}>
+          <dialogPointerDismissalContext.Provider value={!resolvedDisablePointerDismissal}>
             <ActivityBoundary actionsRef={actionsHandleRef}>
               <npm_Dialog_Xg.Root
                 disablePointerDismissal={resolvedDisablePointerDismissal}
@@ -310,10 +310,10 @@ function DialogRoot<Payload = void>({
                 {...props}
               />
             </ActivityBoundary>
-          </DialogDialogContext_4.Provider>
-        </DialogDialogContext_3.Provider>
+          </dialogPointerDismissalContext.Provider>
+        </dialogTriggerElementRefContext.Provider>
       </DialogDialogContext.Provider>
-    </DialogDialogContext_2.Provider>
+    </alertDialogContext.Provider>
   );
 }
 function AlertDialogRoot<Payload = void>({
@@ -324,15 +324,15 @@ function AlertDialogRoot<Payload = void>({
   let actionsHandleRef = (0, reactDialogDialog.useRef)<OverlayActions | null>(null);
   useOverlayImperativeHandle(actionsHandleRef, actionsRef);
   return (
-    <DialogDialogContext_2.Provider value={true}>
+    <alertDialogContext.Provider value={true}>
       <DialogDialogContext.Provider value={true}>
-        <DialogDialogContext_4.Provider value={false}>
+        <dialogPointerDismissalContext.Provider value={false}>
           <ActivityBoundary actionsRef={actionsHandleRef}>
             <npm_AlertDialog_Dh.Root {...props} actionsRef={actionsHandleRef} />
           </ActivityBoundary>
-        </DialogDialogContext_4.Provider>
+        </dialogPointerDismissalContext.Provider>
       </DialogDialogContext.Provider>
-    </DialogDialogContext_2.Provider>
+    </alertDialogContext.Provider>
   );
 }
 function ConfirmationDialog({
@@ -519,7 +519,7 @@ function ConfirmationDialog({
                 forceRender={true}
                 onMouseDown={preventDialogMouseSelection}
                 className={npm_clsx_Ea(
-                  DialogDialogClassNames_3,
+                  dialogBackdropClassName,
                   StartingOpacity0Value,
                 )}
               />
@@ -533,26 +533,26 @@ function ConfirmationDialog({
                 finalFocus={finalFocusTarget}
                 className={cn(
                   "draggable-none",
-                  DialogDialogClassNames_4,
-                  DialogDialogCss_2,
+                  dialogNestedOverlayClassName,
+                  dialogPopupClassName,
                   dialogBackdropClasses,
                   DataNestedDialogOpenBlur2pxValue,
                   DialogDialogSmMdLgConfig[size],
                   className,
                 )}
               >
-                <div className={DialogDialogClassNames_2}>
+                <div className={dialogBodyClassName}>
                   <npm_AlertDialog_Dh.Title
                     className={npm_clsx_Ea(
                       Mt05Value,
-                      DialogDialogClassNames_5,
+                      dialogHeadingTextClassName,
                       "text-primary",
                     )}
                   >
                     {title}
                   </npm_AlertDialog_Dh.Title>
                   {description && (<npm_AlertDialog_Dh.Description
-                      className={DialogDialogClassNames_7}
+                      className={dialogDescriptionClassName}
                     >
                       {description}
                     </npm_AlertDialog_Dh.Description>)}
@@ -597,26 +597,25 @@ export {
   DialogCloseButton,
   DialogDescription,
   DialogDialogClassNames,
-  DialogDialogClassNames_2,
-  DialogDialogClassNames_3,
-  DialogDialogClassNames_4,
-  DialogDialogClassNames_5,
-  DialogDialogClassNames_6,
-  DialogDialogClassNames_7,
+  dialogBodyClassName,
+  dialogBackdropClassName,
+  dialogNestedOverlayClassName,
+  dialogHeadingTextClassName,
+  dialogTitleTextClassName,
+  dialogDescriptionClassName,
   DialogDialogContext,
-  DialogDialogContext_2,
-  DialogDialogContext_3,
-  DialogDialogContext_4,
+  alertDialogContext,
+  dialogTriggerElementRefContext,
+  dialogPointerDismissalContext,
   DialogDialogCss,
-  DialogDialogCss_2,
+  dialogPopupClassName,
   DialogDialogCurrentState,
   DialogDialogDelayMs,
   DialogDialogHeightWebkitAppRegionConfig,
   DialogDialogLabel,
-  closeButtonFlushClasses as DialogDialogLabel_2,
   DialogDialogPattern,
   DialogDialogRootTriggerPopupConfig,
-  alertDialogParts as DialogDialogRootTriggerPopupConfig_2,
+  alertDialogParts,
   DialogDialogSmMdLgConfig,
   DialogDialogStartCenterEndConfig,
   DialogFooter,
@@ -647,20 +646,20 @@ export function installCdsDialogDialog(): () => void {
 
       initializeHooksLayoutEffect();
       initializeClassNames();
-      initializeSheetsStyles_2();
+      initializeLabelsProviderContext();
       initializeCdsRoot();
       initializeHooksStableCallback();
       initializeOverlaysLayers();
       initializeOverlayAttributes();
-      initializeDomRefComposition_3();
+      initializeActivityVisibilityContext();
       initializeDomRefComposition();
-      initializePlatformRootFontSize_2();
+      initializeRootFontSizeHooks();
       initializeTooltipDeferredProvider();
       initializeButtonButton();
       initializeThemeSurfaces();
       initializeOverlaysImperativeHandle();
-      initializeSheetsScrollArea_6();
-      initializeComponentsTextLink_2();
+      initializeFocusHooks();
+      initializeDialogKeyboardViewport();
       reactDialogDialog = toModuleNamespace(
         load_react(),
       );
@@ -673,12 +672,12 @@ export function installCdsDialogDialog(): () => void {
       DialogDialogCss = `${popupSurfaceClassName("popover")} shadow-panel-lg`;
       DialogDialogClassNames =
         "max-h-[calc(100dvh_-_max(2rem,2*var(--desktop-titlebar-inset,0px))_-_2*max(env(safe-area-inset-top,0px),env(safe-area-inset-bottom,0px)))]";
-      DialogDialogCss_2 = `fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col w-[calc(100vw-2rem)] ${DialogDialogClassNames} ${DialogDialogCss} cds-reset text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
-      DialogDialogClassNames_2 =
+      dialogPopupClassName = `fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col w-[calc(100vw-2rem)] ${DialogDialogClassNames} ${DialogDialogCss} cds-reset text-body font-normal text-primary outline-none focus-visible:outline-hidden`;
+      dialogBodyClassName =
         "isolate flex min-h-0 flex-1 flex-col overflow-y-auto scroll-fade-y rounded-[inherit] p-xl";
       dialogBackdropClasses =
         "transition-[opacity,scale,filter] duration-base ease-out motion-reduce:transition-none data-[starting-style]:opacity-0 data-[starting-style]:scale-[0.98] starting:opacity-0 starting:scale-[0.98] motion-reduce:data-[starting-style]:scale-100 data-[ending-style]:opacity-0 data-[ending-style]:scale-[0.98]";
-      DialogDialogClassNames_3 =
+      dialogBackdropClassName =
         "draggable-none fixed inset-0 bg-backdrop backdrop-blur-[2px] transition-opacity duration-base ease-out motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 has-[~[data-nested]]:bg-transparent has-[~[data-nested]]:backdrop-blur-none";
       StartingOpacity0Value = "starting:opacity-0";
       DialogDialogCurrentState = null;
@@ -686,7 +685,7 @@ export function installCdsDialogDialog(): () => void {
         height: "var(--desktop-titlebar-inset, 0px)",
         WebkitAppRegion: "drag",
       };
-      DialogDialogClassNames_4 =
+      dialogNestedOverlayClassName =
         "after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-backdrop after:opacity-0 after:z-50 after:transition-opacity after:duration-base after:ease-out data-[nested-dialog-open]:after:opacity-100";
       DataNestedDialogOpenBlur2pxValue = "data-[nested-dialog-open]:blur-[2px]";
       DialogDialogSmMdLgConfig = {
@@ -701,16 +700,16 @@ export function installCdsDialogDialog(): () => void {
       DialogDialogContext = (0, reactDialogDialog.createContext)<
         boolean | "trap-focus" | undefined
       >(undefined);
-      DialogDialogContext_2 = (0, reactDialogDialog.createContext)(false);
-      DialogDialogClassNames_5 = "text-heading font-medium";
-      DialogDialogClassNames_6 = "text-title font-semibold";
+      alertDialogContext = (0, reactDialogDialog.createContext)(false);
+      dialogHeadingTextClassName = "text-heading font-medium";
+      dialogTitleTextClassName = "text-title font-semibold";
       Mt05Value = "-mt-0.5";
       Mt1Value = "-mt-1";
-      DialogDialogClassNames_7 = "mt-1 text-body font-normal text-secondary";
-      DialogDialogContext_3 = (0, reactDialogDialog.createContext)<
+      dialogDescriptionClassName = "mt-1 text-body font-normal text-secondary";
+      dialogTriggerElementRefContext = (0, reactDialogDialog.createContext)<
         React.RefObject<HTMLButtonElement | null> | undefined
       >(undefined);
-      DialogDialogContext_4 = (0, reactDialogDialog.createContext)(false);
+      dialogPointerDismissalContext = (0, reactDialogDialog.createContext)(false);
       DialogTrigger = (0, reactDialogDialog.forwardRef)<
         HTMLButtonElement,
         import("@base-ui/react/dialog").Dialog.Trigger.Props<void>
@@ -719,7 +718,7 @@ export function installCdsDialogDialog(): () => void {
           props: import("@base-ui/react/dialog").Dialog.Trigger.Props<void>,
           forwardedRef: React.ForwardedRef<HTMLButtonElement>,
         ): React.ReactElement => {
-          let defaultTriggerRef = (0, reactDialogDialog.useContext)(DialogDialogContext_3),
+          let defaultTriggerRef = (0, reactDialogDialog.useContext)(dialogTriggerElementRefContext),
             triggerRef = props.handle ? null : (defaultTriggerRef ?? null),
             mergedRef = useMergedRefs(forwardedRef, triggerRef);
           return <npm_Dialog_Xg.Trigger ref={mergedRef} {...props} />;
@@ -742,7 +741,7 @@ export function installCdsDialogDialog(): () => void {
           forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
           let modalMode = (0, reactDialogDialog.useContext)(DialogDialogContext),
-            triggerRef = (0, reactDialogDialog.useContext)(DialogDialogContext_3),
+            triggerRef = (0, reactDialogDialog.useContext)(dialogTriggerElementRefContext),
             { finalFocus: defaultFinalFocus, popupRef: popupRef } = useFinalFocus(true, modalMode !== false, triggerRef),
             keyboardViewportRef = useDialogKeyboardViewport(fitVisualViewport),
             mergedRef = useMergedRefs(forwardedRef, popupRef, keyboardViewportRef);
@@ -811,11 +810,11 @@ export function installCdsDialogDialog(): () => void {
         ): React.ReactElement => {
           let popupClassName = unstyled
               ? ""
-              : `${DialogDialogCss_2} ${dialogBackdropClasses} ${DataNestedDialogOpenBlur2pxValue} ${DialogDialogSmMdLgConfig[size]} ${fullHeight ? "h-dvh" : ""}`,
+              : `${dialogPopupClassName} ${dialogBackdropClasses} ${DataNestedDialogOpenBlur2pxValue} ${DialogDialogSmMdLgConfig[size]} ${fullHeight ? "h-dvh" : ""}`,
             layer = useDefaultLayer("modal");
           useDialogPresence(portalClassName);
           let modalMode = (0, reactDialogDialog.useContext)(DialogDialogContext),
-            isDismissible = (0, reactDialogDialog.useContext)(DialogDialogContext_4),
+            isDismissible = (0, reactDialogDialog.useContext)(dialogPointerDismissalContext),
             shouldForceRenderBackdrop = modalMode === undefined || modalMode === true;
           return (
             <npm_Dialog_Xg.Portal
@@ -841,7 +840,7 @@ export function installCdsDialogDialog(): () => void {
                         : preventDialogMouseSelection
                     }
                     className={cn(
-                      DialogDialogClassNames_3,
+                      dialogBackdropClassName,
                       !unstyled && StartingOpacity0Value,
                       modalMode === false && "pointer-events-none opacity-0",
                       backdropClassName,
@@ -856,12 +855,12 @@ export function installCdsDialogDialog(): () => void {
                     fitVisualViewport={!unstyled}
                     className={cn(
                       "draggable-none",
-                      DialogDialogClassNames_4,
+                      dialogNestedOverlayClassName,
                       popupClassName,
                       className,
                     )}
                   >
-                    {unstyled ? (children) : (<div className={DialogDialogClassNames_2}>{children}</div>)}
+                    {unstyled ? (children) : (<div className={dialogBodyClassName}>{children}</div>)}
                   </DialogPopupInner>
                 </LayerBaseContext.Provider>
               </PopupSurface>
@@ -878,14 +877,14 @@ export function installCdsDialogDialog(): () => void {
           { className: className, ...props }: DialogTitleProps,
           forwardedRef: React.ForwardedRef<HTMLHeadingElement>,
         ): React.ReactElement => {
-          let isAlertDialog = (0, reactDialogDialog.useContext)(DialogDialogContext_2);
+          let isAlertDialog = (0, reactDialogDialog.useContext)(alertDialogContext);
           return (
             <npm_Dialog_Xg.Title
               ref={forwardedRef}
               {...props}
               className={cn(
                 "text-primary",
-                isAlertDialog ? DialogDialogClassNames_5 : DialogDialogClassNames_6,
+                isAlertDialog ? dialogHeadingTextClassName : dialogTitleTextClassName,
                 className,
               )}
             />
@@ -914,7 +913,7 @@ export function installCdsDialogDialog(): () => void {
           <npm_Dialog_Xg.Description
             ref={forwardedRef}
             {...props}
-            className={cn(DialogDialogClassNames_7, className)}
+            className={cn(dialogDescriptionClassName, className)}
           />
         ),
       );

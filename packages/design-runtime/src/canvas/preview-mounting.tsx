@@ -245,7 +245,6 @@ function samePreviewFiles(filesA?: Dynamic, filesB?: Dynamic): Dynamic {
 }
 export {
   currentPreviewDistanceWeight as CanvasPreviewMountingConstant,
-  viewportSlackRatio as CanvasPreviewMountingConstant_2,
   chooseMountedPreviews,
   distanceBetweenRectCenters,
   distanceBetweenRects,

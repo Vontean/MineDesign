@@ -5,7 +5,7 @@ import {
 import { DcTplAttribute } from "../html/authoring";
 
 var ModelSelectionRelocationLimit: Dynamic;
-var ModelSelectionRelocationLimit_2: Dynamic;
+var maxRelocationTextLength: Dynamic;
 var ModelSelectionRelocationImul: Dynamic;
 var ModelSelectionRelocationReplace: Dynamic;
 var ModelSelectionRelocationElementCache: Dynamic;
@@ -561,7 +561,7 @@ export {
   ModelSelectionRelocationImul,
   ModelSelectionRelocationIncludes,
   ModelSelectionRelocationLimit,
-  ModelSelectionRelocationLimit_2,
+  maxRelocationTextLength,
   ModelSelectionRelocationMap,
   ModelSelectionRelocationReplace,
   relocateModelElementIds,
@@ -575,7 +575,7 @@ export {
 export function installEditorModelSelectionRelocation(): () => void {
   return () => {
     ModelSelectionRelocationLimit = 2e4;
-    ModelSelectionRelocationLimit_2 = 1024;
+    maxRelocationTextLength = 1024;
     ModelSelectionRelocationImul = (text?: Dynamic): Dynamic => {
       let hash: Dynamic = 2166136261;
       for (let index: Dynamic = 0; index < text.length; index++)
@@ -583,7 +583,7 @@ export function installEditorModelSelectionRelocation(): () => void {
       return "\\#" + text.length + "#" + (hash >>> 0).toString(36);
     };
     ModelSelectionRelocationReplace = (text?: Dynamic): Dynamic =>
-      text.length > ModelSelectionRelocationLimit_2
+      text.length > maxRelocationTextLength
         ? ModelSelectionRelocationImul(text)
         : text.replace(
             /[\u0000-\u0004\\]/g,

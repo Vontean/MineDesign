@@ -9,7 +9,7 @@ import { Icon } from "../../cds/components/icon";
 import { load_react_jsx_runtime } from "../../dependencies";
 import { AccessibilityAnnouncerLimit } from "../accessibility/announcer";
 import { joinClassNames } from "../chrome/overlay-state";
-import { ColorContrastCopyLabel_10 as poorContrastLabel, ColorContrastCopyLabel_11 as readableShadeLabel, ColorContrastCopyLabel_9 as goodContrastLabel, detailedContrastSentence, OnValue, reactColorContrastCopy, readableShadeDescription, summarizedContrastSentence } from "./contrast-copy";
+import { ColorContrastCopyPoorContrastLabel as poorContrastLabel, ColorContrastCopyUseReadableShadeLabel as readableShadeLabel, ColorContrastCopyGoodContrastLabel as goodContrastLabel, detailedContrastSentence, OnValue, reactColorContrastCopy, readableShadeDescription, summarizedContrastSentence } from "./contrast-copy";
 import { formatContrastRatio, formatSpokenContrastRatio, parseRgbaColor, worstContrastResult } from "./contrast";
 import { toModuleNamespace } from "../../module-helpers";
 

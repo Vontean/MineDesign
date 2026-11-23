@@ -5,7 +5,7 @@
  */
 import { parseObjectClipPath, parseObjectPosition } from "../editor/media/object-crop";
 import { getHiddenPickerTags } from "../editor/picker/hidden-tags";
-import { PlatformFileContentConstant_17 as minArtboardMeasuredSize, PlatformFileContentLimit_6 as maxArtboardMeasuredSize } from "../platform/file-content";
+import { minFramelessArtboardDimension as minArtboardMeasuredSize, maxCanvasItemDimension as maxArtboardMeasuredSize } from "../platform/file-content";
 
 /** 画板内容区的尺寸（画板像素）。 */
 export interface ArtboardBox {

@@ -8,7 +8,7 @@ import { Button } from "../../cds/button/button";
 import { CssGradientsXYBlurConfig, parseCssBoxShadow, serializeCssBoxShadow } from "../css/gradients";
 import { classifyStyleValue } from "../css/values";
 import { useInspectorContext } from "../inspector/context-part-2";
-import { jsxPropertiesAssetPicker_3, PropertyAssetPopup, PropertyPopupField, reactPropertiesAssetPicker_3 } from "./asset-picker";
+import { jsxForUseBackgroundEditor, PropertyAssetPopup, PropertyPopupField, reactForUseBackgroundEditor } from "./asset-picker";
 import { AuthoredColorPicker, CssColorWell, CssNumericPopupInput, CssNumericPopupRow, PropertySelectTrigger } from "./background-editor";
 import { PropertyRow } from "./row";
 
@@ -24,9 +24,9 @@ function PropertyShadowRow({
   useUiLocale();
   let isTextShadow: Dynamic = prop === "text-shadow",
     [isOpen, setIsOpen]: Dynamic = (0,
-    reactPropertiesAssetPicker_3.useState)(false),
+    reactForUseBackgroundEditor.useState)(false),
     { setOverlayHidden: setOverlayHidden }: Dynamic = useInspectorContext();
-  (0, reactPropertiesAssetPicker_3.useEffect)((): Dynamic => {
+  (0, reactForUseBackgroundEditor.useEffect)((): Dynamic => {
     if (isOpen) {
       setOverlayHidden(true);
       return (): Dynamic => setOverlayHidden(false);
@@ -69,7 +69,7 @@ function PropertyShadowRow({
       data-testid={"dc-shadow-popover"}
       trigger={
         <PropertySelectTrigger
-          aria-label={uiMessage("inspector.shadowRow.undefined", { value1: String(label), value2: String(summaryText) })}
+          aria-label={uiMessage("inspector.shadowRow.shadowValue", { label: String(label), value: String(summaryText) })}
           disabled={isDisabled}
           chip={
             <CssColorWell
@@ -98,7 +98,7 @@ function PropertyShadowRow({
             {uiMessage("inspector.shadowRow.addShadow")}
           </Button>
         </PropertyRow>)}
-      {parsedShadow && (<jsxPropertiesAssetPicker_3.Fragment>
+      {parsedShadow && (<jsxForUseBackgroundEditor.Fragment>
           <PropertyRow label={uiMessage("inspector.shadowRow.offset")}>
             <div className={"flex min-w-0 flex-1 items-center gap-2"}>
               <CssNumericPopupInput
@@ -167,7 +167,7 @@ function PropertyShadowRow({
               }
             />
           </PropertyPopupField>
-        </jsxPropertiesAssetPicker_3.Fragment>)}
+        </jsxForUseBackgroundEditor.Fragment>)}
     </PropertyAssetPopup>
   );
 }

@@ -19,7 +19,7 @@ import { PropertyBackgroundRow } from "./background-editor";
 import { PropertiesColorRowSizeFillShadowSet, PropertyCssColorRow } from "./color-row";
 import { useFieldNumericArrowStep as R_useFieldNumericArrowStep } from "./css-number-row";
 import { PropertyCssEnumRow, PropertyCssTextRow, propertyOptionLabel } from "./css-value-row";
-import { reactPropertiesDropShadowEditor_2 } from "./drop-shadow-editor";
+import { reactForPropertyInspectorField } from "./drop-shadow-editor";
 import { PropertyFontFamilyRow } from "./font-family-row";
 import { PropertyFontWeightRow } from "./font-weight-row";
 import { parseGridSpan, PropertyGridColumnsRow, PropertyGridSpanRow } from "./grid-row";
@@ -32,18 +32,18 @@ import { toModuleNamespace } from "../../module-helpers";
 
 var jsxPropertiesInspectorField: Dynamic;
 var PropertiesInspectorFieldPattern: Dynamic;
-var PropertiesInspectorFieldPattern_2: Dynamic;
-var PropertiesInspectorFieldPattern_3: Dynamic;
+var numericValuePattern: Dynamic;
+var eventPropertyPattern: Dynamic;
 var PropertiesInspectorFieldReplace: Dynamic;
 var PropertiesInspectorFieldTest: Dynamic;
 var PropertiesInspectorFieldNameComponentFromSet: Dynamic;
 function PropertyInspectorField(props?: Dynamic): Dynamic {
   useUiLocale();
   let [menuPosition, setMenuPosition]: Dynamic = (0,
-    reactPropertiesDropShadowEditor_2.useState)(null),
+    reactForPropertyInspectorField.useState)(null),
     { textContrast: textContrast = null }: Dynamic = useInspectorContext(),
     [isEditingAsText, setIsEditingAsText]: Dynamic = (0,
-    reactPropertiesDropShadowEditor_2.useState)(false),
+    reactForPropertyInspectorField.useState)(false),
     isInherited: Dynamic = isInheritedInspectorField(props.state),
     effectiveProps: Dynamic =
       isInherited &&
@@ -58,10 +58,10 @@ function PropertyInspectorField(props?: Dynamic): Dynamic {
           }
         : props,
     { state: fieldState }: Dynamic = effectiveProps,
-    shouldRefocusRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+    shouldRefocusRef: Dynamic = (0, reactForPropertyInspectorField.useRef)(
       false,
     );
-  (0, reactPropertiesDropShadowEditor_2.useEffect)((): Dynamic => {
+  (0, reactForPropertyInspectorField.useEffect)((): Dynamic => {
     if (!isEditingAsText && !shouldRefocusRef.current) return;
     let shouldRefocus: Dynamic = shouldRefocusRef.current;
     shouldRefocusRef.current = false;
@@ -90,7 +90,7 @@ function PropertyInspectorField(props?: Dynamic): Dynamic {
   let { alsoCommit: alsoCommit, alsoCommitOnClear: alsoCommitOnClear }: Dynamic = fieldState,
     { onCommit: onCommit, onCommitMany: onCommitMany }: Dynamic = effectiveProps,
     commitProp: Dynamic = (0,
-    reactPropertiesDropShadowEditor_2.useCallback)(
+    reactForPropertyInspectorField.useCallback)(
       (prop?: Dynamic, nextValue?: Dynamic): Dynamic => {
         let prefixedProp: Dynamic =
             prop === fieldState.prop &&
@@ -134,7 +134,7 @@ function PropertyInspectorField(props?: Dynamic): Dynamic {
       [alsoCommit, alsoCommitOnClear, onCommit, onCommitMany, fieldState.prop],
     ),
     copyDeclaration: Dynamic = (0,
-    reactPropertiesDropShadowEditor_2.useCallback)((): Dynamic => {
+    reactForPropertyInspectorField.useCallback)((): Dynamic => {
       let declarationValue: Dynamic = fieldState.mixed
         ? ""
         : (fieldState.varSource ?? fieldState.value ?? fieldState.fallback ?? "");
@@ -211,7 +211,7 @@ function PropertyInspectorField(props?: Dynamic): Dynamic {
           ...(effectiveProps.extraMenuItems ?? []),
         ],
     commitMany: Dynamic = (0,
-    reactPropertiesDropShadowEditor_2.useCallback)(
+    reactForPropertyInspectorField.useCallback)(
       (commits?: Dynamic): Dynamic => {
         let leftoverCommits: Dynamic = (
             commits.some((commit?: Dynamic): Dynamic => commit.value != null)
@@ -246,16 +246,16 @@ function PropertyInspectorField(props?: Dynamic): Dynamic {
         fieldState.whyDisabled ??
         inheritedFieldTooltip(props.state) ??
         (fieldState.varSource
-          ? uiMessage("inspector.inspectorField.authoredAsValue1EditingWrites", { value1: String(fieldState.varSource) })
+          ? uiMessage("inspector.inspectorField.authoredAsResolvedValue", { source: String(fieldState.varSource) })
           : undefined),
       description: inheritedFieldDescription(props.state),
       onReset: resetHandler,
       trailing: effectiveProps.trailing,
       resetLabel: effectiveProps.onRemoveRow
         ? hasValue
-          ? uiMessage("inspector.inspectorField.unsetValue1AndRemoveRow", { value1: String(fieldState.label) })
-          : uiMessage("inspector.inspectorField.removeValue1Row", { value1: String(fieldState.label) })
-        : uiMessage("inspector.inspectorField.unsetValue1UseInherited", { value1: String(fieldState.label) }),
+          ? uiMessage("inspector.inspectorField.unsetAndRemoveRow", { label: String(fieldState.label) })
+          : uiMessage("inspector.inspectorField.removeNamedRow", { label: String(fieldState.label) })
+        : uiMessage("inspector.inspectorField.unsetUseInherited", { label: String(fieldState.label) }),
       onContextMenu: isHeadProp
         ? undefined
         : (event?: Dynamic): Dynamic => {
@@ -307,7 +307,7 @@ function PropertyInspectorField(props?: Dynamic): Dynamic {
         <PropertyRow
           {...rowShell}
           title={
-            isInherited ? (uiMessage("inspector.inspectorField.fromValue1ItHasNo", { value1: String(fieldState.inheritedFrom) })) : (rowShell.title ?? (uiMessage("inspector.inspectorField.setOnThisElementIt")))
+            isInherited ? (uiMessage("inspector.inspectorField.sourceHasNoRow", { source: String(fieldState.inheritedFrom) })) : (rowShell.title ?? (uiMessage("inspector.inspectorField.setOnThisElementIt")))
           }
         >
           <span
@@ -325,7 +325,7 @@ function PropertyInspectorField(props?: Dynamic): Dynamic {
           onClose={(): Dynamic => setMenuPosition(null)}
           items={menuItems}
           minWidth={170}
-          label={uiMessage("inspector.inspectorField.actions", { value1: String(fieldState.label || (fieldState.prop)) })}
+          label={uiMessage("inspector.inspectorField.actions", { label: String(fieldState.label || (fieldState.prop)) })}
         />
       </jsxPropertiesSizingRow.Fragment>
     );
@@ -574,7 +574,7 @@ function PropertyInspectorField(props?: Dynamic): Dynamic {
         onClose={(): Dynamic => setMenuPosition(null)}
         items={menuItems}
         minWidth={170}
-        label={uiMessage("inspector.inspectorField.actions", { value1: String(fieldState.label || (fieldState.prop)) })}
+        label={uiMessage("inspector.inspectorField.actions", { label: String(fieldState.label || (fieldState.prop)) })}
       />
     </jsxPropertiesSizingRow.Fragment>
   );
@@ -583,8 +583,8 @@ export {
   jsxPropertiesInspectorField,
   PropertiesInspectorFieldNameComponentFromSet,
   PropertiesInspectorFieldPattern,
-  PropertiesInspectorFieldPattern_2,
-  PropertiesInspectorFieldPattern_3,
+  numericValuePattern,
+  eventPropertyPattern,
   PropertiesInspectorFieldReplace,
   PropertiesInspectorFieldTest,
   PropertyInspectorField,
@@ -596,8 +596,8 @@ export function installEditorPropertiesInspectorField(): () => void {
       1,
     );
     PropertiesInspectorFieldPattern = /^\s*\{\{([\s\S]+?)\}\}\s*$/;
-    PropertiesInspectorFieldPattern_2 = /^-?\d+(\.\d+)?$/;
-    PropertiesInspectorFieldPattern_3 = /^on(-|[A-Z])/;
+    numericValuePattern = /^-?\d+(\.\d+)?$/;
+    eventPropertyPattern = /^on(-|[A-Z])/;
     PropertiesInspectorFieldReplace = (cssName?: Dynamic): Dynamic =>
       cssName.replace(
         /-([a-z])/g,

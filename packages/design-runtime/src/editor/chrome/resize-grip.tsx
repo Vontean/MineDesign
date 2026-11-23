@@ -8,7 +8,7 @@ import { ComponentsSelectionPointsComponent } from "../../cds/components/selecti
 import { Tooltip } from "../../cds/tooltip/tooltip";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { joinClassNames } from "./overlay-state";
-import { jsxChromePanelShell_2, reactChromePanelShell } from "./panel-shell";
+import { jsxForPanelResizeGrip, reactChromePanelShell } from "./panel-shell";
 import { startPanelResizeGesture } from "./panel-width";
 import { EditorTooltip } from "../properties/tooltip";
 import { toModuleNamespace } from "../../module-helpers";
@@ -213,7 +213,7 @@ function PanelResizeGrip({
       />
     );
   return (
-    <jsxChromePanelShell_2.Fragment>
+    <jsxForPanelResizeGrip.Fragment>
       {isDisabled ? (null) : (<div
           data-kit={name + "-grab"}
           onPointerDown={(event?: Dynamic): Dynamic =>
@@ -245,7 +245,7 @@ function PanelResizeGrip({
       >
         {gripElement}
       </Tooltip>
-      {disabledTip !== undefined ? (<jsxChromePanelShell_2.Fragment>
+      {disabledTip !== undefined ? (<jsxForPanelResizeGrip.Fragment>
           <span id={tipId} hidden={true}>
             {disabledTip}
           </span>
@@ -260,8 +260,8 @@ function PanelResizeGrip({
           >
             <span className={"size-full"} />
           </EditorTooltip>
-        </jsxChromePanelShell_2.Fragment>) : (null)}
-    </jsxChromePanelShell_2.Fragment>
+        </jsxForPanelResizeGrip.Fragment>) : (null)}
+    </jsxForPanelResizeGrip.Fragment>
   );
 }
 export {

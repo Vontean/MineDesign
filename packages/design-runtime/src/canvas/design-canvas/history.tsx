@@ -1,9 +1,8 @@
-import { CanvasWorkingStateHandler_3 } from "../working-state";
-import { CanvasWorkingStateHas } from "../working-state";
+import { isTextEditHistoryKind } from "../working-state";
 import { NothingChangedThatStepNoLongerMessage } from "../../editor/accessibility/announcements";
-import { PlatformFileContentHandler_4 } from "../../platform/file-content";
-import { PlatformFileContentLimit_3 as pageLimit } from "../../platform/file-content";
-import { PlatformFileContentLimit_5 as annotationLimit } from "../../platform/file-content";
+import { projectFileKey } from "../../platform/file-content";
+import { defaultDesignPageLimit as pageLimit } from "../../platform/file-content";
+import { maxAnnotations as annotationLimit } from "../../platform/file-content";
 import { announce } from "../../editor/accessibility/announcer";
 import { applyCanvasManifestHistory } from "../manifest-history";
 import { assignImplicitFirstCanvasPage } from "../page-operations";
@@ -11,55 +10,49 @@ import { canvasHistoryAnnouncementMode } from "../manifest-history";
 import { clipboardActionFailureMessage } from "../../editor/accessibility/announcements";
 import { compatibleRestoredCanvasLaunch } from "../manifest-history";
 import { createPageId } from "../../platform/file-content";
-import { createSessionHistory } from "../working-state";
-import { designPageId } from "../../platform/file-content";
 import { errorMessage } from "../../platform/rate-limiter";
 import { getKvClient } from "../../platform/file-content";
 import { isShapeAnnotation } from "../../platform/file-content";
 import { moveAnnotation } from "../../platform/file-content";
 import { neighboringCanvasPageId } from "../page-operations";
 import { pageUndoFailureMessage } from "../../editor/accessibility/announcements";
-import { pendingUndoAnnouncement } from "../../editor/accessibility/announcements";
-import { recordSessionLoadStart } from "../working-state";
 import { remainingCanvasPageObjects } from "../page-operations";
 import { repairCanvasLaunchAfterDeletion } from "../manifest-history";
 import { restoreCanvasPageSpec } from "../page-operations";
 import { retargetCanvasPageHistory } from "../page-operations";
-import { summarizeChangedArtboards } from "../../editor/accessibility/announcements";
 import { type Dynamic } from "../../runtime-types";
 import { uiMessage } from "@minedesign/contracts/ui-messages";
-import { undoTargetAnnouncement } from "../../editor/accessibility/announcements";
 import { updateTextEditHistoryCounts } from "../working-state";
-import { emptyCanvasSelectionFiles } from "../design-canvas";
+import { emptyCanvasSelectionFiles } from "./shared";
 
 /** 画布操作完成后运行：把操作推入撤销栈（最多 50 条），记录各画板的会话历史深度并清空重做。 */
-export function recordCanvasHistoryStep(deps: { readonly value140: Dynamic; readonly value141: Dynamic; readonly value4: Dynamic; readonly value405: Dynamic; readonly value408: Dynamic; readonly value410: Dynamic; readonly value412: Dynamic; readonly value440: Dynamic; readonly value67: Dynamic }, source?: Dynamic,
+export function recordCanvasHistoryStep(deps: { readonly pendingRecords: Dynamic; readonly boundRecordMergers: Dynamic; readonly textEdit: Dynamic; readonly undo: Dynamic; readonly notify: Dynamic; readonly trimmedUndoCount: Dynamic; readonly invalidateRedo: Dynamic; readonly localDepths: Dynamic; readonly manifest: Dynamic }, source?: Dynamic,
         excludedFiles?: Dynamic,
         extraFiles?: Dynamic,
         boundKey?: Dynamic): Dynamic {
         let mergeIntoBound: Dynamic =
           boundKey !== undefined &&
           (source.kind === "add" || source.kind === "ann-add")
-            ? deps.value141.current.get(boundKey)
+            ? deps.boundRecordMergers.current.get(boundKey)
             : undefined;
         if (mergeIntoBound) {
           mergeIntoBound(source);
-          deps.value140.current.get(boundKey)?.();
-          deps.value140.current.delete(boundKey);
+          deps.pendingRecords.current.get(boundKey)?.();
+          deps.pendingRecords.current.delete(boundKey);
           return;
         }
-        deps.value412();
-        deps.value4.current !== null &&
+        deps.invalidateRedo();
+        deps.textEdit.current !== null &&
           updateTextEditHistoryCounts(
-            deps.value4.current,
+            deps.textEdit.current,
             "clear-redo",
           );
-        let sessionDepths: Dynamic = deps.value67.artboards
+        let sessionDepths: Dynamic = deps.manifest.artboards
           .filter((artboard?: Dynamic): Dynamic => !excludedFiles.has(artboard.file))
           .map(
             (artboard?: Dynamic): Dynamic => [
               artboard.file,
-              deps.value440.current.get(artboard.file) ?? 0,
+              deps.localDepths.current.get(artboard.file) ?? 0,
             ],
           );
         if (source.kind === "add")
@@ -67,10 +60,10 @@ export function recordCanvasHistoryStep(deps: { readonly value140: Dynamic; read
             ...source.entries.map((addedEntry?: Dynamic): Dynamic => addedEntry.file),
             ...(extraFiles ?? []),
           ]) as Dynamic)
-            sessionDepths.push([file, deps.value440.current.get(file) ?? 0]);
-        deps.value405.current.length >= 50 && (deps.value410.current += 1);
-        deps.value405.current = [
-          ...deps.value405.current,
+            sessionDepths.push([file, deps.localDepths.current.get(file) ?? 0]);
+        deps.undo.current.length >= 50 && (deps.trimmedUndoCount.current += 1);
+        deps.undo.current = [
+          ...deps.undo.current,
           {
             op: source,
             at: Date.now(),
@@ -80,29 +73,29 @@ export function recordCanvasHistoryStep(deps: { readonly value140: Dynamic; read
                   bound: boundKey,
                 }
               : {}),
-            ...(deps.value4.current !== null &&
-            CanvasWorkingStateHandler_3(source.kind)
+            ...(deps.textEdit.current !== null &&
+            isTextEditHistoryKind(source.kind)
               ? {
-                  duringTextEdit: deps.value4.current,
+                  duringTextEdit: deps.textEdit.current,
                 }
               : {}),
           },
         ].slice(-50);
-        deps.value408((revision?: Dynamic): Dynamic => revision + 1);
+        deps.notify();
         boundKey !== undefined &&
-          (deps.value140.current.get(boundKey)?.(),
-          deps.value140.current.delete(boundKey));
+          (deps.pendingRecords.current.get(boundKey)?.(),
+          deps.pendingRecords.current.delete(boundKey));
       }
 
 /** 撤销或重做某个画布步骤时运行：按步骤类型恢复 Tweaks、清单变化、页面增删或画板文件增删。 */
-export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; readonly value177: Dynamic; readonly value298: Dynamic; readonly value70: Dynamic; readonly value80: Dynamic; readonly value98: Dynamic }, source?: Dynamic, direction?: Dynamic): Promise<Dynamic> {
-        let manifest: Dynamic = deps.value70.current,
+export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; readonly frames: Dynamic; readonly switchPage: Dynamic; readonly savedManifest: Dynamic; readonly activePage: Dynamic; readonly persist: Dynamic }, source?: Dynamic, direction?: Dynamic): Promise<Dynamic> {
+        let manifest: Dynamic = deps.savedManifest.current,
           commitManifest: Dynamic = (
             nextManifest?: Dynamic,
             baseManifest: Dynamic = manifest,
-          ): Dynamic => deps.value98(nextManifest, baseManifest);
+          ): Dynamic => deps.persist(nextManifest, baseManifest);
         if (source.kind === "tweak") {
-          let entry: Dynamic = deps.value177.current.get(source.file);
+          let entry: Dynamic = deps.frames.current.get(source.file);
           if (!entry) return false;
           entry.setTweaks(direction === "undo" ? source.from : source.to);
           return;
@@ -212,10 +205,10 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
             ),
           );
           for (let remainingArtboard of remainingObjects.artboards as Dynamic) {
-            await deps.value177.current.get(remainingArtboard.file)?.flushPending();
+            await deps.frames.current.get(remainingArtboard.file)?.flushPending();
             let fileContent: Dynamic =
               (await getKvClient().get(
-                PlatformFileContentHandler_4(remainingArtboard.file),
+                projectFileKey(remainingArtboard.file),
               )) ??
               deps.doc.content().files[remainingArtboard.file] ??
               "";
@@ -395,31 +388,31 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
               (deps.doc.content().files[fileEntry.path] ?? fileEntry.src) ===
                 fileEntry.src &&
                 (await getKvClient().set(
-                  PlatformFileContentHandler_4(fileEntry.path),
+                  projectFileKey(fileEntry.path),
                   fileEntry.src,
                 ));
           for (let artboardEntry of source.entries as Dynamic)
             await getKvClient().set(
-              PlatformFileContentHandler_4(artboardEntry.file),
+              projectFileKey(artboardEntry.file),
               artboardEntry.src,
             );
-          deletedPage !== undefined && deps.value298(deletedPage.spec.id);
+          deletedPage !== undefined && deps.switchPage(deletedPage.spec.id);
           delete source.cover;
           delete source.launch;
         } else {
           for (let artboardEntry of source.entries as Dynamic) {
-            await deps.value177.current.get(artboardEntry.file)?.flushPending();
+            await deps.frames.current.get(artboardEntry.file)?.flushPending();
             await getKvClient().delete(
-              PlatformFileContentHandler_4(artboardEntry.file),
+              projectFileKey(artboardEntry.file),
             );
           }
           if (source.kind === "add")
             for (let fileEntry of (source.files ?? []) as Dynamic)
               deps.doc.content().files[fileEntry.path] === fileEntry.src &&
                 (await getKvClient().delete(
-                  PlatformFileContentHandler_4(fileEntry.path),
+                  projectFileKey(fileEntry.path),
                 ));
-          let latestManifest: Dynamic = deps.value70.current,
+          let latestManifest: Dynamic = deps.savedManifest.current,
             remainingPages: Dynamic =
               deletedPage !== undefined
                 ? (latestManifest.pages ?? []).filter(
@@ -430,7 +423,7 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
             nextPageId: Dynamic =
               deletedPage !== undefined &&
               remainingPages.length > 0 &&
-              deps.value80.current === deletedPage.spec.id
+              deps.activePage.current === deletedPage.spec.id
                 ? (neighboringCanvasPageId(
                     latestManifest.pages ?? [],
                     deletedPage.spec.id,
@@ -471,33 +464,33 @@ export async function applyCanvasHistoryStep(deps: { readonly doc: Dynamic; read
           );
           deletedPage !== undefined &&
             (deletedPage.relisted = remainingPages.length === 0);
-          nextPageId !== undefined && deps.value298(nextPageId);
+          nextPageId !== undefined && deps.switchPage(nextPageId);
         }
       }
 
 /** 执行撤销或重做时运行：取出可达的历史步骤并应用，处理页面删除恢复，失败时把步骤放回并提示，成功时播报具体操作。 */
-export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly value188: Dynamic; readonly value218: Dynamic; readonly value405: Dynamic; readonly value406: Dynamic; readonly value408: Dynamic; readonly value409: Dynamic; readonly value414: Dynamic; readonly value415: Dynamic; readonly value427: Dynamic; readonly value428: Dynamic; readonly value440: Dynamic; readonly value73: Dynamic }, direction?: Dynamic, trigger: Dynamic = false): Dynamic {
-        if (deps.value427.current) return true;
-        let step: Dynamic = deps.value415(direction);
+export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly say: Dynamic; readonly hostGesturing: Dynamic; readonly undo: Dynamic; readonly redo: Dynamic; readonly notify: Dynamic; readonly generation: Dynamic; readonly applyToDocument: Dynamic; readonly reachable: Dynamic; readonly applying: Dynamic; readonly applyBound: Dynamic; readonly localDepths: Dynamic; readonly latestManifest: Dynamic }, direction?: Dynamic, trigger: Dynamic = false): Dynamic {
+        if (deps.applying.current) return true;
+        let step: Dynamic = deps.reachable(direction);
         if (!step) return false;
         if (
           step.op.kind === "delete" &&
           step.op.page !== undefined &&
-          deps.value218.current
+          deps.hostGesturing.current
         )
           return true;
-        deps.value427.current = step;
-        let manifestAtStart: Dynamic = deps.value409.current,
-          sourceStack: Dynamic = direction === "undo" ? deps.value405 : deps.value406,
+        deps.applying.current = step;
+        let manifestAtStart: Dynamic = deps.generation.current,
+          sourceStack: Dynamic = direction === "undo" ? deps.undo : deps.redo,
           stepIndex: Dynamic = sourceStack.current.lastIndexOf(step);
         stepIndex >= 0 && sourceStack.current.splice(stepIndex, 1);
         let putBackAndNotify: Dynamic = (
             message?: Dynamic,
             toastKind?: Dynamic,
           ): Dynamic => {
-            deps.value427.current = null;
+            deps.applying.current = null;
             sourceStack.current.push(step);
-            deps.value408((revision?: Dynamic): Dynamic => revision + 1);
+            deps.notify();
             deps.showToast(message, toastKind);
           },
           pageFailureMessage: Dynamic = (): Dynamic => {
@@ -508,13 +501,13 @@ export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly 
               : pageUndoFailureMessage(
                   direction,
                   deletedPage.relisted === true &&
-                    (deps.value73.current.pages ?? []).some(
+                    (deps.latestManifest.current.pages ?? []).some(
                       (pageItem?: Dynamic): Dynamic =>
                         pageItem.id === deletedPage.spec.id,
                     ),
                 );
           };
-        deps.value414(step.op, direction)
+        deps.applyToDocument(step.op, direction)
           .then((outcome?: Dynamic): Dynamic => {
             if (outcome === "full") {
               putBackAndNotify(
@@ -533,8 +526,8 @@ export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly 
               return;
             }
             if (outcome === "nothing") {
-              deps.value427.current = null;
-              deps.value408((revision?: Dynamic): Dynamic => revision + 1);
+              deps.applying.current = null;
+              deps.notify();
               let announcementMode: Dynamic = canvasHistoryAnnouncementMode(
                   direction,
                   step.bound !== undefined,
@@ -545,7 +538,7 @@ export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly 
                     NothingChangedThatStepNoLongerMessage,
                   );
               announcementMode === "partner"
-                ? deps.value428(step.bound, direction, announceNothingChanged)
+                ? deps.applyBound(step.bound, direction, announceNothingChanged)
                 : announcementMode === "say" && announceNothingChanged();
               return;
             }
@@ -565,18 +558,18 @@ export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly 
                       ...step.op.entries.map(
                         (restoredEntry?: Dynamic): Dynamic => [
                           restoredEntry.file,
-                          deps.value440.current.get(restoredEntry.file) ?? 0,
+                          deps.localDepths.current.get(restoredEntry.file) ?? 0,
                         ],
                       ),
                     ],
                   }
                 : step;
-            (direction === "redo" || deps.value409.current === manifestAtStart) &&
-              (direction === "undo" ? deps.value406 : deps.value405).current.push({
+            (direction === "redo" || deps.generation.current === manifestAtStart) &&
+              (direction === "undo" ? deps.redo : deps.undo).current.push({
                 ...sealedStep,
                 sealed: true,
               });
-            deps.value408((revision?: Dynamic): Dynamic => revision + 1);
+            deps.notify();
             let state: Dynamic = {
                 rename: "Artboard rename",
                 resize: "Artboard resize",
@@ -659,12 +652,12 @@ export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly 
                                 op2.to.video !== undefined)
                             ? uiMessage("canvas.designCanvas.videoReplace")
                             : op2.kind === "ann-box" &&
-                                (deps.value73.current.annotations ?? []).some(
+                                (deps.latestManifest.current.annotations ?? []).some(
                                   (source?: Dynamic): Dynamic =>
                                     source.id === op2.id &&
                                     source.kind === "image",
                                 )
-                              ? (deps.value73.current.annotations ?? []).some(
+                              ? (deps.latestManifest.current.annotations ?? []).some(
                                   (source?: Dynamic): Dynamic =>
                                     source.id === op2.id &&
                                     source.kind === "image" &&
@@ -673,16 +666,16 @@ export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly 
                                 ? uiMessage("canvas.designCanvas.videoMoveResize")
                                 : uiMessage("canvas.designCanvas.pictureMoveResize")
                               : state[op2.kind];
-            deps.value188(
+            deps.say(
               outcome === false
                 ? uiMessage("canvas.designCanvas.thatArtboardIsnTOpen")
                 : actionLabel + (direction === "undo" ? " undone." : " redone."),
             );
-            deps.value427.current = null;
+            deps.applying.current = null;
             step.bound !== undefined &&
               outcome !== false &&
-              deps.value409.current === manifestAtStart &&
-              deps.value428(step.bound, direction);
+              deps.generation.current === manifestAtStart &&
+              deps.applyBound(step.bound, direction);
           })
           .catch((error?: Dynamic): Dynamic => {
             let pageFailure: Dynamic = pageFailureMessage();
@@ -695,116 +688,3 @@ export function applyUndoRedoStep(deps: { readonly showToast: Dynamic; readonly 
           });
         return true;
       }
-
-/** 首次渲染时惰性创建一次：建立跨画板的会话历史（createSessionHistory）及其宿主，负责保护当前页、丢弃过期条目与播报撤销目标。 */
-export function initSessionHistoryKeeper(deps: { readonly callback2: Dynamic; readonly value177: Dynamic; readonly value19: Dynamic; readonly value218: Dynamic; readonly value275: Dynamic; readonly value285: Dynamic; readonly value427: Dynamic; readonly value434: Dynamic; readonly value435: Dynamic; readonly value436: Dynamic; readonly value437: Dynamic; readonly value448: Dynamic; readonly value70: Dynamic; readonly value80: Dynamic }): Dynamic {
-    let isInDocument: Dynamic = (file?: Dynamic): Dynamic =>
-        deps.value70.current?.artboards.some(
-          (artboard?: Dynamic): Dynamic => artboard.file === file,
-        ) === true && deps.value435.current.content().files[file] !== undefined,
-      pageOfFile: Dynamic = (file?: Dynamic): Dynamic => {
-        let manifest: Dynamic = deps.value70.current,
-          artboard: Dynamic = manifest?.artboards.find(
-            (candidate?: Dynamic): Dynamic => candidate.file === file,
-          );
-        return manifest && artboard
-          ? designPageId(artboard, manifest.pages)
-          : undefined;
-      },
-      state: Dynamic = {
-        changed: [],
-        other: [],
-      },
-      noticeTimer: Dynamic,
-      cancelPendingNotice: Dynamic = (): Dynamic => {
-        clearTimeout(noticeTimer);
-        noticeTimer = undefined;
-        state.changed.length = 0;
-        state.other.length = 0;
-      },
-      sessionHistory: Dynamic = createSessionHistory({
-        inDocument: isInDocument,
-        isProtected: (file?: Dynamic): Dynamic =>
-          pageOfFile(file) === deps.value80.current ||
-          deps.value434.current?.undoFile() === file ||
-          deps.value434.current?.redoFile() === file,
-        now: (): Dynamic => performance.now(),
-        onDrop: (file?: Dynamic, dropReason?: Dynamic): Dynamic => {
-          deps.value434.current?.forget(file);
-          if (
-            !CanvasWorkingStateHas(dropReason) ||
-            ((dropReason === "changed" ? state.changed : state.other).push(
-              deps.callback2(file),
-            ),
-            noticeTimer !== undefined)
-          )
-            return;
-          let documentAtDrop: Dynamic = deps.value435.current;
-          noticeTimer = setTimeout((): Dynamic => {
-            noticeTimer = undefined;
-            if (deps.value435.current !== documentAtDrop) return cancelPendingNotice();
-            let { message: summaryMessage, description: summaryDescription }: Dynamic = summarizeChangedArtboards(
-              state.changed.splice(0),
-              state.other.splice(0),
-            );
-            deps.value437.current(
-              summaryMessage,
-              "warning",
-              summaryDescription === undefined
-                ? undefined
-                : {
-                    description: summaryDescription,
-                  },
-            );
-          }, 50);
-        },
-      });
-    return {
-      keeper: sessionHistory,
-      host: {
-        inDocument: isInDocument,
-        openPage: (): Dynamic => deps.value80.current,
-        pageOfFile: pageOfFile,
-        isFramed: (file?: Dynamic): Dynamic =>
-          deps.value70.current?.artboards.some(
-            (artboard?: Dynamic): Dynamic =>
-              artboard.file === file && !artboard.frameless,
-          ) === true,
-        startLoad: (file?: Dynamic): Dynamic => {
-          let entry: Dynamic = deps.value177.current.get(file);
-          recordSessionLoadStart(
-            sessionHistory,
-            file,
-            entry
-              ? (): Dynamic => entry.ensureModel(deps.value19(file))
-              : undefined,
-          );
-        },
-        mayShowPage: (): Dynamic =>
-          !deps.value218.current && deps.value427.current === null && !deps.value285.current,
-        currentSrc: (file?: Dynamic): Dynamic =>
-          deps.value435.current.content().files[file],
-        afterExitGuard: deps.value275,
-        switchPage: (pageId?: Dynamic, target?: Dynamic): Dynamic =>
-          deps.value436.current(pageId, target),
-        say: (source?: Dynamic): Dynamic => {
-          source.kind === "loading"
-            ? announce(
-                pendingUndoAnnouncement(
-                  source.dir,
-                  deps.callback2(source.file),
-                ),
-              )
-            : deps.value448.current?.(
-                undoTargetAnnouncement(
-                  source.dir,
-                  deps.value70.current?.pages?.find(
-                    (pageItem?: Dynamic): Dynamic => pageItem.id === source.page,
-                  )?.name ?? uiMessage("canvas.designCanvas.page1"),
-                ),
-              );
-        },
-      },
-      cancelSaid: cancelPendingNotice,
-    };
-  }

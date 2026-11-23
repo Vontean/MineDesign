@@ -156,7 +156,7 @@ function PropertyTextSpacing({
       data-testid={"dc-text-spacing"}
       disabled={lineHeightField.disabled || letterSpacingField.disabled}
       title={
-        uiMessage("inspector.spacing.lineHeightLetterSpacing", { value1: String(disabledReason ? (" \u2014 " + disabledReason) : ("")) })
+        uiMessage("inspector.spacing.lineHeightLetterSpacing", { disabledReasonSuffix: String(disabledReason ? (" \u2014 " + disabledReason) : ("")) })
       }
       description={description}
       onReset={
@@ -199,7 +199,7 @@ function PropertyTextSpacing({
 }
 export {
   jsxTypographySpacing,
-  INHERITED_SPACING_FIELD_MIXED as PropertiesInheritedFieldMixedAlias_3,
+  INHERITED_SPACING_FIELD_MIXED,
   PropertyTextSpacing,
 };
 export function installEditorTypographySpacing(): () => void {

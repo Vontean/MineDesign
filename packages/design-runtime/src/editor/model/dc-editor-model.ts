@@ -11,7 +11,7 @@ import { expandCssDeclarations, expandShorthandForProperty } from "../css/shorth
 import { setStyleProperty } from "../css/values";
 import { canContainHtmlChildren, canContainHtmlTag, DcTplAttribute, fromParserHtml, HtmlAuthoringCss, HtmlAuthoringSubscribers, HtmlAuthoringTextTspanTextpathSet, isIconOnlyElement, isInlineTextContainer, parseUtilityClassesValue, stripLeadingCssAtRules } from "../html/authoring";
 import { HtmlTagNormalizationSubscribers, kebabToCamelCase, safeJsonStringify, ScCamelValue, toParserHtml } from "../html/tag-normalization";
-import { containsTemplateText, directiveParent, directiveSiblingsAdjacent, editorAssert, elementTextPreview, hasOnlyDirectText, ModelDomTextButtonInputPattern, ModelDomTextH1H2H3Config, ModelDomTextSplitValue, ModelDomTextSplitValue_2, ModelDomTextSubscribers, siblingsSeparatedOnlyByWhitespace } from "./dom-text";
+import { containsTemplateText, directiveParent, directiveSiblingsAdjacent, editorAssert, elementTextPreview, hasOnlyDirectText, ModelDomTextButtonInputPattern, ModelDomTextH1H2H3Config, ModelDomTextSplitValue, fontInheritanceProperties, ModelDomTextSubscribers, siblingsSeparatedOnlyByWhitespace } from "./dom-text";
 import { detectContainerLayout, isImportedIcon, labelToElementKind, readableTagName, slideElementLabel, tagIcon } from "./labels";
 import { regenerateArrowHeadIds } from "../svg/arrows";
 import { buildGoogleFontsUrl } from "../typography/font-catalog";
@@ -1760,12 +1760,12 @@ export function installEditorModelDcEditorModel(): () => void {
                 !propEntry ||
                 isNeutral(propEntry.v) ||
                 (propEntry.i < fontIndex &&
-                  ModelDomTextSplitValue_2.includes(prop))
+                  fontInheritanceProperties.includes(prop))
               )
                 continue;
               let longhandsOverrideFont: Dynamic =
                 prop === "font" &&
-                ModelDomTextSplitValue_2.some(
+                fontInheritanceProperties.some(
                   (longhand?: Dynamic): Dynamic =>
                     coveredProps.has(longhand) ||
                     ((entries.get(longhand)?.i ?? -1) > fontIndex &&
@@ -1783,7 +1783,7 @@ export function installEditorModelDcEditorModel(): () => void {
                 });
             }
             if (fontIndex >= 0)
-              for (let prop of ModelDomTextSplitValue_2 as Dynamic)
+              for (let prop of fontInheritanceProperties as Dynamic)
                 coveredProps.add(prop);
           };
         for (

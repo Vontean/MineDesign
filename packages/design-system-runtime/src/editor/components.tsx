@@ -291,7 +291,7 @@ function ComponentPropsEditor({
         "ds-props-pop flex w-[min(18rem,calc(100vw-2rem))] flex-col py-xs [--pp-label-w:6rem]"
       }
       role={"group"}
-      aria-label={uiMessage("design-system.components.props2", { value1: String(c.name) })}
+      aria-label={uiMessage("design-system.components.props2", { subject: String(c.name) })}
       data-testid={"ds-comp-props-" + c.name}
       {...commentTargetProps("props", c.name)}
     >

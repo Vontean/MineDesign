@@ -1,6 +1,6 @@
 import { uploadedVideoAnnotation } from "./working-state";
 import { structurallyEqual } from "../platform/document-values";
-import { annotationArrowHeads, annotationTextStyle, designPageId, isShapeAnnotation, maxDesignPages, moveAnnotation, normalizeDesignLaunch, PlatformFileContentBackgroundBackgroundColorOpacityValues, PlatformFileContentLimit_5 as maxAnnotations, updateAnnotationArrowHeads, updateAnnotationColor, updateAnnotationCrop, updateAnnotationCss, updateAnnotationTextStyle, updateArtboardRadius, validCoverArtboard } from "../platform/file-content";
+import { annotationArrowHeads, annotationTextStyle, designPageId, isShapeAnnotation, maxDesignPages, moveAnnotation, normalizeDesignLaunch, PlatformFileContentBackgroundBackgroundColorOpacityValues, maxAnnotations as maxAnnotations, updateAnnotationArrowHeads, updateAnnotationColor, updateAnnotationCrop, updateAnnotationCss, updateAnnotationTextStyle, updateArtboardRadius, validCoverArtboard } from "../platform/file-content";
 
 export type HistoryDirection = "undo" | "redo";
 

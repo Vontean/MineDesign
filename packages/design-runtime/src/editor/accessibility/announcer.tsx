@@ -8,7 +8,7 @@ import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { toModuleNamespace } from "../../module-helpers";
 
 var reactAccessibilityAnnouncer: Dynamic;
-var reactAccessibilityAnnouncer_2: Dynamic;
+var reactForScreenReaderAnnouncer: Dynamic;
 var jsxAccessibilityAnnouncer: Dynamic;
 var AccessibilityAnnouncerSubscribers: Dynamic;
 var AccessibilityAnnouncerConstant: Dynamic;
@@ -29,10 +29,10 @@ function ScreenReaderAnnouncer({
   clearMs = defaultClearMs,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [announcement, setAnnouncement]: Dynamic = (0, reactAccessibilityAnnouncer_2.useState)(
+  let [announcement, setAnnouncement]: Dynamic = (0, reactForScreenReaderAnnouncer.useState)(
     "",
   );
-  (0, reactAccessibilityAnnouncer_2.useEffect)((): Dynamic => {
+  (0, reactForScreenReaderAnnouncer.useEffect)((): Dynamic => {
     let settleTimer: Dynamic,
       isIdleOnlyPending: Dynamic = false,
       clearTimer: Dynamic,
@@ -85,13 +85,13 @@ function ScreenReaderAnnouncer({
 }
 export {
   AccessibilityAnnouncerConstant,
-  defaultClearMs as AccessibilityAnnouncerConstant_2,
+  defaultClearMs,
   AccessibilityAnnouncerLimit,
   AccessibilityAnnouncerSubscribers,
   announce,
   jsxAccessibilityAnnouncer,
   reactAccessibilityAnnouncer,
-  reactAccessibilityAnnouncer_2,
+  reactForScreenReaderAnnouncer,
   ScreenReaderAnnouncer,
   subscribeAnnouncements,
 };
@@ -102,7 +102,7 @@ export function installEditorAccessibilityAnnouncer(): () => void {
       1,
     );
     initializeCdsIndex();
-    reactAccessibilityAnnouncer_2 = toModuleNamespace(
+    reactForScreenReaderAnnouncer = toModuleNamespace(
       load_react(),
       1,
     );

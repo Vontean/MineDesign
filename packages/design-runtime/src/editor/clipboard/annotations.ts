@@ -2,12 +2,12 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { ClipboardArtboardsBlobBlobPattern, ClipboardArtboardsDataImagePattern, ClipboardArtboardsLimit, ClipboardArtboardsResolvedValue, ClipboardArtboardsResolvedValue_2 as maxAssetBytes } from "./artboards";
+import { ClipboardArtboardsBlobBlobPattern, ClipboardArtboardsDataImagePattern, ClipboardArtboardsLimit, ClipboardArtboardsResolvedValue, maxAssetBytes } from "./artboards";
 import { sanitizePastedHtml } from "./html-sanitization";
 import { ClipboardPastePlanningKind } from "./paste-planning";
 import { parseDcHtmlDocument } from "../html/dc-document";
 import { escapeHtml } from "../html/escaping";
-import { annotationVisibleBounds, blankDcDocument, PlatformFileContentBackgroundBackgroundColorOpacityValues, PlatformFileContentTest_2 as normalizePictureSource } from "../../platform/file-content";
+import { annotationVisibleBounds, blankDcDocument, PlatformFileContentBackgroundBackgroundColorOpacityValues, parseAnnotationImageUrl as normalizePictureSource } from "../../platform/file-content";
 
 var ClipboardAnnotationsWebpAvifPattern: Dynamic;
 var ClipboardAnnotationsDataImagePattern: Dynamic;
@@ -20,7 +20,7 @@ var ClipboardAnnotationsLimit: Dynamic;
 var ClipboardAnnotationsRectOvalLineValues: Dynamic;
 var ClipboardAnnotationsIncludes: Dynamic;
 var ClipboardAnnotationsGetLength: Dynamic;
-var ClipboardAnnotationsIncludes_2: Dynamic;
+var isNoteOrTitleAnnotation: Dynamic;
 var normalizeBlobReference: Dynamic;
 var strictDataImagePattern: Dynamic;
 var isSupportedDataImage: Dynamic;
@@ -110,7 +110,7 @@ function annotationClipboardEntries(
         ? "budget"
         : enforceLimits &&
             ClipboardPastePlanningKind(
-              copyableAnnotations.filter(ClipboardAnnotationsIncludes_2),
+              copyableAnnotations.filter(isNoteOrTitleAnnotation),
             )
           ? "bounds"
           : false;
@@ -297,22 +297,22 @@ export {
   blankArtboardBody,
   ClipboardAnnotationsCharCodeAt,
   ClipboardAnnotationsDataImagePattern,
-  strictDataImagePattern as ClipboardAnnotationsDataImagePattern_2,
+  strictDataImagePattern,
   ClipboardAnnotationsGetLength,
   ClipboardAnnotationsHelmetScHelmetPattern,
   ClipboardAnnotationsIdKindXValues,
   ClipboardAnnotationsIncludes,
-  ClipboardAnnotationsIncludes_2,
+  isNoteOrTitleAnnotation,
   ClipboardAnnotationsLimit,
-  maxCssValueLength as ClipboardAnnotationsLimit_2,
+  maxCssValueLength,
   ClipboardAnnotationsRectOvalLineValues,
   ClipboardAnnotationsResolvedValue,
-  maxAnnotationJsonBytes as ClipboardAnnotationsResolvedValue_2,
-  maxAnnotationClipboardBytes as ClipboardAnnotationsResolvedValue_3,
+  maxAnnotationJsonBytes,
+  maxAnnotationClipboardBytes,
   ClipboardAnnotationsSrcAltValues,
   ClipboardAnnotationsTest,
-  normalizeBlobReference as ClipboardAnnotationsTest_2,
-  isSupportedDataImage as ClipboardAnnotationsTest_3,
+  normalizeBlobReference,
+  isSupportedDataImage,
   ClipboardAnnotationsWebpAvifPattern,
   normalizeClipboardAnnotation,
   replaceClipboardPictureSource,
@@ -352,7 +352,7 @@ export function installEditorClipboardAnnotations(): () => void {
           : null;
     ClipboardAnnotationsGetLength = (entry?: Dynamic): Dynamic =>
       JSON.stringify(entry).length;
-    ClipboardAnnotationsIncludes_2 = (source?: Dynamic): Dynamic =>
+    isNoteOrTitleAnnotation = (source?: Dynamic): Dynamic =>
       ["note", "title1"].includes(
         ClipboardAnnotationsIncludes(source.kind) ?? "",
       );

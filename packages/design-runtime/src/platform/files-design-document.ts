@@ -1,3 +1,5 @@
+import { createBoardClashes } from "./board-clash";
+import { createDesignStashOffer } from "./design-stash-offer";
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type { DataRecord } from "../contracts/storage";
 /** Restored application module; prepare first, initialize in original order. */
@@ -6,8 +8,7 @@ import {
 } from "../runtime-types";
 import { refreshDesignSystemFileOverlay } from "../design-system/file-overlay";
 import { setDesignSystems } from "../design-system/store";
-import { ModelHistoryRebaseSet } from "../editor/model/history-rebase";
-import { describeMergeField, mergeDcDocuments } from "../editor/model/three-way-merge";
+import { describeMergeField } from "../editor/model/three-way-merge";
 import { artboardStorePath } from "../editor/session/artboard-state";
 import { retryAccessFailure } from "./access-retry";
 import { classifyBootstrapFailure, getBootstrapRetryDelay, getRestartDelay, readBootFiles } from "./boot-reader";
@@ -15,14 +16,13 @@ import { normalizeDocumentTitle, normalizeNewDocumentTitle } from "./database-do
 import { buildDesignDocumentFromIndex, buildSelectedBoardsDocument, createEmptyDesignIndex, FILES_INDEX_MERGE_POLICY, INDEX_DESIGN_SYSTEM_TOKENS_KEY, INDEX_LEFT_OUT_KEY, INDEX_SOURCE_KEY, mergeDesignPages, normalizeDesignIndex, orderedDesignMapKeys, parseIndexDeletionSets, updateDesignIndexFromDocument } from "./design-index";
 import { updateDesignSourceFile } from "./design-source";
 import { recordEdit } from "./edit-count";
-import { canvasMetadataFile, getMimeTypeForPath, hashFileMap, isArtboardFile, isDesignSystemFile, isNarrowedFileContext, isSafeProjectPath, isSupportedProjectAsset, parseCanvasMetadata, PlatformFileContentFilesValue as MAX_LISTED_PROJECT_FILES, PlatformFileContentResolvedValue_11 as MAX_DESIGN_FILE_BYTES, PlatformFileContentWebpAvifPattern as BINARY_IMAGE_PATTERN, serializeCanvasMetadata } from "./file-content";
+import { canvasMetadataFile, getMimeTypeForPath, hashFileMap, isArtboardFile, isDesignSystemFile, isNarrowedFileContext, isSafeProjectPath, isSupportedProjectAsset, parseCanvasMetadata, PlatformFileContentFilesValue as MAX_LISTED_PROJECT_FILES, defaultDocumentFileBytes as MAX_DESIGN_FILE_BYTES, PlatformFileContentWebpAvifPattern as BINARY_IMAGE_PATTERN } from "./file-content";
 import { PlatformFilesHotReloadItems as FILE_READ_RETRY_DELAYS_MS } from "./files-hot-reload";
 import { createFilesPublisher } from "./files-publisher";
 import { cloneIndexValue, replaceIndexObjectProperties } from "./index-merge";
 import { createIndexFileState, stringifyCanonicalIndex } from "./index-state";
 import { fromProjectContentPath, isReservedProjectPath, projectMetadataPaths, projectPathPrefix, toProjectContentPath } from "./project-paths";
 import { applyCrashStashEdits, describeStuckSave, describeUnsendableEdits } from "./save-notices";
-import { PlatformSha256Encode, sha256Fallback } from "./sha256";
 import { CreatedOnFilesValue, getStorageMigrationMarker, migrationTimestampMarker } from "./storage-migration";
 import { CANVAS_READ_ERROR_REASON } from "./write-access";
 
@@ -180,18 +180,42 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
     publishedHashes: Dynamic = new Map(),
     loadedFiles: Dynamic = {},
     missingBoards: Dynamic = new Set(),
-    heldRemoteFiles: Dynamic = new Set(),
     savedFiles: Dynamic = {},
-    overwrittenEdits: Dynamic = new Map(),
-    boardClashes: Dynamic = new Map(),
     ownChangedHashes: Dynamic = new Map(),
-    resolvingClashes: Dynamic = new Set(),
-    pendingReadVersions: Dynamic = new Map(),
     undoHistory: Dynamic = [],
     fileDirtyVersions: Dynamic = new Map(),
     keptNoteIds: Dynamic = new Set(),
     keptPageIds: Dynamic = new Set(),
     knownArtboardFiles: Dynamic = new Set(),
+    clashes: Dynamic = createBoardClashes({
+      documentOptions: documentOptions,
+      timers: timers,
+      liveHashes: liveHashes,
+      publishedHashes: publishedHashes,
+      fileDirtyVersions: fileDirtyVersions,
+      knownArtboardFiles: knownArtboardFiles,
+      undoHistory: undoHistory,
+      get disposed() { return disposed; },
+      get state() { return state; },
+      get loadedFiles() { return loadedFiles; },
+      get savedFiles() { return savedFiles; },
+      get publisher() { return publisher; },
+      get indexState() { return indexState; },
+      get bootMaxAttempts() { return DESIGN_BOOT_MAX_ATTEMPTS; },
+      get bootMaxWaitMs() { return DESIGN_BOOT_MAX_WAIT_MS; },
+      get restartDelayMs() { return DESIGN_RESTART_DELAY_MS; },
+      notice: notice,
+      portVersion: (): Dynamic => trackedPort.version(),
+      readFiles: (paths): Promise<Dynamic> => readFiles(paths),
+      adoptRemoteFiles: (files): Dynamic => adoptRemoteFiles(files),
+      replaceDocument: (nextDocument): Dynamic => replaceDocument(nextDocument),
+      scheduleLocalSave: (): Dynamic => scheduleLocalSave(),
+      handleRemoteUpdate: (update): Dynamic => handleRemoteUpdate(update),
+      shouldHoldRemoteFile: (relativePath): Dynamic => shouldHoldRemoteFile(relativePath),
+      hasUnsavedFileEdits: (relativePath): Dynamic => hasUnsavedFileEdits(relativePath),
+      describeIndexMergeConflict: describeIndexMergeConflict,
+      describeSamePropertyConflict: describeSamePropertyConflict,
+    }),
     rememberArtboards: Dynamic = (files?: Dynamic): Dynamic => {
       for (let filePath of Object.keys(files) as Dynamic)
         isArtboardFile(filePath) &&
@@ -284,7 +308,7 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
                   absolutePath,
                   "design",
                 );
-                removedPath !== undefined && overwrittenEdits.delete(removedPath);
+                removedPath !== undefined && clashes.forgetOverwrittenEdit(removedPath);
                 continue;
               }
               let sha: Dynamic =
@@ -308,7 +332,7 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
                   savedFiles[relativePath] !== undefined &&
                   savedFiles[relativePath] !== fileText &&
                   documentOptions.sameBoardRule !== "last" &&
-                  overwrittenEdits.set(relativePath, {
+                  clashes.rememberOverwrittenEdit({
                     file: relativePath,
                     base: savedFiles[relativePath],
                     mine: fileText,
@@ -440,7 +464,7 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
           }
         : {}),
       onConflict: (conflict?: Dynamic): Dynamic => {
-        handleBoardClash(conflict.path, conflict.theirsSha, "save-refused");
+        clashes.handleBoardClash(conflict.path, conflict.theirsSha, "save-refused");
       },
       onIndexMerged: notifyIndexMerge,
       onState(nextSyncState: Dynamic): Dynamic {
@@ -669,8 +693,16 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
       }, delayMs);
     }
   }
-  let offeredCrashStash: Dynamic,
-    restoreCount: Dynamic = 0;
+  const stashOffer = createDesignStashOffer({
+    latestFileSha: (path) => latestFileSha(path),
+    canRestore: () => canWrite && loadState === "live" && !disposed,
+    show: (offer) => documentOptions.onStashOffer?.(offer),
+    restore: (stash) => applyStashedContent(stash),
+    discard: () => {
+      documentOptions.saveStash?.clearOffered();
+      notifyContent(false);
+    },
+  });
   async function loadFiles(isManualRetry: Dynamic = false): Promise<Dynamic> {
     let loadStartedAt: Dynamic = timers.now();
     try {
@@ -832,7 +864,7 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
         let listedPaths: Dynamic = new Set(
           bootFiles.listing.map((file?: Dynamic): Dynamic => file.path),
         );
-        offeredCrashStash = await applyCrashStashEdits(
+        stashOffer.current = await applyCrashStashEdits(
           documentOptions.saveStash,
           (filePath?: Dynamic): Dynamic =>
             filePath === DESIGN_INDEX_FILE_PATH
@@ -840,7 +872,7 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
               : (bootFiles.files.get(filePath)?.text ??
                 (listedPaths.has(filePath) ? undefined : null)),
         );
-        let stashedIndex: Dynamic = offeredCrashStash?.edits.find(
+        let stashedIndex: Dynamic = stashOffer.current?.edits.find(
             (edit?: Dynamic): Dynamic =>
               edit.path === DESIGN_INDEX_FILE_PATH,
           ),
@@ -854,14 +886,14 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
                 title,
               );
         } catch {}
-        if (offeredCrashStash !== undefined && stashedIndex !== undefined && indexAlreadyMatches) {
-          let remainingEdits: Dynamic = offeredCrashStash.edits.filter(
+        if (stashOffer.current !== undefined && stashedIndex !== undefined && indexAlreadyMatches) {
+          let remainingEdits: Dynamic = stashOffer.current.edits.filter(
             (edit?: Dynamic): Dynamic => edit !== stashedIndex,
           );
           remainingEdits.length === 0
-            ? ((offeredCrashStash = undefined), await documentOptions.saveStash.clearOffered())
-            : (offeredCrashStash = {
-                ...offeredCrashStash,
+            ? ((stashOffer.current = undefined), await documentOptions.saveStash.clearOffered())
+            : (stashOffer.current = {
+                ...stashOffer.current,
                 edits: remainingEdits,
               });
         }
@@ -896,7 +928,7 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
     for (let listener of [...loadListeners] as Dynamic) listener();
     notifyContent(true);
     notifySave();
-    offeredCrashStash !== undefined && loadState === "live" && offerCrashStash();
+    stashOffer.current !== undefined && loadState === "live" && stashOffer.offer();
   }
   let localSaveTimer: Dynamic;
   function scheduleLocalSave(): Dynamic {
@@ -962,9 +994,9 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
         (artboard?: Dynamic): Dynamic =>
           fileDirtyVersions.has(artboard.file)
             ? (deletions.boards.has(artboard.file) &&
-                !boardClashes.has(artboard.file) &&
-                !heldRemoteFiles.has(artboard.file) &&
-                !resolvingClashes.has(artboard.file) &&
+                !clashes.hasClash(artboard.file) &&
+                !clashes.isHeld(artboard.file) &&
+                !clashes.isResolving(artboard.file) &&
                 !shouldHoldRemoteFile(artboard.file) &&
                 excludedFromWriteback.push(artboard.file),
               false)
@@ -1076,31 +1108,25 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
         continue;
       }
       let absolutePath: Dynamic = toProjectContentPath(relativePath);
-      if (!resolvingClashes.has(relativePath)) {
-        if (fileDirtyVersions.has(relativePath) && !boardClashes.has(relativePath)) {
+      if (!clashes.isResolving(relativePath)) {
+        if (fileDirtyVersions.has(relativePath) && !clashes.hasClash(relativePath)) {
           if (shouldHoldRemoteFile(relativePath)) {
-            heldRemoteFiles.add(relativePath);
-            scheduleHeldRemoteCheck();
+            clashes.hold(relativePath);
             continue;
           }
-          handleBoardClash(absolutePath, null, "remote-while-editing");
+          clashes.handleBoardClash(absolutePath, null, "remote-while-editing");
           continue;
         }
-        if (boardClashes.has(relativePath)) {
-          let clash: Dynamic = boardClashes.get(relativePath);
-          clash.ask !== undefined &&
-            clash.askedAt !== undefined &&
-            timers.now() - clash.askedAt > 2e4 &&
-            ((clash.askedAt = timers.now()), clash.ask());
+        if (clashes.hasClash(relativePath)) {
+          clashes.remindStalePrompt(relativePath);
           continue;
         }
         if (hasNewerPublishedHash(absolutePath)) {
           if (shouldHoldRemoteFile(relativePath)) {
-            heldRemoteFiles.add(relativePath);
-            scheduleHeldRemoteCheck();
+            clashes.hold(relativePath);
             continue;
           }
-          handleBoardClash(
+          clashes.handleBoardClash(
             absolutePath,
             publishedHashes.get(absolutePath) ?? null,
             "remote-while-editing",
@@ -1361,26 +1387,19 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
               cloneIndexValue(indexState.get().boards[relativePath]),
             );
           if (relativePath in state.content.files) {
-            if (boardClashes.has(relativePath)) {
-              boardClashes.set(relativePath, {
-                ...boardClashes.get(relativePath),
-                theirsSha: null,
-              });
-              continue;
-            }
+            if (clashes.noteRemoteVersion(relativePath, null)) continue;
             if (shouldHoldRemoteFile(relativePath)) {
-              heldRemoteFiles.add(relativePath);
-              scheduleHeldRemoteCheck();
+              clashes.hold(relativePath);
               continue;
             }
-            if (isArtboardFile(relativePath) && hasLocalBoardChanges(relativePath)) {
+            if (isArtboardFile(relativePath) && clashes.hasLocalBoardChanges(relativePath)) {
               clashingPaths.push(relativePath);
               continue;
             }
           }
           removedPaths.add(relativePath);
           liveHashes.delete(change.path);
-          heldRemoteFiles.delete(relativePath);
+          clashes.dropHold(relativePath);
           continue;
         }
         fileDirtyVersions.delete(relativePath);
@@ -1391,19 +1410,12 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
           }) !== null &&
           liveHashes.get(change.path) !== change.sha256
         ) {
-          if (boardClashes.has(relativePath)) {
-            boardClashes.set(relativePath, {
-              ...boardClashes.get(relativePath),
-              theirsSha: change.sha256,
-            });
-            continue;
-          }
+          if (clashes.noteRemoteVersion(relativePath, change.sha256)) continue;
           if (shouldHoldRemoteFile(relativePath)) {
-            heldRemoteFiles.add(relativePath);
-            scheduleHeldRemoteCheck();
+            clashes.hold(relativePath);
             continue;
           }
-          if (hasLocalBoardChanges(relativePath)) {
+          if (clashes.hasLocalBoardChanges(relativePath)) {
             clashingPaths.push(relativePath);
             continue;
           }
@@ -1480,7 +1492,7 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
         (delete nextFiles[relativePath],
         delete loadedFiles[relativePath],
         delete savedFiles[relativePath],
-        overwrittenEdits.delete(relativePath),
+        clashes.forgetOverwrittenEdit(relativePath),
         (shouldRecompose = true));
     for (let relativePath of pathsToRead as Dynamic) {
       if (readFilesByPath[relativePath] === undefined) continue;
@@ -1494,7 +1506,7 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
         clashingPaths.push(relativePath);
         continue;
       }
-      let recoveredEdit: Dynamic = reapplyOverwrittenEdit(
+      let recoveredEdit: Dynamic = clashes.reapplyOverwrittenEdit(
         relativePath,
         readFilesByPath[relativePath],
       );
@@ -1515,9 +1527,9 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
       delete loadedFiles[canvasMetadataFile];
     }
     for (let edit of recoveredEdits as Dynamic)
-      offerOverwrittenEditNotice(edit);
+      clashes.offerOverwrittenEditNotice(edit);
     for (let relativePath of clashingPaths as Dynamic)
-      await handleBoardClash(
+      await clashes.handleBoardClash(
         toProjectContentPath(relativePath),
         publishedHashes.get(toProjectContentPath(relativePath)) ??
           null,
@@ -1531,715 +1543,19 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
         (relativePath?: Dynamic): Dynamic => readFilesByPath[relativePath] !== undefined,
       ),
       removed: [...removedPaths],
-      held: [...heldRemoteFiles],
+      held: clashes.heldPaths(),
       folded: clashingPaths,
       indexMerged: indexChange !== undefined,
       recomposed: shouldRecompose,
       ms: timers.now() - applyStartedAt,
     });
   }
-  async function applyClashResolution(
-    conflict?: Dynamic,
-    silent: Dynamic = false,
-    mayApply?: Dynamic,
-  ): Promise<Dynamic> {
-    let relativePath: Dynamic = fromProjectContentPath(
-      conflict.path,
-      "design",
-    );
-    if (relativePath === undefined) return false;
-    let remoteContent: Dynamic =
-      conflict.theirsSha === null
-        ? undefined
-        : (await readFiles([relativePath]))[relativePath];
-    if (
-      disposed ||
-      (conflict.theirsSha !== null && remoteContent === undefined) ||
-      (mayApply !== undefined && !mayApply())
-    )
-      return false;
-    let displayName: Dynamic = relativePath.replace(/\.dc\.html$/, "");
-    !silent && documentOptions.sameBoardRule === "first"
-      ? notice(
-          displayName +
-            (conflict.theirsSha === null
-              ? " deleted remotely"
-              : " changed remotely"),
-        )
-      : !silent &&
-        documentOptions.sameBoardRule !== "last" &&
-        notice(
-          "\u201C" +
-            displayName +
-            "\u201D was changed by someone else while you were editing it. Their version was loaded; your last change to it was not saved.",
-        );
-    heldRemoteFiles.delete(relativePath);
-    overwrittenEdits.delete(relativePath);
-    let nextFiles: Dynamic = {
-      ...state.content.files,
-    };
-    remoteContent === undefined
-      ? (delete nextFiles[relativePath],
-        delete loadedFiles[relativePath],
-        delete savedFiles[relativePath],
-        liveHashes.delete(conflict.path))
-      : ((nextFiles[relativePath] = remoteContent),
-        (loadedFiles[relativePath] = remoteContent),
-        (savedFiles[relativePath] = remoteContent),
-        liveHashes.set(conflict.path, conflict.theirsSha));
-    adoptRemoteFiles(nextFiles);
-    return true;
-  }
-  let hasLocalBoardChanges: Dynamic = (relativePath?: Dynamic): Dynamic =>
-      hasUnsavedFileEdits(relativePath) ||
-      isNewLocalFile(relativePath) ||
-      (savedFiles[relativePath] !== undefined &&
-        state.content.files[relativePath] !== undefined &&
-        state.content.files[relativePath] !== savedFiles[relativePath]),
-    isNewLocalFile: Dynamic = (relativePath?: Dynamic): Dynamic =>
-      state.content.files[relativePath] !== undefined &&
-      savedFiles[relativePath] === undefined &&
-      !liveHashes.has(toProjectContentPath(relativePath)),
-    isPathTaken: Dynamic = (relativePath?: Dynamic): Dynamic =>
-      relativePath in state.content.files ||
-      fileDirtyVersions.has(relativePath) ||
-      liveHashes.has(toProjectContentPath(relativePath)) ||
-      (publishedHashes.get(toProjectContentPath(relativePath)) ??
-        null) !== null;
-  function nextDuplicateFilename(fileName?: Dynamic): Dynamic {
-    let stem: Dynamic = fileName.replace(/\.dc\.html$/, ""),
-      numberedStem: Dynamic = /^(.*) (\d+)$/.exec(stem),
-      baseStem: Dynamic = numberedStem ? numberedStem[1] : stem;
-    for (
-      let copyNumber: Dynamic = numberedStem ? Number(numberedStem[2]) + 1 : 2;
-      ;
-      copyNumber++
-    ) {
-      let candidate: Dynamic = baseStem + " " + String(copyNumber) + ".dc.html";
-      if (!isPathTaken(candidate)) return candidate;
-    }
-  }
-  let heldRemoteTimer: Dynamic;
-  function scheduleHeldRemoteCheck(): Dynamic {
-    heldRemoteTimer !== undefined ||
-      disposed ||
-      (heldRemoteTimer = timers.setTimeout((): Dynamic => {
-        heldRemoteTimer = undefined;
-        for (let relativePath of [...heldRemoteFiles] as Dynamic)
-          shouldHoldRemoteFile(relativePath) || releaseHeldFile(relativePath);
-        heldRemoteFiles.size > 0 && scheduleHeldRemoteCheck();
-      }, documentOptions.heldCheckMs ?? 400));
-  }
-  function releaseHeldFile(relativePath?: Dynamic): Dynamic {
-    heldRemoteFiles.delete(relativePath);
-    let absolutePath: Dynamic = toProjectContentPath(relativePath);
-    hasLocalBoardChanges(relativePath)
-      ? handleBoardClash(
-          absolutePath,
-          publishedHashes.get(absolutePath) ?? null,
-          "remote-while-editing",
-        )
-      : handleRemoteUpdate({
-          from: trackedPort.version(),
-          to: trackedPort.version(),
-          changed: [
-            {
-              path: absolutePath,
-              sha256: publishedHashes.get(absolutePath) ?? null,
-            },
-          ],
-        });
-  }
-  async function handleBoardClash(
-    absolutePath?: Dynamic,
-    remoteSha?: Dynamic,
-    trigger?: Dynamic,
-  ): Promise<Dynamic> {
-    let relativePath: Dynamic = fromProjectContentPath(
-      absolutePath,
-      "design",
-    );
-    if (relativePath === undefined || disposed || resolvingClashes.has(relativePath))
-      return;
-    if (boardClashes.has(relativePath)) {
-      boardClashes.set(relativePath, {
-        ...boardClashes.get(relativePath),
-        theirsSha: remoteSha,
-      });
-      return;
-    }
-    let initialLocalContent: Dynamic = state.content.files[relativePath];
-    if (
-      initialLocalContent === undefined ||
-      (!isArtboardFile(relativePath) &&
-        documentOptions.sameBoardRule !== "last")
-    )
-      return void (await applyClashResolution({
-        path: absolutePath,
-        base: liveHashes.get(absolutePath) ?? null,
-        mine: initialLocalContent ?? null,
-        theirsSha: remoteSha,
-      }));
-    if (
-      remoteSha !== null &&
-      isArtboardFile(relativePath) &&
-      isNewLocalFile(relativePath)
-    )
-      return adoptIdenticalBoard(relativePath, initialLocalContent, remoteSha);
-    if (documentOptions.sameBoardRule === "last") {
-      if (
-        !hasLocalBoardChanges(relativePath) &&
-        remoteSha !== (liveHashes.get(absolutePath) ?? null)
-      ) {
-        publisher.withdraw(absolutePath);
-        return void handleRemoteUpdate({
-          from: trackedPort.version(),
-          to: trackedPort.version(),
-          changed: [
-            {
-              path: absolutePath,
-              sha256: remoteSha,
-            },
-          ],
-        });
-      }
-      publishedHashes.set(absolutePath, remoteSha);
-      remoteSha === null
-        ? (liveHashes.delete(absolutePath), fileDirtyVersions.delete(relativePath))
-        : liveHashes.set(absolutePath, remoteSha);
-      delete loadedFiles[relativePath];
-      heldRemoteFiles.delete(relativePath);
-      scheduleLocalSave();
-      return;
-    }
-    if (remoteSha !== null && liveHashes.get(absolutePath) === remoteSha) {
-      documentOptions.sameBoardRule === "first" &&
-        publisher.resolveConflict(absolutePath, "theirs");
-      savedFiles[relativePath] !== undefined &&
-        (loadedFiles[relativePath] = savedFiles[relativePath]);
-      scheduleLocalSave();
-      return;
-    }
-    if (documentOptions.sameBoardRule === "first") {
-      if (shouldHoldRemoteFile(relativePath)) {
-        heldRemoteFiles.add(relativePath);
-        publishedHashes.set(absolutePath, remoteSha);
-        scheduleHeldRemoteCheck();
-        return;
-      }
-      resolvingClashes.add(relativePath);
-      try {
-        let wasHeldAgain: Dynamic = false;
-        if (
-          (await applyClashResolution(
-            {
-              path: absolutePath,
-              base: liveHashes.get(absolutePath) ?? null,
-              mine: initialLocalContent,
-              theirsSha: remoteSha,
-            },
-            false,
-            (): Dynamic => (
-              (wasHeldAgain = shouldHoldRemoteFile(relativePath)),
-              wasHeldAgain
-                ? false
-                : (publisher.withdraw(absolutePath),
-                  ModelHistoryRebaseSet(relativePath),
-                  true)
-            ),
-          )) ||
-          disposed
-        )
-          return void pendingReadVersions.delete(relativePath);
-        publishedHashes.set(absolutePath, remoteSha);
-        if (wasHeldAgain) {
-          heldRemoteFiles.add(relativePath);
-          scheduleHeldRemoteCheck();
-          return;
-        }
-        let readRetry: Dynamic = pendingReadVersions.get(relativePath) ?? {
-          tries: 0,
-        };
-        if (readRetry.timer !== undefined) return;
-        if (readRetry.tries >= DESIGN_BOOT_MAX_ATTEMPTS) {
-          pendingReadVersions.delete(relativePath);
-          notice(
-            relativePath.replace(/\.dc\.html$/, "") +
-              " changed remotely; reload to load it",
-          );
-          return;
-        }
-        readRetry.tries += 1;
-        readRetry.timer = timers.setTimeout(
-          (): Dynamic => {
-            readRetry.timer = undefined;
-            disposed || releaseHeldFile(relativePath);
-          },
-          Math.min(6e4, DESIGN_RESTART_DELAY_MS * 2 ** (readRetry.tries - 1)),
-        );
-        pendingReadVersions.set(relativePath, readRetry);
-      } finally {
-        resolvingClashes.delete(relativePath);
-      }
-      return;
-    }
-    resolvingClashes.add(relativePath);
-    let mergeStartedAt: Dynamic = timers.now();
-    try {
-      let baseContent: Dynamic = savedFiles[relativePath],
-        remoteContent: Dynamic;
-      remoteSha !== null && (remoteContent = (await readFiles([relativePath]))[relativePath]);
-      if (disposed) return;
-      let localContent: Dynamic = state.content.files[relativePath] ?? initialLocalContent,
-        merge: Dynamic,
-        mergeProblem: Dynamic;
-      remoteSha === null
-        ? (mergeProblem = "the board was deleted by someone else")
-        : remoteContent === undefined
-          ? (mergeProblem = "their version could not be read")
-          : baseContent === undefined
-            ? (mergeProblem = "this tab does not know what its edits started from")
-            : ((merge = mergeDcDocuments(
-                baseContent,
-                localContent,
-                remoteContent,
-              )),
-              merge.ok || (mergeProblem = merge.why));
-      let mergeEvent: Dynamic = {
-        file: relativePath,
-        trigger: trigger,
-        ok: merge?.ok === true,
-        ...(mergeProblem !== undefined
-          ? {
-              why: mergeProblem,
-            }
-          : {}),
-        ...(merge !== undefined
-          ? {
-              regions: merge.regions,
-              guard: merge.guard,
-            }
-          : {}),
-        applied: merge?.applied.length ?? 0,
-        overlaps: merge?.overlaps.length ?? 0,
-        ms: timers.now() - mergeStartedAt,
-      };
-      undoHistory.push(mergeEvent);
-      undoHistory.length > 100 && undoHistory.shift();
-      documentOptions.debug?.event("reconcile", {
-        ...mergeEvent,
-        ...(merge !== undefined
-          ? {
-              appliedList: merge.applied.slice(0, 24),
-              overlapList: merge.overlaps.slice(0, 24),
-            }
-          : {}),
-      });
-      if (
-        merge?.ok === true &&
-        merge.merged !== undefined &&
-        remoteContent !== undefined &&
-        remoteSha !== null
-      ) {
-        let mergedFiles: Dynamic = {
-          ...state.content.files,
-          [relativePath]: merge.merged,
-        };
-        savedFiles[relativePath] = remoteContent;
-        loadedFiles[relativePath] = remoteContent;
-        liveHashes.set(absolutePath, remoteSha);
-        publishedHashes.set(absolutePath, remoteSha);
-        heldRemoteFiles.delete(relativePath);
-        let recoveredEdit: Dynamic = reapplyOverwrittenEdit(relativePath, remoteContent);
-        adoptRemoteFiles(mergedFiles);
-        merge.merged !== remoteContent && scheduleLocalSave();
-        merge.overlaps.length > 0 &&
-          notice(describeIndexMergeConflict(relativePath, merge.overlaps));
-        recoveredEdit !== undefined && offerOverwrittenEditNotice(recoveredEdit);
-        return;
-      }
-      offerBoardClashNotice(
-        relativePath,
-        absolutePath,
-        remoteSha,
-        remoteContent,
-        mergeProblem ?? "the two versions could not be folded together",
-      );
-    } finally {
-      resolvingClashes.delete(relativePath);
-    }
-  }
-  async function adoptIdenticalBoard(
-    boardPath?: Dynamic,
-    localContent?: Dynamic,
-    remoteSha?: Dynamic,
-  ): Promise<Dynamic> {
-    resolvingClashes.add(boardPath);
-    try {
-      if (
-        sha256Fallback(
-          PlatformSha256Encode(localContent),
-        ) === remoteSha
-      ) {
-        loadedFiles[boardPath] = localContent;
-        savedFiles[boardPath] = localContent;
-        liveHashes.set(toProjectContentPath(boardPath), remoteSha);
-        publisher.resolveConflict(
-          toProjectContentPath(boardPath),
-          "theirs",
-        );
-        return;
-      }
-      let renamedBoardPath: Dynamic = nextDuplicateFilename(boardPath);
-      knownArtboardFiles.add(renamedBoardPath);
-      let boardMetadata: Dynamic = cloneIndexValue(
-        indexState.get().boards[boardPath],
-      );
-      indexState.update((index?: Dynamic): Dynamic => {
-        index.boards[renamedBoardPath] = boardMetadata ?? {
-          x: 0,
-          y: 0,
-          w: 1280,
-          h: 720,
-        };
-        let sourceOrderIndex: Dynamic = index.order.indexOf(boardPath);
-        index.order.splice(
-          sourceOrderIndex < 0 ? index.order.length : sourceOrderIndex + 1,
-          0,
-          renamedBoardPath,
-        );
-      });
-      let remoteContent: Dynamic = (await readFiles([boardPath]))[boardPath];
-      if (disposed) return;
-      let nextFiles: Dynamic = {
-        ...state.content.files,
-        [renamedBoardPath]: state.content.files[boardPath] ?? localContent,
-      };
-      delete loadedFiles[boardPath];
-      remoteContent === undefined
-        ? delete nextFiles[boardPath]
-        : ((nextFiles[boardPath] = remoteContent),
-          (loadedFiles[boardPath] = remoteContent),
-          (savedFiles[boardPath] = remoteContent),
-          liveHashes.set(toProjectContentPath(boardPath), remoteSha));
-      publisher.resolveConflict(
-        toProjectContentPath(boardPath),
-        "theirs",
-      );
-      documentOptions.debug?.event("moved-aside", {
-        file: boardPath,
-        as: renamedBoardPath,
-      });
-      adoptRemoteFiles(nextFiles);
-      scheduleLocalSave();
-    } finally {
-      resolvingClashes.delete(boardPath);
-    }
-  }
-  function reapplyOverwrittenEdit(
-    boardPath?: Dynamic,
-    remoteContent?: Dynamic,
-  ): Dynamic {
-    let entry: Dynamic = overwrittenEdits.get(boardPath);
-    if (
-      entry === undefined ||
-      (overwrittenEdits.delete(boardPath), remoteContent === entry.mine)
-    )
-      return;
-    let merge: Dynamic = mergeDcDocuments(
-      entry.base,
-      entry.mine,
-      remoteContent,
-    );
-    if (
-      !merge.ok ||
-      merge.merged === undefined ||
-      merge.merged === remoteContent
-    )
-      return;
-    merge.overlaps.length > 0 &&
-      timers.now() - entry.at < DESIGN_BOOT_MAX_WAIT_MS &&
-      notice(describeSamePropertyConflict(boardPath, merge.overlaps));
-    let isOverlappingChange: Dynamic = (appliedChange?: Dynamic): Dynamic =>
-      merge.overlaps.some(
-        (overlap?: Dynamic): Dynamic =>
-          overlap.tid === appliedChange.tid &&
-          overlap.kind === appliedChange.kind &&
-          overlap.name === appliedChange.name,
-      );
-    return merge.regions.template === "mine" ||
-      merge.regions.script === "mine" ||
-      merge.regions.outer === "mine" ||
-      merge.applied.some((change?: Dynamic): Dynamic => !isOverlappingChange(change))
-      ? entry
-      : undefined;
-  }
-  function offerOverwrittenEditNotice(edit?: Dynamic): Dynamic {
-    documentOptions.debug?.event("save-dropped", {
-      file: edit.file,
-    });
-    let handled: Dynamic = false,
-      putBack: Dynamic = (): Dynamic => {
-        if (handled || disposed) return;
-        handled = true;
-        let currentContent: Dynamic = state.content.files[edit.file];
-        if (currentContent === undefined) return;
-        let merge: Dynamic = mergeDcDocuments(
-          edit.base,
-          edit.mine,
-          currentContent,
-        );
-        if (
-          !merge.ok ||
-          merge.merged === undefined ||
-          merge.merged === currentContent
-        ) {
-          notice(
-            "Your change to \u201C" +
-              edit.file.replace(/\.dc\.html$/, "") +
-              "\u201D could not be put back on top of the newer version (" +
-              (merge.why ?? "nothing to put back") +
-              ").",
-          );
-          return;
-        }
-        adoptRemoteFiles({
-          ...state.content.files,
-          [edit.file]: merge.merged,
-        });
-        scheduleLocalSave();
-      };
-    if (documentOptions.onSaveDropped !== undefined) {
-      try {
-        documentOptions.onSaveDropped({
-          file: edit.file,
-          putBack: putBack,
-        });
-      } catch {}
-      return;
-    }
-    notice(
-      "\u201C" +
-        edit.file.replace(/\.dc\.html$/, "") +
-        "\u201D was saved over by a version that leaves out a change you had saved.",
-    );
-  }
-  function createMyCopy(
-    boardPath?: Dynamic,
-    boardContent?: Dynamic,
-    useNumberedCopy: Dynamic = false,
-  ): Dynamic {
-    let files: Dynamic = state.content.files,
-      boardStem: Dynamic = boardPath.replace(/\.dc\.html$/, ""),
-      preferredCopyPath: Dynamic = boardStem + " my copy.dc.html",
-      copyPath: Dynamic = useNumberedCopy
-        ? nextDuplicateFilename(boardPath)
-        : isPathTaken(preferredCopyPath)
-          ? nextDuplicateFilename(preferredCopyPath)
-          : preferredCopyPath,
-      manifest: Dynamic = parseCanvasMetadata(
-        files[canvasMetadataFile],
-        files,
-      ),
-      sourceBoard: Dynamic = manifest.artboards.find(
-        (board?: Dynamic): Dynamic => board.file === boardPath,
-      ),
-      nextManifest: Dynamic = {
-        ...manifest,
-        artboards: [
-          ...manifest.artboards,
-          {
-            ...(sourceBoard ?? {
-              x: 0,
-              y: 0,
-              w: 1280,
-              h: 720,
-            }),
-            file: copyPath,
-            x: (sourceBoard?.x ?? 0) + (sourceBoard?.w ?? 1280) + 80,
-            ...(useNumberedCopy
-              ? {}
-              : {
-                  get title() { return sourceBoard?.title ?? boardStem + " (my copy)"; },
-                }),
-          },
-        ],
-      },
-      nextFiles: Dynamic = {
-        ...files,
-        [copyPath]: boardContent,
-      };
-    replaceDocument({
-      ...state,
-      content: {
-        files: {
-          ...nextFiles,
-          [canvasMetadataFile]: serializeCanvasMetadata(
-            parseCanvasMetadata(
-              serializeCanvasMetadata(nextManifest),
-              nextFiles,
-            ),
-          ),
-        },
-      },
-    });
-    return copyPath;
-  }
-  function offerBoardClashNotice(
-    relativePath?: Dynamic,
-    absolutePath?: Dynamic,
-    remoteSha?: Dynamic,
-    remoteContent?: Dynamic,
-    reason?: Dynamic,
-  ): Dynamic {
-    let localContent: Dynamic = state.content.files[relativePath];
-    if (documentOptions.onBoardClash === undefined || localContent === undefined) {
-      applyClashResolution({
-        path: absolutePath,
-        base: liveHashes.get(absolutePath) ?? null,
-        mine: localContent ?? null,
-        theirsSha: remoteSha,
-      });
-      return;
-    }
-    boardClashes.set(relativePath, {
-      theirsSha: remoteSha,
-    });
-    let resolved: Dynamic = false,
-      resolvedRemoteSha: Dynamic = remoteSha,
-      latestRemoteSha: Dynamic = (): Dynamic =>
-        publishedHashes.has(absolutePath)
-          ? (publishedHashes.get(absolutePath) ?? null)
-          : resolvedRemoteSha,
-      onResolution: Dynamic =
-        (choice?: Dynamic, resolveChoice?: Dynamic): Dynamic =>
-        (): Dynamic => {
-          if (resolved || disposed) return;
-          resolved = true;
-          let entry: Dynamic = boardClashes.get(relativePath);
-          resolvedRemoteSha = entry !== undefined ? entry.theirsSha : remoteSha;
-          boardClashes.delete(relativePath);
-          resolvingClashes.add(relativePath);
-          documentOptions.debug?.event("reconcile-choice", {
-            file: relativePath,
-            choice: choice,
-          });
-          Promise.resolve(
-            resolveChoice(state.content.files[relativePath] ?? localContent),
-          ).finally((): Dynamic => {
-            resolvingClashes.delete(relativePath);
-            scheduleLocalSave();
-          });
-        },
-      takeTheirs: Dynamic = (): Dynamic =>
-        applyClashResolution(
-          {
-            path: absolutePath,
-            base: liveHashes.get(absolutePath) ?? null,
-            mine: localContent,
-            theirsSha: latestRemoteSha(),
-          },
-          true,
-        ).then((): Dynamic => {});
-    function keepMine(): Dynamic {
-      let latestSha: Dynamic = latestRemoteSha();
-      latestSha === null
-        ? (liveHashes.delete(absolutePath), fileDirtyVersions.delete(relativePath))
-        : liveHashes.set(absolutePath, latestSha);
-      remoteContent !== undefined && latestSha !== null
-        ? ((savedFiles[relativePath] = remoteContent), (loadedFiles[relativePath] = remoteContent))
-        : (delete savedFiles[relativePath], delete loadedFiles[relativePath]);
-    }
-    async function keepMineAsCopy(contentToCopy?: Dynamic): Promise<Dynamic> {
-      await takeTheirs();
-      disposed || createMyCopy(relativePath, contentToCopy);
-    }
-    let offer: Dynamic = {
-        file: relativePath,
-        why: reason,
-        get deleted(): Dynamic {
-          return latestRemoteSha() === null;
-        },
-        takeTheirs: onResolution("take theirs", takeTheirs),
-        keepMine: onResolution("keep mine", keepMine),
-        keepMineAsCopy: onResolution("keep mine as a copy", keepMineAsCopy),
-      },
-      showOffer: Dynamic = (): Dynamic => {
-        try {
-          documentOptions.onBoardClash?.(offer);
-        } catch {}
-      };
-    boardClashes.set(relativePath, {
-      theirsSha: remoteSha,
-      askedAt: timers.now(),
-      ask: showOffer,
-    });
-    showOffer();
-  }
   let latestFileSha: Dynamic = (absolutePath?: Dynamic): Dynamic =>
       absolutePath === DESIGN_INDEX_FILE_PATH
         ? (liveHashes.get(DESIGN_INDEX_FILE_PATH) ?? null)
         : publishedHashes.has(absolutePath)
           ? (publishedHashes.get(absolutePath) ?? null)
-          : (liveHashes.get(absolutePath) ?? null),
-    offeredChangedCount: Dynamic = 0,
-    stashAnswerListeners: Dynamic = [];
-  function offerCrashStash(): Dynamic {
-    let stash: Dynamic = offeredCrashStash;
-    if (stash === undefined) return;
-    offeredChangedCount = stash.edits.filter(
-      (edit?: Dynamic): Dynamic => edit.base !== latestFileSha(edit.path),
-    ).length;
-    let offer: Dynamic = {
-      files: stash.edits.length,
-      changedSince: offeredChangedCount,
-      at: stash.at,
-      restore: restoreCrashStash,
-      discard: discardCrashStash,
-      whenAnswered: (listener?: Dynamic): Dynamic => {
-        stashAnswerListeners.push(listener);
-      },
-    };
-    try {
-      documentOptions.onStashOffer?.(offer);
-    } catch {}
-  }
-  function restoreCrashStash(): Dynamic {
-    let stash: Dynamic = offeredCrashStash;
-    if (
-      !(
-        stash === undefined ||
-        !canWrite ||
-        loadState !== "live" ||
-        disposed
-      )
-    ) {
-      if (
-        stash.edits.filter(
-          (edit?: Dynamic): Dynamic => edit.base !== latestFileSha(edit.path),
-        ).length > offeredChangedCount
-      ) {
-        offerCrashStash();
-        return;
-      }
-      clearCrashStashOffer();
-      restoreCount += 1;
-      applyStashedContent(stash);
-    }
-  }
-  function discardCrashStash(): Dynamic {
-    offeredCrashStash !== undefined &&
-      (clearCrashStashOffer(),
-      documentOptions.saveStash?.clearOffered(),
-      notifyContent(false));
-  }
-  function clearCrashStashOffer(): Dynamic {
-    offeredCrashStash = undefined;
-    for (let listener of stashAnswerListeners.splice(0) as Dynamic)
-      try {
-        listener();
-      } catch {}
-  }
+          : (liveHashes.get(absolutePath) ?? null);
   function applyStashedContent(stash?: Dynamic): Dynamic {
     let restoredFiles: Dynamic = {
         ...state.content.files,
@@ -2337,7 +1653,7 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
     }
     adoptRemoteFiles(restoredFiles);
     for (let offer of boardClashOffers as Dynamic)
-      offerBoardClashNotice(
+      clashes.offerBoardClashNotice(
         offer.p,
         offer.treePath,
         offer.theirsSha,
@@ -2349,7 +1665,7 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
         "Someone else made \u201C" +
           edit.p.replace(/\.dc\.html$/, "") +
           "\u201D meanwhile; yours is \u201C" +
-          createMyCopy(edit.p, edit.text, true).replace(
+          clashes.createMyCopy(edit.p, edit.text, true).replace(
             /\.dc\.html$/,
             "",
           ) +
@@ -2359,7 +1675,7 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
       notice(
         edit.p.replace(/\.dc\.html$/, "") +
           " changed remotely; your unsaved edit is in \u201C" +
-          createMyCopy(edit.p, edit.text).replace(/\.dc\.html$/, "") +
+          clashes.createMyCopy(edit.p, edit.text).replace(/\.dc\.html$/, "") +
           "\u201D",
       );
     skippedPaths.length > 0 &&
@@ -2382,11 +1698,11 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
     publisher.stashRestored();
   }
   function releaseHeldFocusedFiles(focusedPath?: Dynamic): Dynamic {
-    for (let relativePath of [...heldRemoteFiles] as Dynamic)
+    for (let relativePath of clashes.heldPaths() as Dynamic)
       (artboardStorePath(relativePath) !== focusedPath &&
         relativePath !== focusedPath) ||
         shouldHoldRemoteFile(relativePath) ||
-        releaseHeldFile(relativePath);
+        clashes.releaseHeldFile(relativePath);
   }
   let retryLoadPromise: Dynamic;
   function retryFailedLoad(isManualRetry: Dynamic = false): Dynamic {
@@ -2486,16 +1802,16 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
       flushBeforeExit();
     },
     stashOffer: (): Dynamic =>
-      offeredCrashStash === undefined
+      stashOffer.current === undefined
         ? undefined
         : {
-            at: offeredCrashStash.at,
+            at: stashOffer.current.at,
           },
     restoreStash(): Dynamic {
-      restoreCrashStash();
+      stashOffer.restore();
     },
-    discardStash: discardCrashStash,
-    restoreCount: (): Dynamic => restoreCount,
+    discardStash: stashOffer.discard,
+    restoreCount: stashOffer.restoreCount,
     subscribe(listener: Dynamic): Dynamic {
       contentListeners.add(listener);
       return (): Dynamic => {
@@ -2530,8 +1846,8 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
               statuses.includes("dirty") &&
               statuses.push("in-flight");
             conflictedFiles.has(absolutePath) && statuses.push("conflicted");
-            heldRemoteFiles.has(relativePath) && statuses.push("held");
-            boardClashes.has(relativePath) &&
+            clashes.isHeld(relativePath) && statuses.push("held");
+            clashes.hasClash(relativePath) &&
               !statuses.includes("conflicted") &&
               statuses.push("conflicted");
             remoteSha !== undefined &&
@@ -2665,7 +1981,7 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
     storeUntouched: (): Dynamic => false,
     releaseHold: releaseHeldFocusedFiles,
     theirsOnItsWay: (relativePath?: Dynamic): Dynamic =>
-      heldRemoteFiles.has(relativePath) ||
+      clashes.isHeld(relativePath) ||
       hasNewerPublishedHash(toProjectContentPath(relativePath)),
     syncDetail: (): Dynamic => ({
       pending: syncState.dirty + (localSaveTimer !== undefined ? 1 : 0),
@@ -2684,8 +2000,7 @@ function createFilesDesignDocument(documentOptions?: Dynamic): Dynamic {
     }),
     dispose(): Dynamic {
       disposed = true;
-      heldRemoteTimer !== undefined &&
-        (timers.clearTimeout(heldRemoteTimer), (heldRemoteTimer = undefined));
+      clashes.dispose();
       fileSaveTimer !== undefined &&
         (timers.clearTimeout(fileSaveTimer), (fileSaveTimer = undefined));
       loadRetryTimer !== undefined &&

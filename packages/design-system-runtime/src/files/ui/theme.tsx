@@ -124,7 +124,7 @@ function PreviewThemeMenu({
               <Button
                 variant={"secondary"}
                 disabled={disabledWhy !== undefined}
-                aria-label={uiMessage("design-system.theme.previewTheme", { value1: String(selectedTheme.name) })}
+                aria-label={uiMessage("design-system.theme.previewTheme", { subject: String(selectedTheme.name) })}
                 className={"max-w-56"}
                 data-testid={"ds-theme-menu"}
               >

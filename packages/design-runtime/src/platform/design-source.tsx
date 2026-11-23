@@ -63,7 +63,6 @@ export {
   getTrustedHostOrigins,
   getTrustedHostOriginsValue,
   designSource as PlatformDesignSourceAlias,
-  sourceFile as PlatformDesignSourceAlias_2,
   defaultTrustedOrigins as PlatformDesignSourceItems,
   sourceListeners as PlatformDesignSourceSubscribers,
   reactPlatformDesignSource,

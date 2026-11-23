@@ -4,14 +4,14 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { FlippingThisWayWouldnTChangeItMessage } from "./flip-elements";
-import { annotationRotation, isShapeAnnotation, normalizeRotationDegrees, PlatformFileContentTrim_2 } from "../../platform/file-content";
+import { annotationRotation, isShapeAnnotation, normalizeRotationDegrees, sanitizePenPath } from "../../platform/file-content";
 
 var GeometryFlipAnnotationsLabel: Dynamic;
 var ThisDrawingHasTooManyPointsMessage: Dynamic;
 var ThisDrawingSSavedPathCouldnTBeMessage: Dynamic;
-var GeometryFlipAnnotationsLabel_2: Dynamic;
+var artboardFlipRefusalMessage: Dynamic;
 var PartOfTheSelectionCouldnTBeMessage: Dynamic;
-var GeometryFlipAnnotationsLabel_3: Dynamic;
+var flipStillInProgressMessage: Dynamic;
 var GeometryFlipAnnotationsWytKytYtConfig: Dynamic;
 var CropDoesNotWorkWhileThisMessage: Dynamic;
 var GeometryFlipAnnotationsPattern: Dynamic;
@@ -55,7 +55,7 @@ function flipAnnotationPen(penAnnotation?: Dynamic, axis?: Dynamic): Dynamic {
       ),
     ];
   if (flippedPath === penAnnotation.d && flippedRotation === rotation) return "same";
-  if (PlatformFileContentTrim_2(flippedPath) !== flippedPath) return null;
+  if (sanitizePenPath(flippedPath) !== flippedPath) return null;
   let fromState: Dynamic = {
       d: penAnnotation.d,
       ...(flippedRotation !== rotation
@@ -220,8 +220,8 @@ export {
   GeometryFlipAnnotationsConstant,
   GeometryFlipAnnotationsHandler,
   GeometryFlipAnnotationsLabel,
-  GeometryFlipAnnotationsLabel_2,
-  GeometryFlipAnnotationsLabel_3,
+  artboardFlipRefusalMessage,
+  flipStillInProgressMessage,
   GeometryFlipAnnotationsPattern,
   GeometryFlipAnnotationsWytKytYtConfig,
   imageFlipCss,
@@ -236,11 +236,11 @@ export function installEditorGeometryFlipAnnotations(): () => void {
       uiMessage("inspector.flipAnnotations.thisDrawingHasTooMany");
     ThisDrawingSSavedPathCouldnTBeMessage =
       uiMessage("inspector.flipAnnotations.thisDrawingSSavedPath");
-    GeometryFlipAnnotationsLabel_2 =
+    artboardFlipRefusalMessage =
       uiMessage("inspector.flipAnnotations.artboardsCanTBeFlipped");
     PartOfTheSelectionCouldnTBeMessage =
       uiMessage("inspector.flipAnnotations.partOfTheSelectionCouldn");
-    GeometryFlipAnnotationsLabel_3 = uiMessage("inspector.flipAnnotations.stillFinishingTheLastFlip");
+    flipStillInProgressMessage = uiMessage("inspector.flipAnnotations.stillFinishingTheLastFlip");
     GeometryFlipAnnotationsWytKytYtConfig = {
       [GeometryFlipAnnotationsLabel]: "notes and titles",
       [ThisDrawingHasTooManyPointsMessage]: "a drawing with too many points",

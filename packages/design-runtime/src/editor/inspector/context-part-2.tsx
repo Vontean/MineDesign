@@ -3,21 +3,21 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { initializeCdsIndex } from "../../cds/index";
-import { iconFontMetadata, initializePlatformRootFontSize_4 } from "../../cds/platform/root-font-size";
+import { iconFontMetadata, initializeIconFontMetadata } from "../../cds/platform/root-font-size";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { toModuleNamespace } from "../../module-helpers";
 
-var reactInspectorContext_2: Dynamic;
+var reactForUseInspectorContext: Dynamic;
 var InspectorContextDsColorTokensArtboardColorsDesignColorTokensConfig: Dynamic;
 var InspectorContext: Dynamic;
-var reactInspectorContext_3: Dynamic;
+var reactForPropColorInput: Dynamic;
 var InspectorContextIconsValue: Dynamic;
 var InspectorContextLimit: Dynamic;
 var InspectorContextConstant: Dynamic;
-var reactInspectorContext_4: Dynamic;
+var reactForPropertyRow: Dynamic;
 var jsxInspectorContext: Dynamic;
 function useInspectorContext(): Dynamic {
-  return (0, reactInspectorContext_2.useContext)(InspectorContext);
+  return (0, reactForUseInspectorContext.useContext)(InspectorContext);
 }
 function getSupportedTool(toolName?: Dynamic): Dynamic {
   return typeof toolName == "string" &&
@@ -41,14 +41,14 @@ export {
   InspectorContextLimit,
   isToolNameList,
   jsxInspectorContext,
-  reactInspectorContext_2,
-  reactInspectorContext_3,
-  reactInspectorContext_4,
+  reactForUseInspectorContext,
+  reactForPropColorInput,
+  reactForPropertyRow,
   useInspectorContext,
 };
 export function installEditorInspectorContextPart2(): () => void {
   return () => {
-    reactInspectorContext_2 = toModuleNamespace(
+    reactForUseInspectorContext = toModuleNamespace(
       load_react(),
       1,
     );
@@ -59,19 +59,19 @@ export function installEditorInspectorContextPart2(): () => void {
       setOverlayHidden: (): Dynamic => {},
       setScrubbing: (): Dynamic => {},
     };
-    InspectorContext = (0, reactInspectorContext_2.createContext)(
+    InspectorContext = (0, reactForUseInspectorContext.createContext)(
       InspectorContextDsColorTokensArtboardColorsDesignColorTokensConfig,
     );
-    reactInspectorContext_3 = toModuleNamespace(
+    reactForPropColorInput = toModuleNamespace(
       load_react(),
       1,
     );
     initializeCdsIndex();
-    initializePlatformRootFontSize_4();
+    initializeIconFontMetadata();
     InspectorContextIconsValue = iconFontMetadata.icons;
     InspectorContextLimit = 8;
     InspectorContextConstant = 0.9;
-    reactInspectorContext_4 = toModuleNamespace(
+    reactForPropertyRow = toModuleNamespace(
       load_react(),
       1,
     );

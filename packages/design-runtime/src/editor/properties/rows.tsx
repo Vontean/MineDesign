@@ -21,7 +21,7 @@ import { ColorPickerConstant, ColorPickerLabel } from "../color/picker";
 import { ColorPickerWithSwatches, jsxPropertiesColorPicker } from "./color-picker";
 import { NumericInput } from "./numeric-input";
 import { captureNumericPointer, stepNumericValue, useNumericScrub } from "./numeric-scrubber";
-import { isNestedPropertyControl, PropertiesPrimitivesClassNames_2, PropertyColorWell, PropertyPickerButton } from "./primitives";
+import { isNestedPropertyControl, colorSwatchClassName, PropertyColorWell, PropertyPickerButton } from "./primitives";
 import { PropertyRow } from "./row";
 import { reactPropertiesSection } from "./section";
 import { PropertySelect } from "./select";
@@ -176,7 +176,7 @@ function PropertyNumberRow({
       />
       {hasUnitSelect ? (<PropertySelect
           compact={true}
-          aria-label={uiMessage("inspector.rows.unit2", { value1: String(label) })}
+          aria-label={uiMessage("inspector.rows.unitForProperty", { label: String(label) })}
           title={uiMessage("inspector.rows.unit")}
           items={units.map(
             (unitOption?: Dynamic): Dynamic => ({
@@ -545,7 +545,7 @@ function ColorWellFace({
     <span
       aria-hidden={"true"}
       className={joinClassNames(
-        PropertiesPrimitivesClassNames_2,
+        colorSwatchClassName,
         className,
       )}
     >

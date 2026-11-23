@@ -1,3 +1,4 @@
+import { getPreviewGenerationGate } from "../preview/generation-gate";
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 /** Restored application module; prepare first, initialize in original order. */
 import {
@@ -17,7 +18,7 @@ var PlatformFileContentCache: Dynamic;
 var PlatformFileContentSubscribers: Dynamic;
 var explicitContentTypes: Dynamic;
 var textContentTypes: Dynamic;
-var Value_2: Dynamic;
+var replacementCharacter: Dynamic;
 var PlatformFileContentUDBFFUDFFFPattern: Dynamic;
 var PlatformFileContentIncludes: Dynamic;
 var isHtmlPath: Dynamic;
@@ -56,7 +57,7 @@ var PlatformFileContentMax: Dynamic;
 var PlatformFileContentKind: Dynamic;
 var PlatformFileContentMaxW: Dynamic;
 var PlatformFileContentHandler: Dynamic;
-var PlatformFileContentKind_2: Dynamic;
+var annotationStyleOverrides: Dynamic;
 var validCoverArtboard: Dynamic;
 var artboardNameWithoutExtension: Dynamic;
 var defaultArtboardWidth: Dynamic;
@@ -71,7 +72,7 @@ var maxAnnotationDimensionLimit: Dynamic;
 var maxFittedAnnotationFontSize: Dynamic;
 var PlatformFileContentMin: Dynamic;
 var PlatformFileContentLh: Dynamic;
-var PlatformFileContentMax_2: Dynamic;
+var defaultAnnotationMaxHeight: Dynamic;
 var PlatformFileContentMatch: Dynamic;
 var PlatformFileContentL: Dynamic;
 var PlatformFileContentTest: Dynamic;
@@ -89,16 +90,16 @@ var minImageDimension: Dynamic;
 var parseAnnotationImageUrl: Dynamic;
 var parseAnnotationVideoUrl: Dynamic;
 var maxPenPathChars: Dynamic;
-var PlatformFileContentTrim_2: Dynamic;
-var PlatformFileContentMin_2: Dynamic;
+var sanitizePenPath: Dynamic;
+var clampNumber: Dynamic;
 var maxCanvasLabelChars: Dynamic;
 var PlatformFileContentSlice: Dynamic;
 var normalizeAnnotationText: Dynamic;
 var parseCanvasItemId: Dynamic;
-var PlatformFileContentHandler_2: Dynamic;
-var PlatformFileContentIncludes_2: Dynamic;
-var PlatformFileContentIncludes_3: Dynamic;
-var PlatformFileContentHandler_3: Dynamic;
+var normalizeAnnotationFontSize: Dynamic;
+var normalizeAnnotationColorName: Dynamic;
+var normalizeAnnotationFillName: Dynamic;
+var normalizeAnnotationKind: Dynamic;
 var normalizeDesignLaunch: Dynamic;
 var PlatformFileContentScriptDataPropsPattern: Dynamic;
 var artboardDisplayName: Dynamic;
@@ -135,21 +136,18 @@ var zonedDateTimePattern: Dynamic;
 var PlatformFileContentFilesValue: Dynamic;
 var defaultDocumentFileBytes: Dynamic;
 var maxEmbeddedFilePathChars: Dynamic;
-var PlatformFileContentTextEncoder_2: Dynamic;
-var PlatformFileContentTextEncoder_3: Dynamic;
+var designContentEncoder: Dynamic;
+var documentKvEncoder: Dynamic;
 var FileValue: Dynamic;
 var PlatformFileContentOverPerFilePattern: Dynamic;
-var PlatformFileContentHandler_4: Dynamic;
+var projectFileKey: Dynamic;
 var PlatformFileContentAlias: Dynamic;
 var AppifactValue: Dynamic;
 var PlatformFileContentBeforeWriteVersionOfState: Dynamic;
 var PlatformFileContentController: Dynamic;
-var PlatformFileContentCache_2: Dynamic;
+var assetUrlByFilePath: Dynamic;
 var imageFilePathPattern: Dynamic;
 var projectFilesystem: Dynamic;
-var PreviewGenerationGate: Dynamic;
-var defaultPreviewGenerationGate: Dynamic;
-var PlatformFileContentElementCache: Dynamic;
 var roomCapabilityHost: Dynamic;
 var requestRoomCapabilityValue: Dynamic;
 var PlatformFileContentFreezeValue: Dynamic;
@@ -235,7 +233,7 @@ function describeInvalidFile(filePath?: Dynamic, fileEntry?: Dynamic): Dynamic {
           }
     : isTextFileContent(filePath, fileEntry)
       ? {
-          get why() { return (("it holds a character that did not decode (it shows as ") + (Value_2)) + ("). Find it and type it again"); },
+          get why() { return (("it holds a character that did not decode (it shows as ") + (replacementCharacter)) + ("). Find it and type it again"); },
           cause: "damaged_text",
         }
       : undefined;
@@ -448,7 +446,7 @@ function resolveArtboardGuide(source?: Dynamic, dimensions?: Dynamic): Dynamic {
           ? isColumnGuide
             ? 12
             : 4
-          : PlatformFileContentMin_2(
+          : clampNumber(
               Math.floor((availableLength + gutter) / (guideSize + gutter)),
               1,
               PlatformFileContentConstant,
@@ -468,7 +466,7 @@ function resolveArtboardGuide(source?: Dynamic, dimensions?: Dynamic): Dynamic {
 function normalizeArtboardRadius(radius?: Dynamic): Dynamic {
   let normalizeRadiusValue: Dynamic = (radiusValue?: Dynamic): Dynamic =>
     typeof radiusValue == "number" && Number.isFinite(radiusValue)
-      ? PlatformFileContentMin_2(
+      ? clampNumber(
           Math.round(radiusValue * 100) / 100,
           0,
           maxArtboardRadius,
@@ -524,7 +522,7 @@ function parseArtboardGuides(rawGuides?: Dynamic): Dynamic {
   if (!Array.isArray(rawGuides)) return;
   let normalizeGuideNumber: Dynamic = (candidate?: Dynamic, range?: Dynamic): Dynamic =>
       typeof candidate == "number" && Number.isFinite(candidate)
-        ? PlatformFileContentMin_2(
+        ? clampNumber(
             Math.round(candidate * 100) / 100,
             range.min,
             range.max,
@@ -578,7 +576,7 @@ function parseArtboardGuides(rawGuides?: Dynamic): Dynamic {
           guide.count === "auto"
             ? "auto"
             : typeof guide.count == "number" && Number.isFinite(guide.count)
-              ? PlatformFileContentMin_2(
+              ? clampNumber(
                   Math.round(guide.count),
                   PlatformFileContentGridSizeCountSizeConfig.count.min,
                   PlatformFileContentGridSizeCountSizeConfig.count.max,
@@ -872,7 +870,7 @@ function updateAnnotationTextStyle(
         ? PlatformFileContentNoteTitle1Config[source.kind]
         : value,
     state: Dynamic = {
-      size: PlatformFileContentHandler_2(
+      size: normalizeAnnotationFontSize(
         Number.isFinite(source.size) ? source.size : defaultStyle.size,
         defaultStyle.size,
       ),
@@ -900,7 +898,7 @@ function updateAnnotationTextStyle(
       ? PlatformFileContentHandler(state.kind, annotation.maxW, annotation.maxH)
       : {}),
     text: text,
-    ...PlatformFileContentKind_2(state),
+    ...annotationStyleOverrides(state),
     ...(page !== undefined
       ? {
           page: page,
@@ -1020,17 +1018,17 @@ function parseShapeAnnotation(
       typeof candidate == "number" && Number.isFinite(candidate)
         ? candidate
         : fallback,
-    x: Dynamic = PlatformFileContentMin_2(
+    x: Dynamic = clampNumber(
       finiteOrFallback(rawAnnotation.x, 0),
       -maxCanvasCoordinate,
       maxCanvasCoordinate,
     ),
-    y: Dynamic = PlatformFileContentMin_2(
+    y: Dynamic = clampNumber(
       finiteOrFallback(rawAnnotation.y, 0),
       -maxCanvasCoordinate,
       maxCanvasCoordinate,
     ),
-    color: Dynamic = PlatformFileContentIncludes_2(rawAnnotation.color),
+    color: Dynamic = normalizeAnnotationColorName(rawAnnotation.color),
     css: Dynamic = normalizeAnnotationCss(rawAnnotation.css),
     rotation: Dynamic = normalizeRotationDegrees(rawAnnotation.rotate),
     supportsFlip: Dynamic =
@@ -1073,7 +1071,7 @@ function parseShapeAnnotation(
     [defaultWidth, defaultHeight]: Dynamic =
       PlatformFileContentRectOvalLineConfig[kind];
   if (kind === "pen") {
-    let svgPath: Dynamic = PlatformFileContentTrim_2(rawAnnotation.d);
+    let svgPath: Dynamic = sanitizePenPath(rawAnnotation.d);
     return svgPath === null
       ? null
       : {
@@ -1081,12 +1079,12 @@ function parseShapeAnnotation(
           kind: kind,
           x: x,
           y: y,
-          w: PlatformFileContentMin_2(
+          w: clampNumber(
             finiteOrFallback(rawAnnotation.w, defaultWidth),
             minShapeDimension,
             maxCanvasItemDimension,
           ),
-          h: PlatformFileContentMin_2(
+          h: clampNumber(
             finiteOrFallback(rawAnnotation.h, defaultHeight),
             minShapeDimension,
             maxCanvasItemDimension,
@@ -1111,12 +1109,12 @@ function parseShapeAnnotation(
       kind: kind,
       x: x,
       y: y,
-      w: PlatformFileContentMin_2(
+      w: clampNumber(
         finiteOrFallback(rawAnnotation.w, defaultWidth),
         minImageDimension,
         maxCanvasItemDimension,
       ),
-      h: PlatformFileContentMin_2(
+      h: clampNumber(
         finiteOrFallback(rawAnnotation.h, defaultHeight),
         minImageDimension,
         maxCanvasItemDimension,
@@ -1160,12 +1158,12 @@ function parseShapeAnnotation(
         kind: kind,
         x: x,
         y: y,
-        x2: PlatformFileContentMin_2(
+        x2: clampNumber(
           finiteOrFallback(rawAnnotation.x2, x + defaultWidth),
           -maxCanvasCoordinate,
           maxCanvasCoordinate,
         ),
-        y2: PlatformFileContentMin_2(
+        y2: clampNumber(
           finiteOrFallback(rawAnnotation.y2, y + defaultHeight),
           -maxCanvasCoordinate,
           maxCanvasCoordinate,
@@ -1183,12 +1181,12 @@ function parseShapeAnnotation(
     kind: kind,
     x: x,
     y: y,
-    w: PlatformFileContentMin_2(
+    w: clampNumber(
       finiteOrFallback(rawAnnotation.w, defaultWidth),
       minShapeDimension,
       maxCanvasItemDimension,
     ),
-    h: PlatformFileContentMin_2(
+    h: clampNumber(
       finiteOrFallback(rawAnnotation.h, defaultHeight),
       minShapeDimension,
       maxCanvasItemDimension,
@@ -1204,13 +1202,13 @@ function parseAnnotation(rawAnnotation?: Dynamic): Dynamic {
   let kind: Dynamic =
     typeof annotation.text == "string" && annotation.text !== ""
       ? null
-      : PlatformFileContentHandler_3(annotation.kind);
+      : normalizeAnnotationKind(annotation.kind);
   if (kind !== null) return parseShapeAnnotation(annotation, id, kind);
   let finiteOrFallback: Dynamic = (candidate?: Dynamic, fallback?: Dynamic): Dynamic =>
       typeof candidate == "number" && Number.isFinite(candidate) ? candidate : fallback,
     isLargeLegacyText: Dynamic =
       annotation.kind === "text" &&
-      PlatformFileContentHandler_2(
+      normalizeAnnotationFontSize(
         annotation.size,
         defaultNoteFontSize,
       ) >= PlatformFileContentSMLConfig.l,
@@ -1219,24 +1217,24 @@ function parseAnnotation(rawAnnotation?: Dynamic): Dynamic {
         PlatformFileContentTest(annotation.kind) || isLargeLegacyText ? "title1" : "note"
       ],
     text: Dynamic = normalizeAnnotationText(annotation.text),
-    fontSize: Dynamic = PlatformFileContentHandler_2(
+    fontSize: Dynamic = normalizeAnnotationFontSize(
       annotation.size,
       textDefaults.size,
     ),
     rotation: Dynamic = normalizeRotationDegrees(annotation.rotate);
   return {
     id: id,
-    x: PlatformFileContentMin_2(
+    x: clampNumber(
       finiteOrFallback(annotation.x, 0),
       -maxCanvasCoordinate,
       maxCanvasCoordinate,
     ),
-    y: PlatformFileContentMin_2(
+    y: clampNumber(
       finiteOrFallback(annotation.y, 0),
       -maxCanvasCoordinate,
       maxCanvasCoordinate,
     ),
-    w: PlatformFileContentMin_2(
+    w: clampNumber(
       typeof annotation.w == "number" && Number.isFinite(annotation.w)
         ? annotation.w
         : textDefaults.kind === "note"
@@ -1251,7 +1249,7 @@ function parseAnnotation(rawAnnotation?: Dynamic): Dynamic {
       annotation.maxH,
     ),
     text: text,
-    ...PlatformFileContentKind_2(
+    ...annotationStyleOverrides(
       isLargeLegacyText
         ? textDefaults
         : {
@@ -1265,8 +1263,8 @@ function parseAnnotation(rawAnnotation?: Dynamic): Dynamic {
               typeof annotation.italic == "boolean"
                 ? annotation.italic
                 : textDefaults.italic,
-            color: PlatformFileContentIncludes_2(annotation.color),
-            fill: PlatformFileContentIncludes_3(annotation.fill),
+            color: normalizeAnnotationColorName(annotation.color),
+            fill: normalizeAnnotationFillName(annotation.fill),
           },
     ),
     ...(parseCanvasItemId(annotation.page) !== null
@@ -1316,24 +1314,24 @@ function parseArtboardSpec(spec?: Dynamic): Dynamic {
     radius: Dynamic = normalizeArtboardRadius(spec.radius);
   return {
     file: spec.file,
-    x: PlatformFileContentMin_2(
+    x: clampNumber(
       finiteOrFallback(spec.x, 0),
       -maxCanvasCoordinate,
       maxCanvasCoordinate,
     ),
-    y: PlatformFileContentMin_2(
+    y: clampNumber(
       finiteOrFallback(spec.y, 0),
       -maxCanvasCoordinate,
       maxCanvasCoordinate,
     ),
-    w: PlatformFileContentMin_2(
+    w: clampNumber(
       finiteOrFallback(spec.w, defaultArtboardWidth),
       isFrameless
         ? minFramelessArtboardDimension
         : minArtboardDimension,
       maxCanvasItemDimension,
     ),
-    h: PlatformFileContentMin_2(
+    h: clampNumber(
       finiteOrFallback(spec.h, defaultArtboardHeight),
       isFrameless
         ? minFramelessArtboardDimension
@@ -1473,7 +1471,7 @@ function parseCanvasMetadata(
   }
   let normalizeEmbeddedDimension: Dynamic = (dimension?: Dynamic): Dynamic =>
     Math.round(
-      PlatformFileContentMin_2(
+      clampNumber(
         dimension,
         minEmbeddedArtboardDimension,
         maxCanvasItemDimension,
@@ -2023,7 +2021,7 @@ function parseDesignContent(
       continue;
     let fileContent: Dynamic = rawFiles[filePath];
     typeof fileContent == "string" &&
-      (PlatformFileContentTextEncoder_2.encode(fileContent).length > maxFileBytes ||
+      (designContentEncoder.encode(fileContent).length > maxFileBytes ||
         items.push([filePath, fileContent]));
   }
   return {
@@ -2093,7 +2091,7 @@ function createDocumentKvAdapter(
         return Promise.reject(
           new Error("only file/ keys exist in the document seam: " + key),
         );
-      if (PlatformFileContentTextEncoder_3.encode(fileContent).length > maxFileBytes)
+      if (documentKvEncoder.encode(fileContent).length > maxFileBytes)
         return Promise.reject(
           new Error(
             "file is over the " +
@@ -2165,12 +2163,12 @@ function stripAppifactPathPrefix(path?: Dynamic): Dynamic {
     : path;
 }
 function registerAssetUrl(filePath?: Dynamic, assetUrl?: Dynamic): Dynamic {
-  PlatformFileContentCache_2.set(filePath, assetUrl);
+  assetUrlByFilePath.set(filePath, assetUrl);
 }
 function registerImageFileUrls(files?: Dynamic): Dynamic {
   for (let [value, base64Content] of Object.entries(files) as Dynamic)
     imageFilePathPattern.test(value) &&
-      PlatformFileContentCache_2.set(
+      assetUrlByFilePath.set(
         value,
         "data:" + imageFileMimeType(value) + ";base64," + base64Content,
       );
@@ -2209,7 +2207,7 @@ function resolveProjectAssetUrl(
   _assetOptions: Dynamic = {},
 ): Dynamic {
   return (
-    PlatformFileContentCache_2.get(stripAppifactPathPrefix(path)) ??
+    assetUrlByFilePath.get(stripAppifactPathPrefix(path)) ??
     `./${stripAppifactPathPrefix(path)}`
   );
 }
@@ -2253,18 +2251,6 @@ function probePreviewRuntime(port?: Dynamic, probeOptions?: Dynamic): Dynamic {
     port.start();
     sendPing();
   });
-}
-function setPreviewGenerationGate(
-  frame?: Dynamic,
-  gate?: Dynamic,
-): Dynamic {
-  PlatformFileContentElementCache.set(frame, gate);
-}
-function getPreviewGenerationGate(frame?: Dynamic): Dynamic {
-  return (
-    (frame && PlatformFileContentElementCache.get(frame)) ||
-    defaultPreviewGenerationGate
-  );
 }
 function hasRoomCapability(): Dynamic {
   // MineDesign: the host is globalThis.designHost (packages/design/src/editor/design-host.ts), not globalThis.claude.
@@ -2666,7 +2652,6 @@ export {
   createDocumentKvAdapter,
   createPageId,
   currentHttpOrigin,
-  defaultPreviewGenerationGate,
   describeInvalidFile,
   describeOversizedFile,
   designArtboardsMatchFiles,
@@ -2699,7 +2684,6 @@ export {
   getFileContent,
   getKvClient,
   getMimeTypeForPath,
-  getPreviewGenerationGate,
   getRawFileBytes,
   hashFileMap,
   hashProjectFileKey,
@@ -2743,48 +2727,19 @@ export {
   parseDesignSource,
   parseShapeAnnotation,
   PlatformFileContentAlias,
-  roomCapabilityHost as PlatformFileContentAlias_2,
-  embeddedEditorSettler as PlatformFileContentAlias_3,
-  embeddedPresenceListener as PlatformFileContentAlias_4,
   PlatformFileContentAZaZAZaZPattern,
   PlatformFileContentAZaZPattern,
-  sourceProjectIdPattern as PlatformFileContentAZaZPattern_2,
-  embedStorePrefixPattern as PlatformFileContentAZaZPattern_3,
-  embedMemoryScopePattern as PlatformFileContentAZaZPattern_4,
   PlatformFileContentAZPattern,
   PlatformFileContentBackgroundBackgroundColorOpacityValues,
   PlatformFileContentBeforeWriteVersionOfState,
   PlatformFileContentBorderStyleObjectFitOpacityConfig,
   PlatformFileContentCache,
-  PlatformFileContentCache_2,
+  assetUrlByFilePath,
   PlatformFileContentConstant,
-  maxTextAnnotationWidth as PlatformFileContentConstant_10,
-  defaultTextAnnotationMaxWidth as PlatformFileContentConstant_11,
-  minAnnotationDimensionLimit as PlatformFileContentConstant_12,
-  maxAnnotationDimensionLimit as PlatformFileContentConstant_13,
-  maxFittedAnnotationFontSize as PlatformFileContentConstant_14,
-  minArtboardDimension as PlatformFileContentConstant_15,
-  minEmbeddedArtboardDimension as PlatformFileContentConstant_16,
-  minFramelessArtboardDimension as PlatformFileContentConstant_17,
-  maxCanvasCoordinate as PlatformFileContentConstant_18,
-  minShapeDimension as PlatformFileContentConstant_19,
-  defaultNoteFontSize as PlatformFileContentConstant_2,
-  minImageDimension as PlatformFileContentConstant_20,
-  maxCanvasLabelChars as PlatformFileContentConstant_21,
-  embeddedSettleTimeoutMs as PlatformFileContentConstant_22,
-  embeddedFlushBufferMs as PlatformFileContentConstant_23,
-  minAnnotationFontSize as PlatformFileContentConstant_3,
-  maxAnnotationFontSize as PlatformFileContentConstant_4,
-  defaultArtboardWidth as PlatformFileContentConstant_5,
-  defaultArtboardHeight as PlatformFileContentConstant_6,
-  newArtboardGap as PlatformFileContentConstant_7,
-  defaultTextAnnotationWidth as PlatformFileContentConstant_8,
-  minTextAnnotationWidth as PlatformFileContentConstant_9,
+  minAnnotationDimensionLimit,
   PlatformFileContentController,
   PlatformFileContentCurrentState,
-  embeddedEditorSilencer as PlatformFileContentCurrentState_2,
   PlatformFileContentDelayMs,
-  PlatformFileContentElementCache,
   PlatformFileContentExpandPrintPaperValues,
   PlatformFileContentFilesBytesConfig,
   PlatformFileContentFilesValue,
@@ -2794,82 +2749,46 @@ export {
   PlatformFileContentGrayRedOrangeValuesAlias,
   PlatformFileContentGridSizeCountSizeConfig,
   PlatformFileContentHandler,
-  PlatformFileContentHandler_2,
-  PlatformFileContentHandler_3,
-  PlatformFileContentHandler_4,
+  projectFileKey,
   PlatformFileContentHas,
   PlatformFileContentIncludes,
-  PlatformFileContentIncludes_2,
-  PlatformFileContentIncludes_3,
+  normalizeAnnotationColorName,
+  normalizeAnnotationFillName,
   PlatformFileContentJsonPattern,
   PlatformFileContentKind,
-  PlatformFileContentKind_2,
+  annotationStyleOverrides,
   PlatformFileContentL,
   PlatformFileContentLabel,
   PlatformFileContentLh,
   PlatformFileContentLimit,
-  maxEmbeddedFilePathChars as PlatformFileContentLimit_10,
-  maxFilePathBytes as PlatformFileContentLimit_2,
-  defaultDesignPageLimit as PlatformFileContentLimit_3,
-  maxAnnotationTextChars as PlatformFileContentLimit_4,
-  maxAnnotations as PlatformFileContentLimit_5,
-  maxCanvasItemDimension as PlatformFileContentLimit_6,
-  maxPenPathChars as PlatformFileContentLimit_7,
-  maxProjectPathChars as PlatformFileContentLimit_8,
-  maxSourceUrlChars as PlatformFileContentLimit_9,
   PlatformFileContentLimitAlias,
   PlatformFileContentMatch,
   PlatformFileContentMax,
-  PlatformFileContentMax_2,
+  defaultAnnotationMaxHeight,
   PlatformFileContentMaxW,
   PlatformFileContentMin,
-  PlatformFileContentMin_2,
+  clampNumber,
   PlatformFileContentNodeModulesPattern,
   PlatformFileContentNoteTitle1Config,
   PlatformFileContentOverPerFilePattern,
   PlatformFileContentPattern,
-  safeAnnotationCssSyntax as PlatformFileContentPattern_2,
-  reservedProjectSegmentPattern as PlatformFileContentPattern_3,
-  declarationPathPattern as PlatformFileContentPattern_4,
-  zonedDateTimePattern as PlatformFileContentPattern_5,
   PlatformFileContentRectOvalLineConfig,
   PlatformFileContentResolvedValue,
-  maxDeclarationFileBytes as PlatformFileContentResolvedValue_10,
-  defaultDocumentFileBytes as PlatformFileContentResolvedValue_11,
-  cachedEmbedContext as PlatformFileContentResolvedValue_12,
-  maxPublishBatchBytes as PlatformFileContentResolvedValue_2,
-  maxArtboardRadius as PlatformFileContentResolvedValue_3,
-  designMetadataPath as PlatformFileContentResolvedValue_4,
-  designSourceDocumentPath as PlatformFileContentResolvedValue_5,
-  maxSyncedArtboardBytes as PlatformFileContentResolvedValue_6,
-  maxSyncedFileBytes as PlatformFileContentResolvedValue_7,
-  maxCollectionBytes as PlatformFileContentResolvedValue_8,
-  maxInlineArtboardBytes as PlatformFileContentResolvedValue_9,
   PlatformFileContentRgbaHslaPattern,
   PlatformFileContentScriptDataPropsPattern,
   PlatformFileContentSlice,
-  normalizeAnnotationText as PlatformFileContentSlice_2,
   PlatformFileContentSMLConfig,
   PlatformFileContentSubscribers,
-  explicitContentTypes as PlatformFileContentSubscribers_2,
-  textContentTypes as PlatformFileContentSubscribers_3,
-  roomPeerListeners as PlatformFileContentSubscribers_4,
-  pendingEmbeddedWrites as PlatformFileContentSubscribers_5,
   PlatformFileContentTest,
-  parseAnnotationImageUrl as PlatformFileContentTest_2,
-  parseAnnotationVideoUrl as PlatformFileContentTest_3,
-  parseCanvasItemId as PlatformFileContentTest_4,
   PlatformFileContentTextEncoder,
-  PlatformFileContentTextEncoder_2,
-  PlatformFileContentTextEncoder_3,
+  designContentEncoder,
+  documentKvEncoder,
   PlatformFileContentTrim,
-  PlatformFileContentTrim_2,
+  sanitizePenPath,
   PlatformFileContentUDBFFUDFFFPattern,
   PlatformFileContentWebpAvifPattern,
-  imageFilePathPattern as PlatformFileContentWebpAvifPattern_2,
   PlatformFileContentXYWValues,
   prefixDocumentStore,
-  PreviewGenerationGate,
   previewMessageOrigin,
   primaryDesignFile,
   probePreviewRuntime,
@@ -2897,7 +2816,6 @@ export {
   setEmbedSettler,
   setEmbedSilencer,
   setKvClient,
-  setPreviewGenerationGate,
   silenceEmbeddedEditor,
   SourceValue,
   splitPublishBatches,
@@ -2919,7 +2837,38 @@ export {
   validateFileName,
   validatePublishFileMap,
   validCoverArtboard,
-  Value_2,
+  replacementCharacter,
+  defaultArtboardHeight,
+  defaultArtboardWidth,
+  defaultDesignPageLimit,
+  defaultDocumentFileBytes,
+  defaultTextAnnotationWidth,
+  designMetadataPath,
+  designSourceDocumentPath,
+  maxAnnotationDimensionLimit,
+  maxAnnotationFontSize,
+  maxAnnotationTextChars,
+  maxAnnotations,
+  maxArtboardRadius,
+  maxCanvasCoordinate,
+  maxCanvasItemDimension,
+  maxCollectionBytes,
+  maxDeclarationFileBytes,
+  maxInlineArtboardBytes,
+  maxPenPathChars,
+  maxProjectPathChars,
+  maxSyncedArtboardBytes,
+  maxSyncedFileBytes,
+  maxTextAnnotationWidth,
+  minAnnotationFontSize,
+  minEmbeddedArtboardDimension,
+  minFramelessArtboardDimension,
+  minImageDimension,
+  minShapeDimension,
+  minTextAnnotationWidth,
+  normalizeAnnotationText,
+  parseAnnotationImageUrl,
+  parseAnnotationVideoUrl,
 };
 export function installPlatformFileContent(): () => void {
   return () => {
@@ -3020,11 +2969,11 @@ export function installPlatformFileContent(): () => void {
       "text/xml",
       "image/svg+xml",
     ]);
-    Value_2 = "\uFFFD";
+    replacementCharacter = "\uFFFD";
     PlatformFileContentUDBFFUDFFFPattern =
       /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
     PlatformFileContentIncludes = (text?: Dynamic): Dynamic =>
-      text.includes(Value_2) ||
+      text.includes(replacementCharacter) ||
       PlatformFileContentUDBFFUDFFFPattern.test(text);
     isHtmlPath = (filePath?: Dynamic): Dynamic => /\.html?$/i.test(filePath);
     frameRuntimeStartMarker = "<\!-- frame-runtime -->";
@@ -3253,7 +3202,7 @@ export function installPlatformFileContent(): () => void {
               ),
             )
         : Math.max(
-            maxHeight ?? PlatformFileContentMax_2(width, fontSize),
+            maxHeight ?? defaultAnnotationMaxHeight(width, fontSize),
             PlatformFileContentLh(1, fontSize),
           );
     PlatformFileContentKind = (source?: Dynamic): Dynamic =>
@@ -3273,7 +3222,7 @@ export function installPlatformFileContent(): () => void {
       let callback: Dynamic = (candidate?: Dynamic): Dynamic =>
           typeof candidate == "number" && Number.isFinite(candidate)
             ? Math.round(
-                PlatformFileContentMin_2(
+                clampNumber(
                   candidate,
                   minAnnotationDimensionLimit,
                   maxAnnotationDimensionLimit,
@@ -3297,7 +3246,7 @@ export function installPlatformFileContent(): () => void {
           : {}),
       };
     };
-    PlatformFileContentKind_2 = (source?: Dynamic): Dynamic => {
+    annotationStyleOverrides = (source?: Dynamic): Dynamic => {
       let value: Dynamic = PlatformFileContentNoteTitle1Config[source.kind];
       return {
         ...(source.kind === "title1"
@@ -3359,7 +3308,7 @@ export function installPlatformFileContent(): () => void {
       let value: Dynamic = PlatformFileContentMin(fontSize);
       return Math.round(lineCount * fontSize * value.lh) + 2 * value.py;
     };
-    PlatformFileContentMax_2 = (width?: Dynamic, fontSize?: Dynamic): Dynamic =>
+    defaultAnnotationMaxHeight = (width?: Dynamic, fontSize?: Dynamic): Dynamic =>
       Math.max(Math.round((width * 4) / 3), PlatformFileContentLh(6, fontSize));
     PlatformFileContentMatch = (
       text?: Dynamic,
@@ -3437,7 +3386,7 @@ export function installPlatformFileContent(): () => void {
         ? candidate
         : null;
     maxPenPathChars = 24e3;
-    PlatformFileContentTrim_2 = (items?: Dynamic): Dynamic => {
+    sanitizePenPath = (items?: Dynamic): Dynamic => {
       if (typeof items != "string" || items.length > maxPenPathChars)
         return null;
       let value: Dynamic = items.trim();
@@ -3451,7 +3400,7 @@ export function installPlatformFileContent(): () => void {
         ? value
         : null;
     };
-    PlatformFileContentMin_2 = (
+    clampNumber = (
       valueToClamp?: Dynamic,
       min?: Dynamic,
       max?: Dynamic,
@@ -3475,7 +3424,7 @@ export function installPlatformFileContent(): () => void {
       typeof candidate == "string" && /^[A-Za-z0-9_-]{1,40}$/.test(candidate)
         ? candidate
         : null;
-    PlatformFileContentHandler_2 = (
+    normalizeAnnotationFontSize = (
       requestedSize?: Dynamic,
       fallbackSize?: Dynamic,
     ): Dynamic =>
@@ -3485,23 +3434,23 @@ export function installPlatformFileContent(): () => void {
         : typeof requestedSize != "number" || !Number.isFinite(requestedSize)
           ? fallbackSize
           : Math.round(
-              PlatformFileContentMin_2(
+              clampNumber(
                 requestedSize,
                 minAnnotationFontSize,
                 maxAnnotationFontSize,
               ),
             );
-    PlatformFileContentIncludes_2 = (color?: Dynamic): Dynamic =>
+    normalizeAnnotationColorName = (color?: Dynamic): Dynamic =>
       typeof color == "string" &&
       PlatformFileContentGrayRedOrangeValues.includes(color)
         ? color
         : "default";
-    PlatformFileContentIncludes_3 = (candidate?: Dynamic): Dynamic =>
+    normalizeAnnotationFillName = (candidate?: Dynamic): Dynamic =>
       typeof candidate == "string" &&
       PlatformFileContentGrayRedOrangeValuesAlias.includes(candidate)
         ? candidate
         : "default";
-    PlatformFileContentHandler_3 = (kind?: Dynamic): Dynamic =>
+    normalizeAnnotationKind = (kind?: Dynamic): Dynamic =>
       kind === "rect" ||
       kind === "oval" ||
       kind === "line" ||
@@ -3605,12 +3554,12 @@ export function installPlatformFileContent(): () => void {
     PlatformFileContentFilesValue = PlatformFileContentFilesBytesConfig.files;
     defaultDocumentFileBytes = 2 * 1024 * 1024;
     maxEmbeddedFilePathChars = 300;
-    PlatformFileContentTextEncoder_2 = new TextEncoder();
-    PlatformFileContentTextEncoder_3 = new TextEncoder();
+    designContentEncoder = new TextEncoder();
+    documentKvEncoder = new TextEncoder();
     FileValue = "file/";
     PlatformFileContentOverPerFilePattern =
       /over the (\d+(?:\.\d+)?) MiB per-file cap — (.*)$/;
-    PlatformFileContentHandler_4 = (path?: Dynamic): Dynamic => `file/${path}`;
+    projectFileKey = (path?: Dynamic): Dynamic => `file/${path}`;
     PlatformFileContentAlias = null;
     AppifactValue = "appifact/";
     PlatformFileContentBeforeWriteVersionOfState = null;
@@ -3619,13 +3568,13 @@ export function installPlatformFileContent(): () => void {
         super(`file not found: ${filePath}`);
       }
     };
-    PlatformFileContentCache_2 = new Map();
+    assetUrlByFilePath = new Map();
     imageFilePathPattern =
       /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
     projectFilesystem = {
       async readdir(directoryPath: Dynamic): Promise<Dynamic> {
         let value: Dynamic = stripAppifactPathPrefix(directoryPath),
-          directoryKeyPrefix: Dynamic = PlatformFileContentHandler_4(
+          directoryKeyPrefix: Dynamic = projectFileKey(
             value ? `${value}/` : "",
           );
         return (await getKvClient().list(directoryKeyPrefix)).map(
@@ -3637,14 +3586,14 @@ export function installPlatformFileContent(): () => void {
       },
       async readFile(filePath: Dynamic): Promise<Dynamic> {
         let value: Dynamic = await getKvClient().get(
-          PlatformFileContentHandler_4(stripAppifactPathPrefix(filePath)),
+          projectFileKey(stripAppifactPathPrefix(filePath)),
         );
         if (value == null) throw new PlatformFileContentController(filePath);
         return value;
       },
       async readFileWithVersion(filePath: Dynamic): Promise<Dynamic> {
         let value: Dynamic = await getKvClient().get(
-          PlatformFileContentHandler_4(stripAppifactPathPrefix(filePath)),
+          projectFileKey(stripAppifactPathPrefix(filePath)),
         );
         if (value == null) throw new PlatformFileContentController(filePath);
         return {
@@ -3662,7 +3611,7 @@ export function installPlatformFileContent(): () => void {
       ): Promise<Dynamic> {
         let value: Dynamic = stripAppifactPathPrefix(filePath);
         if (encoding === "base64") {
-          await getKvClient().set(PlatformFileContentHandler_4(value), content);
+          await getKvClient().set(projectFileKey(value), content);
           let contentType: Dynamic = imageFileMimeType(value);
           registerAssetUrl(value, `data:${contentType};base64,${content}`);
           return;
@@ -3678,7 +3627,7 @@ export function installPlatformFileContent(): () => void {
         if (writeDecision === "skip") return;
         let contentToWrite: Dynamic =
           typeof writeDecision == "object" ? writeDecision.content : content;
-        await getKvClient().set(PlatformFileContentHandler_4(value), contentToWrite);
+        await getKvClient().set(projectFileKey(value), contentToWrite);
         await PlatformFileContentBeforeWriteVersionOfState?.afterWrite(
           value,
           contentToWrite,
@@ -3713,7 +3662,7 @@ export function installPlatformFileContent(): () => void {
           };
         let contentToWrite: Dynamic =
           typeof writeDecision == "object" ? writeDecision.content : content;
-        await getKvClient().set(PlatformFileContentHandler_4(value), contentToWrite);
+        await getKvClient().set(projectFileKey(value), contentToWrite);
         return {
           version:
             await PlatformFileContentBeforeWriteVersionOfState.afterWrite(
@@ -3724,89 +3673,6 @@ export function installPlatformFileContent(): () => void {
         };
       },
     };
-    PreviewGenerationGate = class {
-      gen: Dynamic = 0;
-      mountedGen: Dynamic = 0;
-      consumedGen: Dynamic = 0;
-      port: Dynamic = null;
-      latchedReason: Dynamic = null;
-      helloWaiters: Dynamic = [];
-      hostWillLoad(): Dynamic {
-        this.gen += 1;
-        return this.gen;
-      }
-      generationMounted(generation: Dynamic): Dynamic {
-        generation === this.gen &&
-          ((this.mountedGen = generation),
-          (this.port = null),
-          (this.latchedReason = null),
-          this.settleHelloWaiters(null));
-      }
-      frameRetired(): Dynamic {
-        this.gen += 1;
-        this.port = null;
-        this.settleHelloWaiters(null);
-      }
-      helloReceived(port: Dynamic): Dynamic {
-        return this.latchedReason != null || this.port != null
-          ? "rejected"
-          : ((this.port = port), this.settleHelloWaiters(port), "accepted");
-      }
-      waitForHello(timeoutMs: Dynamic = 1500): Dynamic {
-        return this.port != null
-          ? Promise.resolve(this.port)
-          : new Promise((resolve?: Dynamic): Dynamic => {
-              let callback: Dynamic = (port?: Dynamic): Dynamic => {
-                  clearTimeout(value);
-                  resolve(port);
-                },
-                value: Dynamic = setTimeout((): Dynamic => {
-                  let waiterIndex: Dynamic = this.helloWaiters.indexOf(callback);
-                  waiterIndex >= 0 && this.helloWaiters.splice(waiterIndex, 1);
-                  resolve(this.port);
-                }, timeoutMs);
-              this.helloWaiters.push(callback);
-            });
-      }
-      settleHelloWaiters(port: Dynamic): Dynamic {
-        let value: Dynamic = this.helloWaiters.splice(0);
-        for (let resolve of value as Dynamic) resolve(port);
-      }
-      frameLoaded(): Dynamic {
-        return this.latchedReason == null && this.consumedGen < this.mountedGen
-          ? ((this.consumedGen = this.mountedGen),
-            {
-              kind: "first",
-              gen: this.mountedGen,
-            })
-          : (this.latch("the preview document navigated itself"),
-            {
-              kind: "foreign",
-            });
-      }
-      verdict(generation: Dynamic, status: Dynamic): Dynamic {
-        generation !== this.gen ||
-          generation !== this.mountedGen ||
-          (status !== "alive" &&
-            this.latch(
-              "the preview stopped answering the editor (replaced by a navigation, or unresponsive for too long)",
-            ));
-      }
-      get helloPort(): Dynamic {
-        return this.port;
-      }
-      get mountedGeneration(): Dynamic {
-        return this.mountedGen;
-      }
-      get blocked(): Dynamic {
-        return this.latchedReason;
-      }
-      latch(reason: Dynamic): Dynamic {
-        this.latchedReason == null && (this.latchedReason = reason);
-      }
-    };
-    defaultPreviewGenerationGate = new PreviewGenerationGate();
-    PlatformFileContentElementCache = new WeakMap();
     PlatformFileContentFreezeValue = Object.freeze([]);
     PlatformFileContentFreezeValueAlias = PlatformFileContentFreezeValue;
     roomPeerListeners = new Set();

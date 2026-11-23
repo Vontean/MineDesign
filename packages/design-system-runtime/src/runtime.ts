@@ -182,7 +182,6 @@ import { installFilesUiFileBrowser } from "./files/ui/file-browser";
 import { installFilesUiDesignSystemFiles } from "./files/ui/design-system-files";
 import { installFilesUiDesignSystemApp } from "./files/ui/design-system-app";
 import { installFilesLegacyStateReader } from "./files/legacy-state-reader";
-import { installFilesThumbnailReadiness } from "./files/thumbnail-readiness";
 import { installFilesBrowserPort } from "./files/browser-port";
 import { installFilesBootReader } from "./files/boot-reader";
 import { installFilesSaveQueue } from "./files/save-queue";
@@ -397,7 +396,6 @@ export function createDesignSystemRuntime(
     installFilesUiDesignSystemFiles(),
     installFilesUiDesignSystemApp(),
     installFilesLegacyStateReader(),
-    installFilesThumbnailReadiness(),
     installFilesBrowserPort(),
     installFilesBootReader(),
     installFilesSaveQueue(),

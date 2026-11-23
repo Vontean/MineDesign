@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../runtime-types";
-import { InspectorColorPickResolvedValue_2 as InspectorColorPickIsMac } from "./inspector/color-pick";
+import { isDesktopMac as InspectorColorPickIsMac } from "./inspector/color-pick";
 
 var primaryModifierKey: Dynamic;
 var primaryModifierHeld: Dynamic;

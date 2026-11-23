@@ -6,7 +6,7 @@ import { artboardRectanglesOverlap, findAvailableArtboardPosition, sanitizeArtbo
 import { artboardRectangle, distanceBetweenArtboards } from "./session";
 
 function resolveCommentPinPosition(
-  pin2?: Dynamic,
+  pin?: Dynamic,
   boards?: Dynamic,
   file?: Dynamic,
 ): Dynamic {
@@ -17,8 +17,8 @@ function resolveCommentPinPosition(
       ],
     placement: Dynamic = findAvailableArtboardPosition(
       {
-        x: Math.round(pin2.x),
-        y: Math.round(pin2.y),
+        x: Math.round(pin.x),
+        y: Math.round(pin.y),
         w: target.w,
         h: target.h,
       },
@@ -37,29 +37,29 @@ function prepareFastEditArtboardChanges(
   targetFile?: Dynamic,
   boardByFile?: Dynamic,
   allowDistant: Dynamic = false,
-  pin2?: Dynamic,
+  pin?: Dynamic,
 ): Dynamic {
   let placements: Dynamic = new Map();
-  for (let value of boards as Dynamic) {
-    if (operations.deletes.includes(value.file)) continue;
-    let entry: Dynamic = operations.places.get(value.file);
-    placements.set(value.file, {
-      x: entry?.x ?? value.x,
-      y: entry?.y ?? value.y,
-      w: entry?.w ?? value.w,
-      h: entry?.h ?? value.h,
+  for (let board of boards as Dynamic) {
+    if (operations.deletes.includes(board.file)) continue;
+    let requestedPlacement: Dynamic = operations.places.get(board.file);
+    placements.set(board.file, {
+      x: requestedPlacement?.x ?? board.x,
+      y: requestedPlacement?.y ?? board.y,
+      w: requestedPlacement?.w ?? board.w,
+      h: requestedPlacement?.h ?? board.h,
     });
   }
   let reference: Dynamic =
       placements.get(targetFile) ??
       (boardByFile.has(targetFile)
         ? artboardRectangle(boardByFile.get(targetFile))
-        : pin2),
+        : pin),
     movedFiles: Dynamic = [...operations.places]
       .filter(
-        ([input, input2]: Dynamic): Dynamic =>
+        ([input, placement]: Dynamic): Dynamic =>
           input !== targetFile &&
-          (input2.x !== undefined || input2.y !== undefined) &&
+          (placement.x !== undefined || placement.y !== undefined) &&
           placements.has(input),
       )
       .map(([input]: Dynamic): Dynamic => input),
@@ -67,178 +67,178 @@ function prepareFastEditArtboardChanges(
       .filter(([input]: Dynamic): Dynamic => !movedFiles.includes(input))
       .map(([, input]: Dynamic): Dynamic => input),
     moveOffset: Dynamic = null;
-  for (let value of movedFiles as Dynamic) {
-    let entry: Dynamic = placements.get(value),
-      callback: Dynamic = (input?: Dynamic): Dynamic =>
+  for (let file of movedFiles as Dynamic) {
+    let requestedRect: Dynamic = placements.get(file),
+      isUnoccupied: Dynamic = (input?: Dynamic): Dynamic =>
         !occupied.some(
-          (input2?: Dynamic): Dynamic =>
-            artboardRectanglesOverlap(input, input2),
+          (occupiedRect?: Dynamic): Dynamic =>
+            artboardRectanglesOverlap(input, occupiedRect),
         ),
-      state: Dynamic = {
-        x: entry.x,
-        y: entry.y,
+      position: Dynamic = {
+        x: requestedRect.x,
+        y: requestedRect.y,
       };
-    if (!callback(entry)) {
-      let value2: Dynamic =
+    if (!isUnoccupied(requestedRect)) {
+      let offsetRect: Dynamic =
         moveOffset !== null
           ? {
-              ...entry,
-              x: entry.x + moveOffset.dx,
-              y: entry.y + moveOffset.dy,
+              ...requestedRect,
+              x: requestedRect.x + moveOffset.dx,
+              y: requestedRect.y + moveOffset.dy,
             }
           : null;
-      if (value2 !== null && callback(value2))
-        state = {
-          x: value2.x,
-          y: value2.y,
+      if (offsetRect !== null && isUnoccupied(offsetRect))
+        position = {
+          x: offsetRect.x,
+          y: offsetRect.y,
         };
       else {
-        let value3: Dynamic = findAvailableArtboardPosition(
-          entry,
+        let availablePosition: Dynamic = findAvailableArtboardPosition(
+          requestedRect,
           occupied,
           reference,
         );
-        state = {
-          x: value3.x,
-          y: value3.y,
+        position = {
+          x: availablePosition.x,
+          y: availablePosition.y,
         };
         moveOffset === null &&
-          value3.moved !== "" &&
+          availablePosition.moved !== "" &&
           (moveOffset = {
-            dx: value3.x - entry.x,
-            dy: value3.y - entry.y,
+            dx: availablePosition.x - requestedRect.x,
+            dy: availablePosition.y - requestedRect.y,
           });
       }
-      operations.places.set(value, {
-        ...operations.places.get(value),
-        x: state.x,
-        y: state.y,
+      operations.places.set(file, {
+        ...operations.places.get(file),
+        x: position.x,
+        y: position.y,
       });
     }
-    let state2: Dynamic = {
-      ...entry,
-      x: state.x,
-      y: state.y,
+    let placedRect: Dynamic = {
+      ...requestedRect,
+      x: position.x,
+      y: position.y,
     };
-    placements.set(value, state2);
-    occupied.push(state2);
+    placements.set(file, placedRect);
+    occupied.push(placedRect);
   }
-  for (let [value, value2] of [...operations.places] as Dynamic) {
-    let entry: Dynamic = boardByFile.get(value);
-    entry !== undefined &&
-      (value2.x ?? entry.x) === entry.x &&
-      (value2.y ?? entry.y) === entry.y &&
-      (value2.w ?? entry.w) === entry.w &&
-      (value2.h ?? entry.h) === entry.h &&
-      operations.places.delete(value);
+  for (let [file, placement] of [...operations.places] as Dynamic) {
+    let originalBoard: Dynamic = boardByFile.get(file);
+    originalBoard !== undefined &&
+      (placement.x ?? originalBoard.x) === originalBoard.x &&
+      (placement.y ?? originalBoard.y) === originalBoard.y &&
+      (placement.w ?? originalBoard.w) === originalBoard.w &&
+      (placement.h ?? originalBoard.h) === originalBoard.h &&
+      operations.places.delete(file);
   }
   let allRectangles: Dynamic = [...placements.values()],
     addOffset: Dynamic = null;
-  for (let value of operations.adds as Dynamic) {
-    let value2: Dynamic =
+  for (let addition of operations.adds as Dynamic) {
+    let tooDistant: Dynamic =
         !allowDistant &&
-        value.x !== undefined &&
-        value.y !== undefined &&
+        addition.x !== undefined &&
+        addition.y !== undefined &&
         allRectangles.length > 0 &&
         Math.min(
           ...allRectangles.map(
             (input?: Dynamic): Dynamic =>
               distanceBetweenArtboards(
                 {
-                  x: value.x,
-                  y: value.y,
-                  w: value.w,
-                  h: value.h,
+                  x: addition.x,
+                  y: addition.y,
+                  w: addition.w,
+                  h: addition.h,
                 },
                 input,
               ),
           ),
         ) > 480,
-      value3: Dynamic =
-        addOffset !== null && value.x !== undefined && value.y !== undefined
+      offsetRect: Dynamic =
+        addOffset !== null && addition.x !== undefined && addition.y !== undefined
           ? {
-              x: value.x + addOffset.dx,
-              y: value.y + addOffset.dy,
-              w: value.w,
-              h: value.h,
+              x: addition.x + addOffset.dx,
+              y: addition.y + addOffset.dy,
+              w: addition.w,
+              h: addition.h,
             }
           : null,
-      value4: Dynamic =
-        value3 !== null &&
+      availablePosition: Dynamic =
+        offsetRect !== null &&
         !allRectangles.some(
           (input?: Dynamic): Dynamic =>
-            artboardRectanglesOverlap(value3, input),
+            artboardRectanglesOverlap(offsetRect, input),
         )
           ? {
-              x: value3.x,
-              y: value3.y,
+              x: offsetRect.x,
+              y: offsetRect.y,
               moved: "below",
             }
           : findAvailableArtboardPosition(
               {
-                ...(value.x !== undefined && value.y !== undefined && !value2
+                ...(addition.x !== undefined && addition.y !== undefined && !tooDistant
                   ? {
-                      x: value.x,
-                      y: value.y,
+                      x: addition.x,
+                      y: addition.y,
                     }
                   : {}),
-                w: value.w,
-                h: value.h,
+                w: addition.w,
+                h: addition.h,
               },
               allRectangles,
               reference,
             );
     addOffset === null &&
-      value.x !== undefined &&
-      value.y !== undefined &&
-      (value2 || value4.moved !== "") &&
+      addition.x !== undefined &&
+      addition.y !== undefined &&
+      (tooDistant || availablePosition.moved !== "") &&
       (addOffset = {
-        dx: value4.x - value.x,
-        dy: value4.y - value.y,
+        dx: availablePosition.x - addition.x,
+        dy: availablePosition.y - addition.y,
       });
-    value.x = value4.x;
-    value.y = value4.y;
+    addition.x = availablePosition.x;
+    addition.y = availablePosition.y;
     allRectangles.push({
-      x: value4.x,
-      y: value4.y,
-      w: value.w,
-      h: value.h,
+      x: availablePosition.x,
+      y: availablePosition.y,
+      w: addition.w,
+      h: addition.h,
     });
   }
   let duplicatePositions: Dynamic = [];
-  for (let value of operations.duplicates as Dynamic) {
-    let value2: Dynamic =
-      placements.get(value.file) ?? boardByFile.get(value.file);
-    if (value2 === undefined) {
+  for (let duplication of operations.duplicates as Dynamic) {
+    let sourceBoard: Dynamic =
+      placements.get(duplication.file) ?? boardByFile.get(duplication.file);
+    if (sourceBoard === undefined) {
       duplicatePositions.push({
         x: Number.NaN,
         y: Number.NaN,
       });
       continue;
     }
-    let value3: Dynamic = findAvailableArtboardPosition(
+    let availablePosition: Dynamic = findAvailableArtboardPosition(
       {
-        ...(value.x !== undefined && value.y !== undefined
+        ...(duplication.x !== undefined && duplication.y !== undefined
           ? {
-              x: value.x,
-              y: value.y,
+              x: duplication.x,
+              y: duplication.y,
             }
           : {}),
-        w: value2.w,
-        h: value2.h,
+        w: sourceBoard.w,
+        h: sourceBoard.h,
       },
       allRectangles,
       reference,
     );
     duplicatePositions.push({
-      x: value3.x,
-      y: value3.y,
+      x: availablePosition.x,
+      y: availablePosition.y,
     });
     allRectangles.push({
-      x: value3.x,
-      y: value3.y,
-      w: value2.w,
-      h: value2.h,
+      x: availablePosition.x,
+      y: availablePosition.y,
+      w: sourceBoard.w,
+      h: sourceBoard.h,
     });
   }
   return duplicatePositions;
@@ -246,22 +246,22 @@ function prepareFastEditArtboardChanges(
 async function commitFastEditArtboardChanges(
   operations?: Dynamic,
   canvas?: Dynamic,
-  targetFile?: Dynamic,
+  editSessionsByFile?: Dynamic,
   boardByFile?: Dynamic,
-  options?: Dynamic,
-  result?: Dynamic,
-  pin2?: Dynamic,
+  duplicateOptions?: Dynamic,
+  requestControl?: Dynamic,
+  commitPins?: Dynamic,
 ): Promise<Dynamic> {
   let renames: Dynamic = [...operations.renames].filter(
-      ([input, input2]: Dynamic): Dynamic =>
-        sanitizeArtboardTitle(input2) !== "" &&
+      ([input, title]: Dynamic): Dynamic =>
+        sanitizeArtboardTitle(title) !== "" &&
         boardByFile.get(input) !== undefined,
     ),
     operationKinds: Dynamic = [
       operations.places.size > 0 ? "place" : "",
       ...renames.map(
-        (input?: Dynamic, options2?: Dynamic): Dynamic =>
-          "rename" + String(options2),
+        (input?: Dynamic, renameIndex?: Dynamic): Dynamic =>
+          "rename" + String(renameIndex),
       ),
       operations.adds.length > 0 ? "add" : "",
       operations.duplicates.length > 0 ? "duplicate" : "",
@@ -272,46 +272,46 @@ async function commitFastEditArtboardChanges(
         : "",
     token: Dynamic =
       combinedOperationKind === "" ? undefined : canvas.token(),
-    callback: Dynamic = (input?: Dynamic): Dynamic =>
+    tokenForOperation: Dynamic = (input?: Dynamic): Dynamic =>
       input === combinedOperationKind ? token : undefined,
-    flag: Dynamic = false,
-    callback2: Dynamic = (input?: Dynamic, options2?: Dynamic): Dynamic => {
-      options2 && input === combinedOperationKind && (flag = true);
+    combinedOperationApplied: Dynamic = false,
+    recordCombinedOperation: Dynamic = (input?: Dynamic, applied?: Dynamic): Dynamic => {
+      applied && input === combinedOperationKind && (combinedOperationApplied = true);
     },
-    value: Dynamic =
+    movedFiles: Dynamic =
       operations.places.size > 0
         ? canvas.place(
             [...operations.places].map(
-              ([input, input2]: Dynamic): Dynamic => ({
+              ([input, placement]: Dynamic): Dynamic => ({
                 file: input,
-                ...input2,
+                ...placement,
               }),
             ),
-            callback("place"),
+            tokenForOperation("place"),
           )
         : [];
-  callback2("place", value.length > 0);
-  let items: Dynamic = [];
-  renames.forEach(([input, input2]: Dynamic, options2?: Dynamic): Dynamic => {
-    let value7: Dynamic = canvas.rename(
+  recordCombinedOperation("place", movedFiles.length > 0);
+  let renamedFiles: Dynamic = [];
+  renames.forEach(([input, title]: Dynamic, renameIndex?: Dynamic): Dynamic => {
+    let renamed: Dynamic = canvas.rename(
       input,
-      input2,
-      callback("rename" + String(options2)),
+      title,
+      tokenForOperation("rename" + String(renameIndex)),
     );
-    value7 && items.push(input);
-    callback2("rename" + String(options2), value7);
+    renamed && renamedFiles.push(input);
+    recordCombinedOperation("rename" + String(renameIndex), renamed);
   });
-  let value2: Dynamic =
+  let addedFiles: Dynamic =
     operations.adds.length > 0
       ? await canvas.add(
           operations.adds.map(
             ({ id: id, ...props }: Dynamic): Dynamic => props,
           ),
-          callback("add"),
+          tokenForOperation("add"),
         )
       : [];
-  callback2("add", value2.length > 0);
-  let value3: Dynamic =
+  recordCombinedOperation("add", addedFiles.length > 0);
+  let copiedFiles: Dynamic =
     operations.duplicates.length > 0
       ? await canvas.duplicate(
           operations.duplicates.map(
@@ -324,93 +324,93 @@ async function commitFastEditArtboardChanges(
                 : {}),
             }),
           ),
-          callback("duplicate"),
-          options,
+          tokenForOperation("duplicate"),
+          duplicateOptions,
         )
       : [];
-  callback2("duplicate", value3.length > 0);
-  let items2: Dynamic = [],
-    items3: Dynamic = [];
-  if (operations.templates.size > 0 && !result.aborted) {
-    let value7: Dynamic = canvas.group(
+  recordCombinedOperation("duplicate", copiedFiles.length > 0);
+  let appliedTemplates: Dynamic = [],
+    staleTemplates: Dynamic = [];
+  if (operations.templates.size > 0 && !requestControl.aborted) {
+    let historyGroup: Dynamic = canvas.group(
       operations.templates.keys(),
-      flag ? token : undefined,
+      combinedOperationApplied ? token : undefined,
     );
     try {
-      for (let [value8, value9] of operations.templates as Dynamic) {
-        let value10: Dynamic = await (targetFile
-          .get(value8)
-          ?.askCommit(value9, pin2?.get(value8))
+      for (let [file, template] of operations.templates as Dynamic) {
+        let commitResult: Dynamic = await (editSessionsByFile
+          .get(file)
+          ?.askCommit(template, commitPins?.get(file))
           .catch((): Dynamic => "failed") ?? "stale");
-        value7?.settled(value8);
-        value10 === "applied"
-          ? items2.push(value8)
-          : value10 === "stale" && items3.push(value8);
+        historyGroup?.settled(file);
+        commitResult === "applied"
+          ? appliedTemplates.push(file)
+          : commitResult === "stale" && staleTemplates.push(file);
       }
     } finally {
-      value7?.end();
+      historyGroup?.end();
     }
   }
-  let items4: Dynamic = [];
-  if (operations.deletes.length > 0 && !result.aborted) {
-    let value7: Dynamic = operations.deletes.filter(
+  let removedFiles: Dynamic = [];
+  if (operations.deletes.length > 0 && !requestControl.aborted) {
+    let filesToRemove: Dynamic = operations.deletes.filter(
         (input?: Dynamic): Dynamic => boardByFile.has(input),
       ),
-      value8: Dynamic = canvas
+      previousFiles: Dynamic = canvas
         .boards()
         .map((input?: Dynamic): Dynamic => input.file),
-      value9: Dynamic = value7.length === 0 ? 0 : await canvas.remove(value7);
-    if (value9 > 0) {
-      let values: Dynamic = new Set(
+      removedCount: Dynamic = filesToRemove.length === 0 ? 0 : await canvas.remove(filesToRemove);
+    if (removedCount > 0) {
+      let remainingFilesSet: Dynamic = new Set(
         canvas.boards().map((input?: Dynamic): Dynamic => input.file),
       );
-      items4 = value7.filter(
-        (input?: Dynamic): Dynamic => !values.has(input),
+      removedFiles = filesToRemove.filter(
+        (input?: Dynamic): Dynamic => !remainingFilesSet.has(input),
       );
     }
-    let value10: Dynamic = value8.filter(
-      (input?: Dynamic): Dynamic => !value7.includes(input),
+    let unremovedFiles: Dynamic = previousFiles.filter(
+      (input?: Dynamic): Dynamic => !filesToRemove.includes(input),
     );
     if (
-      value9 > 0 &&
-      value7.includes(operations.asked) &&
-      value10.length > 0
+      removedCount > 0 &&
+      filesToRemove.includes(operations.asked) &&
+      unremovedFiles.length > 0
     ) {
-      let value11: Dynamic = value8.indexOf(operations.asked);
+      let previousFocusIndex: Dynamic = previousFiles.indexOf(operations.asked);
       canvas.focus(
-        value10.find(
-          (input?: Dynamic): Dynamic => value8.indexOf(input) > value11,
-        ) ?? value10[value10.length - 1],
+        unremovedFiles.find(
+          (input?: Dynamic): Dynamic => previousFiles.indexOf(input) > previousFocusIndex,
+        ) ?? unremovedFiles[unremovedFiles.length - 1],
       );
     }
   }
-  let value4: Dynamic =
-      value.length +
-      items.length +
-      value2.length +
-      value3.length +
-      items4.length,
-    value5: Dynamic =
-      (value.length > 0 ? 1 : 0) +
-      items.length +
-      (value2.length > 0 ? 1 : 0) +
-      (value3.length > 0 ? 1 : 0) +
-      (items2.length > 0 && !flag ? 1 : 0) +
-      (items4.length > 0 ? 1 : 0),
-    value6: Dynamic =
-      value5 - (items2.length > 0 && !flag ? 1 : 0) + items2.length;
+  let canvasOperationCount: Dynamic =
+      movedFiles.length +
+      renamedFiles.length +
+      addedFiles.length +
+      copiedFiles.length +
+      removedFiles.length,
+    historyRecordCount: Dynamic =
+      (movedFiles.length > 0 ? 1 : 0) +
+      renamedFiles.length +
+      (addedFiles.length > 0 ? 1 : 0) +
+      (copiedFiles.length > 0 ? 1 : 0) +
+      (appliedTemplates.length > 0 && !combinedOperationApplied ? 1 : 0) +
+      (removedFiles.length > 0 ? 1 : 0),
+    historyPushCount: Dynamic =
+      historyRecordCount - (appliedTemplates.length > 0 && !combinedOperationApplied ? 1 : 0) + appliedTemplates.length;
   return {
-    nothingLanded: items2.length === 0 && value4 === 0,
-    canvasOps: value4,
-    records: value5,
-    pushes: value6,
-    moved: value,
-    renamed: items,
-    added: value2,
-    copied: value3,
-    removed: items4,
-    landed: items2,
-    stale: items3,
+    nothingLanded: appliedTemplates.length === 0 && canvasOperationCount === 0,
+    canvasOps: canvasOperationCount,
+    records: historyRecordCount,
+    pushes: historyPushCount,
+    moved: movedFiles,
+    renamed: renamedFiles,
+    added: addedFiles,
+    copied: copiedFiles,
+    removed: removedFiles,
+    landed: appliedTemplates,
+    stale: staleTemplates,
   };
 }
 export {

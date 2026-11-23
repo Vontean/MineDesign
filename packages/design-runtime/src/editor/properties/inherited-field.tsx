@@ -8,7 +8,7 @@ import { Switch } from "../../cds/components/switch";
 import { classifyStyleValue } from "../css/values";
 import { PropertyRow } from "./row";
 
-var Value_6: Dynamic;
+var emDashPlaceholder: Dynamic;
 var PropertiesInheritedFieldValue: Dynamic;
 var PropertiesInheritedFieldMixed: Dynamic;
 function PropertyToggleRow({
@@ -51,7 +51,7 @@ function inspectorFieldDisplay(field?: Dynamic): Dynamic {
   return valueKind.kind === "unset"
     ? {
         text: "",
-        placeholder: field.fallback || Value_6,
+        placeholder: field.fallback || emDashPlaceholder,
         isLiteral: true,
       }
     : {
@@ -83,11 +83,11 @@ function inheritedFieldForEdit(field?: Dynamic): Dynamic {
 function inheritedFieldTooltip(field?: Dynamic): Dynamic {
   if (!isInheritedInspectorField(field)) return;
   let varSuffix: Dynamic = field.varSource ? ` (${field.varSource})` : "";
-  return uiMessage("inspector.inheritedField.fromValue1Value2EditTo", { value1: String(field.inheritedFrom), value2: String(varSuffix) });
+  return uiMessage("inspector.inheritedField.sourceEditToOverride", { source: String(field.inheritedFrom), variableSuffix: String(varSuffix) });
 }
 function inheritedFieldDescription(field?: Dynamic): Dynamic {
   if (isInheritedInspectorField(field))
-    return uiMessage("inspector.inheritedField.inheritedFromValue1EditTo", { value1: String(field.inheritedFrom) });
+    return uiMessage("inspector.inheritedField.inheritedFromEditToOverride", { source: String(field.inheritedFrom) });
 }
 function inheritedFieldsDisabledReason(...fields: Dynamic[]): Dynamic {
   let explicitReason: Dynamic = fields.find(
@@ -144,11 +144,11 @@ export {
   PropertiesInheritedFieldValue,
   PropertyToggleRow,
   summarizeInheritedFields,
-  Value_6,
+  emDashPlaceholder,
 };
 export function installEditorPropertiesInheritedField(): () => void {
   return () => {
-    Value_6 = "\u2014";
+    emDashPlaceholder = "\u2014";
     PropertiesInheritedFieldValue = (field?: Dynamic): Dynamic =>
       !!field && ((field.value != null && field.value !== "") || !!field.mixed);
     PropertiesInheritedFieldMixed = (field?: Dynamic): Dynamic =>

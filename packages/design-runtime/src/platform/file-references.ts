@@ -147,9 +147,8 @@ export {
   loadReferencedFiles,
   parseFileReferences,
   maxProjectTextFiles as PlatformFileReferencesLimit,
-  maxDeclarationFiles as PlatformFileReferencesLimit_2,
+  maxDeclarationFiles,
   maxReferencedFileBytes as PlatformFileReferencesResolvedValue,
-  maxTotalReferencedBytes as PlatformFileReferencesResolvedValue_2,
 };
 export function installPlatformFileReferences(): () => void {
   return () => {

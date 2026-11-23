@@ -124,3 +124,18 @@ for (const pkg of Object.keys(packages)) {
     assert.deepEqual(found, []);
   });
 }
+
+// 入口 canvas/design-canvas.tsx 是 design-canvas/ 子模块的上层：子模块、load-state、editor/session 不得反向 import 入口，
+// 共用的常量、文案和纯函数放在 design-canvas/shared.ts 与 messages.ts。
+test('design-runtime：design-canvas/ 子模块与入口之间没有环', () => {
+  const src = path.join(root, 'packages', 'design-runtime', 'src');
+  const offenders = [];
+  for (const file of sources(src)) {
+    const text = fs.readFileSync(path.join(src, file), 'utf8');
+    for (const m of text.matchAll(/^(?:import|export)\b[^;]*?\bfrom "(\.[^"]+)";/gms)) {
+      const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), m[1])).replace(/\.tsx?$/, '');
+      if (target === 'canvas/design-canvas' && file !== 'app-runtime.ts' && file !== 'application/document-root.tsx') offenders.push(`${file} → ${target}`);
+    }
+  }
+  assert.deepEqual(offenders, []);
+});

@@ -1,12 +1,12 @@
 import { ModelModelStateLimit } from "../../editor/model/model-state";
-import { PlatformFileContentConstant_16 as minArtboardSize } from "../../platform/file-content";
-import { PlatformFileContentConstant_5 as defaultArtboardWidth } from "../../platform/file-content";
-import { PlatformFileContentConstant_6 as defaultArtboardHeight } from "../../platform/file-content";
+import { minEmbeddedArtboardDimension as minArtboardSize } from "../../platform/file-content";
+import { defaultArtboardWidth } from "../../platform/file-content";
+import { defaultArtboardHeight } from "../../platform/file-content";
 import { PlatformFileContentFilesValue } from "../../platform/file-content";
-import { PlatformFileContentHandler_4 } from "../../platform/file-content";
+import { projectFileKey } from "../../platform/file-content";
 import { PlatformFileContentHas } from "../../platform/file-content";
-import { PlatformFileContentLimit_5 as maxAnnotations } from "../../platform/file-content";
-import { PlatformFileContentLimit_6 as maxArtboardSize } from "../../platform/file-content";
+import { maxAnnotations } from "../../platform/file-content";
+import { maxCanvasItemDimension as maxArtboardSize } from "../../platform/file-content";
 import { PlatformFileContentSlice } from "../../platform/file-content";
 import { annotationGeometry } from "../../platform/file-content";
 import { annotationTextStyle } from "../../platform/file-content";
@@ -19,7 +19,6 @@ import { artboardTransformSnapshot } from "../../geometry/selection-transform";
 import { artboardsDeletedAnnouncement } from "../../editor/accessibility/announcements";
 import { blankDcDocument } from "../../platform/file-content";
 import { boardSelectionKey } from "../working-state";
-import { canvasMetadataFile } from "../../platform/file-content";
 import { createPreviewHandle } from "../../preview/evaluation";
 import { designAnalyticsEvents } from "../../platform/health-and-analytics";
 import { duplicateArtboardTitle } from "../../platform/file-content";
@@ -46,21 +45,22 @@ import { replaceDesignArtboards } from "../../platform/file-content";
 import { replaceDesignPageContents } from "../../platform/file-content";
 import { resolveMeasuredExportHeight } from "../../export/paper-and-scale";
 import { selectionFromBoards } from "../../editor/selection/canvas-selection";
-import { serializeCanvasMetadata } from "../../platform/file-content";
 import { type Dynamic } from "../../runtime-types";
 import { uiMessage } from "@minedesign/contracts/ui-messages";
 import { uniqueArtboardFile } from "../../platform/file-content";
-import { emptyCanvasSelectionFiles, exportAlreadyRunningMessage, nextArtboardPlacementPoint, staleDeleteFailureMessage } from "../design-canvas";
+import { exportAlreadyRunningMessage, staleDeleteFailureMessage } from "./messages";
+import { emptyCanvasSelectionFiles } from "./shared";
+import { nextArtboardPlacementPoint } from "../paste-placement";
 
 /** 绘制画板或点击新增画板时运行（onDrawArtboard/onAdd）：生成空白 dc 文件与唯一标题，放到指定或下一个位置并选中，失败时提示。 */
-export function addBlankArtboard(deps: { readonly callback3: Dynamic; readonly doc: Dynamic; readonly showToast: Dynamic; readonly supportsLoadState: Dynamic; readonly value189: Dynamic; readonly value273: Dynamic; readonly value310: Dynamic; readonly value338: Dynamic; readonly value341: Dynamic; readonly value396: Dynamic; readonly value73: Dynamic; readonly value90: Dynamic; readonly value98: Dynamic }, placement?: Dynamic, markupToInsert?: Dynamic, insertOptions?: Dynamic): Dynamic {
+export function addBlankArtboard(deps: { readonly savePageSelection: Dynamic; readonly doc: Dynamic; readonly showToast: Dynamic; readonly supportsLoadState: Dynamic; readonly clearDragToast: Dynamic; readonly focusArtboard: Dynamic; readonly placeActive: Dynamic; readonly setTool: Dynamic; readonly resetTool: Dynamic; readonly recordHistory: Dynamic; readonly manifest: Dynamic; readonly placementObstacles: Dynamic; readonly persistManifest: Dynamic }, placement?: Dynamic, markupToInsert?: Dynamic, insertOptions?: Dynamic): Dynamic {
         let files: Dynamic = deps.doc.content().files,
           newFile: Dynamic = uniqueArtboardFile(
             files,
             "Artboard",
             deps.supportsLoadState,
           );
-        placement && (deps.value310.current = true);
+        placement && (deps.placeActive.current = true);
         (async (): Promise<Dynamic> => {
           try {
             let newMarkup: Dynamic = markupToInsert
@@ -70,10 +70,10 @@ export function addBlankArtboard(deps: { readonly callback3: Dynamic; readonly d
                 )
               : blankDcDocument();
             await getKvClient().set(
-              PlatformFileContentHandler_4(newFile),
+              projectFileKey(newFile),
               newMarkup,
             );
-            let otherArtboards: Dynamic = deps.value90.current.filter(
+            let otherArtboards: Dynamic = deps.placementObstacles.current.filter(
                 (artboard?: Dynamic): Dynamic => artboard.file !== newFile,
               ),
               position: Dynamic =
@@ -92,9 +92,9 @@ export function addBlankArtboard(deps: { readonly callback3: Dynamic; readonly d
                     : defaultArtboardHeight,
                 title:
                   insertOptions?.title ?? nextArtboardTitle(otherArtboards),
-                ...deps.callback3(),
+                ...deps.savePageSelection(),
               };
-            deps.value396.current(
+            deps.recordHistory.current(
               {
                 kind: "add",
                 entries: [
@@ -108,9 +108,9 @@ export function addBlankArtboard(deps: { readonly callback3: Dynamic; readonly d
               new Set([newFile]),
               insertOptions?.siblings,
             );
-            deps.value98({
+            deps.persistManifest({
               artboards: [
-                ...deps.value73.current.artboards.filter(
+                ...deps.manifest.current.artboards.filter(
                   (artboard?: Dynamic): Dynamic => artboard.file !== newFile,
                 ),
                 state,
@@ -120,10 +120,10 @@ export function addBlankArtboard(deps: { readonly callback3: Dynamic; readonly d
               frameAnalyticsReporter(
                 designAnalyticsEvents.artboardInserted,
               );
-            deps.value273(newFile);
-            deps.value338("select");
-            deps.value341((previousCount?: Dynamic): Dynamic => previousCount + 1);
-            insertOptions?.doneSay && deps.value189(insertOptions.doneSay);
+            deps.focusArtboard(newFile);
+            deps.setTool("select");
+            deps.resetTool((previousCount?: Dynamic): Dynamic => previousCount + 1);
+            insertOptions?.doneSay && deps.clearDragToast(insertOptions.doneSay);
           } catch (error: Dynamic) {
             deps.showToast(
               uiMessage("canvas.designCanvas.couldnTAddAnArtboard") + String(error),
@@ -135,11 +135,11 @@ export function addBlankArtboard(deps: { readonly callback3: Dynamic; readonly d
       }
 
 /** 复制快捷键选中画板或画布说明时运行：计算偏移后的位置，交给 onDuplicateObjects 生成副本。 */
-export function duplicateSelectedBoards(deps: { readonly value344: Dynamic; readonly value383: Dynamic; readonly value87: Dynamic; readonly value90: Dynamic }, selection?: Dynamic, duplicateOptions?: Dynamic): Dynamic {
-        let selectedArtboards: Dynamic = deps.value87.current.artboards.filter(
+export function duplicateSelectedBoards(deps: { readonly duplicateObjects: Dynamic; readonly revealBounds: Dynamic; readonly pageContents: Dynamic; readonly placementObstacles: Dynamic }, selection?: Dynamic, duplicateOptions?: Dynamic): Dynamic {
+        let selectedArtboards: Dynamic = deps.pageContents.current.artboards.filter(
             (artboard?: Dynamic): Dynamic => selection.files.has(artboard.file),
           ),
-          selectedNotes: Dynamic = (deps.value87.current.annotations ?? []).filter(
+          selectedNotes: Dynamic = (deps.pageContents.current.annotations ?? []).filter(
             (note?: Dynamic): Dynamic => selection.notes.has(note.id),
           ),
           selectedObjects: Dynamic = [
@@ -153,7 +153,7 @@ export function duplicateSelectedBoards(deps: { readonly value344: Dynamic; read
           ],
           targetOrigin: Dynamic =
             selectedArtboards.length > 0
-              ? nextArtboardPlacementPoint(deps.value90.current)
+              ? nextArtboardPlacementPoint(deps.placementObstacles.current)
               : {
                   x: minX + 24,
                   y: minY + 24,
@@ -162,7 +162,7 @@ export function duplicateSelectedBoards(deps: { readonly value344: Dynamic; read
             targetOrigin.x - minX,
             targetOrigin.y - minY,
           ];
-        deps.value383.current({
+        deps.revealBounds.current({
           x: targetOrigin.x,
           y: targetOrigin.y,
           w:
@@ -178,7 +178,7 @@ export function duplicateSelectedBoards(deps: { readonly value344: Dynamic; read
               ),
             ) - minY,
         });
-        return deps.value344.current(
+        return deps.duplicateObjects.current(
           selectedArtboards.map(
             (artboard?: Dynamic): Dynamic => ({
               file: artboard.file,
@@ -198,7 +198,7 @@ export function duplicateSelectedBoards(deps: { readonly value344: Dynamic; read
       }
 
 /** 复制画板时运行：为每个画板写入新的 dc 文件与唯一标题，放到指定位置并选中，记录分析事件，失败时提示。 */
-export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; readonly doc: Dynamic; readonly setSelection: Dynamic; readonly showToast: Dynamic; readonly supportsLoadState: Dynamic; readonly value140: Dynamic; readonly value142: Dynamic; readonly value177: Dynamic; readonly value413: Dynamic; readonly value73: Dynamic; readonly value87: Dynamic; readonly value98: Dynamic }, artboardCopies?: Dynamic,
+export function duplicateArtboardFiles(deps: { readonly createNotes: Dynamic; readonly doc: Dynamic; readonly setSelection: Dynamic; readonly showToast: Dynamic; readonly supportsLoadState: Dynamic; readonly finishBoundOperation: Dynamic; readonly boundSelections: Dynamic; readonly artboardEntries: Dynamic; readonly recordHistory: Dynamic; readonly manifest: Dynamic; readonly pageContents: Dynamic; readonly persistManifest: Dynamic }, artboardCopies?: Dynamic,
         notesToCopy: Dynamic = [],
         sessionKey?: Dynamic,
         keepSelectionForSession: Dynamic = false): Dynamic {
@@ -208,7 +208,7 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
           try {
             let sourceEntries: Dynamic = artboardCopies.flatMap(
               (copyRequest?: Dynamic): Dynamic => {
-                let sourceArtboard: Dynamic = deps.value73.current.artboards.find(
+                let sourceArtboard: Dynamic = deps.manifest.current.artboards.find(
                   (artboard?: Dynamic): Dynamic => artboard.file === copyRequest.file,
                 );
                 return sourceArtboard
@@ -239,7 +239,7 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
             await Promise.all(
               sourceEntries.map(
                 (sourceEntry?: Dynamic): Dynamic =>
-                  deps.value177.current.get(sourceEntry.a.file)?.flushPending(),
+                  deps.artboardEntries.current.get(sourceEntry.a.file)?.flushPending(),
               ),
             );
             let state: Dynamic = {
@@ -254,7 +254,7 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
             } of sourceEntries as Dynamic) {
               let artboardSource: Dynamic =
                 (await getKvClient().get(
-                  PlatformFileContentHandler_4(originalArtboard.file),
+                  projectFileKey(originalArtboard.file),
                 )) ?? state[originalArtboard.file];
               if (
                 typeof artboardSource != "string" ||
@@ -295,7 +295,7 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
                   duplicateArtboardTitle(
                     originalArtboard.title ?? baseName,
                     [
-                      ...deps.value87.current.artboards,
+                      ...deps.pageContents.current.artboards,
                       ...newEntries.map(
                         (newEntry?: Dynamic): Dynamic => newEntry.spec,
                       ),
@@ -318,7 +318,7 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
             try {
               for (let entry of newEntries as Dynamic) {
                 await getKvClient().set(
-                  PlatformFileContentHandler_4(entry.file),
+                  projectFileKey(entry.file),
                   entry.src,
                 );
                 values.add(entry.file);
@@ -326,14 +326,14 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
             } catch (error: Dynamic) {
               for (let writtenFile of values as Dynamic)
                 await getKvClient()
-                  .delete(PlatformFileContentHandler_4(writtenFile))
+                  .delete(projectFileKey(writtenFile))
                   .catch((): Dynamic => false);
               throw error;
             }
             let canCopyNotes: Dynamic =
-                (deps.value73.current.annotations ?? []).length + notesToCopy.length <=
+                (deps.manifest.current.annotations ?? []).length + notesToCopy.length <=
                 maxAnnotations,
-              newNotes: Dynamic = canCopyNotes ? deps.callback9(notesToCopy) : [];
+              newNotes: Dynamic = canCopyNotes ? deps.createNotes(notesToCopy) : [];
             !canCopyNotes &&
               notesToCopy.length > 0 &&
               deps.showToast(
@@ -342,9 +342,9 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
                   ").",
                 "error",
               );
-            deps.value98({
+            deps.persistManifest({
               artboards: [
-                ...deps.value73.current.artboards.filter(
+                ...deps.manifest.current.artboards.filter(
                   (artboard?: Dynamic): Dynamic => !values.has(artboard.file),
                 ),
                 ...newEntries.map((newEntry?: Dynamic): Dynamic => newEntry.spec),
@@ -352,13 +352,13 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
               ...(newNotes.length > 0
                 ? {
                     annotations: [
-                      ...(deps.value73.current.annotations ?? []),
+                      ...(deps.manifest.current.annotations ?? []),
                       ...newNotes,
                     ],
                   }
                 : {}),
             });
-            deps.value413(
+            deps.recordHistory(
               {
                 kind: "add",
                 entries: newEntries,
@@ -373,7 +373,7 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
               sessionKey,
             );
             selectionSessionKey !== undefined
-              ? deps.value142.current.set(selectionSessionKey, {
+              ? deps.boundSelections.current.set(selectionSessionKey, {
                   files: values,
                   notes: new Set(
                     newNotes.map((note?: Dynamic): Dynamic => note.id),
@@ -395,24 +395,24 @@ export function duplicateArtboardFiles(deps: { readonly callback9: Dynamic; read
             deps.showToast(uiMessage("canvas.designCanvas.couldnTDuplicate2") + String(error), "error");
           } finally {
             selectionSessionKey !== undefined &&
-              !deps.value142.current.has(selectionSessionKey) &&
-              deps.value142.current.set(selectionSessionKey, {
+              !deps.boundSelections.current.has(selectionSessionKey) &&
+              deps.boundSelections.current.set(selectionSessionKey, {
                 files: new Set(),
                 notes: new Set(),
               });
-            sessionKey !== undefined && deps.value140.current.get(sessionKey)?.();
+            sessionKey !== undefined && deps.finishBoundOperation.current.get(sessionKey)?.();
           }
         })();
       }
 
 /** onDuplicateObjects 的实现（Alt 拖动或复制快捷键）：在给定位置复制画板与画布说明，并更新选择。 */
-export function duplicateBoardsAndNotes(deps: { readonly callback9: Dynamic; readonly setSelection: Dynamic; readonly value140: Dynamic; readonly value142: Dynamic; readonly value188: Dynamic; readonly value318: Dynamic; readonly value342: Dynamic; readonly value396: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value98: Dynamic }, artboardMoves?: Dynamic,
+export function duplicateBoardsAndNotes(deps: { readonly createNotes: Dynamic; readonly setSelection: Dynamic; readonly finishBoundOperation: Dynamic; readonly boundSelections: Dynamic; readonly showDragToast: Dynamic; readonly duplicateAnnotation: Dynamic; readonly duplicateArtboardFiles: Dynamic; readonly recordHistory: Dynamic; readonly clearFramePick: Dynamic; readonly manifest: Dynamic; readonly persistManifest: Dynamic }, artboardMoves?: Dynamic,
         noteMoves?: Dynamic,
         sessionKey?: Dynamic,
         keepSelectionForSession: Dynamic = false): Dynamic {
         if (artboardMoves.length === 0 && noteMoves.length === 1) {
           let singleNote: Dynamic = noteMoves[0];
-          return deps.value318(
+          return deps.duplicateAnnotation(
             singleNote.id,
             singleNote.x,
             singleNote.y,
@@ -422,7 +422,7 @@ export function duplicateBoardsAndNotes(deps: { readonly callback9: Dynamic; rea
         }
         let selectionSessionKey: Dynamic =
             keepSelectionForSession && sessionKey !== undefined ? sessionKey : undefined,
-          annotations: Dynamic = deps.value73.current.annotations ?? [],
+          annotations: Dynamic = deps.manifest.current.annotations ?? [],
           noteCopies: Dynamic = noteMoves.flatMap((noteMove?: Dynamic): Dynamic => {
             let sourceNote: Dynamic = annotations.find(
               (annotation?: Dynamic): Dynamic => annotation.id === noteMove.id,
@@ -439,11 +439,11 @@ export function duplicateBoardsAndNotes(deps: { readonly callback9: Dynamic; rea
           }),
           finishWithoutCopy: Dynamic = (): Dynamic => (
             selectionSessionKey !== undefined &&
-              deps.value142.current.set(selectionSessionKey, {
+              deps.boundSelections.current.set(selectionSessionKey, {
                 files: new Set(),
                 notes: new Set(),
               }),
-            sessionKey !== undefined && deps.value140.current.get(sessionKey)?.(),
+            sessionKey !== undefined && deps.finishBoundOperation.current.get(sessionKey)?.(),
             false
           );
         if (
@@ -451,7 +451,7 @@ export function duplicateBoardsAndNotes(deps: { readonly callback9: Dynamic; rea
           annotations.length + noteCopies.length >
             maxAnnotations
         ) {
-          deps.value188(
+          deps.showDragToast(
             uiMessage("canvas.designCanvas.couldnTCopyThisCanvas") +
               String(maxAnnotations) +
               ").",
@@ -460,18 +460,18 @@ export function duplicateBoardsAndNotes(deps: { readonly callback9: Dynamic; rea
         }
         let artboardsToCopy: Dynamic = artboardMoves.filter(
           (artboardMove?: Dynamic): Dynamic =>
-            deps.value73.current.artboards.some(
+            deps.manifest.current.artboards.some(
               (artboard?: Dynamic): Dynamic => artboard.file === artboardMove.file,
             ),
         );
         if (artboardsToCopy.length > 0) {
-          deps.value342(artboardsToCopy, noteCopies, sessionKey, keepSelectionForSession);
+          deps.duplicateArtboardFiles(artboardsToCopy, noteCopies, sessionKey, keepSelectionForSession);
           return true;
         }
-        let newNotes: Dynamic = deps.callback9(noteCopies);
+        let newNotes: Dynamic = deps.createNotes(noteCopies);
         return newNotes.length === 0
           ? finishWithoutCopy()
-          : (deps.value396.current(
+          : (deps.recordHistory.current(
               {
                 kind: "add",
                 entries: [],
@@ -481,18 +481,18 @@ export function duplicateBoardsAndNotes(deps: { readonly callback9: Dynamic; rea
               undefined,
               sessionKey,
             ),
-            deps.value98({
-              ...deps.value73.current,
+            deps.persistManifest({
+              ...deps.manifest.current,
               annotations: [...annotations, ...newNotes],
             }),
             selectionSessionKey !== undefined
-              ? deps.value142.current.set(selectionSessionKey, {
+              ? deps.boundSelections.current.set(selectionSessionKey, {
                   files: new Set(),
                   notes: new Set(
                     newNotes.map((note?: Dynamic): Dynamic => note.id),
                   ),
                 })
-              : (deps.value62(),
+              : (deps.clearFramePick(),
                 deps.setSelection(
                   selectionFromBoards({
                     files: emptyCanvasSelectionFiles,
@@ -505,8 +505,8 @@ export function duplicateBoardsAndNotes(deps: { readonly callback9: Dynamic; rea
       }
 
 /** 在画板属性中输入宽高时运行：按上下限钳制尺寸，写回清单并播报调整结果。 */
-export function resizeArtboardFromInput(deps: { readonly value396: Dynamic; readonly value68: Dynamic; readonly value70: Dynamic; readonly value73: Dynamic; readonly value98: Dynamic }, file?: Dynamic, newSize?: Dynamic, shouldRecordHistory?: Dynamic): Dynamic {
-        let artboard: Dynamic = deps.value73.current.artboards.find(
+export function resizeArtboardFromInput(deps: { readonly record: Dynamic; readonly setPreview: Dynamic; readonly saved: Dynamic; readonly current: Dynamic; readonly persist: Dynamic }, file?: Dynamic, newSize?: Dynamic, shouldRecordHistory?: Dynamic): Dynamic {
+        let artboard: Dynamic = deps.current.current.artboards.find(
           (item?: Dynamic): Dynamic => item.file === file,
         );
         if (
@@ -530,7 +530,7 @@ export function resizeArtboardFromInput(deps: { readonly value396: Dynamic; read
                 ),
           newWidth: Dynamic = clampSize(newSize.w, artboard.w),
           newHeight: Dynamic = clampSize(newSize.h, artboard.h),
-          resizedArtboards: Dynamic = deps.value73.current.artboards.map(
+          resizedArtboards: Dynamic = deps.current.current.artboards.map(
             (item?: Dynamic): Dynamic =>
               item.file === file
                 ? {
@@ -541,13 +541,13 @@ export function resizeArtboardFromInput(deps: { readonly value396: Dynamic; read
                 : item,
           );
         if (!shouldRecordHistory) {
-          deps.value68(
-            replaceDesignArtboards(deps.value73.current, resizedArtboards),
+          deps.setPreview(
+            replaceDesignArtboards(deps.current.current, resizedArtboards),
           );
           return;
         }
         let startArtboard: Dynamic =
-          (deps.value70.current ?? deps.value73.current).artboards.find(
+          (deps.saved.current ?? deps.current.current).artboards.find(
             (item?: Dynamic): Dynamic => item.file === file,
           ) ?? artboard;
         if (
@@ -555,12 +555,12 @@ export function resizeArtboardFromInput(deps: { readonly value396: Dynamic; read
           Math.round(startArtboard.h) === newHeight
         ) {
           (artboard.w !== newWidth || artboard.h !== newHeight) &&
-            deps.value68(
-              replaceDesignArtboards(deps.value73.current, resizedArtboards),
+            deps.setPreview(
+              replaceDesignArtboards(deps.current.current, resizedArtboards),
             );
           return;
         }
-        deps.value396.current(
+        deps.record.current(
           {
             kind: "resize",
             file: file,
@@ -579,7 +579,7 @@ export function resizeArtboardFromInput(deps: { readonly value396: Dynamic; read
           },
           new Set(),
         );
-        deps.value98({
+        deps.persist({
           artboards: resizedArtboards,
         });
         let announcement: Dynamic = artboardResizeAnnouncement(
@@ -593,23 +593,31 @@ export function resizeArtboardFromInput(deps: { readonly value396: Dynamic; read
       }
 
 /** 方向键微移选中的画板或画布说明时运行：更新位置，并把连续微移合并为同一条移动历史。 */
-export function nudgeBoardsWithHistory(deps: { readonly value405: Dynamic; readonly value412: Dynamic; readonly value413: Dynamic; readonly value415: Dynamic; readonly value440: Dynamic; readonly value73: Dynamic; readonly value98: Dynamic }, selection?: Dynamic,
+export function nudgeBoardsWithHistory(deps: {
+  history: {
+    undoTip(): Dynamic;
+    localDepth(file: string): number;
+    reachable(direction: "undo"): Dynamic;
+    invalidateRedo(): void;
+    record(step: Dynamic, excluded: Set<string>): void;
+  };
+  readonly manifest: Dynamic; readonly persistManifest: Dynamic }, selection?: Dynamic,
         nudgeDelta?: Dynamic,
         nudgeContext?: Dynamic,
         depthOverrides?: Dynamic): Dynamic {
         let nudgeResult: Dynamic = nudgeCanvasObjects(
-          deps.value73.current,
+          deps.manifest.current,
           selection,
           nudgeDelta,
           nudgeContext,
         );
         if (!nudgeResult) return false;
         let nudgeKey: Dynamic = boardSelectionKey(selection),
-          lastHistoryEntry: Dynamic = deps.value405.current[deps.value405.current.length - 1],
+          lastHistoryEntry: Dynamic = deps.history.undoTip(),
           isDepthUnchanged: Dynamic = (): Dynamic =>
             lastHistoryEntry != null &&
             lastHistoryEntry.depths.every(([objectKey, initialDepth]: Dynamic): Dynamic => {
-              let currentDepth: Dynamic = deps.value440.current.get(objectKey) ?? 0;
+              let currentDepth: Dynamic = deps.history.localDepth(objectKey);
               return depthOverrides.has(objectKey)
                 ? currentDepth === depthOverrides.get(objectKey)
                 : currentDepth === (initialDepth ?? 0);
@@ -619,7 +627,7 @@ export function nudgeBoardsWithHistory(deps: { readonly value405: Dynamic; reado
           lastHistoryEntry.nudgeKey === nudgeKey &&
           !lastHistoryEntry.sealed &&
           Date.now() - lastHistoryEntry.at < ModelModelStateLimit &&
-          (deps.value415("undo") === lastHistoryEntry || isDepthUnchanged()) &&
+          (deps.history.reachable("undo") === lastHistoryEntry || isDepthUnchanged()) &&
           nudgeResult.moves.every(
             (move?: Dynamic): Dynamic =>
               lastHistoryEntry.op.kind === "move" &&
@@ -665,9 +673,9 @@ export function nudgeBoardsWithHistory(deps: { readonly value405: Dynamic; reado
               : {}),
           };
           lastHistoryEntry.at = Date.now();
-          deps.value412();
+          deps.history.invalidateRedo();
         } else {
-          deps.value413(
+          deps.history.record(
             {
               kind: "move",
               moves: nudgeResult.moves,
@@ -680,19 +688,19 @@ export function nudgeBoardsWithHistory(deps: { readonly value405: Dynamic; reado
             new Set(),
           );
           let newHistoryEntry: Dynamic =
-            deps.value405.current[deps.value405.current.length - 1];
+            deps.history.undoTip();
           newHistoryEntry && (newHistoryEntry.nudgeKey = nudgeKey);
         }
-        deps.value98(nudgeResult.manifest);
+        deps.persistManifest(nudgeResult.manifest);
         return true;
       }
 
 /** 删除选中的画板、画布说明或整个页面时运行：移除文件与清单条目，修复启动画板、切换到相邻页面，并播报与记录分析。 */
-export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly setSelection: Dynamic; readonly showToast: Dynamic; readonly value140: Dynamic; readonly value177: Dynamic; readonly value298: Dynamic; readonly value413: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic; readonly value98: Dynamic }, fileSet?: Dynamic,
+export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly setSelection: Dynamic; readonly showToast: Dynamic; readonly finishBoundOperation: Dynamic; readonly artboardEntries: Dynamic; readonly resolvePageArtboard: Dynamic; readonly recordHistory: Dynamic; readonly manifest: Dynamic; readonly activePage: Dynamic; readonly persistManifest: Dynamic }, fileSet?: Dynamic,
         noteIds: Dynamic = emptyCanvasSelectionFiles,
         sessionKey?: Dynamic,
         pageToDelete?: Dynamic): Dynamic {
-        let artboards: Dynamic = deps.value73.current.artboards,
+        let artboards: Dynamic = deps.manifest.current.artboards,
           artboardsToDelete: Dynamic = artboards.filter(
             (artboard?: Dynamic): Dynamic => fileSet.has(artboard.file),
           );
@@ -705,10 +713,10 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                     artboard?: Dynamic,
                     allArtboards?: Dynamic,
                   ): Promise<Dynamic> => {
-                    await deps.value177.current.get(artboard.file)?.flushPending();
+                    await deps.artboardEntries.current.get(artboard.file)?.flushPending();
                     let artboardSource: Dynamic =
                       (await getKvClient().get(
-                        PlatformFileContentHandler_4(
+                        projectFileKey(
                           artboard.file,
                         ),
                       )) ??
@@ -729,7 +737,7 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                 let pageRemainder: Dynamic =
                   pageToDelete !== undefined
                     ? remainingCanvasPageObjects(
-                        deps.value73.current,
+                        deps.manifest.current,
                         pageToDelete.spec.id,
                         new Set(
                           deletedEntries.map(
@@ -740,7 +748,7 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                       )
                     : undefined;
                 for (let artboard of (pageRemainder?.artboards ?? []) as Dynamic)
-                  await captureArtboard(artboard, deps.value73.current.artboards);
+                  await captureArtboard(artboard, deps.manifest.current.artboards);
                 let values: Dynamic = new Set(
                     deletedEntries.map((capturedEntry?: Dynamic): Dynamic => capturedEntry.file),
                   ),
@@ -748,7 +756,7 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                     pageRemainder !== undefined && pageRemainder.notes.length > 0
                       ? new Set([...noteIds, ...pageRemainder.notes])
                       : noteIds,
-                  manifest: Dynamic = deps.value73.current;
+                  manifest: Dynamic = deps.manifest.current;
                 if (
                   pageToDelete !== undefined &&
                   !(manifest.pages ?? []).some(
@@ -779,7 +787,7 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                     values,
                     pageToDelete?.spec.id,
                   );
-                deps.value413(
+                deps.recordHistory(
                   {
                     kind: "delete",
                     entries: deletedEntries,
@@ -812,9 +820,9 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                 );
                 for (let entry of deletedEntries as Dynamic)
                   await getKvClient().delete(
-                    PlatformFileContentHandler_4(entry.file),
+                    projectFileKey(entry.file),
                   );
-                let pages: Dynamic = deps.value73.current.pages ?? [],
+                let pages: Dynamic = deps.manifest.current.pages ?? [],
                   remainingPages: Dynamic =
                     pageToDelete !== undefined
                       ? pages.filter(
@@ -822,14 +830,14 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                             page.id !== pageToDelete.spec.id,
                         )
                       : [];
-                deps.value98({
-                  artboards: deps.value73.current.artboards.filter(
+                deps.persistManifest({
+                  artboards: deps.manifest.current.artboards.filter(
                     (artboard?: Dynamic): Dynamic => !values.has(artboard.file),
                   ),
                   ...(deletedNotes.length > 0
                     ? {
                         annotations: (
-                          deps.value73.current.annotations ?? []
+                          deps.manifest.current.annotations ?? []
                         ).filter(
                           (note?: Dynamic): Dynamic =>
                             !deletedNoteIds.has(note.id),
@@ -847,11 +855,11 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                   (pageToDelete.relisted = true);
                 let isActivePage: Dynamic =
                   pageToDelete !== undefined &&
-                  deps.value80.current === pageToDelete.spec.id;
+                  deps.activePage.current === pageToDelete.spec.id;
                 pageToDelete !== undefined &&
                   isActivePage &&
                   remainingPages.length > 0 &&
-                  deps.value298(
+                  deps.resolvePageArtboard(
                     neighboringCanvasPageId(
                       pages,
                       pageToDelete.spec.id,
@@ -891,35 +899,58 @@ export function deleteBoardsAndNotes(deps: { readonly doc: Dynamic; readonly set
                   "error",
                 );
               } finally {
-                sessionKey !== undefined && deps.value140.current.get(sessionKey)?.();
+                sessionKey !== undefined && deps.finishBoundOperation.current.get(sessionKey)?.();
               }
             })(),
             true);
       }
 
 /** 执行适应内容高度时运行：测量画板展开后的内容高度并调整画板尺寸，播报变高、变矮或已匹配等结果。 */
-export async function fitArtboardHeightToContent(deps: { readonly callback2: Dynamic; readonly editableRef: Dynamic; readonly hideToast: Dynamic; readonly showToast: Dynamic; readonly value177: Dynamic; readonly value399: Dynamic; readonly value479: Dynamic; readonly value483: Dynamic; readonly value494: Dynamic; readonly value495: Dynamic; readonly value73: Dynamic; readonly value87: Dynamic }, files?: Dynamic, beforeFit?: Dynamic): Promise<Dynamic> {
-        if (deps.value494()) {
-          deps.showToast(exportAlreadyRunningMessage);
+interface FitArtboardContentContext {
+  readonly artboards: {
+    readonly getTitle: Dynamic;
+    readonly editable: Dynamic;
+    readonly entries: Dynamic;
+    readonly updateSettings: Dynamic;
+    readonly manifest: Dynamic;
+    readonly pageContents: Dynamic;
+  };
+  readonly capture: {
+    readonly waitForFrame: Dynamic;
+  };
+  readonly execution: {
+    readonly setBusy: Dynamic;
+    readonly isBusy: Dynamic;
+    readonly withPreviewClosed: Dynamic;
+  };
+  readonly feedback: {
+    readonly hideToast: Dynamic;
+    readonly showToast: Dynamic;
+  };
+}
+
+export async function fitArtboardHeightToContent(deps: FitArtboardContentContext, files?: Dynamic, beforeFit?: Dynamic): Promise<Dynamic> {
+        if (deps.execution.isBusy()) {
+          deps.feedback.showToast(exportAlreadyRunningMessage);
           return;
         }
         beforeFit?.();
-        if (!deps.editableRef.current) {
-          deps.showToast(
+        if (!deps.artboards.editable.current) {
+          deps.feedback.showToast(
             uiMessage("canvas.designCanvas.thisCanvasIsReadOnly"),
           );
           return;
         }
-        deps.value479(true);
+        deps.execution.setBusy(true);
         let singleArtboard: Dynamic =
             files.length === 1
-              ? deps.value73.current.artboards.find(
+              ? deps.artboards.manifest.current.artboards.find(
                   (artboard?: Dynamic): Dynamic => artboard.file === files[0],
                 )
               : undefined,
           measuringToastId: Dynamic =
             files.length > 1
-              ? deps.showToast(
+              ? deps.feedback.showToast(
                   uiMessage("canvas.designCanvas.measuring") + String(files.length) + " artboards\u2026",
                   "info",
                   {
@@ -927,8 +958,8 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
                   },
                 )
               : singleArtboard && isFillPagedExport(singleArtboard)
-                ? deps.showToast(
-                    uiMessage("canvas.designCanvas.measuring2") + deps.callback2(singleArtboard.file) + '"\u2026',
+                ? deps.feedback.showToast(
+                    uiMessage("canvas.designCanvas.measuring2") + deps.artboards.getTitle(singleArtboard.file) + '"\u2026',
                     "info",
                     {
                       pinned: true,
@@ -939,7 +970,7 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
           artboardLabels: Dynamic = [],
           becameReadOnly: Dynamic = false;
         try {
-          await deps.value495(
+          await deps.execution.withPreviewClosed(
             files.map(
               (file?: Dynamic): Dynamic => ({
                 file: file,
@@ -947,24 +978,24 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
             ),
             async (): Promise<Dynamic> => {
               for (let file of files as Dynamic) {
-                let startArtboard: Dynamic = deps.value73.current.artboards.find(
+                let startArtboard: Dynamic = deps.artboards.manifest.current.artboards.find(
                   (artboard?: Dynamic): Dynamic => artboard.file === file,
                 );
-                artboardLabels.push(deps.callback2(file));
+                artboardLabels.push(deps.artboards.getTitle(file));
                 if (!startArtboard || !needsPagedExport(startArtboard)) {
                   outcomes.push(startArtboard ? "keeps" : "gone");
                   continue;
                 }
-                let frameElement: Dynamic = await deps.value483(file),
+                let frameElement: Dynamic = await deps.capture.waitForFrame(file),
                   previewHandle: Dynamic = frameElement
                     ? createPreviewHandle(frameElement)
                     : null;
                 if (!frameElement || !previewHandle) {
                   outcomes.push(
-                    deps.value87.current.artboards.some(
+                    deps.artboards.pageContents.current.artboards.some(
                       (artboard?: Dynamic): Dynamic => artboard.file === file,
                     )
-                      ? deps.value177.current.get(file)?.isBlocked()
+                      ? deps.artboards.entries.current.get(file)?.isBlocked()
                         ? "stopped"
                         : "unmeasured"
                       : "gone",
@@ -988,11 +1019,11 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
                           h: startArtboard.h,
                         })
                       : undefined;
-                if (!deps.editableRef.current) {
+                if (!deps.artboards.editable.current) {
                   becameReadOnly = true;
                   break;
                 }
-                let latestArtboard: Dynamic = deps.value73.current.artboards.find(
+                let latestArtboard: Dynamic = deps.artboards.manifest.current.artboards.find(
                   (artboard?: Dynamic): Dynamic => artboard.file === file,
                 );
                 if (
@@ -1041,7 +1072,7 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
                   flowHeight,
                 );
                 typeof measuredHeight == "number" &&
-                  deps.value399(
+                  deps.artboards.updateSettings(
                     file,
                     {
                       h: measuredHeight,
@@ -1064,11 +1095,11 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
           console.error("[fit-height]", error);
           outcomes.push("unmeasured");
         } finally {
-          deps.value479(false);
-          measuringToastId !== undefined && deps.hideToast(measuringToastId);
+          deps.execution.setBusy(false);
+          measuringToastId !== undefined && deps.feedback.hideToast(measuringToastId);
         }
         if (becameReadOnly) {
-          deps.showToast(
+          deps.feedback.showToast(
             uiMessage("canvas.designCanvas.thisCanvasIsReadOnly"),
           );
           return;
@@ -1083,109 +1114,24 @@ export async function fitArtboardHeightToContent(deps: { readonly callback2: Dyn
               outcome === "grown" || outcome === "shrunk",
           )
             ? announce(resultMessage)
-            : deps.showToast(resultMessage));
-      }
-
-/** 无框画板上报内容外包框时运行（onContentHull）：防抖后按内容调整画板尺寸，并保存画布元数据。 */
-export function syncFramelessArtboardHull(deps: { readonly focusedFileRef: Dynamic; readonly value125: Dynamic; readonly value127: Dynamic; readonly value129: Dynamic; readonly value202: Dynamic; readonly value218: Dynamic; readonly value224: Dynamic; readonly value427: Dynamic; readonly value583: Dynamic; readonly value584: Dynamic; readonly value585: Dynamic; readonly value68: Dynamic; readonly value70: Dynamic; readonly value72: Dynamic; readonly value73: Dynamic }, file?: Dynamic, contentHull?: Dynamic): Dynamic {
-        deps.value129((pendingFiles?: Dynamic): Dynamic => {
-          if (pendingFiles.has(file) === (contentHull == null)) return pendingFiles;
-          let values: Dynamic = new Set(pendingFiles);
-          contentHull == null ? values.add(file) : values.delete(file);
-          return values;
-        });
-        let timers: Dynamic = deps.value583.current,
-          entry: Dynamic = timers.get(file);
-        entry && clearTimeout(entry);
-        if (contentHull == null) {
-          timers.delete(file);
-          deps.value584.current.delete(file);
-          return;
-        }
-        let applyHull: Dynamic = (): Dynamic => {
-          timers.delete(file);
-          let artboard: Dynamic = deps.value73.current.artboards.find(
-            (item?: Dynamic): Dynamic => item.file === file,
-          );
-          if (!artboard || !artboard.frameless) return;
-          let isFocused: Dynamic =
-            deps.value127.current.has(file) ||
-            deps.value125.current === file ||
-            deps.focusedFileRef.current === file;
-          if (!deps.value224.current || !isFocused) {
-            deps.value584.current.set(file, contentHull);
-            return;
-          }
-          deps.value584.current.delete(file);
-          if (deps.value218.current || deps.value202.current || deps.value427.current) {
-            timers.set(file, setTimeout(applyHull, 300));
-            return;
-          }
-          if (
-            Math.abs(artboard.w - contentHull.w) <= 1 &&
-            Math.abs(artboard.h - contentHull.h) <= 1
-          )
-            return;
-          let now: Dynamic = Date.now(),
-            recentTimes: Dynamic = (deps.value585.current.get(file) ?? []).filter(
-              (timestamp?: Dynamic): Dynamic => now - timestamp < 5e3,
-            );
-          if (recentTimes.length >= 8) {
-            timers.set(
-              file,
-              setTimeout(applyHull, 5e3 - (now - recentTimes[0])),
-            );
-            return;
-          }
-          deps.value585.current.set(file, [...recentTimes, now]);
-          let updatedManifest: Dynamic = deps.value72(
-            replaceDesignArtboards(
-              deps.value73.current,
-              deps.value73.current.artboards.map(
-                (item?: Dynamic): Dynamic =>
-                  item.file === file
-                    ? {
-                        ...item,
-                        w: contentHull.w,
-                        h: contentHull.h,
-                      }
-                    : item,
-              ),
-            ),
-          );
-          deps.value70.current = updatedManifest;
-          deps.value73.current = updatedManifest;
-          deps.value68(updatedManifest);
-          getKvClient()
-            .set(
-              PlatformFileContentHandler_4(
-                canvasMetadataFile,
-              ),
-              serializeCanvasMetadata(updatedManifest),
-              {
-                auto: true,
-              },
-            )
-            .catch((): Dynamic => {});
-        };
-        timers.set(file, setTimeout(applyHull, 400));
+            : deps.feedback.showToast(resultMessage));
       }
 
 /** 交互层（onManifestChange）拖动、缩放或旋转画板与画布图形时运行：预览期间只更新状态，提交时写回页面清单并记录移动、缩放、变换历史与播报。 */
-export function commitInteractionLayerChange(deps: { readonly value143: Dynamic; readonly value169: Dynamic; readonly value413: Dynamic; readonly value67: Dynamic; readonly value68: Dynamic; readonly value70: Dynamic; readonly value72: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic; readonly value98: Dynamic }, pageContents?: Dynamic,
+export function commitInteractionLayerChange(deps: { readonly boundMoveRecords: Dynamic; readonly selectedNoteIds: Dynamic; readonly recordHistory: Dynamic; readonly manifestState: Dynamic; readonly setManifestState: Dynamic; readonly previousManifest: Dynamic; readonly serializeManifest: Dynamic; readonly manifest: Dynamic; readonly activePage: Dynamic; readonly persistManifest: Dynamic }, pageContents?: Dynamic,
                       isCommit?: Dynamic,
                       changeInfo?: Dynamic): Dynamic {
                       let updatedManifest: Dynamic = replaceDesignPageContents(
-                          deps.value73.current,
-                          deps.value80.current,
+                          deps.manifest.current,
+                          deps.activePage.current,
                           pageContents,
                         ),
                         nextManifest: Dynamic = isCommit
-                          ? deps.value72(updatedManifest)
+                          ? deps.serializeManifest(updatedManifest)
                           : updatedManifest;
                       if (!isCommit) {
-                        deps.value73.current = nextManifest;
-                        deps.value68(nextManifest);
+                        deps.manifest.current = nextManifest;
+                        deps.setManifestState(nextManifest);
                         return;
                       }
                       let {
@@ -1251,7 +1197,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                             : [],
                         boundHandler: Dynamic =
                           changeInfo?.bound !== undefined
-                            ? deps.value143.current.get(changeInfo.bound)
+                            ? deps.boundMoveRecords.current.get(changeInfo.bound)
                             : undefined;
                       boundHandler
                         ? boundHandler({
@@ -1259,7 +1205,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                             annMoves: noteMovesToRecord,
                           })
                         : (boardMoves.length > 0 || noteMovesToRecord.length > 0) &&
-                          deps.value413(
+                          deps.recordHistory(
                             {
                               kind: "move",
                               moves: boardMoves,
@@ -1362,10 +1308,10 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                               : [];
                           });
                         if (boardTransforms.length === 0 && noteTransforms.length === 0) {
-                          deps.value68(nextManifest);
+                          deps.setManifestState(nextManifest);
                           return;
                         }
-                        deps.value413(
+                        deps.recordHistory(
                           {
                             kind: "transform",
                             label: transformedFrom.label,
@@ -1390,7 +1336,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                           : undefined;
                       resizeStart &&
                         resizedBoard &&
-                        deps.value413(
+                        deps.recordHistory(
                           {
                             kind: "resize",
                             file: resizedBoard.file,
@@ -1410,7 +1356,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                           new Set(),
                         );
                       let previousNotes: Dynamic =
-                          (deps.value70.current ?? deps.value67).annotations ?? [],
+                          (deps.previousManifest.current ?? deps.manifestState).annotations ?? [],
                         currentNotes: Dynamic = nextManifest.annotations ?? [],
                         findChangedNote: Dynamic = (isChanged?: Dynamic): Dynamic => {
                           for (let currentNote of currentNotes as Dynamic) {
@@ -1466,7 +1412,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                       changedPen &&
                         changedPen[0].kind === "pen" &&
                         changedPen[1].kind === "pen" &&
-                        deps.value413(
+                        deps.recordHistory(
                           {
                             kind: "ann-path",
                             id: changedPen[1].id,
@@ -1499,7 +1445,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                           changedBox[1].id === changedCrop[1].id;
                       changedBox &&
                         !isCropWithBoxChange &&
-                        deps.value413(
+                        deps.recordHistory(
                           {
                             kind: "ann-box",
                             id: changedBox[1].id,
@@ -1523,7 +1469,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                         );
                       if (changedCrop) {
                         let [cropBefore, cropAfter]: Dynamic = changedCrop;
-                        deps.value413(
+                        deps.recordHistory(
                           {
                             kind: "ann-crop",
                             id: cropAfter.id,
@@ -1550,7 +1496,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                         );
                       } else
                         changedColor
-                          ? deps.value413(
+                          ? deps.recordHistory(
                               {
                                 kind: "ann-color",
                                 id: changedColor[1].id,
@@ -1566,7 +1512,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                               new Set(),
                             )
                           : changedCss &&
-                            deps.value413(
+                            deps.recordHistory(
                               {
                                 kind: "ann-css",
                                 id: changedCss[1].id,
@@ -1585,7 +1531,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                             previousNotes,
                             currentNotes,
                             new Set(
-                              [...deps.value169].filter(
+                              [...deps.selectedNoteIds].filter(
                                 (id?: Dynamic): Dynamic =>
                                   !values.has(id),
                               ),
@@ -1612,7 +1558,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                                   ],
                                 ),
                             );
-                        deps.value413(
+                        deps.recordHistory(
                           {
                             kind: "transform",
                             get label() { return uiMessage("canvas.designCanvas.resize"); },
@@ -1629,7 +1575,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                         );
                       } else
                         changedPosition &&
-                          deps.value413(
+                          deps.recordHistory(
                             {
                               kind: "ann-move",
                               id: changedPosition[1].id,
@@ -1650,7 +1596,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                       );
                       changedWidth &&
                         !resizedNote &&
-                        deps.value413(
+                        deps.recordHistory(
                           {
                             kind: "ann-resize",
                             id: changedWidth[1].id,
@@ -1664,7 +1610,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                           before.text !== after.text,
                       );
                       changedText &&
-                        deps.value413(
+                        deps.recordHistory(
                           {
                             kind: "ann-text",
                             id: changedText[1].id,
@@ -1686,7 +1632,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                         },
                       );
                       changedStyle &&
-                        deps.value413(
+                        deps.recordHistory(
                           {
                             kind: "ann-style",
                             id: changedStyle[1].id,
@@ -1718,7 +1664,7 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                           (before.rotate ?? 0) !== (after.rotate ?? 0),
                       );
                       changedRotation &&
-                        deps.value413(
+                        deps.recordHistory(
                           {
                             kind: "transform",
                             get label() { return uiMessage("canvas.designCanvas.rotate"); },
@@ -1737,5 +1683,5 @@ export function commitInteractionLayerChange(deps: { readonly value143: Dynamic;
                           },
                           new Set(),
                         );
-                      deps.value98(nextManifest);
+                      deps.persistManifest(nextManifest);
                     }

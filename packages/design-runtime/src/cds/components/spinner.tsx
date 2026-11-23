@@ -2,7 +2,7 @@ import { useUiLocale } from '../../ui-locale.ts';
 import type { DelayedSpinnerProps, SpinnerProps } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { initializePlatformRootFontSize_3, scaleCssPixels } from "../platform/root-font-size";
+import { initializeRootFontScaleProbe, scaleCssPixels } from "../platform/root-font-size";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { initializeOnce, toModuleNamespace } from "../../module-helpers";
@@ -116,7 +116,7 @@ export function installCdsComponentsSpinner(): () => void {
       "use client";
 
       initializeClassNames();
-      initializePlatformRootFontSize_3();
+      initializeRootFontScaleProbe();
       reactComponentsSpinner = toModuleNamespace(
         load_react(),
       );

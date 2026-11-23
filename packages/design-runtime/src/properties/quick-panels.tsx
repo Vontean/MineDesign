@@ -11,7 +11,7 @@ import { editableElementSelector } from "../editor/chrome/focus";
 import { joinClassNames } from "../editor/chrome/overlay-state";
 import { NumericInput } from "../editor/properties/numeric-input";
 import { PropertyOptionIcon } from "../editor/properties/tool-options";
-import { PropertiesTooltipNameViewBoxPathsConfig as borderWeightIcon, PropertiesTooltipNameViewBoxPathsConfig_2 as borderSidesIcon, PropertiesTooltipNameViewBoxPathsConfig_4 as cornerEachIcon, PropertiesTooltipNameViewBoxPathsConfig_6 as strokeSolidIcon, PropertiesTooltipNameViewBoxPathsConfig_7 as strokeDashedIcon, PropertiesTooltipNameViewBoxPathsConfig_8 as strokeDottedIcon } from "../editor/properties/tooltip";
+import { PropertiesTooltipNameViewBoxPathsConfig as borderWeightIcon, borderSidesIcon as borderSidesIcon, cornerEachIcon as cornerEachIcon, strokeSolidIcon as strokeSolidIcon, strokeDashedIcon as strokeDashedIcon, strokeDottedIcon as strokeDottedIcon } from "../editor/properties/tooltip";
 import { SessionStripButton } from "../editor/session-strip/session-strip";
 import { toModuleNamespace } from "../module-helpers";
 
@@ -183,9 +183,9 @@ function BorderQuickPanel({
                   <NumericInput
                     key={side}
                     prefix={borderSideInitials[side]}
-                    aria-label={uiMessage("inspector.quickPanels.borderWidth", { value1: String(borderSideLabels[side]) })}
+                    aria-label={uiMessage("inspector.quickPanels.borderWidth", { side: String(borderSideLabels[side]) })}
                     title={
-                      uiMessage("inspector.quickPanels.borderWidthPx0None", { value1: String(borderSideLabels[side]) })
+                      uiMessage("inspector.quickPanels.borderWidthPx0None", { side: String(borderSideLabels[side]) })
                     }
                     value={widths.value[side]}
                     min={0}
@@ -259,12 +259,12 @@ function BorderQuickPanel({
               return (
                 <SessionStripButton
                   key={side}
-                  aria-label={uiMessage("inspector.quickPanels.border", { value1: String(borderSideLabels[side]) })}
+                  aria-label={uiMessage("inspector.quickPanels.border", { side: String(borderSideLabels[side]) })}
                   aria-pressed={isDrawn}
                   className={"justify-center"}
                   disabled={isStyleNone || isLastDrawnSide}
                   title={
-                    isLastDrawnSide ? (uiMessage("inspector.quickPanels.setTheStyleToNone")) : (uiMessage("inspector.quickPanels.border", { value1: String(borderSideLabels[side]) }))
+                    isLastDrawnSide ? (uiMessage("inspector.quickPanels.setTheStyleToNone")) : (uiMessage("inspector.quickPanels.border", { side: String(borderSideLabels[side]) }))
                   }
                   onClick={(): Dynamic => toggleSide(side)}
                 >
@@ -287,8 +287,8 @@ function RadiusCornerInput(
   return (
     <NumericInput
       prefix={corner.toUpperCase()}
-      aria-label={uiMessage("inspector.quickPanels.radius", { value1: String(radiusCornerLabels[corner]) })}
-      title={uiMessage("inspector.quickPanels.radius", { value1: String(radiusCornerLabels[corner]) })}
+      aria-label={uiMessage("inspector.quickPanels.radius", { corner: String(radiusCornerLabels[corner]) })}
+      title={uiMessage("inspector.quickPanels.radius", { corner: String(radiusCornerLabels[corner]) })}
       value={cornersBinding.value[corner]}
       min={0}
       max={maxRadius}
@@ -478,7 +478,7 @@ function SpacingSidesEditor({
     individualToggle: Dynamic = (
       <QuickPanelIconButton
         icon={borderSidesIcon}
-        label={uiMessage("inspector.quickPanels.individual", { value1: String(title.toLowerCase()) })}
+        label={uiMessage("inspector.quickPanels.individual", { property: String(title.toLowerCase()) })}
         pressed={isIndividualOpen}
         hint={"Set each side"}
         onClick={(): Dynamic => setIsIndividualOpen(!isIndividualOpen)}

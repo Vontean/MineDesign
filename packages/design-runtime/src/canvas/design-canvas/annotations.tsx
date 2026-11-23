@@ -7,19 +7,19 @@ import { CanvasWorkingStateWidth } from "../working-state";
 import { ModelModelStateLimit } from "../../editor/model/model-state";
 import { NotesBlocksHandler } from "../../editor/notes/blocks";
 import { PlatformFileContentBackgroundBackgroundColorOpacityValues } from "../../platform/file-content";
-import { PlatformFileContentConstant_10 as maxNoteWidth } from "../../platform/file-content";
-import { PlatformFileContentConstant_12 as minNoteMaxExtent } from "../../platform/file-content";
-import { PlatformFileContentConstant_13 as maxNoteMaxExtent } from "../../platform/file-content";
-import { PlatformFileContentConstant_18 as maxCoordinate } from "../../platform/file-content";
-import { PlatformFileContentConstant_19 as minShapeSize } from "../../platform/file-content";
-import { PlatformFileContentConstant_20 as minImageSize } from "../../platform/file-content";
-import { PlatformFileContentConstant_9 as minNoteWidth } from "../../platform/file-content";
+import { maxTextAnnotationWidth as maxNoteWidth } from "../../platform/file-content";
+import { minAnnotationDimensionLimit as minNoteMaxExtent } from "../../platform/file-content";
+import { maxAnnotationDimensionLimit as maxNoteMaxExtent } from "../../platform/file-content";
+import { maxCanvasCoordinate as maxCoordinate } from "../../platform/file-content";
+import { minShapeDimension as minShapeSize } from "../../platform/file-content";
+import { minImageDimension as minImageSize } from "../../platform/file-content";
+import { minTextAnnotationWidth as minNoteWidth } from "../../platform/file-content";
 import { PlatformFileContentKind } from "../../platform/file-content";
-import { PlatformFileContentLimit_6 as maxShapeSize } from "../../platform/file-content";
+import { maxCanvasItemDimension as maxShapeSize } from "../../platform/file-content";
 import { PlatformFileContentMaxW } from "../../platform/file-content";
 import { PlatformFileContentSlice } from "../../platform/file-content";
-import { PlatformFileContentTest_2 as asImageSourcePath } from "../../platform/file-content";
-import { PlatformFileContentTest_3 as asBlobAssetUrl } from "../../platform/file-content";
+import { parseAnnotationImageUrl as asImageSourcePath } from "../../platform/file-content";
+import { parseAnnotationVideoUrl as asBlobAssetUrl } from "../../platform/file-content";
 import { PlatformFileContentTrim } from "../../platform/file-content";
 import { annotationArrowHeads } from "../../platform/file-content";
 import { annotationBounds } from "../../platform/file-content";
@@ -203,9 +203,9 @@ export function annotationToElementHtml(deps: Record<string, never>, source?: Dy
     }
 
 /** 翻转选中的画布图形时运行：计算翻转结果，写回清单并记录 transform 历史，返回已翻转与被拒的项目。 */
-export function flipAnnotationsWithHistory(deps: { readonly value140: Dynamic; readonly value224: Dynamic; readonly value413: Dynamic; readonly value73: Dynamic; readonly value98: Dynamic }, annotationIds?: Dynamic, flipAxis?: Dynamic, historyContext?: Dynamic): Dynamic {
-        let manifest: Dynamic = deps.value73.current,
-          canFlip: Dynamic = deps.value224.current && true,
+export function flipAnnotationsWithHistory(deps: { readonly finishBoundOperation: Dynamic; readonly editing: Dynamic; readonly recordHistory: Dynamic; readonly manifest: Dynamic; readonly persistManifest: Dynamic }, annotationIds?: Dynamic, flipAxis?: Dynamic, historyContext?: Dynamic): Dynamic {
+        let manifest: Dynamic = deps.manifest.current,
+          canFlip: Dynamic = deps.editing.current && true,
           { flips: flips, refused: refused }: Dynamic = canFlip
             ? flipAnnotations(
                 (manifest.annotations ?? []).filter(
@@ -218,7 +218,7 @@ export function flipAnnotationsWithHistory(deps: { readonly value140: Dynamic; r
                 refused: undefined,
               };
         if (flips.length === 0) {
-          historyContext !== undefined && deps.value140.current.get(historyContext)?.();
+          historyContext !== undefined && deps.finishBoundOperation.current.get(historyContext)?.();
           return refused === undefined
             ? {
                 flipped: false,
@@ -231,7 +231,7 @@ export function flipAnnotationsWithHistory(deps: { readonly value140: Dynamic; r
         let flipById: Dynamic = new Map(
           flips.map((flip?: Dynamic): Dynamic => [flip.id, flip.to]),
         );
-        deps.value413(
+        deps.recordHistory(
           {
             kind: "transform",
             get label() { return uiMessage("canvas.designCanvas.flip"); },
@@ -242,7 +242,7 @@ export function flipAnnotationsWithHistory(deps: { readonly value140: Dynamic; r
           undefined,
           historyContext,
         );
-        deps.value98({
+        deps.persistManifest({
           ...manifest,
           annotations: (manifest.annotations ?? []).map(
             (annotation?: Dynamic): Dynamic => {
@@ -267,11 +267,11 @@ export function flipAnnotationsWithHistory(deps: { readonly value140: Dynamic; r
       }
 
 /** 在属性面板修改画布图形或说明的位置与尺寸时运行：校验数值、按图形类型换算几何并写回清单，记录移动或缩放历史。 */
-export function setAnnotationBox(deps: { readonly value396: Dynamic; readonly value68: Dynamic; readonly value70: Dynamic; readonly value73: Dynamic; readonly value98: Dynamic }, annotationId?: Dynamic,
+export function setAnnotationBox(deps: { readonly recordHistory: Dynamic; readonly setManifestState: Dynamic; readonly previousManifest: Dynamic; readonly manifest: Dynamic; readonly persistManifest: Dynamic }, annotationId?: Dynamic,
         boxChanges?: Dynamic,
         shouldRecordHistory?: Dynamic,
         keepAspectRatio?: Dynamic): Dynamic {
-        let annotations: Dynamic = deps.value73.current.annotations ?? [],
+        let annotations: Dynamic = deps.manifest.current.annotations ?? [],
           annotation: Dynamic = annotations.find(
             (item?: Dynamic): Dynamic => item.id === annotationId,
           );
@@ -284,7 +284,7 @@ export function setAnnotationBox(deps: { readonly value396: Dynamic; readonly va
         )
           return;
         let baseline: Dynamic =
-            (deps.value70.current ?? deps.value73.current).annotations?.find(
+            (deps.previousManifest.current ?? deps.manifest.current).annotations?.find(
               (item?: Dynamic): Dynamic => item.id === annotationId,
             ) ?? annotation,
           clampCoordinate: Dynamic = (coordinate?: Dynamic): Dynamic =>
@@ -398,8 +398,8 @@ export function setAnnotationBox(deps: { readonly value396: Dynamic; readonly va
             item.id === annotationId ? nextAnnotation : item,
         );
         if (!shouldRecordHistory) {
-          deps.value68({
-            ...deps.value73.current,
+          deps.setManifestState({
+            ...deps.manifest.current,
             annotations: nextAnnotations,
           });
           return;
@@ -413,8 +413,8 @@ export function setAnnotationBox(deps: { readonly value396: Dynamic; readonly va
             (baseline.x2 === nextAnnotation.x2 && baseline.y2 === nextAnnotation.y2))
         ) {
           annotation !== nextAnnotation &&
-            deps.value68({
-              ...deps.value73.current,
+            deps.setManifestState({
+              ...deps.manifest.current,
               annotations: nextAnnotations,
             });
           return;
@@ -423,7 +423,7 @@ export function setAnnotationBox(deps: { readonly value396: Dynamic; readonly va
           isShapeAnnotation(baseline) &&
           isShapeAnnotation(nextAnnotation)
         )
-          deps.value396.current(
+          deps.recordHistory.current(
             {
               kind: "ann-box",
               id: annotationId,
@@ -441,7 +441,7 @@ export function setAnnotationBox(deps: { readonly value396: Dynamic; readonly va
               baseline[key] !== nextAnnotation[key],
           );
           changedKeys.length > 0 &&
-            deps.value396.current(
+            deps.recordHistory.current(
               {
                 kind: "transform",
                 get label() { return uiMessage("canvas.designCanvas.resize"); },
@@ -471,7 +471,7 @@ export function setAnnotationBox(deps: { readonly value396: Dynamic; readonly va
               new Set(),
             );
           baseline.w !== nextAnnotation.w &&
-            deps.value396.current(
+            deps.recordHistory.current(
               {
                 kind: "ann-resize",
                 id: annotationId,
@@ -481,7 +481,7 @@ export function setAnnotationBox(deps: { readonly value396: Dynamic; readonly va
               new Set(),
             );
           (baseline.x !== nextAnnotation.x || baseline.y !== nextAnnotation.y) &&
-            deps.value396.current(
+            deps.recordHistory.current(
               {
                 kind: "ann-move",
                 id: annotationId,
@@ -497,24 +497,31 @@ export function setAnnotationBox(deps: { readonly value396: Dynamic; readonly va
               new Set(),
             );
         }
-        deps.value98({
-          ...deps.value73.current,
+        deps.persistManifest({
+          ...deps.manifest.current,
           annotations: nextAnnotations,
         });
       }
 
 /** 在属性面板修改画布图形的背景、透明度或图片填充方式时运行（onAnnotationCss）：校验取值、更新样式并合并历史。 */
-export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly value396: Dynamic; readonly value405: Dynamic; readonly value408: Dynamic; readonly value412: Dynamic; readonly value415: Dynamic; readonly value68: Dynamic; readonly value70: Dynamic; readonly value73: Dynamic; readonly value98: Dynamic }, annotationId?: Dynamic,
+export function setAnnotationCss(deps: {
+  history: {
+    undoTip(): Dynamic;
+    reachable(direction: "undo"): Dynamic;
+    invalidateRedo(): void;
+    removeUndoTip(): void;
+  };
+  readonly showDragToast: Dynamic; readonly recordHistory: Dynamic; readonly setManifestState: Dynamic; readonly previousManifest: Dynamic; readonly manifest: Dynamic; readonly persistManifest: Dynamic }, annotationId?: Dynamic,
         cssChanges?: Dynamic,
         skipHistory: Dynamic = false): Dynamic {
-        let annotations: Dynamic = deps.value73.current.annotations ?? [],
+        let annotations: Dynamic = deps.manifest.current.annotations ?? [],
           annotation: Dynamic = annotations.find(
             (item?: Dynamic): Dynamic => item.id === annotationId,
           );
         if (!annotation || !isShapeAnnotation(annotation)) return;
         let baseline: Dynamic = skipHistory
             ? annotation
-            : ((deps.value70.current ?? deps.value73.current).annotations?.find(
+            : ((deps.previousManifest.current ?? deps.manifest.current).annotations?.find(
                 (item?: Dynamic): Dynamic => item.id === annotationId,
               ) ?? annotation),
           nextCss: Dynamic = {
@@ -540,7 +547,7 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
           }
         }
         hasInvalidValue &&
-          deps.value188(
+          deps.showDragToast(
             uiMessage("canvas.designCanvas.thatValueIsnTOne"),
           );
         let finalCss: Dynamic =
@@ -548,8 +555,8 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
         if (skipHistory) {
           JSON.stringify(finalCss ?? null) !==
             JSON.stringify(annotation.css ?? null) &&
-            deps.value68({
-              ...deps.value73.current,
+            deps.setManifestState({
+              ...deps.manifest.current,
               annotations: annotations.map(
                 (item?: Dynamic): Dynamic =>
                   item.id === annotationId
@@ -582,8 +589,8 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
         ) {
           JSON.stringify(finalCss ?? null) !==
             JSON.stringify(annotation.css ?? null) &&
-            deps.value68({
-              ...deps.value73.current,
+            deps.setManifestState({
+              ...deps.manifest.current,
               annotations: annotations.map(
                 (item?: Dynamic): Dynamic =>
                   item.id === annotationId
@@ -598,7 +605,7 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
               (propName?: Dynamic): Dynamic =>
                 (baselineCss?.[propName] ?? null) !== (nextCss[propName] ?? null),
             ),
-          lastHistoryStep: Dynamic = deps.value405.current[deps.value405.current.length - 1];
+          lastHistoryStep: Dynamic = deps.history.undoTip();
         if (
           lastHistoryStep?.op.kind === "ann-css" &&
           lastHistoryStep.op.id === annotationId &&
@@ -608,7 +615,7 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
           changedProps.length === 1 &&
           lastHistoryStep.cssKey === changedProps[0] &&
           Date.now() - lastHistoryStep.at < ModelModelStateLimit &&
-          deps.value415("undo") === lastHistoryStep
+          deps.history.reachable("undo") === lastHistoryStep
         ) {
           let mergedOp: Dynamic = filterSettingHistoryStep(
             lastHistoryStep.op,
@@ -616,13 +623,12 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
             finalCss,
           );
           lastHistoryStep.at = Date.now();
-          deps.value412();
+          deps.history.invalidateRedo();
           mergedOp
             ? (lastHistoryStep.op = mergedOp)
-            : (deps.value405.current.pop(),
-              deps.value408((count?: Dynamic): Dynamic => count + 1));
+            : deps.history.removeUndoTip();
         } else {
-          deps.value396.current(
+          deps.recordHistory.current(
             {
               kind: "ann-css",
               id: annotationId,
@@ -637,13 +643,13 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
             new Set(),
           );
           let pushedStep: Dynamic =
-            deps.value405.current[deps.value405.current.length - 1];
+            deps.history.undoTip();
           pushedStep &&
             changedProps.length === 1 &&
             (pushedStep.cssKey = changedProps[0]);
         }
-        deps.value98({
-          ...deps.value73.current,
+        deps.persistManifest({
+          ...deps.manifest.current,
           annotations: annotations.map(
             (item?: Dynamic): Dynamic =>
               item.id === annotationId ? buildUpdatedAnnotation() : item,
@@ -652,10 +658,10 @@ export function setAnnotationCss(deps: { readonly value188: Dynamic; readonly va
       }
 
 /** 在属性面板修改画布说明或图形的文字样式时运行：写回文字样式并记录 ann-style 历史。 */
-export function setAnnotationTextStyle(deps: { readonly value396: Dynamic; readonly value68: Dynamic; readonly value70: Dynamic; readonly value73: Dynamic; readonly value98: Dynamic }, annotationId?: Dynamic,
+export function setAnnotationTextStyle(deps: { readonly recordHistory: Dynamic; readonly setManifestState: Dynamic; readonly previousManifest: Dynamic; readonly manifest: Dynamic; readonly persistManifest: Dynamic }, annotationId?: Dynamic,
         styleChanges?: Dynamic,
         skipHistory: Dynamic = false): Dynamic {
-        let annotations: Dynamic = deps.value73.current.annotations ?? [],
+        let annotations: Dynamic = deps.manifest.current.annotations ?? [],
           annotation: Dynamic = annotations.find(
             (item?: Dynamic): Dynamic => item.id === annotationId,
           );
@@ -671,14 +677,14 @@ export function setAnnotationTextStyle(deps: { readonly value396: Dynamic; reado
         if (skipHistory) {
           JSON.stringify(annotationTextStyle(annotation)) !==
             JSON.stringify(annotationTextStyle(updatedAnnotation)) &&
-            deps.value68({
-              ...deps.value73.current,
+            deps.setManifestState({
+              ...deps.manifest.current,
               annotations: nextAnnotations,
             });
           return;
         }
         let baseline: Dynamic = (
-            deps.value70.current ?? deps.value73.current
+            deps.previousManifest.current ?? deps.manifest.current
           ).annotations?.find(
             (item?: Dynamic): Dynamic => item.id === annotationId,
           ),
@@ -691,13 +697,13 @@ export function setAnnotationTextStyle(deps: { readonly value396: Dynamic; reado
           styleAfter: Dynamic = annotationTextStyle(updatedAnnotation);
         if (JSON.stringify(styleBefore) === JSON.stringify(styleAfter)) {
           annotation !== updatedAnnotation &&
-            deps.value68({
-              ...deps.value73.current,
+            deps.setManifestState({
+              ...deps.manifest.current,
               annotations: nextAnnotations,
             });
           return;
         }
-        deps.value396.current(
+        deps.recordHistory.current(
           {
             kind: "ann-style",
             id: annotationId,
@@ -706,21 +712,21 @@ export function setAnnotationTextStyle(deps: { readonly value396: Dynamic; reado
           },
           new Set(),
         );
-        deps.value98({
-          ...deps.value73.current,
+        deps.persistManifest({
+          ...deps.manifest.current,
           annotations: nextAnnotations,
         });
       }
 
 /** 在属性面板替换画布图片时运行：校验并上传新图片，更新图片地址、裁剪与替代文字，失败时提示。 */
-export function replaceAnnotationPicture(deps: { readonly value188: Dynamic; readonly value396: Dynamic; readonly value73: Dynamic; readonly value98: Dynamic }, annotationId?: Dynamic, picture?: Dynamic): Dynamic {
+export function replaceAnnotationPicture(deps: { readonly showDragToast: Dynamic; readonly recordHistory: Dynamic; readonly manifest: Dynamic; readonly persistManifest: Dynamic }, annotationId?: Dynamic, picture?: Dynamic): Dynamic {
         if (
           typeof picture == "string"
             ? asImageSourcePath(picture) === null
             : !(picture instanceof File) || !picture.type.startsWith("image/")
         )
           return;
-        let annotation: Dynamic = (deps.value73.current.annotations ?? []).find(
+        let annotation: Dynamic = (deps.manifest.current.annotations ?? []).find(
             (item?: Dynamic): Dynamic => item.id === annotationId,
           ),
           originalSrc: Dynamic =
@@ -743,10 +749,10 @@ export function replaceAnnotationPicture(deps: { readonly value188: Dynamic; rea
               src,
             );
             if (validSrc === null) {
-              deps.value188(uiMessage("canvas.designCanvas.couldNotReplaceThePicture"));
+              deps.showDragToast(uiMessage("canvas.designCanvas.couldNotReplaceThePicture"));
               return false;
             }
-            let annotations: Dynamic = deps.value73.current.annotations ?? [],
+            let annotations: Dynamic = deps.manifest.current.annotations ?? [],
               currentAnnotation: Dynamic = annotations.find(
                 (item?: Dynamic): Dynamic => item.id === annotationId,
               );
@@ -763,7 +769,7 @@ export function replaceAnnotationPicture(deps: { readonly value188: Dynamic; rea
                 : (PlatformFileContentSlice(
                     droppedImageLabel(picture, "dropped"),
                   ) ?? currentAnnotation.alt);
-            deps.value396.current(
+            deps.recordHistory.current(
               {
                 kind: "ann-src",
                 id: annotationId,
@@ -779,8 +785,8 @@ export function replaceAnnotationPicture(deps: { readonly value188: Dynamic; rea
               },
               new Set(),
             );
-            deps.value98({
-              ...deps.value73.current,
+            deps.persistManifest({
+              ...deps.manifest.current,
               annotations: annotations.map(
                 (item?: Dynamic): Dynamic =>
                   item.id === annotationId
@@ -800,15 +806,15 @@ export function replaceAnnotationPicture(deps: { readonly value188: Dynamic; rea
           }),
         ).catch(
           (error?: Dynamic): Dynamic =>
-            deps.value188(
-              uiMessage("canvas.designCanvas.thePictureWasNotReplaced", { value1: uiOperation(error instanceof CanvasImagePlacementError ? error.message : "the upload failed") }),
+            deps.showDragToast(
+              uiMessage("canvas.designCanvas.thePictureWasNotReplaced", { reason: uiOperation(error instanceof CanvasImagePlacementError ? error.message : "the upload failed") }),
             ),
         );
       }
 
 /** 替换画布上的图片或视频时运行（onReplaceAnnotationMedia）：按文件类型上传图片，或探测视频、生成封面后上传，并更新图形与历史。 */
-export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; readonly value396: Dynamic; readonly value425: Dynamic; readonly value73: Dynamic; readonly value98: Dynamic }, annotationId?: Dynamic, mediaFile?: Dynamic): Dynamic {
-        let annotation: Dynamic = (deps.value73.current.annotations ?? []).find(
+export function replaceAnnotationMedia(deps: { readonly showDragToast: Dynamic; readonly recordHistory: Dynamic; readonly mediaOperations: Dynamic; readonly manifest: Dynamic; readonly persistManifest: Dynamic }, annotationId?: Dynamic, mediaFile?: Dynamic): Dynamic {
+        let annotation: Dynamic = (deps.manifest.current.annotations ?? []).find(
           (item?: Dynamic): Dynamic => item.id === annotationId,
         );
         if (
@@ -820,7 +826,7 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
         let mediaFingerprint: Dynamic = CanvasWorkingStateJoin(mediaFile);
         if (
           CanvasWorkingStatePrint(
-            deps.value425.current.get(annotationId),
+            deps.mediaOperations.current.get(annotationId),
             mediaFingerprint,
             annotation,
           )
@@ -835,7 +841,7 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
             alt?: Dynamic,
             size?: Dynamic,
           ): Dynamic => {
-            let annotations: Dynamic = deps.value73.current.annotations ?? [],
+            let annotations: Dynamic = deps.manifest.current.annotations ?? [],
               currentAnnotation: Dynamic = annotations.find(
                 (item?: Dynamic): Dynamic => item.id === annotationId,
               );
@@ -854,7 +860,7 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
               minImageSize,
               maxShapeSize,
             );
-            deps.value396.current(
+            deps.recordHistory.current(
               {
                 kind: "ann-src",
                 id: annotationId,
@@ -886,8 +892,8 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
               },
               new Set(),
             );
-            deps.value98({
-              ...deps.value73.current,
+            deps.persistManifest({
+              ...deps.manifest.current,
               annotations: annotations.map(
                 (item?: Dynamic): Dynamic =>
                   item.id === annotationId
@@ -908,7 +914,7 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
                     : item,
               ),
             });
-            deps.value425.current.set(annotationId, {
+            deps.mediaOperations.current.set(annotationId, {
               print: mediaFingerprint,
               src: newMedia.src,
               video: newMedia.video,
@@ -946,7 +952,7 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
                 src,
               );
               return validSrc === null
-                ? (deps.value188(
+                ? (deps.showDragToast(
                     uiMessage("canvas.designCanvas.couldNotReplaceTheVideo"),
                   ),
                   false)
@@ -962,8 +968,8 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
             }),
           ).catch(
             (error?: Dynamic): Dynamic => (
-              deps.value188(
-                uiMessage("canvas.designCanvas.theVideoWasNotReplaced", { value1: uiOperation(error instanceof CanvasImagePlacementError ? error.message : "the upload failed") }),
+              deps.showDragToast(
+                uiMessage("canvas.designCanvas.theVideoWasNotReplaced", { reason: uiOperation(error instanceof CanvasImagePlacementError ? error.message : "the upload failed") }),
               ),
               false
             ),
@@ -974,7 +980,7 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
           ? videoUploadRefusal(mediaFile)
           : "unsupported_type";
         if (refusal !== null) {
-          deps.value188(
+          deps.showDragToast(
             CanvasWorkingStateReplace(
               videoUploadFailureMessage(refusal),
             ),
@@ -988,7 +994,7 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
               mediaFile,
             ).catch((): Dynamic => "probe_timeout");
             if (typeof poster == "string") {
-              deps.value188(
+              deps.showDragToast(
                 CanvasWorkingStateReplace(
                   videoUploadFailureMessage(poster),
                 ),
@@ -1012,7 +1018,7 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
             );
             if (isEmbedFrozen()) return false;
             if (posterSrc === null) {
-              deps.value188(
+              deps.showDragToast(
                 uiMessage("canvas.designCanvas.couldnTStoreAStill"),
               );
               return false;
@@ -1023,7 +1029,7 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
             );
             if (isEmbedFrozen()) return false;
             if ("refused" in videoUpload) {
-              deps.value188(
+              deps.showDragToast(
                 CanvasWorkingStateReplace(videoUpload.refused),
               );
               return false;
@@ -1032,7 +1038,7 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
               videoUpload.src,
             );
             if (videoSrc === null) {
-              deps.value188(uiMessage("canvas.designCanvas.couldnTReplaceTheVideo"));
+              deps.showDragToast(uiMessage("canvas.designCanvas.couldnTReplaceTheVideo"));
               return false;
             }
             let replaced: Dynamic = applyReplacement(
@@ -1052,10 +1058,10 @@ export function replaceAnnotationMedia(deps: { readonly value188: Dynamic; reado
       }
 
 /** 只选中一个画布图形或说明时计算（useMemo）：生成属性面板所需的位置、尺寸、颜色、线宽、箭头和文字样式及对应修改回调。 */
-export function deriveAnnotationSettings(deps: { readonly value168: Dynamic; readonly value169: Dynamic; readonly value420: Dynamic; readonly value421: Dynamic; readonly value422: Dynamic; readonly value423: Dynamic; readonly value424: Dynamic; readonly value67: Dynamic }): Dynamic {
-      if (deps.value169.size !== 1 || deps.value168.size > 0) return null;
-      let annotationId: Dynamic = [...deps.value169][0],
-        annotation: Dynamic = (deps.value67.annotations ?? []).find(
+export function deriveAnnotationSettings(deps: { readonly selectedFiles: Dynamic; readonly selectedNotes: Dynamic; readonly setBox: Dynamic; readonly setCss: Dynamic; readonly setArrowHeads: Dynamic; readonly setTextStyle: Dynamic; readonly replacePicture: Dynamic; readonly manifestState: Dynamic }): Dynamic {
+      if (deps.selectedNotes.size !== 1 || deps.selectedFiles.size > 0) return null;
+      let annotationId: Dynamic = [...deps.selectedNotes][0],
+        annotation: Dynamic = (deps.manifestState.annotations ?? []).find(
           (item?: Dynamic): Dynamic => item.id === annotationId,
         );
       if (!annotation) return null;
@@ -1102,11 +1108,11 @@ export function deriveAnnotationSettings(deps: { readonly value168: Dynamic; rea
                     onSetHeads: (
                       startHead?: Dynamic,
                       endHead?: Dynamic,
-                    ): Dynamic => deps.value422(annotationId, startHead, endHead),
+                    ): Dynamic => deps.setArrowHeads(annotationId, startHead, endHead),
                   }
                 : {}),
               onSetCss: (cssChanges?: Dynamic, skipHistory?: Dynamic): Dynamic =>
-                deps.value421(annotationId, cssChanges, skipHistory),
+                deps.setCss(annotationId, cssChanges, skipHistory),
             }
           : {
               textStyle: annotationTextStyle(annotation),
@@ -1131,7 +1137,7 @@ export function deriveAnnotationSettings(deps: { readonly value168: Dynamic; rea
                   })
                 : undefined,
               onSetTextStyle: (styleChanges?: Dynamic, skipHistory?: Dynamic): Dynamic =>
-                deps.value423(annotationId, styleChanges, skipHistory),
+                deps.setTextStyle(annotationId, styleChanges, skipHistory),
             }),
         ...(annotation.kind === "image"
           ? {
@@ -1143,11 +1149,11 @@ export function deriveAnnotationSettings(deps: { readonly value168: Dynamic; rea
                   }
                 : {
                     onReplaceImage: (picture?: Dynamic): Dynamic =>
-                      deps.value424(annotationId, picture),
+                      deps.replacePicture(annotationId, picture),
                   }),
             }
           : {}),
         onSetBox: (boxChanges?: Dynamic, shouldRecordHistory?: Dynamic): Dynamic =>
-          deps.value420(annotationId, boxChanges, shouldRecordHistory, false),
+          deps.setBox(annotationId, boxChanges, shouldRecordHistory, false),
       };
     }

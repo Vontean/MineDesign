@@ -118,11 +118,7 @@ export {
   isLanguageTag,
   PdfLanguageAZaZAZaZPattern,
   PdfLanguageItems,
-  languageScriptDetectors as PdfLanguageItems_2,
-  localeScriptRules as PdfLanguageItems_3,
   PdfLanguagePattern,
-  hanScriptPattern as PdfLanguagePattern_2,
-  hangulScriptPattern as PdfLanguagePattern_3,
   PdfLanguageScriptLatinPattern,
   scoreLatinLanguages,
 };

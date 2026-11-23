@@ -7,12 +7,11 @@ import {
 import { MenuMenuAssignValue, renderMenuItems } from "../../cds/menu/menu";
 import { load_react_jsx_runtime } from "../../dependencies";
 import { useEscapeReleaseSuppression, usePopoverDismissal as R_usePopoverDismissal } from "./popover";
-import { reactChromeTheme_2 } from "./theme";
+import { reactForEditorContextMenu } from "./theme";
 import { toModuleNamespace } from "../../module-helpers";
 
 var jsxChromeContextMenu: Dynamic;
 var ChromeContextMenuConstant: Dynamic;
-var jsxChromeContextMenu_2: Dynamic;
 var ChromeContextMenuIsConnected: Dynamic;
 function EditorContextMenu({
   at: at,
@@ -30,14 +29,14 @@ function EditorContextMenu({
   useUiLocale();
   let isOpen: Dynamic = at !== null;
   useEscapeReleaseSuppression(isOpen && focusFirstItem);
-  let popupRef: Dynamic = (0, reactChromeTheme_2.useRef)(null),
-    onCloseRef: Dynamic = (0, reactChromeTheme_2.useRef)(onClose);
+  let popupRef: Dynamic = (0, reactForEditorContextMenu.useRef)(null),
+    onCloseRef: Dynamic = (0, reactForEditorContextMenu.useRef)(onClose);
   onCloseRef.current = onClose;
-  let [isMounted, setIsMounted]: Dynamic = (0, reactChromeTheme_2.useState)(
+  let [isMounted, setIsMounted]: Dynamic = (0, reactForEditorContextMenu.useState)(
       false,
     ),
-    lastMenuRef: Dynamic = (0, reactChromeTheme_2.useRef)(null);
-  (0, reactChromeTheme_2.useLayoutEffect)((): Dynamic => {
+    lastMenuRef: Dynamic = (0, reactForEditorContextMenu.useRef)(null);
+  (0, reactForEditorContextMenu.useLayoutEffect)((): Dynamic => {
     at &&
       ((lastMenuRef.current = {
         at: at,
@@ -61,7 +60,7 @@ function EditorContextMenu({
     anchorX: Dynamic = currentMenu?.at.x,
     anchorY: Dynamic = currentMenu?.at.y,
     virtualAnchor: Dynamic = (0,
-    reactChromeTheme_2.useMemo)((): Dynamic => {
+    reactForEditorContextMenu.useMemo)((): Dynamic => {
       if (anchorX === undefined || anchorY === undefined) return;
       let state: Dynamic = {
         x: anchorX,
@@ -83,8 +82,8 @@ function EditorContextMenu({
         getBoundingClientRect: (): Dynamic => state,
       };
     }, [anchorX, anchorY]),
-    previousFocusRef: Dynamic = (0, reactChromeTheme_2.useRef)(null);
-  (0, reactChromeTheme_2.useLayoutEffect)((): Dynamic => {
+    previousFocusRef: Dynamic = (0, reactForEditorContextMenu.useRef)(null);
+  (0, reactForEditorContextMenu.useLayoutEffect)((): Dynamic => {
     if (!isOpen) return;
     let activeElement: Dynamic = (document as Dynamic).activeElement;
     (isMounted &&
@@ -96,7 +95,7 @@ function EditorContextMenu({
           ? activeElement
           : null);
   }, [isOpen, isMounted]);
-  (0, reactChromeTheme_2.useEffect)((): Dynamic => {
+  (0, reactForEditorContextMenu.useEffect)((): Dynamic => {
     if (!isOpen || !focusFirstItem) return;
     let frameId: Dynamic = requestAnimationFrame((): Dynamic => {
       let current: Dynamic = popupRef.current;
@@ -249,7 +248,6 @@ export {
   EditorContextMenu,
   EditorMenu,
   jsxChromeContextMenu,
-  jsxChromeContextMenu_2,
   normalizeEditorMenuItems,
 };
 export function installEditorChromeContextMenu(): () => void {
@@ -259,10 +257,6 @@ export function installEditorChromeContextMenu(): () => void {
       1,
     );
     ChromeContextMenuConstant = 14;
-    jsxChromeContextMenu_2 = toModuleNamespace(
-      load_react_jsx_runtime(),
-      1,
-    );
     ChromeContextMenuIsConnected = (element?: Dynamic): Dynamic => (
       element !== null &&
         queueMicrotask((): Dynamic => {

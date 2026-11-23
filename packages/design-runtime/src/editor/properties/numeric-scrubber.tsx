@@ -3,7 +3,7 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { load_react_jsx_runtime } from "../../dependencies";
-import { reactPropertiesToolOptions_2 } from "./tool-options";
+import { reactForUseNumericScrub } from "./tool-options";
 import { toModuleNamespace } from "../../module-helpers";
 
 var PropertiesNumericScrubberAlias: Dynamic;
@@ -12,7 +12,7 @@ var PropertiesNumericScrubberUseGroupingConfig: Dynamic;
 var numericInputFormatter: Dynamic;
 var PropertiesNumericScrubberClassNames: Dynamic;
 var PropertiesNumericScrubberResolvedValue: Dynamic;
-var PropertiesNumericScrubberClassNames_2: Dynamic;
+var scrubberStepButtonClassName: Dynamic;
 function decimalPlaces(numericValue?: Dynamic): Dynamic {
   let text: Dynamic = String(numericValue),
     dotIndex: Dynamic = text.indexOf(".");
@@ -106,14 +106,14 @@ function createNumericScrubber(getOptions?: Dynamic, startX?: Dynamic): Dynamic 
   };
 }
 function useNumericScrub(latestOptions?: Dynamic): Dynamic {
-  let optionsRef: Dynamic = (0, reactPropertiesToolOptions_2.useRef)(
+  let optionsRef: Dynamic = (0, reactForUseNumericScrub.useRef)(
     latestOptions,
   );
   optionsRef.current = latestOptions;
-  let cancelGestureRef: Dynamic = (0, reactPropertiesToolOptions_2.useRef)(
+  let cancelGestureRef: Dynamic = (0, reactForUseNumericScrub.useRef)(
     null,
   );
-  (0, reactPropertiesToolOptions_2.useEffect)(
+  (0, reactForUseNumericScrub.useEffect)(
     (): Dynamic => (): Dynamic => {
       cancelGestureRef.current &&
         cancelGestureRef.current === PropertiesNumericScrubberAlias &&
@@ -190,7 +190,7 @@ export {
   numericStepPrecision,
   PropertiesNumericScrubberAlias,
   PropertiesNumericScrubberClassNames,
-  PropertiesNumericScrubberClassNames_2,
+  scrubberStepButtonClassName,
   PropertiesNumericScrubberResolvedValue,
   PropertiesNumericScrubberUseGroupingConfig,
   roundNumericStep,
@@ -215,7 +215,7 @@ export function installEditorPropertiesNumericScrubber(): () => void {
     PropertiesNumericScrubberClassNames = "select-none text-muted";
     PropertiesNumericScrubberResolvedValue =
       PropertiesNumericScrubberClassNames + " text-caption";
-    PropertiesNumericScrubberClassNames_2 =
+    scrubberStepButtonClassName =
       "flex h-2.5 w-3 items-center justify-center rounded-sm text-muted outline-none hover:text-primary disabled:opacity-50";
   };
 }

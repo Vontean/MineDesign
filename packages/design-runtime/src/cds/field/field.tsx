@@ -4,9 +4,9 @@ import { useUiLocale } from '../../ui-locale.ts';
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { ComboboxComboboxAssignValue, initializeComboboxCombobox_6 } from "../combobox/combobox";
-import { Icon, initializeComponentsIcon_2 } from "../components/icon";
-import { initializeComponentsSelectionRing_7, NumberInput } from "../components/selection-ring";
+import { ComboboxComboboxAssignValue, initializeComboboxFieldClassNames } from "../combobox/combobox";
+import { Icon, initializeIconSizeMetrics } from "../components/icon";
+import { initializeNumberInput, NumberInput } from "../components/selection-ring";
 import { initializeComponentsTextArea, TextArea } from "../components/text-area";
 import { initializeComponentsTextInput, TextInput } from "../components/text-input";
 import { FieldStateContext, initializeFieldContext } from "./context";
@@ -25,22 +25,22 @@ var Field: Dynamic;
 var FieldControl: Dynamic;
 var FieldValidity: Dynamic;
 var initializeFieldField: Dynamic;
-var reactFieldField_2: Dynamic;
-var jsxFieldField_2: Dynamic;
+var reactForFieldTextInput: Dynamic;
+var jsxForFieldTextInput: Dynamic;
 var FieldTextInput: Dynamic;
-var initializeFieldField_2: Dynamic;
-var reactFieldField_3: Dynamic;
-var jsxFieldField_3: Dynamic;
+var initializeFieldTextInput: Dynamic;
+var reactForFieldTextArea: Dynamic;
+var jsxForFieldTextArea: Dynamic;
 var FieldTextArea: Dynamic;
-var initializeFieldField_3: Dynamic;
-var reactFieldField_4: Dynamic;
-var jsxFieldField_4: Dynamic;
+var initializeFieldTextArea: Dynamic;
+var reactForFieldNumberInput: Dynamic;
+var jsxForFieldNumberInput: Dynamic;
 var FieldNumberInput: Dynamic;
-var initializeFieldField_4: Dynamic;
-var jsxFieldField_5: Dynamic;
-var initializeFieldField_5: Dynamic;
+var initializeFieldNumberInput: Dynamic;
+var jsxForFieldCombobox: Dynamic;
+var initializeFieldCombobox: Dynamic;
 var FieldExports: Dynamic;
-var initializeFieldField_6: Dynamic;
+var initializeFieldComponents: Dynamic;
 function FieldCombobox({
   label: label,
   hint: hint,
@@ -83,20 +83,20 @@ export {
   FieldTextInput,
   FieldValidity,
   initializeFieldField,
-  initializeFieldField_2,
-  initializeFieldField_3,
-  initializeFieldField_4,
-  initializeFieldField_5,
-  initializeFieldField_6,
+  initializeFieldTextInput,
+  initializeFieldTextArea,
+  initializeFieldNumberInput,
+  initializeFieldCombobox,
+  initializeFieldComponents,
   jsxFieldField,
-  jsxFieldField_2,
-  jsxFieldField_3,
-  jsxFieldField_4,
-  jsxFieldField_5,
+  jsxForFieldTextInput,
+  jsxForFieldTextArea,
+  jsxForFieldNumberInput,
+  jsxForFieldCombobox,
   reactFieldField,
-  reactFieldField_2,
-  reactFieldField_3,
-  reactFieldField_4,
+  reactForFieldTextInput,
+  reactForFieldTextArea,
+  reactForFieldNumberInput,
 };
 export function installCdsFieldField(): () => void {
   return () => {
@@ -104,7 +104,7 @@ export function installCdsFieldField(): () => void {
       "use client";
 
       initializeClassNames();
-      initializeComponentsIcon_2();
+      initializeIconSizeMetrics();
       initializeFieldContext();
       reactFieldField = toModuleNamespace(
         load_react(),
@@ -243,18 +243,18 @@ export function installCdsFieldField(): () => void {
       FieldControl = npm_Field_qg.Control;
       FieldValidity = npm_Field_qg.Validity;
     });
-    initializeFieldField_2 = initializeOnce((): Dynamic => {
+    initializeFieldTextInput = initializeOnce((): Dynamic => {
       "use client";
 
       initializeComponentsTextInput();
       initializeFieldField();
-      reactFieldField_2 = toModuleNamespace(
+      reactForFieldTextInput = toModuleNamespace(
         load_react(),
       );
-      jsxFieldField_2 = toModuleNamespace(
+      jsxForFieldTextInput = toModuleNamespace(
         load_react_jsx_runtime(),
       );
-      FieldTextInput = (0, reactFieldField_2.forwardRef)(
+      FieldTextInput = (0, reactForFieldTextInput.forwardRef)(
         (
           {
             label: label,
@@ -278,18 +278,18 @@ export function installCdsFieldField(): () => void {
       );
       FieldTextInput.displayName = "Field.TextInput";
     });
-    initializeFieldField_3 = initializeOnce((): Dynamic => {
+    initializeFieldTextArea = initializeOnce((): Dynamic => {
       "use client";
 
       initializeComponentsTextArea();
       initializeFieldField();
-      reactFieldField_3 = toModuleNamespace(
+      reactForFieldTextArea = toModuleNamespace(
         load_react(),
       );
-      jsxFieldField_3 = toModuleNamespace(
+      jsxForFieldTextArea = toModuleNamespace(
         load_react_jsx_runtime(),
       );
-      FieldTextArea = (0, reactFieldField_3.forwardRef)(
+      FieldTextArea = (0, reactForFieldTextArea.forwardRef)(
         (
           {
             label: label,
@@ -313,18 +313,18 @@ export function installCdsFieldField(): () => void {
       );
       FieldTextArea.displayName = "Field.TextArea";
     });
-    initializeFieldField_4 = initializeOnce((): Dynamic => {
+    initializeFieldNumberInput = initializeOnce((): Dynamic => {
       "use client";
 
-      initializeComponentsSelectionRing_7();
+      initializeNumberInput();
       initializeFieldField();
-      reactFieldField_4 = toModuleNamespace(
+      reactForFieldNumberInput = toModuleNamespace(
         load_react(),
       );
-      jsxFieldField_4 = toModuleNamespace(
+      jsxForFieldNumberInput = toModuleNamespace(
         load_react_jsx_runtime(),
       );
-      FieldNumberInput = (0, reactFieldField_4.forwardRef)(
+      FieldNumberInput = (0, reactForFieldNumberInput.forwardRef)(
         (
           {
             label: label,
@@ -348,12 +348,12 @@ export function installCdsFieldField(): () => void {
       );
       FieldNumberInput.displayName = "Field.NumberInput";
     });
-    initializeFieldField_5 = initializeOnce((): Dynamic => {
+    initializeFieldCombobox = initializeOnce((): Dynamic => {
       "use client";
 
-      initializeComboboxCombobox_6();
+      initializeComboboxFieldClassNames();
       initializeFieldField();
-      jsxFieldField_5 = toModuleNamespace(
+      jsxForFieldCombobox = toModuleNamespace(
         load_react_jsx_runtime(),
       );
       (FieldCombobox as Dynamic).displayName = "Field.Combobox";
@@ -371,12 +371,12 @@ export function installCdsFieldField(): () => void {
       TextInput: (): Dynamic => FieldTextInput,
       Validity: (): Dynamic => FieldValidity,
     });
-    initializeFieldField_6 = initializeOnce((): Dynamic => {
+    initializeFieldComponents = initializeOnce((): Dynamic => {
       initializeFieldField();
-      initializeFieldField_2();
-      initializeFieldField_3();
-      initializeFieldField_4();
-      initializeFieldField_5();
+      initializeFieldTextInput();
+      initializeFieldTextArea();
+      initializeFieldNumberInput();
+      initializeFieldCombobox();
     });
   };
 }

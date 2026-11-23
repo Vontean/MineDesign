@@ -12,13 +12,8 @@ import { toModuleNamespace } from "../../module-helpers";
 import { defaultDensity } from "../../platform/document-theme";
 
 var jsxChromeRoot: Dynamic;
-var jsxChromeRoot_2: Dynamic;
 var reactChromeRoot: Dynamic;
 var reactDomChromeRoot: Dynamic;
-var jsxChromeRoot_3: Dynamic;
-var jsxChromeRoot_4: Dynamic;
-var reactChromeRoot_2: Dynamic;
-var jsxChromeRoot_5: Dynamic;
 function EditorChromeRoot({ children: children }: Dynamic): Dynamic {
   useUiLocale();
   return (
@@ -36,21 +31,12 @@ function EditorChromeRoot({ children: children }: Dynamic): Dynamic {
 export {
   EditorChromeRoot,
   jsxChromeRoot,
-  jsxChromeRoot_2,
-  jsxChromeRoot_3,
-  jsxChromeRoot_4,
-  jsxChromeRoot_5,
   reactChromeRoot,
-  reactChromeRoot_2,
   reactDomChromeRoot,
 };
 export function installEditorChromeRoot(): () => void {
   return () => {
     jsxChromeRoot = toModuleNamespace(
-      load_react_jsx_runtime(),
-      1,
-    );
-    jsxChromeRoot_2 = toModuleNamespace(
       load_react_jsx_runtime(),
       1,
     );
@@ -63,22 +49,6 @@ export function installEditorChromeRoot(): () => void {
       load_react_dom(),
       1,
     );
-    jsxChromeRoot_3 = toModuleNamespace(
-      load_react_jsx_runtime(),
-      1,
-    );
     initializeCdsIndex();
-    jsxChromeRoot_4 = toModuleNamespace(
-      load_react_jsx_runtime(),
-      1,
-    );
-    reactChromeRoot_2 = toModuleNamespace(
-      load_react(),
-      1,
-    );
-    jsxChromeRoot_5 = toModuleNamespace(
-      load_react_jsx_runtime(),
-      1,
-    );
   };
 }

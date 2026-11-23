@@ -5,7 +5,7 @@ import {
 } from "../../runtime-types";
 import { createSheetMutableCell, getInertProps, initializeDomInert, sheetFrameHeight, sheetStackMaxHeight } from "../dom/inert";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
-import { initializeHooksStableCallback_2, useOptionalStableCallback } from "../hooks/stable-callback";
+import { initializeStableCallbackReact, useOptionalStableCallback } from "../hooks/stable-callback";
 import { initializeOverlaysAndroidCloseWatcher, useAndroidCloseWatcher } from "../overlays/android-close-watcher";
 import { initializeOverlaysImperativeHandle, useOverlayImperativeHandle } from "../overlays/imperative-handle";
 import { reducedMotionAttribute, reducedMotionMediaQuery } from "../platform/reduced-motion";
@@ -558,7 +558,7 @@ export function installCdsSheetsPopupStack(): () => void {
       initializeHooksLayoutEffect();
       initializeCdsRoot();
       initializeOverlaysAndroidCloseWatcher();
-      initializeHooksStableCallback_2();
+      initializeStableCallbackReact();
       initializeOverlaysImperativeHandle();
       initializeDomInert();
       initializeSheetsKeyboardViewport();

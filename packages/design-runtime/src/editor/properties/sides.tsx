@@ -8,13 +8,13 @@ import { Button } from "../../cds/button/button";
 import { initializeCdsIndex } from "../../cds/index";
 import { DisabledReasonTooltip } from "../../cds/tooltip/tooltip";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
-import { ColorContrastCopyItems, ColorContrastCopyLabel_6 as perSideLabel, ColorContrastCopyLabel_7 as perCornerLabel, ColorContrastCopyLabel_8 as valuesDifferLabel, ColorContrastCopyTopRightBottomValues, EditValue, HideValue } from "../color/contrast-copy";
+import { ColorContrastCopyItems, ColorContrastCopyPerSideLabel as perSideLabel, ColorContrastCopyPerCornerLabel as perCornerLabel, ColorContrastCopyValuesDifferLabel as valuesDifferLabel, ColorContrastCopyTopRightBottomValues, EditValue, HideValue } from "../color/contrast-copy";
 import { NumericInput } from "./numeric-input";
 import { EditorIcon } from "./primitives";
 import { PropertyRow } from "./row";
 import { jsxPropertiesSegments, PropertiesSegmentsItems, PropertiesSegmentsSideCornerConfig, reactPropertiesSegments } from "./segments";
 import { PropertyOptionIcon } from "./tool-options";
-import { PropertiesTooltipNameViewBoxPathsConfig_2 as borderSidesIcon, PropertiesTooltipNameViewBoxPathsConfig_4 as cornerEachIcon } from "./tooltip";
+import { borderSidesIcon, cornerEachIcon } from "./tooltip";
 import { toModuleNamespace } from "../../module-helpers";
 
 var PropertiesSidesSideTopSideRightSideBottomValues: Dynamic;
@@ -275,8 +275,8 @@ export {
   jsxPropertiesSides,
   PropertiesSidesArrowLeftArrowRightArrowUpConfig,
   PropertiesSidesConstant,
-  dimmedMediaOpacity as PropertiesSidesConstant_2,
-  keyboardZoomFactor as PropertiesSidesConstant_3,
+  dimmedMediaOpacity,
+  keyboardZoomFactor,
   PropertiesSidesCornerTopLeftCornerTopRightCornerBottomRightValues,
   PropertiesSidesNESConfig,
   PropertiesSidesNESValues,

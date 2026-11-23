@@ -7,9 +7,9 @@ import {
 import { ComponentsSkeletonAssignValue } from "../../cds/components/skeleton";
 import { Spinner } from "../../cds/components/spinner";
 import { TextLink } from "../../cds/components/text-link";
-import { AccessibilityAnnouncerConstant_2 as announcerClearMs } from "../accessibility/announcer";
+import { defaultClearMs as announcerClearMs } from "../accessibility/announcer";
 import { joinClassNames } from "./overlay-state";
-import { jsxSessionStripReveal_2, reactSessionStripReveal_2 } from "../session-strip/reveal";
+import { jsxForDocumentLoadGate, reactForDocumentLoadGate } from "../session-strip/reveal";
 
 var ChromeLoadingLabel: Dynamic;
 var ChromeLoadingDelayMs: Dynamic;
@@ -55,13 +55,13 @@ function DocumentLoadGate({
       return state === "loading" || state === "failed" ? state : "live";
     },
     [loadState, setLoadState]: Dynamic = (0,
-    reactSessionStripReveal_2.useState)(readLoadState),
+    reactForDocumentLoadGate.useState)(readLoadState),
     [statusMessage, setStatusMessage]: Dynamic = (0,
-    reactSessionStripReveal_2.useState)(""),
-    retryLinkRef: Dynamic = (0, reactSessionStripReveal_2.useRef)(null),
-    hadRetryFocusRef: Dynamic = (0, reactSessionStripReveal_2.useRef)(false),
-    shouldAnnounceRef: Dynamic = (0, reactSessionStripReveal_2.useRef)(true);
-  (0, reactSessionStripReveal_2.useEffect)(
+    reactForDocumentLoadGate.useState)(""),
+    retryLinkRef: Dynamic = (0, reactForDocumentLoadGate.useRef)(null),
+    hadRetryFocusRef: Dynamic = (0, reactForDocumentLoadGate.useRef)(false),
+    shouldAnnounceRef: Dynamic = (0, reactForDocumentLoadGate.useRef)(true);
+  (0, reactForDocumentLoadGate.useEffect)(
     (): Dynamic => (
       (hadRetryFocusRef.current = false),
       (shouldAnnounceRef.current = true),
@@ -77,7 +77,7 @@ function DocumentLoadGate({
     ),
     [doc],
   );
-  (0, reactSessionStripReveal_2.useEffect)((): Dynamic => {
+  (0, reactForDocumentLoadGate.useEffect)((): Dynamic => {
     if (loadState !== "failed") {
       loadState === "live" && ((hadRetryFocusRef.current = false), (shouldAnnounceRef.current = true));
       setStatusMessage("");
@@ -109,9 +109,9 @@ function DocumentLoadGate({
     };
   }, [loadState]);
   return loadState === "live" ? (
-    <jsxSessionStripReveal_2.Fragment>
+    <jsxForDocumentLoadGate.Fragment>
       {children}
-    </jsxSessionStripReveal_2.Fragment>
+    </jsxForDocumentLoadGate.Fragment>
   ) : (
     <div
       className={joinClassNames(

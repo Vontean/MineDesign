@@ -8,20 +8,20 @@ import { serializeDesignCommentAnchor } from "../../comments/anchor-codec";
 import { type Dynamic } from "../../runtime-types";
 
 /** 在选中元素的快捷操作中点击评论时运行：向画板查询该元素的评论锚点与描述，换算到屏幕位置后打开评论输入框。 */
-export function composeSelectedElementComment(deps: { readonly callback16: Dynamic; readonly camera: Dynamic; readonly elementSelection: Dynamic; readonly manifest: Dynamic; readonly value2: Dynamic; readonly value20: Dynamic; readonly value4: Dynamic; readonly value9: Dynamic }, triggerElement?: Dynamic): Dynamic {
+export function composeSelectedElementComment(deps: { readonly clientToCanvasPoint: Dynamic; readonly camera: Dynamic; readonly elementSelection: Dynamic; readonly manifest: Dynamic; readonly artboardHandlesRef: Dynamic; readonly focusedContentRect: Dynamic; readonly commentsController: Dynamic; readonly canvasRootRef: Dynamic }, triggerElement?: Dynamic): Dynamic {
             let selection: Dynamic = deps.elementSelection,
               file: Dynamic = selection.file,
-              artboardEntry: Dynamic = deps.value2.current.get(file),
+              artboardEntry: Dynamic = deps.artboardHandlesRef.current.get(file),
               previewHandle: Dynamic = artboardEntry
-                ? createPreviewHandle(artboardEntry.webviewRef.current)
+                ? createPreviewHandle(artboardEntry.previewFrameRef.current)
                 : null,
-              current: Dynamic = deps.value9.current;
+              current: Dynamic = deps.canvasRootRef.current;
             if (!previewHandle || !current) return;
             triggerElement.focus({
               preventScroll: true,
             });
             let bounds: Dynamic = triggerElement.getBoundingClientRect(),
-              anchorPoint: Dynamic = deps.callback16(
+              anchorPoint: Dynamic = deps.clientToCanvasPoint(
                 bounds.left + bounds.width / 2,
                 bounds.bottom,
                 current.getBoundingClientRect(),
@@ -36,7 +36,7 @@ export function composeSelectedElementComment(deps: { readonly callback16: Dynam
               );
               if (!pickedElement || !artboard) return;
               let targetBoard: Dynamic =
-                  deps.value20?.file === file ? deps.value20 : artboard,
+                  deps.focusedContentRect?.file === file ? deps.focusedContentRect : artboard,
                 elementRect: Dynamic =
                   pickedElement.path == null
                     ? {
@@ -113,7 +113,7 @@ export function composeSelectedElementComment(deps: { readonly callback16: Dynam
                 ),
                 canvasBounds: Dynamic = current.getBoundingClientRect(),
                 cameraState: Dynamic = deps.camera.get();
-              deps.value4
+              deps.commentsController
                 .compose(
                   serializedAnchor,
                   {

@@ -9,7 +9,6 @@ var DesignSystemPathsResolvedValue: Dynamic;
 var DesignSystemPathsConstant: Dynamic;
 var maxDisplayTextLength: Dynamic;
 var maxArtifactTextLength: Dynamic;
-var DesignSystemPathsConstant_4: Dynamic;
 var maxTokensFileBytes: Dynamic;
 var DesignSystemPathsLabel: Dynamic;
 var designSystemFilePathPattern: Dynamic;
@@ -26,15 +25,14 @@ function designSystemProjectPrefix(namespaceId?: Dynamic): Dynamic {
 export {
   designSystemFilePathPattern,
   DesignSystemPathsConstant,
-  maxDisplayTextLength as DesignSystemPathsConstant_2,
-  maxArtifactTextLength as DesignSystemPathsConstant_3,
-  DesignSystemPathsConstant_4,
+  maxDisplayTextLength,
+  maxArtifactTextLength,
   DesignSystemPathsLabel,
   DesignSystemPathsPattern,
-  strictControlCharPattern as DesignSystemPathsPattern_2,
-  titleControlCharPattern as DesignSystemPathsPattern_3,
+  strictControlCharPattern,
+  titleControlCharPattern,
   DesignSystemPathsResolvedValue,
-  maxTokensFileBytes as DesignSystemPathsResolvedValue_2,
+  maxTokensFileBytes,
   designSystemProjectPrefix,
   isDesignSystemNamespace,
   PathCheckError,
@@ -57,7 +55,6 @@ export function installDesignSystemPaths(): () => void {
     DesignSystemPathsConstant = 4;
     maxDisplayTextLength = 200;
     maxArtifactTextLength = 2e3;
-    DesignSystemPathsConstant_4 = 224;
     maxTokensFileBytes = 1024 * 1024;
     DesignSystemPathsLabel =
       "[A-Za-z0-9_](?:(?:[A-Za-z0-9._-]| (?=[A-Za-z0-9_]))*[A-Za-z0-9_-])?";

@@ -1,14 +1,34 @@
-import { InspectorEditorEvery } from "../inspector/editor";
+import { sameTidList } from "../inspector/editor";
 import { applyElementUndo } from "../undo/elements";
 import { emitEditorEvent } from "../events/runtime";
 import { setPickerSelection } from "../picker/bridge";
 import { type Dynamic } from "../../runtime-types";
 
+interface StepSessionUndoRedoDependencies {
+  readonly dcPropsRef: Dynamic;
+  readonly incrementSessionEpoch: Dynamic;
+  readonly markModelDirty: Dynamic;
+  readonly modelRef: Dynamic;
+  readonly onHistoryApply: Dynamic;
+  readonly onHistoryDrop: Dynamic;
+  readonly pushLiveModel: Dynamic;
+  readonly readOnlyRef: Dynamic;
+  readonly rootName: Dynamic;
+  readonly pendingPropSnapshotsRef: Dynamic;
+  readonly selectElements: Dynamic;
+  readonly setSelection: Dynamic;
+  readonly selectionRef: Dynamic;
+  readonly advanceSelectionSequence: Dynamic;
+  readonly undoEditGroupRef: Dynamic;
+  readonly lastEditedTemplateRef: Dynamic;
+  readonly getPreviewFrame: Dynamic;
+}
+
 /** 在编辑会话中按撤销或重做时运行：回放元素模型的一步历史，同步组件属性值或脚本的暂存内容，推送实时模型、标脏并恢复该步对应的选中。 */
-export function stepSessionUndoRedo(deps: { readonly dcPropsRef: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly onHistoryApply: Dynamic; readonly onHistoryDrop: Dynamic; readonly pushLiveModel: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly value: Dynamic; readonly value105: Dynamic; readonly value3: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value65: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic }, direction?: Dynamic): Dynamic {
+export function stepSessionUndoRedo(deps: StepSessionUndoRedoDependencies, direction?: Dynamic): Dynamic {
         if (deps.readOnlyRef.current) return;
         let artboardName: Dynamic =
-            deps.value66.current ?? deps.value49.current?.name ?? deps.rootName,
+            deps.lastEditedTemplateRef.current ?? deps.selectionRef.current?.name ?? deps.rootName,
           modelState: Dynamic = deps.modelRef.current.state(artboardName);
         if (!modelState) return;
         let model: Dynamic = modelState.model,
@@ -18,7 +38,7 @@ export function stepSessionUndoRedo(deps: { readonly dcPropsRef: Dynamic; readon
             overrides: deps.dcPropsRef.current.values,
           });
         if (!undoResult) {
-          deps.value65.current = null;
+          deps.undoEditGroupRef.current = null;
           if (modelState[direction].length < stackLengthBefore) {
             if (direction === "undo")
               for (
@@ -33,13 +53,13 @@ export function stepSessionUndoRedo(deps: { readonly dcPropsRef: Dynamic; readon
           return;
         }
         deps.onHistoryApply?.(direction);
-        deps.value65.current = null;
+        deps.undoEditGroupRef.current = null;
         if (undoResult.kind === "prop") {
           if (undoResult.episode === "closed")
-            delete deps.value.current[undoResult.prop];
+            delete deps.pendingPropSnapshotsRef.current[undoResult.prop];
           else if (undoResult.episode === "reopened") {
             let dcProps: Dynamic = deps.dcPropsRef.current;
-            deps.value.current[undoResult.prop] = Object.hasOwn(
+            deps.pendingPropSnapshotsRef.current[undoResult.prop] = Object.hasOwn(
               dcProps.values,
               undoResult.prop,
             )
@@ -71,7 +91,7 @@ export function stepSessionUndoRedo(deps: { readonly dcPropsRef: Dynamic; readon
         }
         deps.pushLiveModel(artboardName, modelState);
         deps.markModelDirty(artboardName);
-        let currentSelection: Dynamic = deps.value49.current;
+        let currentSelection: Dynamic = deps.selectionRef.current;
         if (currentSelection?.name === artboardName) {
           let validTids: Dynamic = modelState.model.sameSkeleton(model)
             ? currentSelection.tids.filter(
@@ -80,13 +100,13 @@ export function stepSessionUndoRedo(deps: { readonly dcPropsRef: Dynamic; readon
               )
             : [];
           if (validTids.length > 0) {
-            deps.value105(artboardName, validTids, undefined, undefined, true);
-            let pickerTarget: Dynamic = deps.value67();
+            deps.selectElements(artboardName, validTids, undefined, undefined, true);
+            let pickerTarget: Dynamic = deps.getPreviewFrame();
             pickerTarget &&
               setTimeout((): Dynamic => {
-                let latestSelection: Dynamic = deps.value49.current;
+                let latestSelection: Dynamic = deps.selectionRef.current;
                 latestSelection?.name === currentSelection.name &&
-                  InspectorEditorEvery(
+                  sameTidList(
                     latestSelection.tids,
                     validTids,
                   ) &&
@@ -97,9 +117,9 @@ export function stepSessionUndoRedo(deps: { readonly dcPropsRef: Dynamic; readon
                   );
               }, 60);
           } else {
-            deps.value50.current++;
-            deps.value3(null);
-            let pickerTarget: Dynamic = deps.value67();
+            deps.advanceSelectionSequence();
+            deps.setSelection(null);
+            let pickerTarget: Dynamic = deps.getPreviewFrame();
             pickerTarget && setPickerSelection(pickerTarget, null, null);
           }
         }

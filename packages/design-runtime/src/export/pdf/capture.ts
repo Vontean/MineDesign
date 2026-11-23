@@ -4,11 +4,11 @@ import {
 } from "../../runtime-types";
 import { buildCaptureScript } from "../capture-script";
 import { ExportCaptureViewportLabel, lockCaptureViewport } from "../capture-viewport";
-import { collectCaptureWarnings, countMatchingExportWarnings, ExportCaptureWarningsItems, ExportCaptureWarningsItems_2 as ExportCaptureWarningsItemsForCapture } from "../capture-warnings";
+import { collectCaptureWarnings, countMatchingExportWarnings, ExportCaptureWarningsItems, FONT_FALLBACK_WARNING_PHRASES as ExportCaptureWarningsItemsForCapture } from "../capture-warnings";
 import { ExportDeliveryCapMsFinishAnimationsConfig, ExportDeliveryCapMsFinishAnimationsEagerImagesConfig } from "../delivery";
 import { isLanguageTag } from "./language";
 import { normalizePdfLink } from "./link-annotations";
-import { PdfTextOperatorsLimit_2 as pdfTextOperatorsLimit } from "./text-operators";
+import { maxListItemIndex as pdfTextOperatorsLimit } from "./text-operators";
 import { normalizeExportWarnings } from "../warnings";
 
 var PdfCaptureLimit: Dynamic;
@@ -823,19 +823,9 @@ export {
   parseCapturedLinks,
   parseCapturedTextRuns,
   PdfCaptureConstant,
-  targetRasterWidth as PdfCaptureConstant_2,
-  flowPageMarginRatio as PdfCaptureConstant_3,
-  flowCaptureBatchPages as PdfCaptureConstant_4,
-  maxTextRunChars as PdfCaptureConstant_5,
-  maxFigureAltChars as PdfCaptureConstant_6,
   PdfCaptureHas,
   PdfCaptureLimit,
-  maxFlowPages as PdfCaptureLimit_2,
-  maxTextRuns as PdfCaptureLimit_3,
-  maxCapturedItemsPerPage as PdfCaptureLimit_4,
-  maxPageImageUriChars as PdfCaptureLimit_5,
-  maxTotalImageUriChars as PdfCaptureLimit_6,
-  maxCapturedTextChars as PdfCaptureLimit_7,
+  maxFlowPages,
   PdfCapturePH1H2Set,
   remapCapturedTextBlocks,
 };

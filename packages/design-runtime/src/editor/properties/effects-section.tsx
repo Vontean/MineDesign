@@ -30,7 +30,7 @@ function propertyEffectAddItems(
       limitDisabled: Dynamic =
         shadowList.length >= StyleSchemaValuesLimit
           ? {
-              disabledReason: uiMessage("inspector.effectsSection.atMostValue1PerElement", { value1: String(StyleSchemaValuesLimit) }),
+              disabledReason: uiMessage("inspector.effectsSection.atMostPerElement", { limit: String(StyleSchemaValuesLimit) }),
             }
           : {},
       createAddShadow: Dynamic =
@@ -43,7 +43,7 @@ function propertyEffectAddItems(
       dropShadowReason: Dynamic =
         dropShadowDisabledReason ??
         (shadowList.length >= StyleSchemaValuesLimit
-          ? uiMessage("inspector.effectsSection.atMostValue1PerElement", { value1: String(StyleSchemaValuesLimit) })
+          ? uiMessage("inspector.effectsSection.atMostPerElement", { limit: String(StyleSchemaValuesLimit) })
           : undefined);
     items.push(
       dropShadowReason !== undefined

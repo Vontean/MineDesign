@@ -12,7 +12,7 @@ import { isEditablePropMetadata } from "./prop-validation";
 import { ViewOnlyYouCanInspectThisMessage } from "../outline/annotations";
 import { PropertyTextInput } from "../properties/css-number-row";
 import { reactPropertiesDropShadowEditor } from "../properties/drop-shadow-editor";
-import { PropertiesInspectorFieldNameComponentFromSet, PropertiesInspectorFieldPattern, PropertiesInspectorFieldPattern_2 as numberLiteralPattern, PropertiesInspectorFieldPattern_3 as eventAttributePattern, PropertiesInspectorFieldReplace, PropertiesInspectorFieldTest } from "../properties/inspector-field";
+import { PropertiesInspectorFieldNameComponentFromSet, PropertiesInspectorFieldPattern, numericValuePattern as numberLiteralPattern, eventPropertyPattern as eventAttributePattern, PropertiesInspectorFieldReplace, PropertiesInspectorFieldTest } from "../properties/inspector-field";
 import { PropertyPickerButton } from "../properties/primitives";
 import { PropertyTextRow } from "../properties/rows";
 import { PropertySection } from "../properties/section";
@@ -230,7 +230,7 @@ function ComponentImportPropsPanel({
       ),
     ];
   return !onEditComponent && items.length === 0 && !emptyNote ? null : (
-    <PropertySection title={uiMessage("inspector.attributePropsPanel.props", { value1: String(importName) })}>
+    <PropertySection title={uiMessage("inspector.attributePropsPanel.props", { component: String(importName) })}>
       {items.length === 0 && emptyNote && (<div
           className={"px-3.5 pt-3 pb-1 text-caption text-muted"}
           data-testid={"dc-import-props-empty"}
@@ -330,7 +330,7 @@ function ComponentImportPropsPanel({
                         className={"w-full"}
                         data-testid={"dc-import-prop-bound"}
                         title={tooltip}
-                        aria-label={uiMessage("inspector.attributePropsPanel.undefined", { value1: String(label), value2: String((displayValue) || (uiMessage("inspector.attributePropsPanel.notSet"))) })}
+                        aria-label={uiMessage("inspector.attributePropsPanel.propertyValue", { label: String(label), value: String((displayValue) || (uiMessage("inspector.attributePropsPanel.notSet"))) })}
                         muted={displayValue === ""}
                         disabled={!canEditInCode}
                         onClick={

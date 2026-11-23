@@ -11,8 +11,8 @@ import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 var reactComponentsShortcut: Dynamic;
 var jsxComponentsShortcut: Dynamic;
 var ComponentsShortcutClassNames: Dynamic;
-var ComponentsShortcutClassNames_2: Dynamic;
-var ComponentsShortcutClassNames_3: Dynamic;
+var singleKeyWidthClassName: Dynamic;
+var multiKeyMinWidthClassName: Dynamic;
 var ComponentsShortcutLabel: Dynamic;
 var ComponentsShortcutKeycapTextConfig: Dynamic;
 var ThenValue: Dynamic;
@@ -30,7 +30,7 @@ var ComponentsShortcutCmdCommandMetaConfig: Dynamic;
 var eventKeyNames: Dynamic;
 var initializeComponentsShortcut: Dynamic;
 function shortcutKeycapClassName(label?: Dynamic): Dynamic {
-  return `${ComponentsShortcutClassNames} ${Array.from(label ?? "").length === 1 ? ComponentsShortcutClassNames_2 : ComponentsShortcutClassNames_3}`;
+  return `${ComponentsShortcutClassNames} ${Array.from(label ?? "").length === 1 ? singleKeyWidthClassName : multiKeyMinWidthClassName}`;
 }
 function Shortcut({
   keys: keys,
@@ -217,13 +217,11 @@ function parseSingleShortcut(shortcut?: Dynamic, isApple?: Dynamic): Dynamic {
 }
 export {
   ComponentsShortcutClassNames,
-  ComponentsShortcutClassNames_2,
-  ComponentsShortcutClassNames_3,
+  singleKeyWidthClassName,
+  multiKeyMinWidthClassName,
   ComponentsShortcutCmdCommandMetaConfig,
   ComponentsShortcutCmdCommandMetaValues,
   ComponentsShortcutCtrlControlAltConfig,
-  pcModifierLabels as ComponentsShortcutCtrlControlAltConfig_2,
-  eventKeyNames as ComponentsShortcutCtrlControlAltConfig_3,
   ComponentsShortcutCtrlControlAltValues,
   ComponentsShortcutHandler,
   ComponentsShortcutIncludes,
@@ -231,7 +229,6 @@ export {
   ComponentsShortcutKeycapTextConfig,
   ComponentsShortcutLabel,
   ComponentsShortcutSpaceEnterReturnConfig,
-  pcKeyLabels as ComponentsShortcutSpaceEnterReturnConfig_2,
   formatShortcutChord,
   getOwnPropertyValue,
   getShortcutKeyLabel,
@@ -261,8 +258,8 @@ export function installCdsComponentsShortcut(): () => void {
       );
       ComponentsShortcutClassNames =
         "inline-flex shrink-0 items-center justify-center h-[calc(1em+6px)] rounded-[var(--cds-keycap-radius,4px)] [color:var(--cds-shortcut-cap-ink)] bg-[color:var(--cds-shortcut-cap-fill)] border border-[color:var(--cds-shortcut-cap-line)] font-inherit [font-variation-settings:inherit] [line-height:1]";
-      ComponentsShortcutClassNames_2 = "w-[calc(1em+6px)] px-0";
-      ComponentsShortcutClassNames_3 = "min-w-[calc(1em+6px)] px-[3px]";
+      singleKeyWidthClassName = "w-[calc(1em+6px)] px-0";
+      multiKeyMinWidthClassName = "min-w-[calc(1em+6px)] px-[3px]";
       ComponentsShortcutLabel =
         "font-inherit [font-variation-settings:inherit] [color:var(--cds-shortcut-cap-ink)]";
       ComponentsShortcutKeycapTextConfig = {

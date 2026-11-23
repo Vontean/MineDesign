@@ -15,13 +15,12 @@ import { toModuleNamespace } from "../../module-helpers";
 
 var reactChromePanelShell: Dynamic;
 var reactDomChromePanelShell: Dynamic;
-var reactChromePanelShell_2: Dynamic;
+var reactForUsePanelTab: Dynamic;
 var jsxChromePanelShell: Dynamic;
 var ChromePanelShellClassNames: Dynamic;
-var jsxChromePanelShell_2: Dynamic;
+var jsxForPanelResizeGrip: Dynamic;
 var ChromePanelShellComponent: Dynamic;
 var ChromePanelShellContext: Dynamic;
-var ChromePanelShellContext_2: Dynamic;
 function PanelHeader({
   tabs: tabs,
   activateOnFocus: activateOnFocus,
@@ -80,7 +79,7 @@ function PanelHeader({
   );
 }
 function usePanelTab(props?: Dynamic): Dynamic {
-  let [internalTab, setInternalTab]: Dynamic = (0, reactChromePanelShell_2.useState)(
+  let [internalTab, setInternalTab]: Dynamic = (0, reactForUsePanelTab.useState)(
     props.tabs?.[0]?.value ?? "",
   );
   return [
@@ -129,13 +128,12 @@ export {
   ChromePanelShellClassNames,
   ChromePanelShellComponent,
   ChromePanelShellContext,
-  ChromePanelShellContext_2,
   jsxChromePanelShell,
-  jsxChromePanelShell_2,
+  jsxForPanelResizeGrip,
   PanelHeader,
   PanelShell,
   reactChromePanelShell,
-  reactChromePanelShell_2,
+  reactForUsePanelTab,
   reactDomChromePanelShell,
   usePanelTab,
 };
@@ -150,7 +148,7 @@ export function installEditorChromePanelShell(): () => void {
       load_react_dom(),
       1,
     );
-    reactChromePanelShell_2 = toModuleNamespace(
+    reactForUsePanelTab = toModuleNamespace(
       load_react(),
       1,
     );
@@ -161,7 +159,7 @@ export function installEditorChromePanelShell(): () => void {
     );
     ChromePanelShellClassNames =
       "flex min-w-0 shrink-0 items-center gap-xs py-md pr-sm pl-sm";
-    jsxChromePanelShell_2 = toModuleNamespace(
+    jsxForPanelResizeGrip = toModuleNamespace(
       load_react_jsx_runtime(),
       1,
     );
@@ -180,6 +178,5 @@ export function installEditorChromePanelShell(): () => void {
       );
     });
     ChromePanelShellContext = (0, reactChromePanelShell.createContext)(null);
-    ChromePanelShellContext_2 = (0, reactChromePanelShell.createContext)(null);
   };
 }

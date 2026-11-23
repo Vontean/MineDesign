@@ -3,8 +3,8 @@ import {
   type Dynamic,
 } from "../runtime-types";
 import { sameOriginFileFetcher, setDeclarationReferences } from "../design-system/type-declarations";
-import { encodeStorePathSegment, FilesValue, isFullProjectPath, isProjectTextFilePath, isTypeDeclarationPath, PlatformFileContentResolvedValue_10 as maxDeclarationFileBytes, ProjectValue } from "./file-content";
-import { PlatformFileReferencesLimit as maxProjectTextFiles, PlatformFileReferencesLimit_2 as maxDeclarationFiles, PlatformFileReferencesResolvedValue as maxReferencedFileBytes } from "./file-references";
+import { encodeStorePathSegment, FilesValue, isFullProjectPath, isProjectTextFilePath, isTypeDeclarationPath, maxDeclarationFileBytes as maxDeclarationFileBytes, ProjectValue } from "./file-content";
+import { PlatformFileReferencesLimit as maxProjectTextFiles, maxDeclarationFiles, PlatformFileReferencesResolvedValue as maxReferencedFileBytes } from "./file-references";
 
 var publishedSupportFileReferences: Dynamic;
 var publishedReferencePaths: Dynamic;
@@ -195,9 +195,7 @@ export {
   externalFileReferences as PlatformExternalFilesMapValue,
   PlatformExternalFilesProjectWoffPattern,
   publishedReferencePaths as PlatformExternalFilesResolvedValue,
-  publishedDeclarationReferences as PlatformExternalFilesResolvedValue_2,
   reservedProjectPaths as PlatformExternalFilesSubscribers,
-  usedStorePathSegments as PlatformExternalFilesSubscribers_2,
   saveExternalFileReference,
   setExternalFileReferences,
   setFileReferenceStore,

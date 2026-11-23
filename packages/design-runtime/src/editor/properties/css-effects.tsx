@@ -25,7 +25,7 @@ var ThisTextAlreadyHasAShadowMessage: Dynamic;
 var NotOnShapesInsideAGraphicMessage: Dynamic;
 var WebkitBackdropFilterValue: Dynamic;
 var PropertiesCssEffectsXYBlurConfig: Dynamic;
-var PropertiesCssEffectsXYBlurConfig_2: Dynamic;
+var shadowControlRanges: Dynamic;
 function useEditorColorSwatches(): Dynamic {
   let { designColorTokens: designColorTokens }: Dynamic = useInspectorContext();
   return (0, reactComponentsPropsPanel.useMemo)(
@@ -505,7 +505,7 @@ export {
   PropertiesCssEffectsBoxShadowTextShadowFilterValues,
   PropertiesCssEffectsMin,
   PropertiesCssEffectsXYBlurConfig,
-  PropertiesCssEffectsXYBlurConfig_2,
+  shadowControlRanges,
   serializeDropShadowFilters,
   serializeEffectValue,
   splitEffectTokens,
@@ -547,7 +547,7 @@ export function installEditorPropertiesCssEffects(): () => void {
       blur: 3,
       color: "#00000033",
     };
-    PropertiesCssEffectsXYBlurConfig_2 = {
+    shadowControlRanges = {
       x: {
         ...StyleSchemaShadowXYBlurConfig.x,
         step: 1,

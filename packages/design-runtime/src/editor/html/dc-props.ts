@@ -6,7 +6,7 @@ import { findHtmlTagEnd, parseDcHtmlDocument, TextXDcValue } from "./dc-document
 import { escapeHtmlAttributeValue } from "./escaping";
 
 var HtmlDcPropsAmpLtGtConfig: Dynamic;
-var Value_3: Dynamic;
+var windows1252ControlChars: Dynamic;
 var HtmlDcPropsItems: Dynamic;
 function decodeHtmlEntities(text?: Dynamic): Dynamic {
   return text.replace(
@@ -18,7 +18,7 @@ function decodeHtmlEntities(text?: Dynamic): Dynamic {
           ? parseInt(entityBody.slice(2), 16)
           : parseInt(entityBody.slice(1), 10);
       return codePoint >= 128 && codePoint <= 159
-        ? Value_3[codePoint - 128]
+        ? windows1252ControlChars[codePoint - 128]
         : codePoint === 0 || codePoint > 1114111 || (codePoint >= 55296 && codePoint <= 57343)
           ? "\uFFFD"
           : String.fromCodePoint(codePoint);
@@ -100,7 +100,7 @@ export {
   HtmlDcPropsItems,
   setDcPropsJson,
   setDcScript,
-  Value_3,
+  windows1252ControlChars,
 };
 export function installEditorHtmlDcProps(): () => void {
   return () => {
@@ -111,7 +111,7 @@ export function installEditorHtmlDcProps(): () => void {
       quot: '"',
       apos: "'",
     };
-    Value_3 =
+    windows1252ControlChars =
       "\u20AC\x81\u201A\u0192\u201E\u2026\u2020\u2021\u02C6\u2030\u0160\u2039\u0152\x8D\u017D\x8F\x90\u2018\u2019\u201C\u201D\u2022\u2013\u2014\u02DC\u2122\u0161\u203A\u0153\x9D\u017E\u0178";
     HtmlDcPropsItems = [
       {

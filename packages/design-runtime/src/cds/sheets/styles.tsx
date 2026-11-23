@@ -6,7 +6,7 @@ import {
 } from "../../runtime-types";
 import { createSheetMutableCell } from "../dom/inert";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
-import { initializePlatformReducedMotion, initializePlatformReducedMotion_2, PlatformReducedMotionLabel } from "../platform/reduced-motion";
+import { initializePlatformReducedMotion, initializeSheetMotionClassNames, PlatformReducedMotionLabel } from "../platform/reduced-motion";
 import { calculateSheetDetents, calculateSheetPosition, initializeSheetsGesturePhysics, settleSheetGesture, sheetPositionToRawHeight } from "./gesture-physics";
 import { initializeSheetsLayout, SheetsLayoutConstant, SheetsLayoutCss } from "./layout";
 import { initializeSheetsPopupStack, prefersReducedMotion, SheetPopupContext } from "./popup-stack";
@@ -15,14 +15,14 @@ import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 
 var reactSheetsStyles: Dynamic;
 var initializeSheetsStyles: Dynamic;
-var reactSheetsStyles_2: typeof React;
+var reactForUseLabel: typeof React;
 var LabelsProviderContext: React.Context<LabelResolver | undefined>;
-var initializeSheetsStyles_2: Dynamic;
+var initializeLabelsProviderContext: Dynamic;
 function clearSheetTransition(sheetElement?: Dynamic): Dynamic {
   sheetElement.style.transition = "";
   sheetElement.style.translate = "";
 }
-function useSheetState_2(): Dynamic {
+function useSheetPartProps(): Dynamic {
   let value: Dynamic = (0, reactSheetsStyles.useContext)(
       SheetPopupContext,
     ),
@@ -266,7 +266,7 @@ function useLabel(
   values?: LabelValues,
 ): string {
   return resolveLabel(
-    (0, reactSheetsStyles_2.useContext)(LabelsProviderContext),
+    (0, reactForUseLabel.useContext)(LabelsProviderContext),
     key,
     fallback,
     values,
@@ -275,14 +275,14 @@ function useLabel(
 export {
   clearSheetTransition,
   initializeSheetsStyles,
-  initializeSheetsStyles_2,
+  initializeLabelsProviderContext,
   interpolateLabel,
   LabelsProviderContext,
   reactSheetsStyles,
-  reactSheetsStyles_2,
+  reactForUseLabel,
   resolveLabel,
   useLabel,
-  useSheetState_2,
+  useSheetPartProps,
 };
 export function installCdsSheetsStyles(): () => void {
   return () => {
@@ -294,16 +294,16 @@ export function installCdsSheetsStyles(): () => void {
       initializeSheetsGesturePhysics();
       initializeSheetsLayout();
       initializeSheetsPopupStack();
-      initializePlatformReducedMotion_2();
+      initializeSheetMotionClassNames();
       reactSheetsStyles = toModuleNamespace(
         load_react(),
       );
     });
-    initializeSheetsStyles_2 = initializeOnce((): Dynamic => {
-      reactSheetsStyles_2 = toModuleNamespace(
+    initializeLabelsProviderContext = initializeOnce((): Dynamic => {
+      reactForUseLabel = toModuleNamespace(
         load_react(),
       );
-      LabelsProviderContext = (0, reactSheetsStyles_2.createContext)<
+      LabelsProviderContext = (0, reactForUseLabel.createContext)<
         LabelResolver | undefined
       >(undefined);
     });

@@ -257,8 +257,8 @@ function FloatingScrollbar({
 export {
   ChromeScrollbarClassNames,
   ChromeScrollbarConstant,
-  scrollbarRightInset as ChromeScrollbarConstant_2,
-  scrollbarMinThumbHeight as ChromeScrollbarConstant_3,
+  scrollbarRightInset,
+  scrollbarMinThumbHeight,
   ChromeScrollbarDelayMs,
   ChromeScrollbarLabel,
   FloatingScrollbar,

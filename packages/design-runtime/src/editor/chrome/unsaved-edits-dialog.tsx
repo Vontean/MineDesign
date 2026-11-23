@@ -38,7 +38,7 @@ function UnsavedEditsDialog({
         <DialogDialogRootTriggerPopupConfig.Popup size={"sm"}>
           <DialogDialogRootTriggerPopupConfig.Header
             showClose={false}
-            description={uiMessage("inspector.unsavedEditsDialog.itWasUpdatedOutsideThisEditorWhatDoYouWantToDoWith", { value1: String(editsDescription) })}
+            description={uiMessage("inspector.unsavedEditsDialog.itWasUpdatedOutsideThisEditorWhatDoYouWantToDoWith", { edits: String(editsDescription) })}
           >
             {uiMessage("inspector.unsavedEditsDialog.thisFileChanged")}
           </DialogDialogRootTriggerPopupConfig.Header>

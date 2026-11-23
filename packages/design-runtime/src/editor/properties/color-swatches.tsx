@@ -7,7 +7,7 @@ import {
 import { SegmentedControl } from "../../cds/components/selection-points";
 import { DisabledReasonTooltip } from "../../cds/tooltip/tooltip";
 import { joinClassNames } from "../chrome/overlay-state";
-import { ColorContrastCopyLabel_2 as searchLabel, ColorContrastCopyLabel_3 as noMatchesMessage, TypeValue } from "../color/contrast-copy";
+import { ColorContrastCopySearchColorsLabel as searchLabel, ColorContrastCopyNoMatchesLabel as noMatchesMessage, TypeValue } from "../color/contrast-copy";
 import { alphaCheckerboardBackground, ColorSwatchRow, hsvaToRgbaCss, parseHsvaColor, PickerListGroup, PickerListHeader } from "../color/picker-primitives";
 import { ColorHexInput, ColorPicker } from "../color/picker";
 import { jsxPropertiesGradientEditor, PropertiesGradientEditorColorMixPattern, PropertiesGradientEditorImageCrossFadePattern, PropertiesGradientEditorLabel } from "./gradient-editor";

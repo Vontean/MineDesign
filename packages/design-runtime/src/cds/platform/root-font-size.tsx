@@ -5,7 +5,7 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { ensureDocumentInputObserver, initializeDomInputObservation } from "../dom/input-observation";
-import { DisabledContext, handleModalCatcherDismissal, initializeDomRefComposition, initializeDomRefComposition_3, initializeDomRefComposition_4, initializeDomRefComposition_5, preventModalCatcherMouseFocus, preventModalCatcherPointerFocus, useCloseOnHiddenActivity, useMergedRefs } from "../dom/ref-composition";
+import { DisabledContext, handleModalCatcherDismissal, initializeDomRefComposition, initializeActivityVisibilityContext, initializeDomEventRestoreState, initializeDisabledContext, preventModalCatcherMouseFocus, preventModalCatcherPointerFocus, useCloseOnHiddenActivity, useMergedRefs } from "../dom/ref-composition";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { initializeExperimentalTheme, useThemeId } from "../theme/experimental-theme";
 import { DensityContextAlias, initializeCdsRoot, monoFontOverrideStyle, PageBackgroundContext, pageBackgroundStyle, RootPresenceContext, useCdsFont, useCdsLabels, useColorMode, useDensity, useLocale, usePageBackground, usePlatform } from "../theme/root";
@@ -19,22 +19,22 @@ var SkeletonElementContext: Dynamic;
 var PlatformRootFontSizeContext: Dynamic;
 var SkeletonMotionContext: Dynamic;
 var initializePlatformRootFontSize: Dynamic;
-var jsxPlatformRootFontSize_2: Dynamic;
-var initializePlatformRootFontSize_2: Dynamic;
-var reactPlatformRootFontSize_2: Dynamic;
+var jsxForIconFontMetadata: Dynamic;
+var initializeRootFontSizeHooks: Dynamic;
+var reactForUseRootFontSize: Dynamic;
 var rootRemScaleProperty: Dynamic;
 var PlatformRootFontSizeConstant: Dynamic;
 var PlatformRootFontSizeCss: Dynamic;
-var PlatformRootFontSizeCss_2: Dynamic;
+var rootFontSizeProbeStyle: Dynamic;
 var CdsRootFontSizeProbeAttribute: Dynamic;
 var scaleCssPixels: Dynamic;
 var PlatformRootFontSizeIsConnectedRemoveState: Dynamic;
 var rootFontSizeObserver: Dynamic;
 var rootFontSizeSnapshot: Dynamic;
 var rootFontSizeSubscribers: Dynamic;
-var initializePlatformRootFontSize_3: Dynamic;
+var initializeRootFontScaleProbe: Dynamic;
 var iconFontMetadata: Dynamic;
-var initializePlatformRootFontSize_4: Dynamic;
+var initializeIconFontMetadata: Dynamic;
 function ResetSkeletonContext({ children: children }: Dynamic): Dynamic {
   useUiLocale();
   return (
@@ -145,7 +145,7 @@ function rootFontSizeProbe(): Dynamic {
       "",
     ),
     (PlatformRootFontSizeIsConnectedRemoveState.style.cssText =
-      PlatformRootFontSizeCss_2),
+      rootFontSizeProbeStyle),
     PlatformRootFontSizeIsConnectedRemoveState.isConnected ||
       (document as Dynamic).documentElement.appendChild(
         PlatformRootFontSizeIsConnectedRemoveState,
@@ -207,7 +207,7 @@ function subscribeRootFontSize(onRootFontSizeChange?: Dynamic): Dynamic {
   };
 }
 function useRootFontSize(): Dynamic {
-  return (0, reactPlatformRootFontSize_2.useSyncExternalStore)(
+  return (0, reactForUseRootFontSize.useSyncExternalStore)(
     subscribeRootFontSize,
     getRootFontSizeSnapshot,
     getServerRootFontSize,
@@ -219,20 +219,20 @@ export {
   getServerRootFontSize,
   iconFontMetadata,
   initializePlatformRootFontSize,
-  initializePlatformRootFontSize_2,
-  initializePlatformRootFontSize_3,
-  initializePlatformRootFontSize_4,
+  initializeRootFontSizeHooks,
+  initializeRootFontScaleProbe,
+  initializeIconFontMetadata,
   jsxPlatformRootFontSize,
-  jsxPlatformRootFontSize_2,
+  jsxForIconFontMetadata,
   measureRootRemScale,
   PlatformRootFontSizeConstant,
   PlatformRootFontSizeContext,
   PlatformRootFontSizeCss,
-  PlatformRootFontSizeCss_2,
+  rootFontSizeProbeStyle,
   PlatformRootFontSizeIsConnectedRemoveState,
   PopupSurface,
   reactPlatformRootFontSize,
-  reactPlatformRootFontSize_2,
+  reactForUseRootFontSize,
   readRootFontSize,
   ResetSkeletonContext,
   rootFontSizeObserver,
@@ -271,7 +271,7 @@ export function installCdsPlatformRootFontSize(): () => void {
         );
       },
     );
-    initializePlatformRootFontSize_2 = initializeOnce(
+    initializeRootFontSizeHooks = initializeOnce(
       (): Dynamic => {
         "use client";
 
@@ -279,27 +279,27 @@ export function installCdsPlatformRootFontSize(): () => void {
         initializeExperimentalTheme();
         initializeClassNames();
         initializeCdsRoot();
-        initializeDomRefComposition_3();
-        initializeDomRefComposition_4();
-        initializeDomRefComposition_5();
+        initializeActivityVisibilityContext();
+        initializeDomEventRestoreState();
+        initializeDisabledContext();
         initializeDomRefComposition();
         initializePlatformRootFontSize();
-        jsxPlatformRootFontSize_2 = toModuleNamespace(
+        jsxForIconFontMetadata = toModuleNamespace(
           load_react_jsx_runtime(),
         );
       },
     );
-    initializePlatformRootFontSize_3 = initializeOnce(
+    initializeRootFontScaleProbe = initializeOnce(
       (): Dynamic => {
         "use client";
 
-        reactPlatformRootFontSize_2 = toModuleNamespace(
+        reactForUseRootFontSize = toModuleNamespace(
           load_react(),
         );
         rootRemScaleProperty = "--cds-rem-scale";
         PlatformRootFontSizeConstant = 16;
         PlatformRootFontSizeCss = `calc(${PlatformRootFontSizeConstant}rem * var(${rootRemScaleProperty}, 1))`;
-        PlatformRootFontSizeCss_2 = `position:fixed;top:0;left:0;width:${PlatformRootFontSizeCss};min-width:0;max-width:none;height:0;font-size:${PlatformRootFontSizeCss};-webkit-text-size-adjust:none;text-size-adjust:none;visibility:hidden;pointer-events:none;`;
+        rootFontSizeProbeStyle = `position:fixed;top:0;left:0;width:${PlatformRootFontSizeCss};min-width:0;max-width:none;height:0;font-size:${PlatformRootFontSizeCss};-webkit-text-size-adjust:none;text-size-adjust:none;visibility:hidden;pointer-events:none;`;
         CdsRootFontSizeProbeAttribute = "data-cds-root-font-size-probe";
         scaleCssPixels = (pixels: number): string =>
           `calc(${pixels / 16}rem * var(${rootRemScaleProperty}, 1))`;
@@ -309,7 +309,7 @@ export function installCdsPlatformRootFontSize(): () => void {
         rootFontSizeSubscribers = new Set();
       },
     );
-    initializePlatformRootFontSize_4 = initializeOnce(
+    initializeIconFontMetadata = initializeOnce(
       (): Dynamic => {
         iconFontMetadata = JSON.parse(`{
  "icons": {

@@ -2,11 +2,11 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type { ForwardComponent, TextInputProps } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { Button, ButtonButtonClassNames_3, ButtonButtonClassNames_4, ButtonButtonCss, initializeButtonButton, initializeButtonButton_2 } from "../button/button";
+import { Button, fieldHoverShadowClassName, inlineInputClassName, ButtonButtonCss, initializeButtonButton, initializeFieldBoxClassNames } from "../button/button";
 import { initializeDomRefComposition, useMergedRefs } from "../dom/ref-composition";
 import { initializeFieldContext, useFieldDisabled, useFieldInvalid } from "../field/context";
-import { initializeMenuPopup_2, useClickToFocus } from "../menu/popup";
-import { initializeSheetsStyles_2, useLabel } from "../sheets/styles";
+import { initializeMenuPopupInteractiveSelector, useClickToFocus } from "../menu/popup";
+import { initializeLabelsProviderContext, useLabel } from "../sheets/styles";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { getSizeAttribute, initializeCdsRoot } from "../theme/root";
 import { initializeNpm__base_ui_react_x7, load_react, load_react_jsx_runtime, npm_Field_qg } from "../../dependencies";
@@ -17,14 +17,14 @@ var jsxComponentsTextInput: typeof import("react/jsx-runtime");
 var ButtonButtonCssAlias: string;
 var ButtonButtonClassNamesAlias: string;
 var ComponentsTextInputClassNames: string;
-var ComponentsTextInputClassNames_2: string;
+var endSlotButtonPaddingClassName: string;
 var TextInput: ForwardComponent<HTMLInputElement, TextInputProps>;
 var initializeComponentsTextInput: () => void;
 export {
   ButtonButtonClassNamesAlias,
   ButtonButtonCssAlias,
   ComponentsTextInputClassNames,
-  ComponentsTextInputClassNames_2,
+  endSlotButtonPaddingClassName,
   initializeComponentsTextInput,
   jsxComponentsTextInput,
   reactComponentsTextInput,
@@ -36,12 +36,12 @@ export function installCdsComponentsTextInput(): () => void {
       "use client";
 
       initializeClassNames();
-      initializeSheetsStyles_2();
+      initializeLabelsProviderContext();
       initializeCdsRoot();
-      initializeMenuPopup_2();
+      initializeMenuPopupInteractiveSelector();
       initializeDomRefComposition();
       initializeButtonButton();
-      initializeButtonButton_2();
+      initializeFieldBoxClassNames();
       initializeFieldContext();
       reactComponentsTextInput = toModuleNamespace(
         load_react(),
@@ -51,10 +51,10 @@ export function installCdsComponentsTextInput(): () => void {
       );
       initializeNpm__base_ui_react_x7();
       ButtonButtonCssAlias = ButtonButtonCss;
-      ButtonButtonClassNamesAlias = ButtonButtonClassNames_4;
+      ButtonButtonClassNamesAlias = inlineInputClassName;
       ComponentsTextInputClassNames =
         "[&_[data-cds=Button]:not([data-cds-ghost])]:h-[var(--fhn)] [&_[data-cds=Button]:not([data-cds-ghost])]:rounded-[calc(var(--fr)-(var(--fh)-var(--fhn))/2)] [&_[data-cds=Button][data-cds-icon-only]:not([data-cds-ghost])]:w-[var(--fhn)]";
-      ComponentsTextInputClassNames_2 =
+      endSlotButtonPaddingClassName =
         "has-[[data-cds-end-slot]_[data-cds=Button]:not([data-cds-ghost])]:pr-[calc((var(--cds-h-control)-var(--cds-h-control-nested))/2)]";
       TextInput = (0, reactComponentsTextInput.forwardRef)<
         HTMLInputElement,
@@ -168,13 +168,13 @@ export function installCdsComponentsTextInput(): () => void {
                 className={cn(
                   ButtonButtonCssAlias,
                   paddingRightClass,
-                  ComponentsTextInputClassNames_2,
+                  endSlotButtonPaddingClassName,
                   "inline-flex",
                   widthClass,
                   isDisabled ? "cursor-default" : "cursor-text",
                   "items-center gap-[var(--cds-pad-sm,6px)] has-[:focus-visible]:shadow-focus",
                   "has-[input:disabled]:opacity-disabled",
-                  isDisabled ? undefined : ButtonButtonClassNames_3,
+                  isDisabled ? undefined : fieldHoverShadowClassName,
                   className,
                 )}
               >

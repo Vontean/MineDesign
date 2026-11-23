@@ -17,10 +17,10 @@ import { transformTouchedProperties } from "../../geometry/selection-transform";
 import { type Dynamic } from "../../runtime-types";
 
 /** 按下缩放或编组变换手柄时运行：捕获指针，移动超过 4px 后持续调用 live，松开时 commit，按 Esc、丢失捕获或手柄消失时 revert，最后清理监听。 */
-export function trackHandleDragGesture(deps: { readonly callback30: Dynamic; readonly value130: Dynamic; readonly value134: Dynamic; readonly value18: Dynamic; readonly value19: Dynamic }, event?: Dynamic,
+export function trackHandleDragGesture(deps: { readonly trackPointerGesture: Dynamic; readonly activeGesturesRef: Dynamic; readonly trackGesture: Dynamic; readonly canEditCanvas: Dynamic; readonly canEditCanvasRef: Dynamic }, event?: Dynamic,
       handleName?: Dynamic,
       gestureCallbacks?: Dynamic): Dynamic {
-      if (event.button !== 0 || !deps.value18 || deps.value130.current.has("resize"))
+      if (event.button !== 0 || !deps.canEditCanvas || deps.activeGesturesRef.current.has("resize"))
         return;
       event.preventDefault();
       event.stopPropagation();
@@ -35,11 +35,11 @@ export function trackHandleDragGesture(deps: { readonly callback30: Dynamic; rea
           } catch {}
         };
       capturePointer(event.currentTarget);
-      deps.value134("resize", true);
-      deps.callback30("resize");
+      deps.trackGesture("resize", true);
+      deps.trackPointerGesture("resize");
       let [startX, startY]: Dynamic = [event.clientX, event.clientY],
         isHandleAlive: Dynamic = (): Dynamic =>
-          !!ancestor?.isConnected && deps.value19.current,
+          !!ancestor?.isConnected && deps.canEditCanvasRef.current,
         hasMoved: Dynamic = false,
         handlePointerMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
           if (moveEvent.pointerId === pointerId) {
@@ -70,7 +70,7 @@ export function trackHandleDragGesture(deps: { readonly callback30: Dynamic; rea
             handleLostCapture,
             true,
           );
-          deps.value134("resize", false);
+          deps.trackGesture("resize", false);
           gestureCallbacks.end?.();
         },
         handlePointerUp: Dynamic = (upEvent?: Dynamic): Dynamic => {
@@ -101,16 +101,16 @@ export function trackHandleDragGesture(deps: { readonly callback30: Dynamic; rea
     }
 
 /** 选中多个画板或便签并整体缩放或旋转时运行：记录变换前的快照，手势中把计算出的新几何写入画布清单并显示变换框，结束时提交或还原。 */
-export function runSelectionTransformGesture(deps: { readonly callback57: Dynamic; readonly onManifestChange: Dynamic; readonly value146: Dynamic; readonly value230: Dynamic; readonly value231: Dynamic; readonly value234: Dynamic; readonly value236: Dynamic; readonly value241: Dynamic; readonly value242: Dynamic; readonly value70: Dynamic }, pointerEvent?: Dynamic,
+export function runSelectionTransformGesture(deps: { readonly trackHandleDragGestureBound: Dynamic; readonly onManifestChange: Dynamic; readonly manifestRef: Dynamic; readonly selectedArtboardSpecs: Dynamic; readonly selectedNoteEntries: Dynamic; readonly setGroupTransformPreview: Dynamic; readonly setGroupSnapTransforms: Dynamic; readonly selectionBox: Dynamic; readonly selectionRotation: Dynamic; readonly setSnapGuides: Dynamic }, pointerEvent?: Dynamic,
       gestureLabel?: Dynamic,
       touchedKeys?: Dynamic,
       computeTransform?: Dynamic,
       isRotated: Dynamic = false): Dynamic {
       let boardEntries: Dynamic = new Map(
-          deps.value230.map((boardEntry?: Dynamic): Dynamic => [boardEntry.file, boardEntry]),
+          deps.selectedArtboardSpecs.map((boardEntry?: Dynamic): Dynamic => [boardEntry.file, boardEntry]),
         ),
         noteEntries: Dynamic = new Map(
-          deps.value231.map(
+          deps.selectedNoteEntries.map(
             (noteEntry?: Dynamic): Dynamic => [noteEntry.spec.id, noteEntry],
           ),
         ),
@@ -120,12 +120,12 @@ export function runSelectionTransformGesture(deps: { readonly callback57: Dynami
               ([key]: Dynamic): Dynamic => touchedKeys.has(key),
             ),
           ),
-        startBox: Dynamic = deps.value241,
+        startBox: Dynamic = deps.selectionBox,
         applyTransform: Dynamic = (
           transform?: Dynamic,
           shouldCommit?: Dynamic,
         ): Dynamic => {
-          deps.value234(
+          deps.setGroupTransformPreview(
             transform && !shouldCommit
               ? {
                   box: transform.box,
@@ -134,7 +134,7 @@ export function runSelectionTransformGesture(deps: { readonly callback57: Dynami
                 }
               : null,
           );
-          let manifest: Dynamic = deps.value146.current,
+          let manifest: Dynamic = deps.manifestRef.current,
             nextManifest: Dynamic = {
               ...manifest,
               artboards: manifest.artboards.map(
@@ -177,7 +177,7 @@ export function runSelectionTransformGesture(deps: { readonly callback57: Dynami
           shouldCommit &&
             transform &&
             (transform.deg !== 0 || isRotated) &&
-            deps.value236(
+            deps.setGroupSnapTransforms(
               (previousTransforms?: Dynamic): Dynamic =>
                 [
                   {
@@ -207,7 +207,7 @@ export function runSelectionTransformGesture(deps: { readonly callback57: Dynami
                     keys: touchedKeys,
                     boards: boardEntries,
                     notes: new Map(
-                      deps.value231.map(
+                      deps.selectedNoteEntries.map(
                         (noteEntry?: Dynamic): Dynamic => [
                           noteEntry.spec.id,
                           noteEntry.spec,
@@ -220,14 +220,14 @@ export function runSelectionTransformGesture(deps: { readonly callback57: Dynami
           );
         },
         currentTransform: Dynamic = null;
-      deps.callback57(pointerEvent, "group-resize", {
+      deps.trackHandleDragGestureBound(pointerEvent, "group-resize", {
         live: (moveEvent?: Dynamic): Dynamic => {
           currentTransform = computeTransform(moveEvent);
           applyTransform(currentTransform, false);
           currentTransform ||
-            deps.value234({
+            deps.setGroupTransformPreview({
               box: startBox,
-              deg: deps.value242,
+              deg: deps.selectionRotation,
               turning: gestureLabel === "Rotate",
             });
         },
@@ -236,17 +236,17 @@ export function runSelectionTransformGesture(deps: { readonly callback57: Dynami
         },
         revert: (): Dynamic => applyTransform(null, false),
         end: (): Dynamic => {
-          deps.value234(null);
-          deps.value70(null);
+          deps.setGroupTransformPreview(null);
+          deps.setSnapGuides(null);
         },
       });
     }
 
 /** 拖动选中范围的缩放手柄时运行：根据指针位移和缩放上下限计算新的选区框（支持吸附、Shift 等比、旋转后的矩形），再交给整体变换手势应用到画板与便签。 */
-export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; readonly callback58: Dynamic; readonly camera: Dynamic; readonly selectedArtboards: Dynamic; readonly selectedNotes: Dynamic; readonly value230: Dynamic; readonly value231: Dynamic; readonly value241: Dynamic; readonly value242: Dynamic; readonly value243: Dynamic; readonly value70: Dynamic }, handleAxes?: Dynamic, pointerEvent?: Dynamic): Dynamic {
-      if (!deps.value241) return;
-      let [startBox, rotationDeg]: Dynamic = [deps.value241, deps.value242],
-        { min: sizeMin, max: sizeMax }: Dynamic = selectionScaleLimits(startBox, deps.value230, deps.value231),
+export function beginSelectionGroupResize(deps: { readonly buildSnapReferenceLines: Dynamic; readonly runSelectionTransform: Dynamic; readonly camera: Dynamic; readonly selectedArtboards: Dynamic; readonly selectedNotes: Dynamic; readonly selectedArtboardSpecs: Dynamic; readonly selectedNoteEntries: Dynamic; readonly selectionBox: Dynamic; readonly selectionRotation: Dynamic; readonly isRotatedSelection: Dynamic; readonly setSnapGuides: Dynamic }, handleAxes?: Dynamic, pointerEvent?: Dynamic): Dynamic {
+      if (!deps.selectionBox) return;
+      let [startBox, rotationDeg]: Dynamic = [deps.selectionBox, deps.selectionRotation],
+        { min: sizeMin, max: sizeMax }: Dynamic = selectionScaleLimits(startBox, deps.selectedArtboardSpecs, deps.selectedNoteEntries),
         activeAxes: Dynamic = {
           x: handleAxes.x !== null,
           y: handleAxes.y !== null,
@@ -263,11 +263,11 @@ export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; 
         ),
         snapTargets: Dynamic = rotationDeg
           ? []
-          : deps.callback45({
+          : deps.buildSnapReferenceLines({
               files: deps.selectedArtboards,
               notes: deps.selectedNotes,
             });
-      deps.callback58(
+      deps.runSelectionTransform(
         pointerEvent,
         "Resize",
         touchedKeys,
@@ -336,7 +336,7 @@ export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; 
             };
           }
           let resizedBox: Dynamic =
-              canKeepAspect && (deps.value243 || moveEvent.shiftKey)
+              canKeepAspect && (deps.isRotatedSelection || moveEvent.shiftKey)
                 ? resizeRectKeepingAspect(
                     startBox,
                     handleAxes,
@@ -358,7 +358,7 @@ export function beginSelectionGroupResize(deps: { readonly callback45: Dynamic; 
               handleAxes,
               snapped.guides,
             );
-          deps.value70(activeGuides.length > 0 ? activeGuides : null);
+          deps.setSnapGuides(activeGuides.length > 0 ? activeGuides : null);
           return resizedBox.x === startBox.x &&
             resizedBox.y === startBox.y &&
             resizedBox.w === startBox.w &&

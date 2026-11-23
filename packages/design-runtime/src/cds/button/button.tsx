@@ -5,13 +5,13 @@ import type * as React from "react";
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { buttonBackgroundClassName, ButtonContextClassNames_2, ButtonContextClassNames_3, ButtonContextClassNames_4, ButtonContextClassNames_5, ButtonContextClassNames_6, ButtonContextClassNames_7, CdsCompactableAttribute, initializeButtonContext, initializeButtonContext_2, initializeButtonContext_3, useButtonAnimation, useButtonGroup } from "./context";
-import { Icon, iconSizeMetrics, initializeComponentsIcon_2, isIconName, useIconSize } from "../components/icon";
+import { buttonBackgroundClassName, focusRingClassName, dangerFocusRingClassName, focusInsetOverlayClassName, pressedFieldShadowClassName, pressedAccentBackgroundClassName, secondaryFillClassName, CdsCompactableAttribute, initializeButtonContext, initializeButtonAnimationReact, initializeButtonFocusClassNames, useButtonAnimation, useButtonGroup } from "./context";
+import { Icon, iconSizeMetrics, initializeIconSizeMetrics, isIconName, useIconSize } from "../components/icon";
 import { initializeComponentsShortcut, parseSingleShortcut, Shortcut, useAppleKeyboard } from "../components/shortcut";
 import { initializeComponentsSpinner, Spinner } from "../components/spinner";
 import { initializeDomSelectionPrevention, withSelectionPrevention } from "../dom/selection-prevention";
 import { initializeLinkRouter, pickRouterOptions, useLinkProps } from "../links";
-import { initializePlatformRootFontSize_3, scaleCssPixels } from "../platform/root-font-size";
+import { initializeRootFontScaleProbe, scaleCssPixels } from "../platform/root-font-size";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { getSizeAttribute, initializeCdsRoot } from "../theme/root";
 import { DeferredDisabledReasonTooltip, DeferredTooltip, initializeTooltipDeferredProvider } from "../tooltip/deferred-provider";
@@ -34,13 +34,13 @@ var ButtonButtonCdsOutsetXConfig: Dynamic;
 var ButtonIconSizeContext: Dynamic;
 var Button: Dynamic;
 var initializeButtonButton: Dynamic;
-var ButtonButtonClassNames_2: Dynamic;
-var ButtonButtonClassNames_3: Dynamic;
+var fieldSurfaceClassName: Dynamic;
+var fieldHoverShadowClassName: Dynamic;
 var ButtonButtonCss: Dynamic;
-var ButtonButtonClassNames_4: Dynamic;
-var ButtonButtonCss_2: Dynamic;
-var ButtonButtonCss_3: Dynamic;
-var initializeButtonButton_2: Dynamic;
+var inlineInputClassName: Dynamic;
+var fieldBoxClassName: Dynamic;
+var fieldFocusWithinClassName: Dynamic;
+var initializeFieldBoxClassNames: Dynamic;
 function isButtonActivationKey(
   event: Pick<React.KeyboardEvent, "key">,
 ): boolean {
@@ -93,12 +93,12 @@ export {
   Button,
   ButtonButtonCdsOutsetXConfig,
   ButtonButtonClassNames,
-  ButtonButtonClassNames_2,
-  ButtonButtonClassNames_3,
-  ButtonButtonClassNames_4,
+  fieldSurfaceClassName,
+  fieldHoverShadowClassName,
+  inlineInputClassName,
   ButtonButtonCss,
-  ButtonButtonCss_2,
-  ButtonButtonCss_3,
+  fieldBoxClassName,
+  fieldFocusWithinClassName,
   ButtonButtonPreventDefault,
   ButtonButtonStartEndBothConfig,
   ButtonButtonStartEndMiddleConfig,
@@ -110,7 +110,7 @@ export {
   buttonSizeToIconSize,
   buttonStyleVariants,
   initializeButtonButton,
-  initializeButtonButton_2,
+  initializeFieldBoxClassNames,
   isButtonActivationKey,
   isUnmodifiedButtonActivationKey,
   jsxButtonButton,
@@ -128,15 +128,15 @@ export function installCdsButtonButton(): () => void {
       initializeLinkRouter();
       initializeCdsRoot();
       initializeDomSelectionPrevention();
-      initializePlatformRootFontSize_3();
-      initializeComponentsIcon_2();
+      initializeRootFontScaleProbe();
+      initializeIconSizeMetrics();
       initializeComponentsShortcut();
       initializeTooltipTrigger();
       initializeButtonContext();
-      initializeButtonContext_2();
+      initializeButtonAnimationReact();
       initializeComponentsSpinner();
       initializeTooltipDeferredProvider();
-      initializeButtonContext_3();
+      initializeButtonFocusClassNames();
       initializeNpm__base_ui_react_SY();
       reactButtonButton = toModuleNamespace(
         load_react(),
@@ -159,11 +159,11 @@ export function installCdsButtonButton(): () => void {
         {
           variants: {
             variant: {
-              primary: `text-on-primary font-medium [--cds-shortcut-cap-ink:currentColor] ${ButtonContextClassNames_2}`,
-              secondary: `text-primary font-normal aria-pressed:text-accent ${ButtonContextClassNames_2}`,
-              ghost: `text-primary font-normal aria-pressed:text-accent ${ButtonContextClassNames_2}`,
-              danger: `text-on-danger font-medium [--cds-shortcut-cap-ink:currentColor] ${ButtonContextClassNames_3}`,
-              brand: `text-on-brand font-medium [--cds-shortcut-cap-ink:currentColor] ${ButtonContextClassNames_2}`,
+              primary: `text-on-primary font-medium [--cds-shortcut-cap-ink:currentColor] ${focusRingClassName}`,
+              secondary: `text-primary font-normal aria-pressed:text-accent ${focusRingClassName}`,
+              ghost: `text-primary font-normal aria-pressed:text-accent ${focusRingClassName}`,
+              danger: `text-on-danger font-medium [--cds-shortcut-cap-ink:currentColor] ${dangerFocusRingClassName}`,
+              brand: `text-on-brand font-medium [--cds-shortcut-cap-ink:currentColor] ${focusRingClassName}`,
               onContent: ButtonButtonClassNames,
               onAccent: ButtonButtonClassNames,
             },
@@ -181,13 +181,13 @@ export function installCdsButtonButton(): () => void {
       buttonStyleVariants =
         "bg-[var(--cds-button-on-content)] backdrop-blur-md shadow-[inset_0_0_0_1px_var(--cds-button-on-content-ring)] group-focus-visible/btn:!shadow-[inset_0_0_0_1px_var(--cds-button-on-content-ring)] group-[[data-initial-focus]:focus]/btn:!shadow-[inset_0_0_0_1px_var(--cds-button-on-content-ring)] group-hover/btn:bg-[var(--cds-button-on-content-hover)] group-[[aria-haspopup][aria-expanded=true]]/btn:bg-[var(--cds-button-on-content-hover)]";
       buttonIconOnlyVariants = npm_cva_Kj(
-        ButtonContextClassNames_4,
+        focusInsetOverlayClassName,
         {
           variants: {
             variant: {
               primary:
                 "bg-fill-primary group-hover/btn:bg-fill-primary-hover group-[[aria-haspopup][aria-expanded=true]]/btn:bg-fill-primary-hover",
-              secondary: ButtonContextClassNames_7,
+              secondary: secondaryFillClassName,
               ghost:
                 "bg-transparent group-hover/btn:bg-fill-ghost-hover group-[[aria-haspopup][aria-expanded=true]]/btn:bg-fill-ghost-hover",
               danger:
@@ -365,7 +365,7 @@ export function installCdsButtonButton(): () => void {
                     data-cds-part={"paint"}
                     className={`${buttonIconOnlyVariants({
                       variant: resolvedVariant,
-                    })} ${ButtonContextClassNames_6} ${resolvedVariant === "secondary" && !joinedPosition ? ButtonContextClassNames_5 : ""}`}
+                    })} ${pressedAccentBackgroundClassName} ${resolvedVariant === "secondary" && !joinedPosition ? pressedFieldShadowClassName : ""}`}
                   />
                 </span>
                 <span
@@ -525,16 +525,16 @@ export function installCdsButtonButton(): () => void {
       );
       Button.displayName = "Button";
     });
-    initializeButtonButton_2 = initializeOnce((): Dynamic => {
-      ButtonButtonClassNames_2 =
+    initializeFieldBoxClassNames = initializeOnce((): Dynamic => {
+      fieldSurfaceClassName =
         "bg-fill-field shadow-field-ring data-[invalid]:shadow-field-invalid";
-      ButtonButtonClassNames_3 =
+      fieldHoverShadowClassName =
         "[&:hover:not(:focus-visible):not(:has(:focus-visible)):not([data-invalid]):not([data-disabled])]:shadow-field-hover";
-      ButtonButtonCss = `h-control pl-md rounded ${ButtonButtonClassNames_2} font-sans text-body font-normal text-primary transition duration-fast`;
-      ButtonButtonClassNames_4 =
+      ButtonButtonCss = `h-control pl-md rounded ${fieldSurfaceClassName} font-sans text-body font-normal text-primary transition duration-fast`;
+      inlineInputClassName =
         "cds-input cds-reset min-w-0 flex-1 h-full bg-transparent border-0 p-0 outline-none focus-visible:outline-hidden text-body font-normal text-primary focus-visible:shadow-none placeholder:text-muted disabled:opacity-disabled";
-      ButtonButtonCss_2 = `rounded ${ButtonButtonClassNames_2} px-md py-sm transition duration-fast`;
-      ButtonButtonCss_3 = `${ButtonButtonCss_2} [&:hover:not(:focus-within):not([data-invalid]):not([data-disabled])]:shadow-field-hover focus-within:shadow-focus font-sans text-body text-primary`;
+      fieldBoxClassName = `rounded ${fieldSurfaceClassName} px-md py-sm transition duration-fast`;
+      fieldFocusWithinClassName = `${fieldBoxClassName} [&:hover:not(:focus-within):not([data-invalid]):not([data-disabled])]:shadow-field-hover focus-within:shadow-focus font-sans text-body text-primary`;
     });
   };
 }

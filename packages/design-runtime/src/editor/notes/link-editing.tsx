@@ -5,7 +5,7 @@ import {
 import { load_react_jsx_runtime } from "../../dependencies";
 import { ContenteditableFalseValue, NotesAutoformatCaretPositionFromPoint, NotesAutoformatParentNode } from "./autoformat";
 import { toModuleNamespace } from "../../module-helpers";
-import { annotationTextStyle, PlatformFileContentConstant_10 as noteMaxWidth, PlatformFileContentConstant_9 as noteMinWidth, PlatformFileContentMatch, PlatformFileContentMaxW, PlatformFileContentMin } from "../../platform/file-content";
+import { annotationTextStyle, maxTextAnnotationWidth as noteMaxWidth, minTextAnnotationWidth as noteMinWidth, PlatformFileContentMatch, PlatformFileContentMaxW, PlatformFileContentMin } from "../../platform/file-content";
 
 var jsxNotesLinkEditing: Dynamic;
 var NotesLinkEditingLabel: Dynamic;
@@ -15,7 +15,7 @@ var noteLinkHighlightColor: Dynamic;
 var noteTextColors: Dynamic;
 var noteFillColors: Dynamic;
 var NotesLinkEditingHandler: Dynamic;
-var NotesLinkEditingHandler_2: Dynamic;
+var resolveAnnotationTextColor: Dynamic;
 var NotesLinkEditingLh: Dynamic;
 var NotesLinkEditingKind: Dynamic;
 var NotesLinkEditingSize: Dynamic;
@@ -288,9 +288,9 @@ export {
   noteLinkHighlightColor,
   NotesLinkEditingClosest,
   noteTextColors as NotesLinkEditingGrayRedOrangeConfig,
-  noteFillColors as NotesLinkEditingGrayRedOrangeConfig_2,
+  noteFillColors,
   NotesLinkEditingHandler,
-  NotesLinkEditingHandler_2,
+  resolveAnnotationTextColor,
   NotesLinkEditingKind,
   NotesLinkEditingLabel,
   NotesLinkEditingLh,
@@ -333,7 +333,7 @@ export function installEditorNotesLinkEditing(): () => void {
       colorName === "default"
         ? Fef3a2Value
         : noteFillColors[colorName];
-    NotesLinkEditingHandler_2 = (
+    resolveAnnotationTextColor = (
       kind?: Dynamic,
       colorName?: Dynamic,
     ): Dynamic => {
@@ -379,7 +379,7 @@ export function installEditorNotesLinkEditing(): () => void {
       let textStyle: Dynamic = annotationTextStyle(annotation),
         metrics: Dynamic = PlatformFileContentMin(textStyle.size);
       return {
-        color: NotesLinkEditingHandler_2(textStyle.kind, textStyle.color),
+        color: resolveAnnotationTextColor(textStyle.kind, textStyle.color),
         fontSize: textStyle.size,
         fontWeight: textStyle.bold ? 700 : undefined,
         fontStyle: textStyle.italic ? "italic" : undefined,

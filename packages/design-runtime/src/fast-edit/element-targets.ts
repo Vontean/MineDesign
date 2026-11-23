@@ -61,7 +61,7 @@ function describeTemplateElementTarget(
     directText: Dynamic = directTargetText(element);
   if (/^sc-(?!raw-)/.test(element.localName)) return null;
   let value: Dynamic = new RegExp("^" + prefix + "\\d{1,6}$"),
-    value2: Dynamic = findEmptyDrawingTarget(element, value);
+    drawingTarget: Dynamic = findEmptyDrawingTarget(element, value);
   return value.test(id)
     ? {
         id: id,
@@ -71,7 +71,7 @@ function describeTemplateElementTarget(
         parent: element.parentElement?.getAttribute("id") ?? "",
         hollow:
           directText === "" &&
-          value2 === null &&
+          drawingTarget === null &&
           !LEAF_TARGET_ELEMENT_TAGS.has(
             element.localName.replace(/^sc-raw-/, ""),
           ) &&
@@ -80,26 +80,26 @@ function describeTemplateElementTarget(
           !isSuitableTextTarget(element),
         inList: loopIndex >= 0,
         list: loopIndex,
-        drawing: value2,
+        drawing: drawingTarget,
       }
     : null;
 }
 function resolveClickedElementTarget(
   selectorPath?: Dynamic,
-  hit2?: Dynamic,
+  hit?: Dynamic,
   handles?: Dynamic,
   html?: Dynamic,
   prefix?: Dynamic,
 ): Dynamic {
   let pathTarget: Dynamic =
-      hit2 !== null && !hit2.atPath
+      hit !== null && !hit.atPath
         ? null
         : resolveRenderedElementPath(selectorPath, html, prefix),
     handleTarget: Dynamic =
-      hit2 === null || hit2.tid === null
+      hit === null || hit.tid === null
         ? null
         : resolveTemplateHandleId(
-            hit2.tid,
+            hit.tid,
             handles,
             html,
             prefix,
@@ -109,9 +109,9 @@ function resolveClickedElementTarget(
     (pathTarget !== null &&
       handleTarget !== null &&
       pathTarget.id !== handleTarget.id) ||
-    (hit2 !== null &&
-      (hit2.tag !== target.tag ||
-        (!target.own.includes("{{") && hit2.own !== target.own)))
+    (hit !== null &&
+      (hit.tag !== target.tag ||
+        (!target.own.includes("{{") && hit.own !== target.own)))
     ? null
     : target;
 }
@@ -134,68 +134,68 @@ async function resolveFastEditClickTarget(
     items: Dynamic = [],
     callback: Dynamic = (
       input?: Dynamic,
-      options2?: Dynamic,
+      parentPath?: Dynamic,
       context?: Dynamic,
     ): Dynamic => {
-      let value10: Dynamic = Array.from(input.children);
+      let children: Dynamic = Array.from(input.children);
       if (
-        value10.some(
-          (input2?: Dynamic): Dynamic =>
-            /^sc-|^(?:dc|x)-import$/.test(input2.localName),
+        children.some(
+          (child?: Dynamic): Dynamic =>
+            /^sc-|^(?:dc|x)-import$/.test(child.localName),
         )
       )
         return;
       let entries: Dynamic = new Map();
-      for (let value11 of value10 as Dynamic) {
-        let value12: Dynamic = (entries.get(value11.localName) ?? 0) + 1;
-        entries.set(value11.localName, value12);
-        let value13: Dynamic = value11.getAttribute("id") ?? "";
+      for (let child of children as Dynamic) {
+        let siblingIndex: Dynamic = (entries.get(child.localName) ?? 0) + 1;
+        entries.set(child.localName, siblingIndex);
+        let elementId: Dynamic = child.getAttribute("id") ?? "";
         if (
-          !/^[a-z][a-z0-9-]{0,23}$/.test(value11.localName) ||
-          !value.test(value13) ||
+          !/^[a-z][a-z0-9-]{0,23}$/.test(child.localName) ||
+          !value.test(elementId) ||
           items.length >= 256
         )
           continue;
-        let value14: Dynamic =
-          options2 +
+        let elementPath: Dynamic =
+          parentPath +
           " > " +
-          value11.localName +
+          child.localName +
           ":nth-of-type(" +
-          String(value12) +
+          String(siblingIndex) +
           ")";
         items.push({
-          id: value13,
-          path: value14,
+          id: elementId,
+          path: elementPath,
           parent: context,
         });
-        callback(value11, value14, items.length - 1);
+        callback(child, elementPath, items.length - 1);
       }
     },
     firstElementChild: Dynamic = template.content.firstElementChild;
   if (firstElementChild === null) return {};
   callback(firstElementChild, "#dc-root > div:nth-of-type(1)", -1);
-  let value2: Dynamic = items.find(
+  let firstTarget: Dynamic = items.find(
       (input?: Dynamic): Dynamic =>
         input.parent === -1 &&
         !/ > (?:sc-)?helmet:nth-of-type\(\d+\)$/.test(input.path),
     ),
-    value3: Dynamic = Array.from(firstElementChild.children).filter(
+    topLevelElements: Dynamic = Array.from(firstElementChild.children).filter(
       (input?: Dynamic): Dynamic => !/^(?:sc-)?helmet$/.test(input.localName),
     ),
-    value4: Dynamic = value3[value3.length - 1]?.getAttribute("id") ?? "",
-    value5: Dynamic =
-      value2 === undefined
+    lastTopId: Dynamic = topLevelElements[topLevelElements.length - 1]?.getAttribute("id") ?? "",
+    fallbackTarget: Dynamic =
+      firstTarget === undefined
         ? {}
         : {
-            first: value2.id,
-            ...(value3.length > 1 && value.test(value4)
+            first: firstTarget.id,
+            ...(topLevelElements.length > 1 && value.test(lastTopId)
               ? {
-                  lastTop: value4,
+                  lastTop: lastTopId,
                 }
               : {}),
           };
-  if (webview.rectsOf === undefined) return value5;
-  let value6: Dynamic = await withFastEditTimeout(
+  if (webview.rectsOf === undefined) return fallbackTarget;
+  let rectangles: Dynamic = await withFastEditTimeout(
     webview
       .rectsOf(
         html,
@@ -209,51 +209,51 @@ async function resolveFastEditClickTarget(
       .catch((): Dynamic => null),
     2500,
   );
-  if (value6 === FAST_EDIT_TIMEOUT_SENTINEL || value6 === null)
-    return value5;
+  if (rectangles === FAST_EDIT_TIMEOUT_SENTINEL || rectangles === null)
+    return fallbackTarget;
   let x: Dynamic = click.x,
     y3: Dynamic = click.y,
-    callback2: Dynamic = (input?: Dynamic): Dynamic =>
+    isValidRectangle: Dynamic = (input?: Dynamic): Dynamic =>
       input != null &&
       [input.x, input.y, input.w, input.h].every(
-        (input2?: Dynamic): Dynamic => Number.isFinite(input2),
+        (coordinate?: Dynamic): Dynamic => Number.isFinite(coordinate),
       ),
-    value7: Dynamic = -1;
+    matchedIndex: Dynamic = -1;
   // MineDesign: restorer fix — the pointer's x is the outer `x` (click.x), as in the original; the restored code compared the
   // element entry (`input`) with the rect, so no artboard child ever matched the click horizontally.
-  items.forEach((input?: Dynamic, options2?: Dynamic): Dynamic => {
-    let value10: Dynamic = value6[options2];
-    input.parent === value7 &&
-      callback2(value10) &&
-      x >= value10.x &&
-      x <= value10.x + value10.w &&
-      y3 >= value10.y &&
-      y3 <= value10.y + value10.h &&
-      (value7 = options2);
+  items.forEach((input?: Dynamic, itemIndex?: Dynamic): Dynamic => {
+    let rectangle: Dynamic = rectangles[itemIndex];
+    input.parent === matchedIndex &&
+      isValidRectangle(rectangle) &&
+      x >= rectangle.x &&
+      x <= rectangle.x + rectangle.w &&
+      y3 >= rectangle.y &&
+      y3 <= rectangle.y + rectangle.h &&
+      (matchedIndex = itemIndex);
   });
-  if (value7 < 0) return value5;
-  let value8: Dynamic, value9: Dynamic;
-  items.forEach((input?: Dynamic, options2?: Dynamic): Dynamic => {
-    let value10: Dynamic = value6[options2];
-    input.parent !== value7 ||
-      !callback2(value10) ||
-      (value10.y + value10.h <= y3
-        ? (value8 = input.id)
-        : value10.x + value10.w <= x && // MineDesign: restorer fix — outer `x` (click.x), as above
-          y3 >= value10.y &&
-          y3 <= value10.y + value10.h &&
-          (value9 = input.id));
+  if (matchedIndex < 0) return fallbackTarget;
+  let belowId: Dynamic, afterId: Dynamic;
+  items.forEach((input?: Dynamic, itemIndex?: Dynamic): Dynamic => {
+    let rectangle: Dynamic = rectangles[itemIndex];
+    input.parent !== matchedIndex ||
+      !isValidRectangle(rectangle) ||
+      (rectangle.y + rectangle.h <= y3
+        ? (belowId = input.id)
+        : rectangle.x + rectangle.w <= x && // MineDesign: restorer fix — outer `x` (click.x), as above
+          y3 >= rectangle.y &&
+          y3 <= rectangle.y + rectangle.h &&
+          (afterId = input.id));
   });
   return {
-    ...value5,
-    inside: items[value7].id,
-    ...(value9 !== undefined
+    ...fallbackTarget,
+    inside: items[matchedIndex].id,
+    ...(afterId !== undefined
       ? {
-          after: value9,
+          after: afterId,
         }
-      : value8 !== undefined
+      : belowId !== undefined
         ? {
-            below: value8,
+            below: belowId,
           }
         : {}),
   };
@@ -357,16 +357,16 @@ export function installFastEditElementTargets(): () => void {
     countEmptySvgDrawings = (input?: Dynamic): Dynamic =>
       /<svg\b/i.test(input)
         ? Array.from(parseTargetTemplate(input).querySelectorAll("svg")).filter(
-            (input2?: Dynamic): Dynamic =>
+            (svg?: Dynamic): Dynamic =>
               !Array.from(
-                input2.querySelectorAll(
+                svg.querySelectorAll(
                   "path, circle, ellipse, rect, line, polyline, polygon, use, text",
                 ),
               ).some(
-                (input3?: Dynamic): Dynamic =>
-                  (input3.localName !== "text" ||
-                    (input3.textContent ?? "").trim() !== "") &&
-                  !isInsideSvgDefinitions(input3, input2),
+                (shape?: Dynamic): Dynamic =>
+                  (shape.localName !== "text" ||
+                    (shape.textContent ?? "").trim() !== "") &&
+                  !isInsideSvgDefinitions(shape, svg),
               ),
           ).length
         : 0;
@@ -377,10 +377,10 @@ export function installFastEditElementTargets(): () => void {
         firstElementChild !== null &&
         (firstElementChild.textContent ?? "").trim() === "" &&
         Array.from(firstElementChild.children).every(
-          (input2?: Dynamic): Dynamic =>
-            input2.children.length === 0 &&
-            !STRUCTURAL_LEAF_ELEMENT_TAGS.has(input2.localName) &&
-            !input2.localName.includes("-"),
+          (element?: Dynamic): Dynamic =>
+            element.children.length === 0 &&
+            !STRUCTURAL_LEAF_ELEMENT_TAGS.has(element.localName) &&
+            !element.localName.includes("-"),
         )
       );
     };
@@ -408,8 +408,8 @@ export function installFastEditElementTargets(): () => void {
       input.replace(/\{\{[\s\S]*?\}\}/g, "").trim() === "";
     directTargetText = (input?: Dynamic): Dynamic =>
       Array.from(input.childNodes)
-        .filter((input2?: Dynamic): Dynamic => input2.nodeType === 3)
-        .map((input2?: Dynamic): Dynamic => input2.textContent ?? "")
+        .filter((node?: Dynamic): Dynamic => node.nodeType === 3)
+        .map((node?: Dynamic): Dynamic => node.textContent ?? "")
         .join("")
         .replace(/\s+/g, " ")
         .trim();

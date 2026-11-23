@@ -31,27 +31,27 @@ import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
 import { Button, initializeButtonButton, useButtonGroupOptions } from "../button/button";
 import { CheckboxVisual, initializeComponentsCheckbox } from "../components/checkbox";
-import { CollisionPaddingProvider, ComponentsIconContext, Icon, IconRenderer, initializeComponentsIcon_2, initializeComponentsIcon_3 } from "../components/icon";
+import { CollisionPaddingProvider, ComponentsIconContext, Icon, IconRenderer, initializeIconSizeMetrics, initializeIconContext } from "../components/icon";
 import { initializeComponentsShortcut, parseSingleShortcut, Shortcut, useAppleKeyboard } from "../components/shortcut";
 import { ComponentsSkeletonAssignValue, initializeComponentsSkeleton, SkeletonGroup } from "../components/skeleton";
 import { initializeComponentsTextInput, TextInput } from "../components/text-input";
-import { ActivityBoundary, initializeDomRefComposition, initializeDomRefComposition_2, initializeDomRefComposition_3, isHtmlElement, useEventRef, useMergedRefs } from "../dom/ref-composition";
+import { ActivityBoundary, initializeDomRefComposition, initializeXmlNamespaceUris, initializeActivityVisibilityContext, isHtmlElement, useEventRef, useMergedRefs } from "../dom/ref-composition";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
 import { coarsePointerMediaQuery, initializeHooksMediaQuery, useWindowMediaQuery } from "../hooks/media-query";
-import { asElement, initializeHooksStableCallback, initializeHooksStableCallback_2, useOptionalStableCallback, useStableCallback } from "../hooks/stable-callback";
+import { asElement, initializeHooksStableCallback, initializeStableCallbackReact, useOptionalStableCallback, useStableCallback } from "../hooks/stable-callback";
 import { initializeLinkRouter, omitRouterOptions, pickRouterOptions, useLinkProps } from "../links";
-import { CdsFocusesNothingAttribute, initializeMenuConfiguration, MenuConfigurationContext, MenuConfigurationContext_2, MenuConfigurationLabelOpenConfig, MenuItemContext, MenuRootContext, MenuSheetLabelsContext, MenuSurfaceContext, MenuTriggerContext, PopupScrollArea, useMutableMenuRef, warnNestedMenuInitialFocus, warnNestedMenuLayerOffset } from "./configuration";
-import { initializeMenuItemStyles, initializeMenuItemStyles_2, initializeMenuItemStyles_3, MenuItemStylesClassNames, MenuItemStylesProviderValue, menuItemVariants, MenuPopupElement, useMenuPopupFocus, useMenuTriggerRef, usePopupEntryAnimation } from "./item-styles";
+import { CdsFocusesNothingAttribute, initializeMenuConfiguration, MenuConfigurationContext, insideMenuConfigurationContext, MenuConfigurationLabelOpenConfig, MenuItemContext, MenuRootContext, MenuSheetLabelsContext, MenuSurfaceContext, MenuTriggerContext, PopupScrollArea, useMutableMenuRef, warnNestedMenuInitialFocus, warnNestedMenuLayerOffset } from "./configuration";
+import { initializeMenuItemStyles, initializeParentMenuContext, initializeMenuPopupElementComponent, MenuItemStylesClassNames, MenuItemStylesProviderValue, menuItemVariants, MenuPopupElement, useMenuPopupFocus, useMenuTriggerRef, usePopupEntryAnimation } from "./item-styles";
 import { initializeMenuPassiveOpenGate, PassiveOpenCellContext } from "./passive-open-gate";
-import { ContextMenuPopupFrame, initializeMenuPopup, initializeMenuPopup_2, isScrollbarPointerEvent, MenuPopupCss, PassiveOpenGate, usePassiveOpenCell, usePassiveOpenGate, usePassiveOpenHandlers } from "./popup";
+import { ContextMenuPopupFrame, initializeMenuPopup, initializeMenuPopupInteractiveSelector, isScrollbarPointerEvent, MenuPopupCss, PassiveOpenGate, usePassiveOpenCell, usePassiveOpenGate, usePassiveOpenHandlers } from "./popup";
 import { initializeOverlaysBackdrop, OverlayBackdrop, OverlaysBackdropVisibilityOpacityConfig, useRestoreFocusOnClose } from "../overlays/backdrop";
 import { initializeOverlaysImperativeHandle, useOverlayImperativeHandle } from "../overlays/imperative-handle";
 import { initializeOverlaysLayers, LayerBaseContext, useLayer } from "../overlays/layers";
-import { initializePlatformRootFontSize_2, PopupSurface } from "../platform/root-font-size";
+import { initializeRootFontSizeHooks, PopupSurface } from "../platform/root-font-size";
 import { initializeSheetsMenuPopup } from "../sheets/menu-popup";
 import { initializeSheetsPopupStack, isInsideSheetPopup, SheetPopupContext, SheetPopupProvider, useAvailableSheetParts, useIsSheet, useOverlayOpenState, useSheetInteractionMode, useSheetPopup, useSheetState } from "../sheets/popup-stack";
 import { initializeSheetsPresentation, useOpenSnapshot } from "../sheets/presentation";
-import { initializeSheetsScrollArea, initializeSheetsScrollArea_2, recordKeyboardContextMenu } from "../sheets/scroll-area";
+import { initializeSheetsScrollArea, initializeScrollAreaElementCache, recordKeyboardContextMenu } from "../sheets/scroll-area";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { getControlSizeRank, initializeCdsRoot, useCdsWindow, useDensity, useOverlayRoot } from "../theme/root";
 import { initializeThemeSurfaces, surfaceBackgroundTokens, virtualTriggerAnchor } from "../theme/surfaces";
@@ -67,12 +67,12 @@ var MenuMenuInsertParagraphInsertLineBreakSet: Set<string>;
 var MenuMenuBeforeinputKeydownKeyupValues: string[];
 var initializeMenuMenu: () => void;
 var jsxMenuMenu: typeof import("react/jsx-runtime");
-var initializeMenuMenu_2: () => void;
-var initializeMenuMenu_3: () => void;
+var initializeMenuJsxRuntime: () => void;
+var initializeMenuStableCallback: () => void;
 var reactMenuMenu: typeof React;
-var initializeMenuMenu_4: () => void;
-var reactMenuMenu_2: typeof React;
-var jsxMenuMenu_2: typeof import("react/jsx-runtime");
+var initializeMenuReactNamespace: () => void;
+var reactForMenuSubmenu: typeof React;
+var jsxForContextMenu: typeof import("react/jsx-runtime");
 var MenuMenuPattern: RegExp;
 var MenuPopup: ForwardComponent<HTMLDivElement, MenuPopupProps>;
 var MenuSheetCapablePopup: ForwardComponent<HTMLDivElement, MenuPopupProps>;
@@ -112,7 +112,7 @@ var MenuMenuAssignValue: typeof Menu & {
   SearchablePopup: typeof MenuSearchablePopup;
   PendingList: typeof MenuPendingList;
 };
-var initializeMenuMenu_5: () => void;
+var initializeMenuComponents: () => void;
 function isAppleWebKit(): boolean {
   return typeof window === "undefined"
     ? false
@@ -344,13 +344,13 @@ function MenuPopupContent(
       ...popupProps
     } = menuProps,
     overlayRoot = useOverlayRoot(),
-    menuRoot = (0, reactMenuMenu_2.useContext)(MenuRootContext),
+    menuRoot = (0, reactForMenuSubmenu.useContext)(MenuRootContext),
     isContextMenu =
-      (0, reactMenuMenu_2.useContext)(MenuConfigurationContext) &&
+      (0, reactForMenuSubmenu.useContext)(MenuConfigurationContext) &&
       menuRoot === null,
-    iconContext = (0, reactMenuMenu_2.useContext)(ComponentsIconContext),
+    iconContext = (0, reactForMenuSubmenu.useContext)(ComponentsIconContext),
     effectiveCollisionPadding = collisionPadding ?? iconContext?.collisionPadding,
-    effectiveAnchor = (0, reactMenuMenu_2.useMemo)(
+    effectiveAnchor = (0, reactForMenuSubmenu.useMemo)(
       () =>
         anchor !== undefined || !menuRoot
           ? anchor
@@ -490,25 +490,25 @@ function MenuSubmenu({
   ...props
 }: MenuSubmenuProps): React.ReactElement {
   useUiLocale();
-  let [openState, setOpenState] = (0, reactMenuMenu_2.useState)(
+  let [openState, setOpenState] = (0, reactForMenuSubmenu.useState)(
       props.open ?? props.defaultOpen ?? false,
     ),
-    openRef = (0, reactMenuMenu_2.useRef)(openState),
+    openRef = (0, reactForMenuSubmenu.useRef)(openState),
     onOpenChangeProp = useOptionalStableCallback(props.onOpenChange),
     { sheet: isSheet } = useSheetState(),
-    sheetFrame = (0, reactMenuMenu_2.useContext)(SheetPopupContext),
+    sheetFrame = (0, reactForMenuSubmenu.useContext)(SheetPopupContext),
     treeId = sheetFrame?.treeId,
-    stashedLabelRef: React.RefObject<React.ReactNode> = (0, reactMenuMenu_2.useRef)(
+    stashedLabelRef: React.RefObject<React.ReactNode> = (0, reactForMenuSubmenu.useRef)(
       null,
     ),
-    stashLabel = (0, reactMenuMenu_2.useCallback)(
+    stashLabel = (0, reactForMenuSubmenu.useCallback)(
       (label: React.ReactNode): void => {
         stashedLabelRef.current = label;
       },
       [],
     ),
-    [triggerLabel, setTriggerLabel] = (0, reactMenuMenu_2.useState)<React.ReactNode>(null),
-    handleOpenChange = (0, reactMenuMenu_2.useCallback)(
+    [triggerLabel, setTriggerLabel] = (0, reactForMenuSubmenu.useState)<React.ReactNode>(null),
+    handleOpenChange = (0, reactForMenuSubmenu.useCallback)(
       (
         isOpen: boolean,
         changeDetails: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
@@ -531,22 +531,22 @@ function MenuSubmenu({
       },
       [onOpenChangeProp, isSheet, sheetFrame, treeId],
     ),
-    triggerRef = (0, reactMenuMenu_2.useRef)<HTMLElement | null>(null),
-    setTriggerNode = (0, reactMenuMenu_2.useCallback)(
+    triggerRef = (0, reactForMenuSubmenu.useRef)<HTMLElement | null>(null),
+    setTriggerNode = (0, reactForMenuSubmenu.useCallback)(
       (node: HTMLElement | null): void => {
         triggerRef.current = node;
       },
       [],
     ),
-    overlayActionsRef = (0, reactMenuMenu_2.useRef)<OverlayActions | null>(null);
+    overlayActionsRef = (0, reactForMenuSubmenu.useRef)<OverlayActions | null>(null);
   useOverlayImperativeHandle(overlayActionsRef, actionsRef);
-  let closeSubmenu = (0, reactMenuMenu_2.useCallback)(() => {
+  let closeSubmenu = (0, reactForMenuSubmenu.useCallback)(() => {
       (overlayActionsRef.current as Required<OverlayActions> | null)?.close();
     }, []),
-    surfaceContext = (0, reactMenuMenu_2.useContext)(MenuSurfaceContext),
-    triggerContext = (0, reactMenuMenu_2.useContext)(MenuTriggerContext),
+    surfaceContext = (0, reactForMenuSubmenu.useContext)(MenuSurfaceContext),
+    triggerContext = (0, reactForMenuSubmenu.useContext)(MenuTriggerContext),
     surface = surfaceContext ?? triggerContext,
-    menuRootContext = (0, reactMenuMenu_2.useMemo)(
+    menuRootContext = (0, reactForMenuSubmenu.useMemo)(
       () => ({
         triggerRef: triggerRef,
         setTriggerNode: setTriggerNode,
@@ -564,7 +564,7 @@ function MenuSubmenu({
       setTriggerLabel((previousLabel) => (previousLabel === current ? previousLabel : current));
     }
   }, [effectiveOpen]);
-  let menuItemContext = (0, reactMenuMenu_2.useMemo)(
+  let menuItemContext = (0, reactForMenuSubmenu.useMemo)(
     () => ({
       label: triggerLabel,
       open: effectiveOpen,
@@ -604,8 +604,8 @@ function MenuHeader({
   useUiLocale();
   let isSheet = useIsSheet(),
     isNested =
-      (0, reactMenuMenu_2.useContext)(MenuRootContext) !== null,
-    { label: parentLabel } = (0, reactMenuMenu_2.useContext)(
+      (0, reactForMenuSubmenu.useContext)(MenuRootContext) !== null,
+    { label: parentLabel } = (0, reactForMenuSubmenu.useContext)(
       MenuItemContext,
     ),
     isRedundantTitle =
@@ -654,7 +654,7 @@ function renderMenuItems(items: MenuItemsContent): React.ReactNode {
           event.label === null ||
           event.label === "" ||
           event.label === false ? null : event.items ? (
-          <reactMenuMenu_2.Fragment key={index}>
+          <reactForMenuSubmenu.Fragment key={index}>
             {event.separatorBefore && (<MenuSeparator />)}
             <MenuSubmenu disabled={event.disabled}>
               <MenuSubmenuTrigger icon={event.icon} hint={event.hint}>
@@ -662,9 +662,9 @@ function renderMenuItems(items: MenuItemsContent): React.ReactNode {
               </MenuSubmenuTrigger>
               <MenuPopup>{renderMenuItems(event.items)}</MenuPopup>
             </MenuSubmenu>
-          </reactMenuMenu_2.Fragment>
+          </reactForMenuSubmenu.Fragment>
         ) : (
-          <reactMenuMenu_2.Fragment key={index}>
+          <reactForMenuSubmenu.Fragment key={index}>
             {event.separatorBefore && (<MenuSeparator />)}
             <MenuItem
               icon={event.icon}
@@ -688,7 +688,7 @@ function renderMenuItems(items: MenuItemsContent): React.ReactNode {
             >
               {event.label}
             </MenuItem>
-          </reactMenuMenu_2.Fragment>
+          </reactForMenuSubmenu.Fragment>
         ),
       )
     : items;
@@ -745,8 +745,8 @@ function ContextMenuContent({
 function Menu(menuProps: MenuProps): React.ReactElement {
   useUiLocale();
   let isSheetMode = useSheetInteractionMode(),
-    menuBarContext = (0, reactMenuMenu_2.useContext)(
-      MenuConfigurationContext_2,
+    menuBarContext = (0, reactForMenuSubmenu.useContext)(
+      insideMenuConfigurationContext,
     ),
     actionsRef: React.RefObject<OverlayActions | null> = useMutableMenuRef(),
     onOpenChange = menuProps.onOpenChange,
@@ -775,7 +775,7 @@ function useContextMenuRoot(menuProps: MenuProps): React.ReactElement {
       backLabel: backLabel,
       closeLabel: closeLabel,
     } = menuProps,
-    sheetLabels = (0, reactMenuMenu_2.useMemo)(
+    sheetLabels = (0, reactForMenuSubmenu.useMemo)(
       () => ({
         sheetTitle: sheetTitle,
         backLabel: backLabel,
@@ -784,8 +784,8 @@ function useContextMenuRoot(menuProps: MenuProps): React.ReactElement {
       [sheetTitle, backLabel, closeLabel],
     ),
     overlayRoot = useOverlayRoot(),
-    menuBarContext = (0, reactMenuMenu_2.useContext)(
-      MenuConfigurationContext_2,
+    menuBarContext = (0, reactForMenuSubmenu.useContext)(
+      insideMenuConfigurationContext,
     ),
     { onOpenChange: handleOpenChange, triggerRef: triggerRef } = useMenuTriggerRef(menuProps.onOpenChange, menuBarContext),
     openState = useOverlayOpenState({
@@ -848,7 +848,7 @@ function ContextMenu(
           actionsRef={menuState.actionsRef}
         >
           {MenuContextProviders(
-            <jsxMenuMenu_2.Fragment>
+            <jsxForContextMenu.Fragment>
               <npm_ContextMenu_Ex.Trigger className={className}>
                 {menuProps.children}
               </npm_ContextMenu_Ex.Trigger>
@@ -862,7 +862,7 @@ function ContextMenu(
               >
                 {renderMenuItems(items)}
               </MenuPopup>
-            </jsxMenuMenu_2.Fragment>,
+            </jsxForContextMenu.Fragment>,
             null,
             menuState.actionsRef,
             true,
@@ -977,7 +977,7 @@ function ContextMenu(
           modal={menuState.inMenuBar ? undefined : true}
         >
           {MenuContextProviders(
-            <jsxMenuMenu_2.Fragment>
+            <jsxForContextMenu.Fragment>
               {triggerNode}
               <MenuPopup
                 side={side}
@@ -989,7 +989,7 @@ function ContextMenu(
               >
                 {renderMenuItems(items)}
               </MenuPopup>
-            </jsxMenuMenu_2.Fragment>,
+            </jsxForContextMenu.Fragment>,
             null,
             menuState.actionsRef,
           )}
@@ -1014,8 +1014,8 @@ function MenuRoot(rootProps: MenuRootProps): React.ReactElement {
       ...restProps
     } = rootProps,
     isSheetMode = useSheetInteractionMode(),
-    menuBarContext = (0, reactMenuMenu_2.useContext)(
-      MenuConfigurationContext_2,
+    menuBarContext = (0, reactForMenuSubmenu.useContext)(
+      insideMenuConfigurationContext,
     ),
     { onOpenChange: handleOpenChange, triggerRef: triggerRef } = useMenuTriggerRef(restProps.onOpenChange, menuBarContext),
     passiveOpenGate = usePassiveOpenGate(handleOpenChange, restProps.open, !menuBarContext),
@@ -1023,7 +1023,7 @@ function MenuRoot(rootProps: MenuRootProps): React.ReactElement {
   useOverlayImperativeHandle(actionsRef, restProps.actionsRef);
   return isSheetMode ? (
     <ActivityBoundary actionsRef={actionsRef}>
-      <MenuRoot_2 {...rootProps} actionsRef={actionsRef} />
+      <MenuRootWithSheetLabels {...rootProps} actionsRef={actionsRef} />
     </ActivityBoundary>
   ) : (
     <MenuItemStylesProviderValue value={triggerRef}>
@@ -1041,7 +1041,7 @@ function MenuRoot(rootProps: MenuRootProps): React.ReactElement {
     </MenuItemStylesProviderValue>
   );
 }
-function MenuRoot_2(rootProps: MenuRootProps): React.ReactElement {
+function MenuRootWithSheetLabels(rootProps: MenuRootProps): React.ReactElement {
   useUiLocale();
   let {
       children: children,
@@ -1050,7 +1050,7 @@ function MenuRoot_2(rootProps: MenuRootProps): React.ReactElement {
       closeLabel: closeLabel,
       ...restProps
     } = rootProps,
-    sheetLabels = (0, reactMenuMenu_2.useMemo)(
+    sheetLabels = (0, reactForMenuSubmenu.useMemo)(
       () => ({
         sheetTitle: sheetTitle,
         backLabel: backLabel,
@@ -1058,8 +1058,8 @@ function MenuRoot_2(rootProps: MenuRootProps): React.ReactElement {
       }),
       [sheetTitle, backLabel, closeLabel],
     ),
-    menuBarContext = (0, reactMenuMenu_2.useContext)(
-      MenuConfigurationContext_2,
+    menuBarContext = (0, reactForMenuSubmenu.useContext)(
+      insideMenuConfigurationContext,
     ),
     { onOpenChange: handleOpenChange, triggerRef: triggerRef } = useMenuTriggerRef(rootProps.onOpenChange, menuBarContext),
     passiveOpenGate = usePassiveOpenGate(handleOpenChange, rootProps.open, !menuBarContext),
@@ -1107,7 +1107,7 @@ function MenuRoot_2(rootProps: MenuRootProps): React.ReactElement {
   );
 }
 function ResetOnUnmount({ reset: reset }: { reset: () => void }): null {
-  (0, reactMenuMenu_2.useEffect)(() => () => reset(), [reset]);
+  (0, reactForMenuSubmenu.useEffect)(() => () => reset(), [reset]);
   return null;
 }
 function isSearchMenuTypingKey(event: SearchKeyEvent): boolean {
@@ -1129,10 +1129,10 @@ function MenuSearchTypingWatcher({
   inputRef: React.RefObject<HTMLInputElement | null>;
   applyKey: (key: string) => void;
 }): null {
-  let triggerRef = (0, reactMenuMenu_2.useContext)(
+  let triggerRef = (0, reactForMenuSubmenu.useContext)(
     MenuRootContext,
   )?.triggerRef;
-  (0, reactMenuMenu_2.useEffect)(() => {
+  (0, reactForMenuSubmenu.useEffect)(() => {
     let triggerElement = triggerRef?.current;
     if (!triggerElement) return;
     let handleKeyDown = (event: KeyboardEvent): void => {
@@ -1155,8 +1155,8 @@ function MenuSearchTriggerWatcher({
 }: {
   inputRef: React.RefObject<HTMLInputElement | null>;
 }): null {
-  let menuRoot = (0, reactMenuMenu_2.useContext)(MenuRootContext);
-  (0, reactMenuMenu_2.useEffect)(() => {
+  let menuRoot = (0, reactForMenuSubmenu.useContext)(MenuRootContext);
+  (0, reactForMenuSubmenu.useEffect)(() => {
     let triggerElement = menuRoot?.triggerRef.current;
     if (!menuRoot || !triggerElement) return;
     let { openRef: openRef } = menuRoot,
@@ -1174,7 +1174,7 @@ function MenuSearchTriggerWatcher({
     triggerElement.addEventListener("focus", handleTriggerFocus);
     return () => triggerElement.removeEventListener("focus", handleTriggerFocus);
   }, [menuRoot, inputRef]);
-  (0, reactMenuMenu_2.useEffect)(() => {
+  (0, reactForMenuSubmenu.useEffect)(() => {
     let focusSearchInput = (): void => {
       let current = inputRef.current;
       if (!current) return;
@@ -1212,7 +1212,7 @@ function MenuSearchablePopup({
   ...props
 }: MenuSearchProps): React.ReactElement {
   useUiLocale();
-  let [internalQuery, setInternalQuery] = (0, reactMenuMenu_2.useState)(""),
+  let [internalQuery, setInternalQuery] = (0, reactForMenuSubmenu.useState)(""),
     currentQuery = query ?? internalQuery,
     changeQuery: (input: string) => void = useStableCallback(
       (nextQuery) => {
@@ -1223,20 +1223,20 @@ function MenuSearchablePopup({
     resetQuery = useStableCallback(() => {
       currentQuery !== "" && changeQuery("");
     }),
-    hasMountedRef = (0, reactMenuMenu_2.useRef)(false);
-  (0, reactMenuMenu_2.useEffect)(() => {}, [query, onQueryChange]);
+    hasMountedRef = (0, reactForMenuSubmenu.useRef)(false);
+  (0, reactForMenuSubmenu.useEffect)(() => {}, [query, onQueryChange]);
   let isSheet = useIsSheet(),
     isCoarsePointer = useWindowMediaQuery(
       useCdsWindow(),
       coarsePointerMediaQuery,
     ),
     shouldAutoFocus = !isSheet && !isCoarsePointer,
-    surfaceContext = (0, reactMenuMenu_2.useContext)(MenuSurfaceContext),
-    triggerContext = (0, reactMenuMenu_2.useContext)(MenuTriggerContext),
+    surfaceContext = (0, reactForMenuSubmenu.useContext)(MenuSurfaceContext),
+    triggerContext = (0, reactForMenuSubmenu.useContext)(MenuTriggerContext),
     surface = surfaceContext ?? triggerContext,
-    beforeSearchRef = (0, reactMenuMenu_2.useRef)<HTMLDivElement | null>(null),
-    searchInputRef = (0, reactMenuMenu_2.useRef)<HTMLInputElement | null>(null),
-    insertKey = (0, reactMenuMenu_2.useCallback)((key: string): void => {
+    beforeSearchRef = (0, reactForMenuSubmenu.useRef)<HTMLDivElement | null>(null),
+    searchInputRef = (0, reactForMenuSubmenu.useRef)<HTMLInputElement | null>(null),
+    insertKey = (0, reactForMenuSubmenu.useCallback)((key: string): void => {
       let current = searchInputRef.current;
       if (!current) return;
       let { value: currentText } = current,
@@ -1327,7 +1327,7 @@ function MenuSearchablePopup({
           event.preventDefault();
       }}
       header={
-        <jsxMenuMenu_2.Fragment>
+        <jsxForContextMenu.Fragment>
           {beforeSearch !== undefined && (<div
               ref={beforeSearchRef}
               role={"presentation"}
@@ -1418,7 +1418,7 @@ function MenuSearchablePopup({
           <npm_Menu_La.Separator
             className={"-mx-1 my-1 h-px bg-border"}
           />
-        </jsxMenuMenu_2.Fragment>
+        </jsxForContextMenu.Fragment>
       }
     >
       {resetQueryOnClose && (<ResetOnUnmount reset={resetQuery} />)}
@@ -1432,7 +1432,7 @@ function useSearchMenuFocus(
   menuRef: React.RefObject<HTMLElement | null>,
   isLoading: boolean,
 ): void {
-  let wasLoadingRef = (0, reactMenuMenu_2.useRef)(isLoading);
+  let wasLoadingRef = (0, reactForMenuSubmenu.useRef)(isLoading);
   useIsomorphicLayoutEffect(() => {
     let menuElement = menuRef.current?.closest('[role="menu"]');
     if (!isLoading || wasLoadingRef.current || !menuElement?.hasAttribute("data-open"))
@@ -1443,7 +1443,7 @@ function useSearchMenuFocus(
         preventScroll: true,
       });
   }, [menuRef, isLoading]);
-  (0, reactMenuMenu_2.useEffect)(() => {
+  (0, reactForMenuSubmenu.useEffect)(() => {
     let didFinishLoading = wasLoadingRef.current && !isLoading;
     wasLoadingRef.current = isLoading;
     let current = menuRef.current;
@@ -1471,9 +1471,9 @@ function MenuPendingList({
   children: children,
 }: MenuPendingProps): React.ReactElement {
   useUiLocale();
-  let containerRef = (0, reactMenuMenu_2.useRef)<HTMLDivElement | null>(null),
-    lastSizeRef = (0, reactMenuMenu_2.useRef)(MenuMenuWidthHeightConfig);
-  (0, reactMenuMenu_2.useEffect)(() => {
+  let containerRef = (0, reactForMenuSubmenu.useRef)<HTMLDivElement | null>(null),
+    lastSizeRef = (0, reactForMenuSubmenu.useRef)(MenuMenuWidthHeightConfig);
+  (0, reactForMenuSubmenu.useEffect)(() => {
     let current = containerRef.current;
     if (!current || typeof ResizeObserver === "undefined") return;
     let observer = new ResizeObserver(() => {
@@ -1486,7 +1486,7 @@ function MenuPendingList({
     return () => observer.disconnect();
   }, []);
   let isPending = pending || loading,
-    [frozenSize, setFrozenSize] = (0, reactMenuMenu_2.useState)(
+    [frozenSize, setFrozenSize] = (0, reactForMenuSubmenu.useState)(
       MenuMenuWidthHeightConfig,
     );
   useIsomorphicLayoutEffect(() => {
@@ -1541,17 +1541,17 @@ export {
   DataHighlightedTabindex0Value,
   extractReactText,
   initializeMenuMenu,
-  initializeMenuMenu_2,
-  initializeMenuMenu_3,
-  initializeMenuMenu_4,
-  initializeMenuMenu_5,
+  initializeMenuJsxRuntime,
+  initializeMenuStableCallback,
+  initializeMenuReactNamespace,
+  initializeMenuComponents,
   isAppleWebKit,
   isFocusOutEvent,
   isMenuItemsArray,
   isNestedSheetTarget,
   isSearchMenuTypingKey,
   jsxMenuMenu,
-  jsxMenuMenu_2,
+  jsxForContextMenu,
   Menu,
   MenuBar,
   MenuCaret,
@@ -1574,7 +1574,7 @@ export {
   MenuPopup,
   MenuPopupContent,
   MenuRoot,
-  MenuRoot_2,
+  MenuRootWithSheetLabels,
   MenuSearchablePopup,
   MenuSearchTriggerWatcher,
   MenuSearchTypingWatcher,
@@ -1588,7 +1588,7 @@ export {
   noImeTimestamp,
   normalizeMenuText,
   reactMenuMenu,
-  reactMenuMenu_2,
+  reactForMenuSubmenu,
   rememberImeEnter,
   renderMenuItems,
   resetImeEnterTimestamp,
@@ -1617,27 +1617,27 @@ export function installCdsMenuMenu(): () => void {
         "focusout",
       ];
     });
-    initializeMenuMenu_2 = initializeOnce(() => {
+    initializeMenuJsxRuntime = initializeOnce(() => {
       "use client";
 
       initializeTooltipTooltip();
       initializeMenuConfiguration();
       initializeMenuPassiveOpenGate();
-      initializeMenuItemStyles_2();
+      initializeParentMenuContext();
       jsxMenuMenu = toModuleNamespace(
         load_react_jsx_runtime(),
       );
     });
-    initializeMenuMenu_3 = initializeOnce(() => {
+    initializeMenuStableCallback = initializeOnce(() => {
       initializeHooksStableCallback();
     });
-    initializeMenuMenu_4 = initializeOnce(() => {
+    initializeMenuReactNamespace = initializeOnce(() => {
       "use client";
 
       initializeHooksLayoutEffect();
       reactMenuMenu = toModuleNamespace(load_react());
     });
-    initializeMenuMenu_5 = initializeOnce(() => {
+    initializeMenuComponents = initializeOnce(() => {
       "use client";
 
       initializeHooksMediaQuery();
@@ -1647,14 +1647,14 @@ export function installCdsMenuMenu(): () => void {
       initializeCdsRoot();
       initializeHooksStableCallback();
       initializeOverlaysLayers();
-      initializeHooksStableCallback_2();
-      initializeMenuPopup_2();
-      initializeDomRefComposition_2();
-      initializeDomRefComposition_3();
+      initializeStableCallbackReact();
+      initializeMenuPopupInteractiveSelector();
+      initializeXmlNamespaceUris();
+      initializeActivityVisibilityContext();
       initializeDomRefComposition();
-      initializePlatformRootFontSize_2();
-      initializeComponentsIcon_2();
-      initializeComponentsIcon_3();
+      initializeRootFontSizeHooks();
+      initializeIconSizeMetrics();
+      initializeIconContext();
       initializeComponentsShortcut();
       initializeTooltipDisabledReason();
       initializeTooltipTooltip();
@@ -1669,29 +1669,29 @@ export function installCdsMenuMenu(): () => void {
       initializeComponentsCheckbox();
       initializeComponentsTextInput();
       initializeMenuConfiguration();
-      initializeSheetsScrollArea_2();
+      initializeScrollAreaElementCache();
       initializeSheetsScrollArea();
       initializeMenuPopup();
       initializeMenuPassiveOpenGate();
       initializeMenuItemStyles();
-      initializeMenuItemStyles_2();
-      initializeMenuMenu_2();
-      initializeMenuItemStyles_3();
-      initializeMenuMenu_3();
+      initializeParentMenuContext();
+      initializeMenuJsxRuntime();
+      initializeMenuPopupElementComponent();
+      initializeMenuStableCallback();
       initializeSheetsMenuPopup();
-      initializeMenuMenu_4();
-      reactMenuMenu_2 = toModuleNamespace(
+      initializeMenuReactNamespace();
+      reactForMenuSubmenu = toModuleNamespace(
         load_react(),
       );
       initializeNpm_clsx_xh();
-      jsxMenuMenu_2 = toModuleNamespace(
+      jsxForContextMenu = toModuleNamespace(
         load_react_jsx_runtime(),
       );
       initializeNpm__base_ui_react_jhe();
       initializeNpm__base_ui_react_jj();
       initializeNpm__base_ui_react_BXe();
       MenuMenuPattern = /^\d+$/;
-      MenuPopup = (0, reactMenuMenu_2.forwardRef)<
+      MenuPopup = (0, reactForMenuSubmenu.forwardRef)<
         HTMLDivElement,
         MenuPopupProps
       >(
@@ -1720,7 +1720,7 @@ export function installCdsMenuMenu(): () => void {
         },
       );
       MenuPopup.displayName = "Menu.Popup";
-      MenuSheetCapablePopup = (0, reactMenuMenu_2.forwardRef)<
+      MenuSheetCapablePopup = (0, reactForMenuSubmenu.forwardRef)<
         HTMLDivElement,
         MenuPopupProps
       >(
@@ -1730,9 +1730,9 @@ export function installCdsMenuMenu(): () => void {
         ): React.ReactElement => {
           let SheetParts = useAvailableSheetParts(),
             { pending: isSheetPending } = useSheetState(),
-            menuRoot = (0, reactMenuMenu_2.useContext)(MenuRootContext),
+            menuRoot = (0, reactForMenuSubmenu.useContext)(MenuRootContext),
             overlayKind: OverlayKind =
-              (0, reactMenuMenu_2.useContext)(
+              (0, reactForMenuSubmenu.useContext)(
                 MenuConfigurationContext,
               ) && menuRoot === null
                 ? "contextmenu"
@@ -1746,15 +1746,15 @@ export function installCdsMenuMenu(): () => void {
           return SheetParts !== null ? (
             <SheetParts.MenuSheetPopup {...menuProps} ref={forwardedRef} />
           ) : (
-            <jsxMenuMenu_2.Fragment>
+            <jsxForContextMenu.Fragment>
               {inlinePopup}
               {isSheetPending && menuRoot === null ? (<OverlayBackdrop kind={overlayKind} />) : (null)}
-            </jsxMenuMenu_2.Fragment>
+            </jsxForContextMenu.Fragment>
           );
         },
       );
       MenuSheetCapablePopup.displayName = "MenuSheetCapablePopup";
-      MenuItem = (0, reactMenuMenu_2.forwardRef)<HTMLDivElement, MenuItemProps>(
+      MenuItem = (0, reactForMenuSubmenu.forwardRef)<HTMLDivElement, MenuItemProps>(
         (
           {
             variant: variant,
@@ -1792,7 +1792,7 @@ export function installCdsMenuMenu(): () => void {
             effectiveCheckedRole = isCheckboxIndicator ? "checkbox" : (checkedRole ?? "checkbox"),
             effectiveCheckPosition = checkPosition ?? (isCheckboxIndicator ? "leading" : "trailing"),
             isAppleKeyboard = useAppleKeyboard(),
-            descriptionId = (0, reactMenuMenu_2.useId)(),
+            descriptionId = (0, reactForMenuSubmenu.useId)(),
             {
               label: label,
               labelSpanRef: labelSpanRef,
@@ -1884,7 +1884,7 @@ export function installCdsMenuMenu(): () => void {
               </span>
             ),
             itemContent = (
-              <jsxMenuMenu_2.Fragment>
+              <jsxForContextMenu.Fragment>
                 {leading}
                 {effectiveCheckPosition === "leading" && (checkIndicator)}
                 {icon !== undefined && (<IconRenderer icon={icon} />)}
@@ -1927,7 +1927,7 @@ export function installCdsMenuMenu(): () => void {
                       </span>)}
                     {shortcut && (<MenuShortcut keys={shortcut} />)}
                   </span>)}
-              </jsxMenuMenu_2.Fragment>
+              </jsxForContextMenu.Fragment>
             );
           if (href !== undefined) {
             let anchorItemProps = omitRouterOptions(state);
@@ -1990,7 +1990,7 @@ export function installCdsMenuMenu(): () => void {
         },
       );
       MenuItem.displayName = "Menu.Item";
-      MenuSubmenuTrigger = (0, reactMenuMenu_2.forwardRef)<
+      MenuSubmenuTrigger = (0, reactForMenuSubmenu.forwardRef)<
         HTMLDivElement,
         MenuSubmenuTriggerProps
       >(
@@ -2007,7 +2007,7 @@ export function installCdsMenuMenu(): () => void {
           }: MenuSubmenuTriggerProps,
           forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
-          let menuRoot = (0, reactMenuMenu_2.useContext)(MenuRootContext),
+          let menuRoot = (0, reactForMenuSubmenu.useContext)(MenuRootContext),
             isSheet = useIsSheet(),
             passiveOpenHandlers = usePassiveOpenHandlers(),
             {
@@ -2087,7 +2087,7 @@ export function installCdsMenuMenu(): () => void {
       ).displayName = "Menu.GroupLabel";
       (Menu as React.FC<MenuProps>).displayName = "Menu";
       (MenuRoot as React.FC<MenuRootProps>).displayName = "Menu.Root";
-      MenuTriggerButton = (0, reactMenuMenu_2.forwardRef)<
+      MenuTriggerButton = (0, reactForMenuSubmenu.forwardRef)<
         HTMLButtonElement,
         MenuTriggerButtonProps
       >(function (
@@ -2118,7 +2118,7 @@ export function installCdsMenuMenu(): () => void {
       DataHighlightedTabindex0Value = '[data-highlighted][tabindex="0"]';
       (MenuPendingList as React.FC<MenuPendingProps>).displayName =
         "Menu.PendingList";
-      MenuBar = (0, reactMenuMenu_2.forwardRef)<
+      MenuBar = (0, reactForMenuSubmenu.forwardRef)<
         HTMLDivElement,
         import("@base-ui/react/menubar").Menubar.Props
       >(function (
@@ -2129,14 +2129,14 @@ export function installCdsMenuMenu(): () => void {
         forwardedRef: React.ForwardedRef<HTMLDivElement>,
       ): React.ReactElement {
         return (
-          <MenuConfigurationContext_2.Provider value={true}>
+          <insideMenuConfigurationContext.Provider value={true}>
             <R_npm_Menubar_yye
               ref={forwardedRef}
               data-cds={"MenuBar"}
               {...props}
               className={cn("flex items-center gap-xs", className)}
             />
-          </MenuConfigurationContext_2.Provider>
+          </insideMenuConfigurationContext.Provider>
         );
       });
       MenuBar.displayName = "Menu.Bar";

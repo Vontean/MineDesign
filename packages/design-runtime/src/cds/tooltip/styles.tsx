@@ -10,7 +10,7 @@ var TooltipStylesClassNames: string;
 var TooltipStylesCss: string;
 var tooltipPopupClasses: string;
 var TooltipStylesLabel: string;
-var TooltipStylesCss_2: string;
+var compactTooltipClassName: string;
 var tooltipTextWrapClasses: string;
 var initializeTooltipStyles: () => void;
 var tooltipImplementationExports: Partial<TooltipImplementation>;
@@ -32,9 +32,9 @@ export {
   tooltipPopupClasses,
   TooltipStylesClassNames,
   TooltipStylesCss,
-  TooltipStylesCss_2,
+  compactTooltipClassName,
   TooltipStylesLabel,
-  tooltipTextWrapClasses as TooltipStylesLabel_2,
+  tooltipTextWrapClasses,
 };
 export function installCdsTooltipStyles(): () => void {
   return () => {
@@ -50,7 +50,7 @@ export function installCdsTooltipStyles(): () => void {
       tooltipPopupClasses =
         "origin-[var(--transform-origin)] transition-[opacity,scale] duration-snap ease-snap motion-reduce:transition-none data-[starting-style]:opacity-0 data-[starting-style]:scale-[0.98] data-[ending-style]:opacity-0 data-[ending-style]:scale-[0.98] data-[instant]:duration-0";
       TooltipStylesLabel = "max-w-[240px] whitespace-normal";
-      TooltipStylesCss_2 = `${TooltipStylesLabel} py-1.5`;
+      compactTooltipClassName = `${TooltipStylesLabel} py-1.5`;
       tooltipTextWrapClasses = "min-w-0 break-words";
     });
     tooltipImplementationExports = {};

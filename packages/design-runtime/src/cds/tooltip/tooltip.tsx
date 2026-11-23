@@ -16,19 +16,19 @@ import type {
 } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { CollisionPaddingProvider, initializeComponentsIcon_3 } from "../components/icon";
+import { CollisionPaddingProvider, initializeIconContext } from "../components/icon";
 import { initializeComponentsShortcut, Shortcut } from "../components/shortcut";
-import { initializeComponentsShrinkWrap_2, useShrinkWrap } from "../components/shrink-wrap";
+import { initializeShrinkWrapComponent, useShrinkWrap } from "../components/shrink-wrap";
 import { initializeDomInputObservation, isRestoredFocus } from "../dom/input-observation";
 import { initializeDomRefComposition, useMergedRefs } from "../dom/ref-composition";
-import { initializeHooksStableCallback_2, useOptionalStableCallback } from "../hooks/stable-callback";
+import { initializeStableCallbackReact, useOptionalStableCallback } from "../hooks/stable-callback";
 import { initializeOverlaysLayers, LayerBaseContext, useDefaultLayer } from "../overlays/layers";
-import { initializePlatformRootFontSize_2, PopupSurface } from "../platform/root-font-size";
+import { initializeRootFontSizeHooks, PopupSurface } from "../platform/root-font-size";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { initializeCdsRoot, useOverlayRoot } from "../theme/root";
 import { DisabledReasonDescription, disabledReasonWrapperProps, hasDisabledReason, initializeTooltipDisabledReason } from "./disabled-reason";
-import { DarkScope, initializeTooltipStyles, tooltipImplementationExports, tooltipPopupClasses, TooltipStylesCss, TooltipStylesCss_2, TooltipStylesLabel_2 as tooltipTextWrapClasses } from "./styles";
-import { initializeTooltipTrigger, initializeTooltipTrigger_3, initializeTooltipTrigger_4, measureContentRect, TooltipImplementationContext, TooltipTriggerContext, useTooltipDelay, useTooltipTrigger } from "./trigger";
+import { DarkScope, initializeTooltipStyles, tooltipImplementationExports, tooltipPopupClasses, TooltipStylesCss, compactTooltipClassName, tooltipTextWrapClasses } from "./styles";
+import { initializeTooltipTrigger, initializeTooltipTriggerElementCache, initializeTooltipDelayReact, measureContentRect, TooltipImplementationContext, TooltipTriggerContext, useTooltipDelay, useTooltipTrigger } from "./trigger";
 import { initializeNpm__base_ui_react_V8e, load_react, load_react_jsx_runtime, npm_Tooltip_Ax } from "../../dependencies";
 import { defineLiveExports, initializeOnce, toModuleNamespace } from "../../module-helpers";
 
@@ -38,15 +38,15 @@ var TooltipTooltipCurrentState: React.RefObject<TooltipInstantActions> | null;
 var emptyTooltipContent: EmptyTooltipContent;
 var TooltipTooltipOpenBodyConfig: TooltipBodyState;
 var TooltipTooltipOpen: TooltipBodyUpdate;
-var TooltipTooltipOpen_2: TooltipBodyUpdate;
+var closeTooltipBodyState: TooltipBodyUpdate;
 var TooltipTooltipBody: TooltipBodyUpdate;
-var TooltipTooltipOpen_3: (input: React.ReactNode) => TooltipBodyUpdate;
+var openTooltipBodyUpdate: (input: React.ReactNode) => TooltipBodyUpdate;
 var TooltipTooltipIs: (input: React.ReactNode) => TooltipBodyUpdate;
-var TooltipTooltipOpen_4: TooltipBodyUpdate;
+var clearTooltipBodyState: TooltipBodyUpdate;
 var TooltipStylesCssAlias: string;
 var TooltipTooltipClassNames: string;
 var TooltipTooltipAlias: string;
-var TooltipTooltipClassNames_2: string;
+var tooltipBodyClassName: string;
 var SelfStartValue: string;
 var TooltipTooltipCss: string;
 var OverflowTooltip: ForwardComponent<HTMLSpanElement, OverflowTooltipProps>;
@@ -156,7 +156,7 @@ function Tooltip({
     [bodyState, setBodyState] = (0, reactTooltipTooltip.useState)(
       TooltipTooltipOpenBodyConfig,
     );
-  open === false && bodyState.open && setBodyState(TooltipTooltipOpen_2);
+  open === false && bodyState.open && setBodyState(closeTooltipBodyState);
   let isContentFunction = typeof content == "function",
     hasContent = isContentFunction || !isEmptyTooltipContent(content as React.ReactNode),
     displayedBody: React.ReactNode = (
@@ -181,7 +181,7 @@ function Tooltip({
           return false;
         if (nextOpen) {
           if (typeof content != "function")
-            setBodyState(TooltipTooltipOpen_3(content));
+            setBodyState(openTooltipBodyUpdate(content));
           else if (isOpen) setBodyState(TooltipTooltipOpen);
           else {
             let resolvedContent = resolveTooltipContent(content);
@@ -189,12 +189,12 @@ function Tooltip({
               eventDetails.cancel();
               return false;
             }
-            setBodyState(TooltipTooltipOpen_3(resolvedContent));
+            setBodyState(openTooltipBodyUpdate(resolvedContent));
           }
           setSkipTransition(false);
           activateTooltip(instantActionsRef);
         } else {
-          setBodyState(isOpen ? TooltipTooltipOpen_2 : TooltipTooltipOpen_4);
+          setBodyState(isOpen ? closeTooltipBodyState : clearTooltipBodyState);
           TooltipTooltipCurrentState === instantActionsRef &&
             (TooltipTooltipCurrentState = null);
         }
@@ -288,7 +288,7 @@ function Tooltip({
       setSkipTransition(false);
       activateTooltip(instantActionsRef);
       setHoverTrigger(pendingTriggerRef.current);
-      setBodyState(TooltipTooltipOpen_3(delayedContent));
+      setBodyState(openTooltipBodyUpdate(delayedContent));
       openedByDelayRef.current = true;
       onOpenChange?.(true);
     }),
@@ -393,7 +393,7 @@ function Tooltip({
                         TooltipTooltipAlias,
                         multiline || detailText || secondaryHint
                           ? TooltipTooltipCss
-                          : TooltipTooltipClassNames_2,
+                          : tooltipBodyClassName,
                         !shortcut && TooltipTooltipClassNames,
                         className,
                       )}
@@ -586,15 +586,15 @@ export {
   TooltipTooltipAlias,
   TooltipTooltipBody,
   TooltipTooltipClassNames,
-  TooltipTooltipClassNames_2,
+  tooltipBodyClassName,
   TooltipTooltipContext,
   TooltipTooltipCss,
   TooltipTooltipCurrentState,
   TooltipTooltipIs,
   TooltipTooltipOpen,
-  TooltipTooltipOpen_2,
-  TooltipTooltipOpen_3,
-  TooltipTooltipOpen_4,
+  closeTooltipBodyState,
+  openTooltipBodyUpdate,
+  clearTooltipBodyState,
   TooltipTooltipOpenBodyConfig,
   TooltipTooltipTooltipDisabledReasonTooltipConfig,
   useTooltipGroup,
@@ -617,14 +617,14 @@ export function installCdsTooltipTooltip(): () => void {
       initializeClassNames();
       initializeCdsRoot();
       initializeOverlaysLayers();
-      initializeHooksStableCallback_2();
+      initializeStableCallbackReact();
       initializeDomRefComposition();
-      initializePlatformRootFontSize_2();
-      initializeComponentsIcon_3();
-      initializeTooltipTrigger_3();
-      initializeTooltipTrigger_4();
+      initializeRootFontSizeHooks();
+      initializeIconContext();
+      initializeTooltipTriggerElementCache();
+      initializeTooltipDelayReact();
       initializeComponentsShortcut();
-      initializeComponentsShrinkWrap_2();
+      initializeShrinkWrapComponent();
       initializeTooltipDisabledReason();
       initializeTooltipStyles();
       initializeTooltipTrigger();
@@ -648,7 +648,7 @@ export function installCdsTooltipTooltip(): () => void {
               ...state,
               open: true,
             };
-      TooltipTooltipOpen_2 = (state: TooltipBodyState): TooltipBodyState =>
+      closeTooltipBodyState = (state: TooltipBodyState): TooltipBodyState =>
         state.open
           ? {
               ...state,
@@ -662,7 +662,7 @@ export function installCdsTooltipTooltip(): () => void {
               ...state,
               body: undefined,
             };
-      TooltipTooltipOpen_3 =
+      openTooltipBodyUpdate =
         (body: React.ReactNode): TooltipBodyUpdate =>
         (state) =>
           state.open && Object.is(state.body, body)
@@ -680,17 +680,17 @@ export function installCdsTooltipTooltip(): () => void {
                 ...state,
                 body: body,
               };
-      TooltipTooltipOpen_4 = (state: TooltipBodyState): TooltipBodyState =>
+      clearTooltipBodyState = (state: TooltipBodyState): TooltipBodyState =>
         state.open || state.body !== undefined
           ? TooltipTooltipOpenBodyConfig
           : state;
       TooltipStylesCssAlias = TooltipStylesCss;
       TooltipTooltipClassNames = "text-balance";
       TooltipTooltipAlias = tooltipPopupClasses;
-      TooltipTooltipClassNames_2 =
+      tooltipBodyClassName =
         "inline-flex items-center gap-2 min-h-[calc(1.5rem*var(--cds-rem-scale,1))] max-w-[240px] py-[calc(0.1875rem*var(--cds-rem-scale,1))]";
       SelfStartValue = "self-start";
-      TooltipTooltipCss = `flex flex-col gap-0.5 ${TooltipStylesCss_2}`;
+      TooltipTooltipCss = `flex flex-col gap-0.5 ${compactTooltipClassName}`;
       OverflowTooltip = (0, reactTooltipTooltip.forwardRef)<
         HTMLSpanElement,
         OverflowTooltipProps

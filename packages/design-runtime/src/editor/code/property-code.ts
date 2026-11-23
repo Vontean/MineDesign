@@ -271,7 +271,7 @@ function useCodeErrorAnnouncement(
 }
 export {
   CodePropertyCodeConstant,
-  CodePropertyCodeDiscardDelayMs as CodePropertyCodeConstant_2,
+  CodePropertyCodeDiscardDelayMs,
   CodePropertyCodeResolvedValue,
   focusPropertyCodeLine,
   getSelectionCodeEntries,

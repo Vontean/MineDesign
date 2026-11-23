@@ -2,7 +2,7 @@ import { useUiLocale } from '../../ui-locale.ts';
 import type { ActivityBoundaryProps } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { asElement, initializeHooksStableCallback, initializeHooksStableCallback_2, useStableCallback } from "../hooks/stable-callback";
+import { asElement, initializeHooksStableCallback, initializeStableCallbackReact, useStableCallback } from "../hooks/stable-callback";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 
@@ -10,21 +10,21 @@ var reactDomRefComposition: typeof React;
 var initializeDomRefComposition: () => void;
 var HttpWwwW3Org1999XhtmlValue: string;
 var HttpWwwW3Org2000SvgValue: string;
-var initializeDomRefComposition_2: () => void;
-var reactDomRefComposition_2: typeof React;
+var initializeXmlNamespaceUris: () => void;
+var reactForActivityBoundary: typeof React;
 var jsxDomRefComposition: typeof import("react/jsx-runtime");
 var ActivityVisibilityContext: React.Context<Set<Element> | null>;
-var initializeDomRefComposition_3: () => void;
+var initializeActivityVisibilityContext: () => void;
 var DomRefCompositionEventRestoreAllState: {
   event: Event;
   restoreAll: () => void;
 } | null;
 var DomRefCompositionDragendDropPointerdownValues: string[];
-var initializeDomRefComposition_4: () => void;
-var reactDomRefComposition_3: typeof React;
-var jsxDomRefComposition_2: typeof import("react/jsx-runtime");
+var initializeDomEventRestoreState: () => void;
+var reactForDisabledContext: typeof React;
+var jsxForDisabledContext: typeof import("react/jsx-runtime");
 var DisabledContext: React.Context<boolean>;
-var initializeDomRefComposition_5: () => void;
+var initializeDisabledContext: () => void;
 function assignRef<Element>(
   ref: React.Ref<Element> | undefined,
   node: Element | null,
@@ -101,11 +101,11 @@ function ActivityBoundary({
   children: children,
 }: ActivityBoundaryProps): React.ReactElement {
   useUiLocale();
-  let [hiddenElements] = (0, reactDomRefComposition_2.useState)(
+  let [hiddenElements] = (0, reactForActivityBoundary.useState)(
       () => new Set<Element>(),
     ),
-    hadHiddenOverlayRef = (0, reactDomRefComposition_2.useRef)(false);
-  (0, reactDomRefComposition_2.useEffect)(
+    hadHiddenOverlayRef = (0, reactForActivityBoundary.useRef)(false);
+  (0, reactForActivityBoundary.useEffect)(
     () => (
       hadHiddenOverlayRef.current &&
         ((hadHiddenOverlayRef.current = false), actionsRef.current?.close?.()),
@@ -128,11 +128,11 @@ function ActivityBoundary({
 function useCloseOnHiddenActivity(
   enabled: boolean | undefined,
 ): React.RefObject<HTMLElement | null> {
-  let hiddenElements = (0, reactDomRefComposition_2.useContext)(
+  let hiddenElements = (0, reactForActivityBoundary.useContext)(
       ActivityVisibilityContext,
     ),
-    elementRef = (0, reactDomRefComposition_2.useRef)<HTMLElement | null>(null);
-  (0, reactDomRefComposition_2.useEffect)(() => {
+    elementRef = (0, reactForActivityBoundary.useRef)<HTMLElement | null>(null);
+  (0, reactForActivityBoundary.useEffect)(() => {
     let current = elementRef.current;
     if (!(!enabled || hiddenElements === null || current === null)) {
       hiddenElements.add(current);
@@ -237,20 +237,20 @@ export {
   HttpWwwW3Org1999XhtmlValue,
   HttpWwwW3Org2000SvgValue,
   initializeDomRefComposition,
-  initializeDomRefComposition_2,
-  initializeDomRefComposition_3,
-  initializeDomRefComposition_4,
-  initializeDomRefComposition_5,
+  initializeXmlNamespaceUris,
+  initializeActivityVisibilityContext,
+  initializeDomEventRestoreState,
+  initializeDisabledContext,
   isHtmlElement,
   isSvgElement,
   jsxDomRefComposition,
-  jsxDomRefComposition_2,
+  jsxForDisabledContext,
   mergeRefs,
   preventModalCatcherMouseFocus,
   preventModalCatcherPointerFocus,
   reactDomRefComposition,
-  reactDomRefComposition_2,
-  reactDomRefComposition_3,
+  reactForActivityBoundary,
+  reactForDisabledContext,
   shouldPreventModalCatcherFocus,
   useCloseOnHiddenActivity,
   useEventRef,
@@ -259,29 +259,29 @@ export {
 export function installCdsDomRefComposition(): () => void {
   return () => {
     initializeDomRefComposition = initializeOnce(() => {
-      initializeHooksStableCallback_2();
+      initializeStableCallbackReact();
       reactDomRefComposition = toModuleNamespace(
         load_react(),
       );
     });
-    initializeDomRefComposition_2 = initializeOnce(() => {
+    initializeXmlNamespaceUris = initializeOnce(() => {
       HttpWwwW3Org1999XhtmlValue = "http://www.w3.org/1999/xhtml";
       HttpWwwW3Org2000SvgValue = "http://www.w3.org/2000/svg";
     });
-    initializeDomRefComposition_3 = initializeOnce(() => {
+    initializeActivityVisibilityContext = initializeOnce(() => {
       "use client";
 
-      initializeDomRefComposition_2();
-      reactDomRefComposition_2 = toModuleNamespace(
+      initializeXmlNamespaceUris();
+      reactForActivityBoundary = toModuleNamespace(
         load_react(),
       );
       jsxDomRefComposition = toModuleNamespace(
         load_react_jsx_runtime(),
       );
       ActivityVisibilityContext = (0,
-      reactDomRefComposition_2.createContext)<Set<Element> | null>(null);
+      reactForActivityBoundary.createContext)<Set<Element> | null>(null);
     });
-    initializeDomRefComposition_4 = initializeOnce(() => {
+    initializeDomEventRestoreState = initializeOnce(() => {
       initializeHooksStableCallback();
       DomRefCompositionEventRestoreAllState = null;
       DomRefCompositionDragendDropPointerdownValues = [
@@ -290,16 +290,16 @@ export function installCdsDomRefComposition(): () => void {
         "pointerdown",
       ];
     });
-    initializeDomRefComposition_5 = initializeOnce(() => {
+    initializeDisabledContext = initializeOnce(() => {
       "use client";
 
-      reactDomRefComposition_3 = toModuleNamespace(
+      reactForDisabledContext = toModuleNamespace(
         load_react(),
       );
-      jsxDomRefComposition_2 = toModuleNamespace(
+      jsxForDisabledContext = toModuleNamespace(
         load_react_jsx_runtime(),
       );
-      DisabledContext = (0, reactDomRefComposition_3.createContext)(false);
+      DisabledContext = (0, reactForDisabledContext.createContext)(false);
     });
   };
 }

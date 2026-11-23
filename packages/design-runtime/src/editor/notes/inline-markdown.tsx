@@ -8,7 +8,7 @@ import { toModuleNamespace } from "../../module-helpers";
 
 var jsxNotesInlineMarkdown: Dynamic;
 var NotesInlineMarkdownPattern: Dynamic;
-var Value_4: Dynamic;
+var inlineMarkdownEscapedChars: Dynamic;
 var NotesInlineMarkdownUFDDUFDDPattern: Dynamic;
 var encodeEscapes: Dynamic;
 var decodeEscapes: Dynamic;
@@ -171,12 +171,12 @@ export {
   jsxNotesInlineMarkdown,
   NotesInlineMarkdownPattern,
   encodeEscapes as NotesInlineMarkdownReplace,
-  decodeEscapes as NotesInlineMarkdownReplace_2,
+  decodeEscapes,
   NotesInlineMarkdownUFDDUFDDPattern,
   parseNoteInlineMarkdown,
   scanMarkdownCodeSpans,
   trimCodeSpanPadding,
-  Value_4,
+  inlineMarkdownEscapedChars,
 };
 export function installEditorNotesInlineMarkdown(): () => void {
   return () => {
@@ -186,7 +186,7 @@ export function installEditorNotesInlineMarkdown(): () => void {
     );
     NotesInlineMarkdownPattern =
       /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(\[([^\]\[]+)\]\(([^)\s\[]+)\))/g;
-    Value_4 = "*`[]\\";
+    inlineMarkdownEscapedChars = "*`[]\\";
     NotesInlineMarkdownUFDDUFDDPattern = /[\uFDD0-\uFDD4]/g;
     encodeEscapes = (text?: Dynamic): Dynamic =>
       text
@@ -194,7 +194,7 @@ export function installEditorNotesInlineMarkdown(): () => void {
         .replace(
           /\\([*\u0060[\]\\])/g,
           (matchedText?: Dynamic, escapedChar?: Dynamic): Dynamic =>
-            String.fromCharCode(64976 + Value_4.indexOf(escapedChar)),
+            String.fromCharCode(64976 + inlineMarkdownEscapedChars.indexOf(escapedChar)),
         );
     decodeEscapes = (
       text?: Dynamic,
@@ -203,7 +203,7 @@ export function installEditorNotesInlineMarkdown(): () => void {
       text.replace(
         NotesInlineMarkdownUFDDUFDDPattern,
         (placeholder?: Dynamic): Dynamic =>
-          (shouldEscape ? "\\" : "") + (Value_4[placeholder.charCodeAt(0) - 64976] ?? ""),
+          (shouldEscape ? "\\" : "") + (inlineMarkdownEscapedChars[placeholder.charCodeAt(0) - 64976] ?? ""),
       );
   };
 }

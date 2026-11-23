@@ -8,26 +8,26 @@ import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 
 var MaxWidthValue: Dynamic;
 var ComponentsShrinkWrapElementCache: Dynamic;
-var ComponentsShrinkWrapElementCache_2: Dynamic;
+var appliedWidthByElement: Dynamic;
 var ComponentsShrinkWrapLimit: Dynamic;
 var ShrinkwrapAttribute: Dynamic;
 var ancestorDepthLimit: Dynamic;
 var ComponentsShrinkWrapSubscribers: Dynamic;
-var ComponentsShrinkWrapElementCache_3: Dynamic;
-var ComponentsShrinkWrapElementCache_4: Dynamic;
+var shrinkWrapQueueByView: Dynamic;
+var shrinkWrapResizeObserverByView: Dynamic;
 var initializeComponentsShrinkWrap: Dynamic;
 var reactComponentsShrinkWrap: Dynamic;
 var jsxComponentsShrinkWrap: Dynamic;
 var ShrinkWrap: Dynamic;
-var initializeComponentsShrinkWrap_2: Dynamic;
+var initializeShrinkWrapComponent: Dynamic;
 function applyShrinkWrapWidth(element?: Dynamic, width?: Dynamic): Dynamic {
   element.style[MaxWidthValue] = width;
-  ComponentsShrinkWrapElementCache_2.set(element, width);
+  appliedWidthByElement.set(element, width);
 }
 function rememberOriginalWidth(element?: Dynamic): Dynamic {
   let inlineMaxWidth: Dynamic = element.style[MaxWidthValue];
   (!ComponentsShrinkWrapElementCache.has(element) ||
-    inlineMaxWidth !== ComponentsShrinkWrapElementCache_2.get(element)) &&
+    inlineMaxWidth !== appliedWidthByElement.get(element)) &&
     ComponentsShrinkWrapElementCache.set(element, inlineMaxWidth);
 }
 function measureInlineContent(element?: Dynamic): Dynamic {
@@ -323,14 +323,14 @@ function shrinkWrapElement(element?: Dynamic): Dynamic {
   return measuredWidth;
 }
 function getShrinkWrapQueue(view?: Dynamic): Dynamic {
-  let entry: Dynamic = ComponentsShrinkWrapElementCache_3.get(view);
+  let entry: Dynamic = shrinkWrapQueueByView.get(view);
   entry ||
     ((entry = {
       queue: new Map(),
       microtaskQueued: false,
       frameQueued: 0,
     }),
-    ComponentsShrinkWrapElementCache_3.set(view, entry));
+    shrinkWrapQueueByView.set(view, entry));
   return entry;
 }
 function flushShrinkWrapJobs(
@@ -344,10 +344,10 @@ function flushShrinkWrapJobs(
       (view.cancelAnimationFrame(queueEntry.frameQueued),
       (queueEntry.frameQueued = 0)),
     queueEntry.microtaskQueued ||
-      ComponentsShrinkWrapElementCache_3.delete(view));
+      shrinkWrapQueueByView.delete(view));
 }
 function flushShrinkWrapMicrotask(view?: Dynamic): Dynamic {
-  let entry: Dynamic = ComponentsShrinkWrapElementCache_3.get(view);
+  let entry: Dynamic = shrinkWrapQueueByView.get(view);
   if (!entry) return;
   entry.microtaskQueued = false;
   entry.frameQueued &&
@@ -357,7 +357,7 @@ function flushShrinkWrapMicrotask(view?: Dynamic): Dynamic {
   flushShrinkWrapJobs(view, entry, jobs);
 }
 function flushShrinkWrapResizeJobs(view?: Dynamic): Dynamic {
-  let entry: Dynamic = ComponentsShrinkWrapElementCache_3.get(view);
+  let entry: Dynamic = shrinkWrapQueueByView.get(view);
   if (!entry) return;
   let jobs: Dynamic = [];
   for (let [element, job] of entry.queue as Dynamic)
@@ -399,7 +399,7 @@ function scheduleShrinkWrapJob(
 function cancelShrinkWrapJob(element?: Dynamic): Dynamic {
   let defaultView: Dynamic = element.ownerDocument.defaultView;
   if (!defaultView) return;
-  let entry: Dynamic = ComponentsShrinkWrapElementCache_3.get(defaultView);
+  let entry: Dynamic = shrinkWrapQueueByView.get(defaultView);
   entry &&
     (entry.queue.delete(element),
     flushShrinkWrapJobs(defaultView, entry, []));
@@ -420,7 +420,7 @@ function observeShrinkWrapResize(
   element?: Dynamic,
   handler?: Dynamic,
 ): Dynamic {
-  let entry: Dynamic = ComponentsShrinkWrapElementCache_4.get(view);
+  let entry: Dynamic = shrinkWrapResizeObserverByView.get(view);
   if (!entry) {
     let entries: Dynamic = new Map();
     entry = {
@@ -434,7 +434,7 @@ function observeShrinkWrapResize(
       paused: new Set(),
       resumeQueued: 0,
     };
-    ComponentsShrinkWrapElementCache_4.set(view, entry);
+    shrinkWrapResizeObserverByView.set(view, entry);
   }
   let elementHandlers: Dynamic = entry.handlers.get(element);
   elementHandlers ||
@@ -448,7 +448,7 @@ function unobserveShrinkWrapResize(
   element?: Dynamic,
   handler?: Dynamic,
 ): Dynamic {
-  let entry: Dynamic = ComponentsShrinkWrapElementCache_4.get(view),
+  let entry: Dynamic = shrinkWrapResizeObserverByView.get(view),
     elementHandlers: Dynamic = entry?.handlers.get(element);
   !entry ||
     !elementHandlers ||
@@ -460,10 +460,10 @@ function unobserveShrinkWrapResize(
     entry.handlers.size === 0 &&
       (entry.observer.disconnect(),
       entry.resumeQueued && view.cancelAnimationFrame(entry.resumeQueued),
-      ComponentsShrinkWrapElementCache_4.delete(view)));
+      shrinkWrapResizeObserverByView.delete(view)));
 }
 function pauseShrinkWrapResize(view?: Dynamic, element?: Dynamic): Dynamic {
-  let entry: Dynamic = ComponentsShrinkWrapElementCache_4.get(view);
+  let entry: Dynamic = shrinkWrapResizeObserverByView.get(view);
   !entry ||
     !entry.handlers.has(element) ||
     entry.paused.has(element) ||
@@ -602,11 +602,10 @@ export {
   applyShrinkWrapWidth,
   cancelShrinkWrapJob,
   ComponentsShrinkWrapElementCache,
-  ComponentsShrinkWrapElementCache_2,
-  ComponentsShrinkWrapElementCache_3,
-  ComponentsShrinkWrapElementCache_4,
+  appliedWidthByElement,
+  shrinkWrapQueueByView,
+  shrinkWrapResizeObserverByView,
   ComponentsShrinkWrapLimit,
-  ancestorDepthLimit as ComponentsShrinkWrapLimit_2,
   ComponentsShrinkWrapSubscribers,
   createShrinkWrapJob,
   flushShrinkWrapJobs,
@@ -614,7 +613,7 @@ export {
   flushShrinkWrapResizeJobs,
   getShrinkWrapQueue,
   initializeComponentsShrinkWrap,
-  initializeComponentsShrinkWrap_2,
+  initializeShrinkWrapComponent,
   isInlineBox,
   jsxComponentsShrinkWrap,
   MaxWidthValue,
@@ -646,7 +645,7 @@ export function installCdsComponentsShrinkWrap(): () => void {
       (): Dynamic => {
         MaxWidthValue = "maxWidth";
         ComponentsShrinkWrapElementCache = new WeakMap();
-        ComponentsShrinkWrapElementCache_2 = new WeakMap();
+        appliedWidthByElement = new WeakMap();
         ComponentsShrinkWrapLimit = 12;
         ShrinkwrapAttribute = "data-shrinkwrap";
         ancestorDepthLimit = 16;
@@ -666,11 +665,11 @@ export function installCdsComponentsShrinkWrap(): () => void {
           "PROGRESS",
           "METER",
         ]);
-        ComponentsShrinkWrapElementCache_3 = new WeakMap();
-        ComponentsShrinkWrapElementCache_4 = new WeakMap();
+        shrinkWrapQueueByView = new WeakMap();
+        shrinkWrapResizeObserverByView = new WeakMap();
       },
     );
-    initializeComponentsShrinkWrap_2 = initializeOnce(
+    initializeShrinkWrapComponent = initializeOnce(
       (): Dynamic => {
         "use client";
 

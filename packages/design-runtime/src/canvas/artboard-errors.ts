@@ -60,9 +60,9 @@ function artboardLoadErrorMessage(
   previewError?: Dynamic,
 ): Dynamic {
   return loadError != null
-    ? uiMessage("canvas.artboardErrors.couldnTLoadThisArtboard", { value1: String(loadError) })
+    ? uiMessage("canvas.artboardErrors.couldnTLoadThisArtboard", { error: String(loadError) })
     : previewError != null
-      ? uiMessage("canvas.artboardErrors.previewStoppedValue1", { value1: String(previewError) })
+      ? uiMessage("canvas.artboardErrors.previewStopped", { error: String(previewError) })
       : null;
 }
 function artboardLoadErrorMessages(

@@ -4,8 +4,8 @@ import type { TabMenuItem, TabsListMenuProps } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
-import { initializeMenuMenu_5, MenuMenuAssignValue } from "../menu/menu";
-import { initializeSwitchContext_2, TabsMenuLabelValue, TabsMenuTriggerValue, useFlipIndicatorContext } from "../switch/context";
+import { initializeMenuComponents, MenuMenuAssignValue } from "../menu/menu";
+import { initializeFlipIndicatorContext, TabsMenuLabelValue, TabsMenuTriggerValue, useFlipIndicatorContext } from "../switch/context";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 
@@ -255,8 +255,8 @@ export function installCdsComponentsNumberInput(): () => void {
       "use client";
 
       initializeHooksLayoutEffect();
-      initializeMenuMenu_5();
-      initializeSwitchContext_2();
+      initializeMenuComponents();
+      initializeFlipIndicatorContext();
       reactTabsListMenu = toModuleNamespace(
         load_react(),
       );

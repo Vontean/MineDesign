@@ -220,7 +220,7 @@ function FileConflictBanner({
         <span className={"text-muted"}>{uiMessage("design-system.conflictBanners.readingBothVersions")}</span>
       ) : conflictFiles === null ? (
         <span className={"text-muted"}>
-          {[uiMessage("design-system.conflictBanners.theirs", { value1: String(conflictFileSummary(flag.path, conflictState.theirs)) }), uiMessage("design-system.conflictBanners.mine", { value1: String(conflictFileSummary(flag.path, conflictState.mine)) }), uiMessage("design-system.conflictBanners.tooLargeOrNotText")]}
+          {[uiMessage("design-system.conflictBanners.theirs", { subject: String(conflictFileSummary(flag.path, conflictState.theirs)) }), uiMessage("design-system.conflictBanners.mine", { subject: String(conflictFileSummary(flag.path, conflictState.mine)) }), uiMessage("design-system.conflictBanners.tooLargeOrNotText")]}
         </span>
       ) : conflictFiles.every((source): boolean => source.kind === "same") ? (
         <span className={"text-muted"}>

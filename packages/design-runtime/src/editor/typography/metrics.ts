@@ -9,7 +9,7 @@ import { displayFontFamily } from "./font-family";
 var TypographyMetricsSansSerifMonoConfig: Dynamic;
 var TypographyMetricsMin: Dynamic;
 var TypographyMetricsHandler: Dynamic;
-var TypographyMetricsHandler_2: Dynamic;
+var roundToHundredths: Dynamic;
 var TypographyMetricsFontSize: Dynamic;
 var TypographyMetricsLineHeight: Dynamic;
 var TypographyMetricsLetterSpacing: Dynamic;
@@ -85,7 +85,7 @@ function matchedDesignSystemTextStyle(
       referenceValue?: Dynamic,
       tolerance?: Dynamic,
     ): Dynamic =>
-      TypographyMetricsHandler_2(referenceValue) === target
+      roundToHundredths(referenceValue) === target
         ? 0
         : Math.abs(candidate - referenceValue) / tolerance,
     bestStyle: Dynamic,
@@ -206,7 +206,7 @@ export {
   resolvedTypographyMetrics,
   TypographyMetricsFontSize,
   TypographyMetricsHandler,
-  TypographyMetricsHandler_2,
+  roundToHundredths,
   TypographyMetricsLetterSpacing,
   TypographyMetricsLineHeight,
   TypographyMetricsMin,
@@ -227,16 +227,16 @@ export function installEditorTypographyMetrics(): () => void {
     ): Dynamic => Math.min(maximum, Math.max(minimum, numberValue));
     TypographyMetricsHandler = (metrics?: Dynamic): Dynamic =>
       TypographyMetricsMin(Math.round(metrics / 100) * 100, 100, 900);
-    TypographyMetricsHandler_2 = (numberValue?: Dynamic): Dynamic =>
+    roundToHundredths = (numberValue?: Dynamic): Dynamic =>
       Math.round(numberValue * 100) / 100;
     TypographyMetricsFontSize = (metrics?: Dynamic): Dynamic =>
-      TypographyMetricsHandler_2(TypographyMetricsMin(metrics.fontSize, 1, 9999));
+      roundToHundredths(TypographyMetricsMin(metrics.fontSize, 1, 9999));
     TypographyMetricsLineHeight = (metrics?: Dynamic): Dynamic =>
-      TypographyMetricsHandler_2(
+      roundToHundredths(
         TypographyMetricsMin(metrics.lineHeight, 0.1, 99),
       );
     TypographyMetricsLetterSpacing = (metrics?: Dynamic): Dynamic =>
-      TypographyMetricsHandler_2(
+      roundToHundredths(
         TypographyMetricsMin(metrics.letterSpacing, -999, 999),
       );
   };

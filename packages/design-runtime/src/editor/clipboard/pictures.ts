@@ -2,13 +2,13 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { ClipboardAnnotationsGetLength, ClipboardAnnotationsIncludes, ClipboardAnnotationsIncludes_2, ClipboardAnnotationsResolvedValue, ClipboardAnnotationsResolvedValue_2 as totalContentLengthLimit, ClipboardAnnotationsResolvedValue_3 as totalSerializedLengthLimit, ClipboardAnnotationsTest_2 as normalizeImageSource, normalizeClipboardAnnotation } from "./annotations";
-import { ClipboardArtboardsConstant_4 as maxOffsetLimit, ClipboardArtboardsMax } from "./artboards";
+import { ClipboardAnnotationsGetLength, ClipboardAnnotationsIncludes, isNoteOrTitleAnnotation, ClipboardAnnotationsResolvedValue, maxAnnotationJsonBytes as totalContentLengthLimit, maxAnnotationClipboardBytes as totalSerializedLengthLimit, normalizeBlobReference as normalizeImageSource, normalizeClipboardAnnotation } from "./annotations";
+import { maxOffset as maxOffsetLimit, ClipboardArtboardsMax } from "./artboards";
 import { ClipboardStateHandler } from "./state";
 import { validateStyleColor } from "../style-schema/color-and-font";
 import { StyleSchemaShadowXYBlurConfig } from "../style-schema/shadow";
 import { StyleSchemaValuesLimit } from "../style-schema/values";
-import { annotationVisibleBounds, parseCanvasMetadata, PlatformFileContentLimit_5 as maxAnnotationCount } from "../../platform/file-content";
+import { annotationVisibleBounds, parseCanvasMetadata, maxAnnotations as maxAnnotationCount } from "../../platform/file-content";
 
 var ClipboardPicturesObjectFitObjectPositionOpacityValues: Dynamic;
 var ClipboardPicturesPattern: Dynamic;
@@ -188,7 +188,7 @@ function parseAnnotationClipboard(rawClipboard?: Dynamic): Dynamic {
 function clipboardPictureEntries(items?: Dynamic): Dynamic {
   let specEntries: Dynamic = items.filter(
     (entry?: Dynamic): Dynamic =>
-      ClipboardAnnotationsIncludes_2(entry.spec),
+      isNoteOrTitleAnnotation(entry.spec),
   );
   return {
     entries: specEntries,

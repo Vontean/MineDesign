@@ -48,7 +48,7 @@ function TypographyStyleSelect({
       value={attached ? (model.value ?? "") : ""}
       placeholder={model.mixed ? (uiMessage("inspector.styleSelect.mixed")) : (attached ? ("") : (uiMessage("inspector.styleSelect.custom")))}
       title={
-        value.length === 0 ? (uiMessage("inspector.styleSelect.noTypeStylesInThis")) : (!attached && !model.mixed && model.matchedName !== null ? (uiMessage("inspector.styleSelect.customMatches", { value1: String(model.matchedName) })) : (undefined))
+        value.length === 0 ? (uiMessage("inspector.styleSelect.noTypeStylesInThis")) : (!attached && !model.mixed && model.matchedName !== null ? (uiMessage("inspector.styleSelect.customMatches", { style: String(model.matchedName) })) : (undefined))
       }
       searchable={true}
       searchLabel={"Search styles"}

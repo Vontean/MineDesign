@@ -13,7 +13,7 @@ import { ClipboardWorkingFilesHandler } from "../editor/clipboard/working-files"
 import { toModuleNamespace } from "../module-helpers";
 import { claudeActivityStore } from "../platform/claude-activity";
 import { getFeatureFlag } from "../platform/feature-flags";
-import { designPageId, isArtboardFile, isDesignSystemFile, PlatformFileContentConstant_5 as defaultArtboardWidth, PlatformFileContentConstant_6 as defaultArtboardHeight } from "../platform/file-content";
+import { designPageId, isArtboardFile, isDesignSystemFile, defaultArtboardWidth as defaultArtboardWidth, defaultArtboardHeight as defaultArtboardHeight } from "../platform/file-content";
 
 var jsx_U1e: Dynamic;
 var creationCursorContentInset: Dynamic;
@@ -210,15 +210,15 @@ function useDesignCreationProgress(progressOptions?: Dynamic): Dynamic {
       0,
     ),
     [progressState]: Dynamic = (0, react_Gu.useState)((): Dynamic => {
-      let listedInfo: Dynamic = progressOptions.flag
+      let listedInfo: Dynamic = progressOptions.creationSequenceEnabled
         ? getListedArtboards(doc)
         : emptyListedArtboards;
       return {
         creating:
-          progressOptions.flag &&
+          progressOptions.creationSequenceEnabled &&
           supportsListedArtboards(doc) &&
           (progressOptions.artboards.length === 0 || listedInfo.awaited.length > 0),
-        names: progressOptions.flag ? listedArtboardNames(doc) : new Set(),
+        names: progressOptions.creationSequenceEnabled ? listedArtboardNames(doc) : new Set(),
         listed: listedInfo.listed,
         needsProgress: new Set(
           listedInfo.awaited.map((board?: Dynamic): Dynamic => board.file),

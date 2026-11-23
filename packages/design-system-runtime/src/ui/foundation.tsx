@@ -1043,7 +1043,7 @@ function usePresentationMode(): OverlayPresentation {
   return reactPresentationMode.useContext(presentationModeContext);
 }
 function useCoarsePresentation(): boolean {
-  let presentationMode = usePresentationMode(),
+  let fullscreenPresentationEnabled = usePresentationMode(),
     windowObject = useRootWindow(),
     coarsePointer = reactPresentationMode.useSyncExternalStore(
       subscribeNoop,
@@ -1056,7 +1056,7 @@ function useCoarsePresentation(): boolean {
           false),
       getFalseSnapshot,
     );
-  return presentationMode === "sheet" || coarsePointer;
+  return fullscreenPresentationEnabled === "sheet" || coarsePointer;
 }
 function sheetContentCanGrow(element: Element): boolean {
   if (hasEditableSheetContent(element)) {
@@ -1456,7 +1456,7 @@ function useAdaptiveSheet<Details extends Overlays.OverlayEventDetails>(
       refuseClose: refuseClose,
     } = props,
     parentSheet = reactAdaptiveSheets.useContext(sheetParentContext),
-    presentationMode = usePresentationMode(),
+    fullscreenPresentationEnabled = usePresentationMode(),
     mobileCoarsePointer = useMobileSheetMediaQuery(),
     sheetFrame = useSheetFrame(
       open,
@@ -1483,11 +1483,11 @@ function useAdaptiveSheet<Details extends Overlays.OverlayEventDetails>(
   ]);
   let prefersSheet = usePresentationWhileShowing(
       shouldUseSheetPresentation(
-        presentationMode,
+        fullscreenPresentationEnabled,
         false,
         mobileCoarsePointer,
       ) &&
-        (closable || presentationMode === "sheet"),
+        (closable || fullscreenPresentationEnabled === "sheet"),
       open,
       sheetFrame.showing,
     ),

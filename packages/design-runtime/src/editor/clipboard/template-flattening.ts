@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { ClipboardHtmlSanitizationAnimateSetAnimatemotionSet, ClipboardHtmlSanitizationScriptDataDcScriptPattern, ClipboardHtmlSanitizationSubscribers_2 as urlAttributeNames, createNativeDomAccessors, isPastedStylePreserved, isSafePastedSrcset, isSafePastedUrl } from "./html-sanitization";
+import { ClipboardHtmlSanitizationAnimateSetAnimatemotionSet, ClipboardHtmlSanitizationScriptDataDcScriptPattern, urlAttributeNames, createNativeDomAccessors, isPastedStylePreserved, isSafePastedSrcset, isSafePastedUrl } from "./html-sanitization";
 import { ClipboardLayoutSnapshotsScriptStyleXmpSet } from "./layout-snapshots";
 import { DcTplAttribute, fromParserHtml } from "../html/authoring";
 import { ScCamelValue, toParserHtml } from "../html/tag-normalization";
@@ -239,7 +239,7 @@ function flattenSelectionTemplates(
 }
 export {
   ClipboardTemplateFlatteningAZaZPattern,
-  ClipboardTemplateFlatteningSoleVariablePattern as ClipboardTemplateFlatteningAZaZPattern_2,
+  ClipboardTemplateFlatteningSoleVariablePattern,
   ClipboardTemplateFlatteningHelmetScriptPattern,
   ClipboardTemplateFlatteningLimit,
   ClipboardTemplateFlatteningMatch,

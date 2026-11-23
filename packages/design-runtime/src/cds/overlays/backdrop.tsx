@@ -4,8 +4,8 @@ import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
 import { initializeOverlaysAndroidCloseWatcher, useAndroidCloseWatcher } from "./android-close-watcher";
 import { initializeOverlaysLayers, useDefaultLayer } from "./layers";
-import { initializePlatformReducedMotion_2, PlatformReducedMotionCss_4 } from "../platform/reduced-motion";
-import { initializePlatformRootFontSize_2, PopupSurface } from "../platform/root-font-size";
+import { initializeSheetMotionClassNames, sheetBackdropClassName } from "../platform/reduced-motion";
+import { initializeRootFontSizeHooks, PopupSurface } from "../platform/root-font-size";
 import { initializeSheetsPopupStack, SheetPopupContext } from "../sheets/popup-stack";
 import { initializeCdsRoot, useCdsWindow, useOverlayRoot } from "../theme/root";
 import { initializeNpm_clsx_xh, load_react, load_react_dom, load_react_jsx_runtime, npm_clsx_Ea } from "../../dependencies";
@@ -76,7 +76,7 @@ function OverlayBackdrop({
               [CdsSheetPendingAttribute]: "",
             }}
             className={npm_clsx_Ea(
-              PlatformReducedMotionCss_4,
+              sheetBackdropClassName,
               !isVisible && "opacity-0",
             )}
             style={layer.style}
@@ -115,9 +115,9 @@ export function installCdsOverlaysBackdrop(): () => void {
       initializeCdsRoot();
       initializeOverlaysLayers();
       initializeOverlaysAndroidCloseWatcher();
-      initializePlatformRootFontSize_2();
+      initializeRootFontSizeHooks();
       initializeSheetsPopupStack();
-      initializePlatformReducedMotion_2();
+      initializeSheetMotionClassNames();
       reactOverlaysBackdrop = toModuleNamespace(
         load_react(),
       );

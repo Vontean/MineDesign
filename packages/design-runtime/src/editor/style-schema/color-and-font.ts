@@ -66,8 +66,8 @@ export {
   StyleSchemaColorAndFontCall,
   StyleSchemaColorAndFontTest,
   StyleSchemaValuesHandlerValue,
-  shadowBlurRange as StyleSchemaValuesHandlerValue_2,
-  shadowSpreadRange as StyleSchemaValuesHandlerValue_3,
+  shadowBlurRange,
+  shadowSpreadRange,
   validateFontFamily,
   validateStyleColor,
 };

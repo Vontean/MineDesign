@@ -5,7 +5,7 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { initializePlatformRootFontSize, PlatformRootFontSizeContext, SkeletonDecorativeContext, SkeletonElementContext, SkeletonMotionContext } from "../platform/root-font-size";
-import { initializeSheetsStyles_2, useLabel } from "../sheets/styles";
+import { initializeLabelsProviderContext, useLabel } from "../sheets/styles";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { initializeOnce, toModuleNamespace } from "../../module-helpers";
@@ -24,7 +24,7 @@ var WaveValue: Dynamic;
 var waveStepMs: Dynamic;
 var settledDurationMs: Dynamic;
 var ComponentsSkeletonLimit: Dynamic;
-var ComponentsSkeletonElementCache_2: Dynamic;
+var alignedStartByDocument: Dynamic;
 var ComponentsSkeletonItems: Dynamic;
 var rowWidthsWithoutIcon: Dynamic;
 var lineWidths: Dynamic;
@@ -143,9 +143,9 @@ function synchronizeSkeletonAnimation(
   let startWithDelay: Dynamic = animation.startTime + (timing.delay ?? 0),
     alignedStart: Dynamic = startWithDelay - phaseOffset,
     ownerDocument: Dynamic = element.ownerDocument,
-    entry: Dynamic = ComponentsSkeletonElementCache_2.get(ownerDocument);
+    entry: Dynamic = alignedStartByDocument.get(ownerDocument);
   if (entry === undefined) {
-    ComponentsSkeletonElementCache_2.set(ownerDocument, alignedStart);
+    alignedStartByDocument.set(ownerDocument, alignedStart);
     return;
   }
   let drift: Dynamic =
@@ -693,16 +693,11 @@ export {
   clearSkeletonElapsed,
   ComponentsSkeletonAssignValue,
   ComponentsSkeletonConstant,
-  waveStepMs as ComponentsSkeletonConstant_2,
-  settledDurationMs as ComponentsSkeletonConstant_3,
   ComponentsSkeletonDivSpanConfig,
   ComponentsSkeletonElementCache,
-  ComponentsSkeletonElementCache_2,
+  alignedStartByDocument,
   ComponentsSkeletonFreezeValue,
-  shownSnapshot as ComponentsSkeletonFreezeValue_2,
   ComponentsSkeletonItems,
-  rowWidthsWithoutIcon as ComponentsSkeletonItems_2,
-  lineWidths as ComponentsSkeletonItems_3,
   ComponentsSkeletonLimit,
   ComponentsSkeletonSubscribers,
   createSkeletonStore,
@@ -732,7 +727,7 @@ export function installCdsComponentsSkeleton(): () => void {
       "use client";
 
       initializeClassNames();
-      initializeSheetsStyles_2();
+      initializeLabelsProviderContext();
       initializePlatformRootFontSize();
       reactComponentsSkeleton = toModuleNamespace(
         load_react(),
@@ -759,7 +754,7 @@ export function installCdsComponentsSkeleton(): () => void {
       waveStepMs = 90;
       settledDurationMs = 1e5;
       ComponentsSkeletonLimit = 1;
-      ComponentsSkeletonElementCache_2 = new WeakMap();
+      alignedStartByDocument = new WeakMap();
       ComponentsSkeletonItems = [160, 128, 144];
       rowWidthsWithoutIcon = [120, 88, 104];
       (SkeletonRows as Dynamic).displayName = "Skeleton.Rows";

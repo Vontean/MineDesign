@@ -5,7 +5,7 @@ import {
 import { fromParserHtml } from "../editor/html/authoring";
 import { camelToKebabCss, toParserHtml } from "../editor/html/tag-normalization";
 import { validatePageColor } from "./page-style";
-import { splitCssDeclarations_2 } from "./template-validation";
+import { splitStyleDeclarations } from "./template-validation";
 
 var splitCssPropertyValue: Dynamic;
 var joinCssDeclarations: Dynamic;
@@ -37,7 +37,7 @@ function mapFastEditCssChanges(
           declaration.slice(0, Math.max(0, declaration.indexOf(":"))).trim(),
         ).toLowerCase(),
       readStyleDeclarations: Dynamic = (element?: Dynamic): Dynamic =>
-        splitCssDeclarations_2(
+        splitStyleDeclarations(
           element?.getAttribute("style") ?? "",
         ),
       matchesViewportSize: Dynamic = (

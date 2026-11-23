@@ -1,6 +1,6 @@
 import { CanvasWorkingStateHandler } from "../../canvas/working-state";
 import { DcTplAttribute } from "../html/authoring";
-import { InspectorEditorEvery } from "../inspector/editor";
+import { sameTidList } from "../inspector/editor";
 import { StyleValue } from "../insert/file-drops";
 import { arrowDrawingHtml } from "../svg/drawing";
 import { attachDeferredTextSink } from "../text/deferred-input";
@@ -47,14 +47,34 @@ import { uiOperation } from "@minedesign/contracts/ui-value";
 import { uploadDesignFile } from "../../canvas/working-state";
 import { videoUploadFailureMessage } from "../media/video-upload";
 
+interface InsertHtmlAtTargetDependencies {
+  readonly incrementSessionEpoch: Dynamic;
+  readonly markModelDirty: Dynamic;
+  readonly modelRef: Dynamic;
+  readonly pushLiveModel: Dynamic;
+  readonly rootName: Dynamic;
+  readonly pushUndoEdit: Dynamic;
+  readonly revokeUndoEdit: Dynamic;
+  readonly selectElements: Dynamic;
+  readonly retargetSelection: Dynamic;
+  readonly setSelection: Dynamic;
+  readonly selectionRef: Dynamic;
+  readonly selectionSequenceRef: Dynamic;
+  readonly pendingSelectionRef: Dynamic;
+  readonly notePendingHighlight: Dynamic;
+  readonly advanceSelectionSequence: Dynamic;
+  readonly lastEditedTemplateRef: Dynamic;
+  readonly getPreviewFrame: Dynamic;
+}
+
 /** 粘贴或用工具放置内容时运行：把一段 HTML 插入到目标元素之后或画板根部（必要时先把 SVG 图形提升到根部），推送实时模型、标脏并选中新插入的元素。 */
-export function insertHtmlAtTarget(deps: { readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value105: Dynamic; readonly value106: Dynamic; readonly value3: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value51: Dynamic; readonly value62: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic }, html?: Dynamic,
+export function insertHtmlAtTarget(deps: InsertHtmlAtTargetDependencies, html?: Dynamic,
         undoLabel?: Dynamic,
         placement?: Dynamic,
         shouldSelect: Dynamic = true): Dynamic {
         let docState: Dynamic = deps.modelRef.current.state(deps.rootName);
         if (!docState) return [];
-        let current: Dynamic = deps.value49.current,
+        let current: Dynamic = deps.selectionRef.current,
           selectedTids: Dynamic =
             current && current.name === deps.rootName
               ? current.tids.filter(
@@ -81,7 +101,7 @@ export function insertHtmlAtTarget(deps: { readonly incrementSessionEpoch: Dynam
               ? "root-end"
               : "after",
           redo: Dynamic = docState.redo,
-          undoEntry: Dynamic = deps.value101(deps.rootName, undoLabel, docState),
+          undoEntry: Dynamic = deps.pushUndoEdit(deps.rootName, undoLabel, docState),
           insertedTids: Dynamic = insertHtmlIntoModel(
             docState,
             html,
@@ -91,42 +111,59 @@ export function insertHtmlAtTarget(deps: { readonly incrementSessionEpoch: Dynam
             },
           );
         if (insertedTids.length === 0) {
-          deps.value102(docState, undoEntry, redo);
+          deps.revokeUndoEdit(docState, undoEntry, redo);
           return [];
         }
-        deps.value66.current = deps.rootName;
+        deps.lastEditedTemplateRef.current = deps.rootName;
         deps.pushLiveModel(deps.rootName, docState);
         deps.markModelDirty(deps.rootName);
         deps.incrementSessionEpoch();
-        let previewFrame: Dynamic = deps.value67();
+        let previewFrame: Dynamic = deps.getPreviewFrame();
         if (shouldSelect) {
-          let selectionSyncFlag: Dynamic = deps.value106(docState, insertedTids);
-          deps.value105(deps.rootName, insertedTids);
-          selectionSyncFlag && (deps.value62.current = deps.value50.current);
-          let selectionAtInsert: Dynamic = deps.value51.current;
+          let selectionSyncFlag: Dynamic = deps.retargetSelection(docState, insertedTids);
+          deps.selectElements(deps.rootName, insertedTids);
+          selectionSyncFlag && deps.notePendingHighlight();
+          let selectionAtInsert: Dynamic = deps.pendingSelectionRef.current;
           previewFrame &&
             setTimeout((): Dynamic => {
-              let currentSelection: Dynamic = deps.value49.current;
-              ((deps.value51.current === selectionAtInsert &&
-                selectionAtInsert?.seq === deps.value50.current) ||
+              let currentSelection: Dynamic = deps.selectionRef.current;
+              ((deps.pendingSelectionRef.current === selectionAtInsert &&
+                selectionAtInsert?.seq === deps.selectionSequenceRef.current) ||
                 (currentSelection?.name === deps.rootName &&
-                  InspectorEditorEvery(
+                  sameTidList(
                     currentSelection.tids,
                     insertedTids,
                   ))) &&
                 setPickerSelection(previewFrame, insertedTids, deps.rootName);
             }, 60);
         } else
-          deps.value49.current?.name === deps.rootName &&
+          deps.selectionRef.current?.name === deps.rootName &&
             (previewFrame &&
               setPickerSelection(previewFrame, null, null),
-            deps.value50.current++,
-            deps.value3(null));
+            deps.advanceSelectionSequence(),
+            deps.setSelection(null));
         return insertedTids;
       }
 
+interface PlaceToolElementAtPointDependencies {
+  readonly drawExitGraceUntilRef: Dynamic;
+  readonly filePath: Dynamic;
+  readonly incrementSessionEpoch: Dynamic;
+  readonly markModelDirty: Dynamic;
+  readonly modelRef: Dynamic;
+  readonly pushLiveModel: Dynamic;
+  readonly rootName: Dynamic;
+  readonly sessionAliveRef: Dynamic;
+  readonly setTool: Dynamic;
+  readonly toolRef: Dynamic;
+  readonly pendingTextTargetTidRef: Dynamic;
+  readonly insertHtml: Dynamic;
+  readonly getPreviewFrame: Dynamic;
+  readonly cacheFeedbackLabel: Dynamic;
+}
+
 /** 用绘制类工具（文字、形状、线条、箭头、自由绘制）在画板上点击或拖出范围时运行：生成对应的 HTML 插入画板，文字工具会接管延迟输入并进入编辑；放入静态定位容器时把容器改为相对定位，最后切回选择工具。 */
-export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUntilRef: Dynamic; readonly filePath: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly sessionAliveRef: Dynamic; readonly setTool: Dynamic; readonly toolRef: Dynamic; readonly value107: Dynamic; readonly value163: Dynamic; readonly value67: Dynamic; readonly value8: Dynamic }, placement?: Dynamic,
+export async function placeToolElementAtPoint(deps: PlaceToolElementAtPointDependencies, placement?: Dynamic,
         toolOverride?: Dynamic,
         providedTextInput?: Dynamic): Promise<Dynamic> {
         let isDrawActive: Dynamic =
@@ -159,7 +196,7 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
                 : (providedTextInput ?? null);
         if (tool === "text") {
           if (toolOverride === undefined && textInput === null) return;
-          let previewFrame: Dynamic = deps.value67(),
+          let previewFrame: Dynamic = deps.getPreviewFrame(),
             firstTextFont: Dynamic = previewFrame
               ? await getPickerFirstTextFont(previewFrame)
               : null;
@@ -223,10 +260,10 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
           );
         }
         if (tool === "text") {
-          let previewFrame: Dynamic = deps.value67();
+          let previewFrame: Dynamic = deps.getPreviewFrame();
           previewFrame && notePickerTextInsert(previewFrame);
         }
-        let insertedTids: Dynamic = deps.value163(
+        let insertedTids: Dynamic = deps.insertHtml(
           html,
           `insert-${tool}-${Date.now()}`,
           isRootTarget
@@ -241,11 +278,11 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
           tool !== "draw",
         );
         tool === "draw" &&
-          deps.value8(
+          deps.cacheFeedbackLabel(
             `${deps.modelRef.current.state(deps.rootName)?.path ?? deps.filePath}: drew a freehand SVG path \u2014 use the screenshot tool to view it`,
           );
         if (tool === "text") {
-          let previewFrame: Dynamic = deps.value67(),
+          let previewFrame: Dynamic = deps.getPreviewFrame(),
             textSink: Dynamic =
               previewFrame && insertedTids && insertedTids.length > 0 && textInput !== null
                 ? attachDeferredTextSink(textInput, {
@@ -253,8 +290,8 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
                       pickerHeldTextKey(previewFrame, typed),
                     drop: (isKept?: Dynamic): Dynamic => {
                       !isKept &&
-                        deps.value107.current === insertedTids[0] &&
-                        (deps.value107.current = null);
+                        deps.pendingTextTargetTidRef.current === insertedTids[0] &&
+                        (deps.pendingTextTargetTidRef.current = null);
                       dropPickerInsertedTextEdit(
                         previewFrame,
                         isKept,
@@ -268,7 +305,7 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
               previewFrame &&
                 !hasDeferredTextSink() &&
                 dropPickerInsertedTextEdit(previewFrame, false))
-            : ((deps.value107.current = insertedTids[0]),
+            : ((deps.pendingTextTargetTidRef.current = insertedTids[0]),
               startPickerInsertedTextEdit(
                 previewFrame,
                 insertedTids[0],
@@ -284,7 +321,7 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
             !docState.model.inlineStyleValue(placement.targetTid, "position")
           ) {
             let targetElement: Dynamic = docState.model.element(placement.targetTid),
-              previewFrame: Dynamic = deps.value67();
+              previewFrame: Dynamic = deps.getPreviewFrame();
             ((previewFrame
               ? await inspectPickerSelection(
                   previewFrame,
@@ -308,12 +345,27 @@ export async function placeToolElementAtPoint(deps: { readonly drawExitGraceUnti
         (tool !== "draw" || placement.endTool) && deps.setTool("select");
       }
 
+interface InsertImageFilesIntoArtboardDependencies {
+  readonly fileDirectory: Dynamic;
+  readonly incrementSessionEpoch: Dynamic;
+  readonly markModelDirty: Dynamic;
+  readonly modelRef: Dynamic;
+  readonly pendingStampEditsRef: Dynamic;
+  readonly projectPath: Dynamic;
+  readonly pushLiveModel: Dynamic;
+  readonly rootName: Dynamic;
+  readonly showToast: Dynamic;
+  readonly insertHtml: Dynamic;
+  readonly typingQuietScheduler: Dynamic;
+  readonly entryCheckPromiseRef: Dynamic;
+}
+
 /** 粘贴或拖入图片文件后运行：读取图片尺寸，按落点找到可容纳的容器（含幻灯片舞台、空画板），上传并插入图片元素，失败或目标不能放图片时提示。 */
-export async function insertImageFilesIntoArtboard(deps: { readonly fileDirectory: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pendingStampEditsRef: Dynamic; readonly projectPath: Dynamic; readonly pushLiveModel: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value163: Dynamic; readonly value38: Dynamic; readonly value92: Dynamic }, dataset?: Dynamic,
+export async function insertImageFilesIntoArtboard(deps: InsertImageFilesIntoArtboardDependencies, dataset?: Dynamic,
         files?: Dynamic,
         dropContext?: Dynamic): Promise<Dynamic> {
         let shownBox: Dynamic =
-            dataset.source === "paste" ? null : deps.value38.shown(),
+            dataset.source === "paste" ? null : deps.typingQuietScheduler.shown(),
           verb: Dynamic =
             dataset.source === "paste" ? "pasted" : "dropped",
           sizePromises: Dynamic = files.map(
@@ -338,7 +390,7 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
                   )
               ).catch((): Dynamic => null),
           );
-        deps.value92.current && (await deps.value92.current);
+        deps.entryCheckPromiseRef.current && (await deps.entryCheckPromiseRef.current);
         let hasTargetTid: Dynamic =
             (dataset.name ?? deps.rootName) === deps.rootName &&
             dataset.targetTid != null,
@@ -405,8 +457,8 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
         if (!docState) {
           deps.showToast(
             files.length > 1
-              ? uiMessage("inspector.session.couldNotAddTheValue1", { value1: uiOperation(verb) })
-              : uiMessage("inspector.session.couldNotAddTheValue12", { value1: uiOperation(verb) }),
+              ? uiMessage("inspector.session.couldNotAddImages", { operation: uiOperation(verb) })
+              : uiMessage("inspector.session.couldNotAddImage", { operation: uiOperation(verb) }),
             "error",
           );
           return;
@@ -637,7 +689,7 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
           ).join(`
 `),
             insertedElements: Dynamic = (
-            deps.value163(
+            deps.insertHtml(
               imageHtml,
               `image-drop-${Date.now()}`,
               fileDropTarget && emptyArtboardTarget
@@ -655,7 +707,7 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
           ).map((tid?: Dynamic): Dynamic => docState.model.element(tid));
         if (insertedElements.every((element?: Dynamic): Dynamic => element == null)) {
           deps.showToast(
-            uiMessage("inspector.session.targetCannotHoldImagesValue1", { value1: uiOperation(verb === "pasted" ? "select" : "drop onto") }),
+            uiMessage("inspector.session.targetCannotHoldImages", { operation: uiOperation(verb === "pasted" ? "select" : "drop onto") }),
             "error",
           );
           return;
@@ -772,15 +824,26 @@ export async function insertImageFilesIntoArtboard(deps: { readonly fileDirector
         failedCount > 0 &&
           deps.showToast(
             files.length > 1
-              ? uiMessage("inspector.session.couldNotAddValue1Of", { value1: String(failedCount), value2: String(files.length), value3: uiOperation(verb) })
-              : uiMessage("inspector.session.couldNotAddTheValue12", { value1: uiOperation(verb) }),
+              ? uiMessage("inspector.session.couldNotAddSomeImages", { failed: String(failedCount), total: String(files.length), operation: uiOperation(verb) })
+              : uiMessage("inspector.session.couldNotAddImage", { operation: uiOperation(verb) }),
             "error",
           );
         return failedCount === 0;
       }
 
+interface RouteDroppedMediaFilesDependencies {
+  readonly filePath: Dynamic;
+  readonly modelRef: Dynamic;
+  readonly onDropVideos: Dynamic;
+  readonly rootName: Dynamic;
+  readonly showToast: Dynamic;
+  readonly insertImageFiles: Dynamic;
+  readonly pendingImageDropsRef: Dynamic;
+  readonly previewFrameRef: Dynamic;
+}
+
 /** 文件拖入或粘贴到画板时运行：筛出图片与视频，视频交给视频上传流程，其余文件提示不支持，图片交给插图流程并在结束后清理拖放状态。 */
-export async function routeDroppedMediaFiles(deps: { readonly filePath: Dynamic; readonly modelRef: Dynamic; readonly onDropVideos: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value179: Dynamic; readonly value180: Dynamic; readonly webviewRef: Dynamic }, dataset?: Dynamic): Promise<Dynamic> {
+export async function routeDroppedMediaFiles(deps: RouteDroppedMediaFilesDependencies, dataset?: Dynamic): Promise<Dynamic> {
         let files: Dynamic = (dataset.files ?? []).filter(
             (file?: Dynamic): Dynamic => file instanceof File,
           ),
@@ -818,7 +881,7 @@ export async function routeDroppedMediaFiles(deps: { readonly filePath: Dynamic;
         videoFiles.length > 0
           ? dataset.slide != null ||
             deps.modelRef.current.state(deps.rootName)?.model.findDeckStage() != null ||
-            deps.webviewRef.current?.contentDocument?.querySelector(
+            deps.previewFrameRef.current?.contentDocument?.querySelector(
               "deck-stage",
             ) != null
             ? deps.showToast(CanvasWorkingStateHandler("artboard"))
@@ -832,12 +895,12 @@ export async function routeDroppedMediaFiles(deps: { readonly filePath: Dynamic;
                   videoUploadFailureMessage("unavailable"),
                 )
           : imageFiles.length === 0 &&
-            Date.now() - deps.value180.current > 5e3 &&
-            ((deps.value180.current = Date.now()),
+            Date.now() - deps.pendingImageDropsRef.current > 5e3 &&
+            ((deps.pendingImageDropsRef.current = Date.now()),
             deps.showToast(
               dataset.refuse === true
                 ? uiMessage("inspector.session.filesCanTBeDropped")
-                : uiMessage("inspector.session.onlyImagesAndMp4Mov", { value1: uiOperation(verb) }),
+                : uiMessage("inspector.session.onlyImagesAndMp4Mov", { operation: uiOperation(verb) }),
             ));
         if (imageFiles.length === 0) return;
         let dropSession: Dynamic = receiveFileDrops(
@@ -854,15 +917,36 @@ export async function routeDroppedMediaFiles(deps: { readonly filePath: Dynamic;
             : null,
         );
         try {
-          return await deps.value179(dataset, imageFiles, dropSession);
+          return await deps.insertImageFiles(dataset, imageFiles, dropSession);
         } finally {
           dropSession.end();
         }
       }
 
+interface UploadReplacementImageDependencies {
+  readonly fileDirectory: Dynamic;
+  readonly incrementSessionEpoch: Dynamic;
+  readonly markModelDirty: Dynamic;
+  readonly modelRef: Dynamic;
+  readonly onHistoryDrop: Dynamic;
+  readonly pendingStampEditsRef: Dynamic;
+  readonly projectPath: Dynamic;
+  readonly pushLiveModel: Dynamic;
+  readonly readOnlyRef: Dynamic;
+  readonly rootName: Dynamic;
+  readonly showToast: Dynamic;
+  readonly pushUndoEdit: Dynamic;
+  readonly editSelectionProperty: Dynamic;
+  readonly replacementImageUploadsRef: Dynamic;
+  readonly selectionRef: Dynamic;
+  readonly undoEditGroupRef: Dynamic;
+  readonly lastEditedTemplateRef: Dynamic;
+  readonly cacheFeedbackLabel: Dynamic;
+}
+
 /** 替换选中图片时运行：把用户选择的文件上传到作品目录，多选时统一改 src，单选时替换图片并记录撤销、推送实时模型；上传失败时提示。 */
-export async function uploadReplacementImage(deps: { readonly fileDirectory: Dynamic; readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly onHistoryDrop: Dynamic; readonly pendingStampEditsRef: Dynamic; readonly projectPath: Dynamic; readonly pushLiveModel: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value101: Dynamic; readonly value151: Dynamic; readonly value183: Dynamic; readonly value49: Dynamic; readonly value65: Dynamic; readonly value66: Dynamic; readonly value8: Dynamic }, file?: Dynamic): Promise<Dynamic> {
-        let current: Dynamic = deps.value49.current;
+export async function uploadReplacementImage(deps: UploadReplacementImageDependencies, file?: Dynamic): Promise<Dynamic> {
+        let current: Dynamic = deps.selectionRef.current;
         if (!current || deps.readOnlyRef.current || current.name !== deps.rootName)
           return;
         let docState: Dynamic = deps.modelRef.current.state(current.name);
@@ -877,7 +961,7 @@ export async function uploadReplacementImage(deps: { readonly fileDirectory: Dyn
         if (existingTids.length > 1) {
           try {
             let { src: uploadedSrc }: Dynamic = await uploadDesignFile(deps.projectPath, deps.fileDirectory, file);
-            deps.value151("@src", uploadedSrc);
+            deps.editSelectionProperty("@src", uploadedSrc);
           } catch (uploadError: Dynamic) {
             console.error("[dc-editor] image pick upload failed:", uploadError);
             deps.showToast(uiMessage("inspector.session.couldNotUploadTheImage"), "error");
@@ -888,8 +972,8 @@ export async function uploadReplacementImage(deps: { readonly fileDirectory: Dyn
         let imageTid: Dynamic = existingTids[0],
           imageElement: Dynamic = docState.model.element(imageTid);
         if (imageElement == null) return;
-        let uploadToken: Dynamic = (deps.value183.current.get(imageElement) ?? 0) + 1;
-        deps.value183.current.set(imageElement, uploadToken);
+        let uploadToken: Dynamic = (deps.replacementImageUploadsRef.current.get(imageElement) ?? 0) + 1;
+        deps.replacementImageUploadsRef.current.set(imageElement, uploadToken);
         let undoKey: Dynamic = `src-pick-${Date.now()}`,
           redoSnapshot: Dynamic = null,
           {
@@ -902,7 +986,7 @@ export async function uploadReplacementImage(deps: { readonly fileDirectory: Dyn
             el: imageElement,
             getModel: (): Dynamic => currentDocState().model,
             isCurrent: (): Dynamic =>
-              deps.value183.current.get(imageElement) === uploadToken,
+              deps.replacementImageUploadsRef.current.get(imageElement) === uploadToken,
             upload: (uploadFile?: Dynamic): Dynamic =>
               uploadDesignFile(
                 deps.projectPath,
@@ -912,10 +996,10 @@ export async function uploadReplacementImage(deps: { readonly fileDirectory: Dyn
             pushUndo: (): Dynamic => {
               let state: Dynamic = currentDocState();
               redoSnapshot = state.redo.slice();
-              deps.value101(current.name, undoKey, state);
+              deps.pushUndoEdit(current.name, undoKey, state);
             },
             afterPatch: (): Dynamic => {
-              deps.value66.current = current.name;
+              deps.lastEditedTemplateRef.current = current.name;
               deps.pushLiveModel(current.name, currentDocState());
               deps.markModelDirty(current.name);
               deps.incrementSessionEpoch();
@@ -927,7 +1011,7 @@ export async function uploadReplacementImage(deps: { readonly fileDirectory: Dyn
               }),
           });
         if (failed) {
-          let pendingUndo: Dynamic = deps.value65.current,
+          let pendingUndo: Dynamic = deps.undoEditGroupRef.current,
             latestState: Dynamic = currentDocState();
           pendingUndo &&
             pendingUndo.name === current.name &&
@@ -937,14 +1021,14 @@ export async function uploadReplacementImage(deps: { readonly fileDirectory: Dyn
             (latestState.undo.pop(),
             (latestState.redo = redoSnapshot),
             deps.onHistoryDrop?.("undo"),
-            (deps.value65.current = null));
-          return deps.value183.current.get(imageElement) === uploadToken
+            (deps.undoEditGroupRef.current = null));
+          return deps.replacementImageUploadsRef.current.get(imageElement) === uploadToken
             ? (deps.showToast(uiMessage("inspector.session.couldNotUploadTheImage"), "error"), false)
             : undefined;
         } else
           relName != null &&
             applied &&
-            deps.value8(
+            deps.cacheFeedbackLabel(
               `${docState.path}: set @src=${replacedSrc ?? "./" + relName} on img`,
               `${docState.path}:@src:${imageTid}`,
             );

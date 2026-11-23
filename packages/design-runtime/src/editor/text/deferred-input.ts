@@ -6,13 +6,13 @@ import {
 var TextDeferredInputTokenTypedSinkConfig: Dynamic;
 var TextDeferredInputConstant: Dynamic;
 var TextDeferredInputHandler: Dynamic;
-var TextDeferredInputHandler_2: Dynamic;
+var finishDeferredTextEdit: Dynamic;
 var TextDeferredInputNow: Dynamic;
-var TextDeferredInputHandler_3: Dynamic;
+var isEditableHtmlElement: Dynamic;
 function eventTargetsInput(event?: Dynamic): Dynamic {
   let value: Dynamic = event.composedPath?.()[0] ?? event.target;
   return (
-    TextDeferredInputHandler_3(value) &&
+    isEditableHtmlElement(value) &&
     (value.tagName === "INPUT" ||
       value.tagName === "TEXTAREA" ||
       value.tagName === "SELECT" ||
@@ -51,7 +51,7 @@ function collectDeferredTypedText(event?: Dynamic): Dynamic {
     value === "Escape" ||
     eventTargetsInput(event)
   ) {
-    TextDeferredInputHandler_2();
+    finishDeferredTextEdit();
     return;
   }
   if (event.altKey && !isAltGraph && /^[a-z0-9]$/i.test(value)) return;
@@ -102,7 +102,7 @@ function attachDeferredTextSink(token?: Dynamic, sink?: Dynamic): Dynamic {
     : (clearTimeout(TextDeferredInputTokenTypedSinkConfig.timer),
       (TextDeferredInputTokenTypedSinkConfig.sink = sink),
       (TextDeferredInputTokenTypedSinkConfig.timer = setTimeout(
-        TextDeferredInputHandler_2,
+        finishDeferredTextEdit,
         2100,
       )),
       {
@@ -150,8 +150,8 @@ export {
   resetDeferredTextPointer,
   TextDeferredInputConstant,
   TextDeferredInputHandler,
-  TextDeferredInputHandler_2,
-  TextDeferredInputHandler_3,
+  finishDeferredTextEdit,
+  isEditableHtmlElement,
   TextDeferredInputNow,
   TextDeferredInputTokenTypedSinkConfig,
 };
@@ -160,15 +160,15 @@ export function installEditorTextDeferredInput(): () => void {
     TextDeferredInputTokenTypedSinkConfig = null;
     TextDeferredInputConstant = 0;
     TextDeferredInputHandler = (): Dynamic => finishDeferredTextInput("keys");
-    TextDeferredInputHandler_2 = (): Dynamic => finishDeferredTextInput("edit");
+    finishDeferredTextEdit = (): Dynamic => finishDeferredTextInput("edit");
     TextDeferredInputNow = (event?: Dynamic): Dynamic => {
       TextDeferredInputTokenTypedSinkConfig?.keys &&
         (event?.timeStamp ?? performance.now()) -
           TextDeferredInputTokenTypedSinkConfig.at >
           500 &&
-        TextDeferredInputHandler_2();
+        finishDeferredTextEdit();
     };
-    TextDeferredInputHandler_3 = (node?: Dynamic): Dynamic =>
+    isEditableHtmlElement = (node?: Dynamic): Dynamic =>
       node != null && "tagName" in node && "isContentEditable" in node;
   };
 }

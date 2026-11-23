@@ -12,16 +12,16 @@ function groupArtboardsIntoRows(boards?: Dynamic): Dynamic {
     (input?: Dynamic, options?: Dynamic): Dynamic =>
       input.y - options.y || input.x - options.x,
   ) as Dynamic) {
-    let value2: Dynamic = rows.find(
+    let row: Dynamic = rows.find(
       (input?: Dynamic): Dynamic => value.y < input[0].y + input[0].h,
     );
-    value2 !== undefined ? value2.push(value) : rows.push([value]);
+    row !== undefined ? row.push(value) : rows.push([value]);
   }
   return rows.map(
     (input?: Dynamic): Dynamic =>
       [...input].sort(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          input2.x - options.x,
+        (left?: Dynamic, options?: Dynamic): Dynamic =>
+          left.x - options.x,
       ),
   );
 }
@@ -76,7 +76,7 @@ function describeFreeCanvasSpots(
         .filter(
           (input?: Dynamic): Dynamic =>
             input.some(
-              (input2?: Dynamic): Dynamic => options.includes(input2.id),
+              (board?: Dynamic): Dynamic => options.includes(board.id),
             ),
         )
         .slice(0, MAX_SUGGESTED_CANVAS_SPOTS)

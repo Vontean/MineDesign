@@ -2,13 +2,13 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { StyleSchemaValuesHandlerValue, StyleSchemaValuesHandlerValue_2 as shadowBlurRange, StyleSchemaValuesHandlerValue_3 as shadowSpreadRange, validateStyleColor } from "./color-and-font";
+import { StyleSchemaValuesHandlerValue, shadowBlurRange, shadowSpreadRange, validateStyleColor } from "./color-and-font";
 import { isStyleObject, validateOptionalStyleNumber } from "./validation";
-import { StyleSchemaValuesItems, StyleSchemaValuesItems_2 as transformFieldSpecs, StyleSchemaValuesLimit } from "./values";
+import { StyleSchemaValuesItems, transformFieldSpecs, StyleSchemaValuesLimit } from "./values";
 
 var StyleSchemaShadowXYBlurConfig: Dynamic;
 var styleFieldBoundsValue: Dynamic;
-var styleFieldBoundsValue_2: Dynamic;
+var transformFieldBounds: Dynamic;
 function numericStyleBounds(bounds?: Dynamic): Dynamic {
   return {
     min: bounds.lo,
@@ -109,7 +109,7 @@ export {
   shadowFieldBounds,
   styleFieldBounds,
   styleFieldBoundsValue,
-  styleFieldBoundsValue_2,
+  transformFieldBounds,
   StyleSchemaShadowXYBlurConfig,
   validateStyleShadow,
   validateStyleShadows,
@@ -123,7 +123,7 @@ export function installEditorStyleSchemaShadow(): () => void {
       spread: numericStyleBounds(shadowSpreadRange),
     };
     styleFieldBoundsValue = styleFieldBounds(StyleSchemaValuesItems);
-    styleFieldBoundsValue_2 = styleFieldBounds(
+    transformFieldBounds = styleFieldBounds(
       transformFieldSpecs,
     );
   };

@@ -310,6 +310,7 @@ import { installEditorNotesAutoformat } from "./editor/notes/autoformat";
 import { installEditorNotesLinkEditing } from "./editor/notes/link-editing";
 import { installCanvasNote } from "./canvas/note";
 import { installCanvasMeasurements } from "./canvas/measurements";
+import { installFrameHostValidation } from "./platform/frame-host-validation";
 import { installPlatformFrameHostBridge } from "./platform/frame-host-bridge";
 import { installEditorToolbarPrimitives } from "./editor/toolbar/primitives";
 import { installEditorToolbarLayout } from "./editor/toolbar/layout";
@@ -444,7 +445,6 @@ import { installEditorInspectorHelp } from "./editor/inspector/help";
 import { installEditorChromeToolSelector } from "./editor/chrome/tool-selector";
 import { installEditorTools } from "./editor/tools";
 import { installEditorPropertiesPanel } from "./editor/properties-panel";
-import { installEditorSession } from "./editor/session";
 import { installCanvasArtboardFocus } from "./canvas/artboard-focus";
 import { installCanvasArtboardTweaks } from "./canvas/artboard-tweaks";
 import { installCanvasSelectionChrome } from "./canvas/selection-chrome";
@@ -897,6 +897,7 @@ export function createDesignRuntime(
     installEditorNotesLinkEditing(),
     installCanvasNote(),
     installCanvasMeasurements(),
+    installFrameHostValidation(),
     installPlatformFrameHostBridge(),
     installEditorToolbarPrimitives(),
     installEditorToolbarLayout(),
@@ -1031,7 +1032,6 @@ export function createDesignRuntime(
     installEditorChromeToolSelector(),
     installEditorTools(),
     installEditorPropertiesPanel(),
-    installEditorSession(),
     installCanvasArtboardFocus(),
     installCanvasArtboardTweaks(),
     installCanvasSelectionChrome(),

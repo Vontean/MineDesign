@@ -192,7 +192,6 @@ export {
   isSvgMimeType,
   IMAGE_RESIZE_STEP as PlatformImageProcessingConstant,
   DATA_URL_ENCODING_QUALITIES as PlatformImageProcessingItems,
-  BLOB_ENCODING_QUALITIES as PlatformImageProcessingItems_2,
   MIN_DOWNSAMPLE_EDGE as PlatformImageProcessingLimit,
   rasterizeSvg,
 };

@@ -9,7 +9,7 @@ import { DownloadsArenTAvailableToYouForMessage, downloadsWithheld, saveThroughH
 import { exportFileName, sanitizeExportFileName } from "../file-names";
 import { classifyExportFailure, classifyExportSaveOutcome } from "../outcomes";
 import { minEmptyExportTail, getArtboardPaperSize, isFillPagedExport, isFlowExport, paperHeightForWidth, paperSizes } from "../paper-and-scale";
-import { captureArtboardPdfPages, getPdfRasterScale, PdfCaptureLimit_2 as pdfCapturePageLimit } from "./capture";
+import { captureArtboardPdfPages, getPdfRasterScale, maxFlowPages as pdfCapturePageLimit } from "./capture";
 import { buildPdfDocument } from "./document";
 import { decodeJpegDataUrl, pixelsToPoints, readJpegDimensions } from "./jpeg";
 import { inferPdfLanguage } from "./language";
@@ -709,7 +709,6 @@ export {
   pdfExportMessage,
   pdfExportWarnings,
   PdfOrchestrationLimit,
-  maxPdfContentDimensionPt as PdfOrchestrationLimit_2,
   sharedExportLanguage,
 };
 export function installExportPdfOrchestration(): () => void {

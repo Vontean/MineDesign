@@ -6,7 +6,7 @@ import type {
 } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { Icon, initializeComponentsIcon_2 } from "./icon";
+import { Icon, initializeIconSizeMetrics } from "./icon";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { load_react_jsx_runtime } from "../../dependencies";
 import { initializeOnce, toModuleNamespace } from "../../module-helpers";
@@ -64,7 +64,7 @@ export function installCdsComponentsCheckbox(): () => void {
   return () => {
     initializeComponentsCheckbox = initializeOnce(() => {
       initializeClassNames();
-      initializeComponentsIcon_2();
+      initializeIconSizeMetrics();
       jsxComponentsCheckbox = toModuleNamespace(
         load_react_jsx_runtime(),
       );

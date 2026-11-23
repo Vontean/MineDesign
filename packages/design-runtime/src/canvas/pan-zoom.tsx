@@ -668,7 +668,6 @@ export {
   CanvasPanZoomGesturestartGesturechangeGestureendValues,
   CanvasPanZoomKeys,
   CanvasPanZoomLimit,
-  wheelAfterGestureMs as CanvasPanZoomLimit_2,
   CanvasPanZoomResolvedValue,
   CanvasPanZoomRound,
   CanvasPanZoomScrollTop,

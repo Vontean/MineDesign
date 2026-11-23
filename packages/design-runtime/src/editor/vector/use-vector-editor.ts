@@ -2,14 +2,14 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { reactHooksLatestCallback_4 } from "../hooks/latest-callback";
-import { blurVectorInput, captureVectorPointer, constrainVectorPointAngle, deleteVectorAnchor, moveVectorPart, previousContourAnchor, resetVectorControl, sameVectorPath, showVectorControls, vectorHitRadius, vectorPartPoint, VectorPathEditingConstant, VectorPathEditingConstant_2 as TOUCH_HIT_RADIUS_PX, VectorPathEditingLimit, vectorUsesCoarsePointer } from "./path-editing";
+import { reactForUseVectorEditor } from "../hooks/latest-callback";
+import { blurVectorInput, captureVectorPointer, constrainVectorPointAngle, deleteVectorAnchor, moveVectorPart, previousContourAnchor, resetVectorControl, sameVectorPath, showVectorControls, vectorHitRadius, vectorPartPoint, VectorPathEditingConstant, TOUCH_HIT_RADIUS_PX, VectorPathEditingLimit, vectorUsesCoarsePointer } from "./path-editing";
 
 function useVectorEditor(request?: Dynamic): Dynamic {
   let [value, setRequest]: Dynamic = (0,
-    reactHooksLatestCallback_4.useState)([]),
-    draftRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)([]),
-    setDraft: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+    reactForUseVectorEditor.useState)([]),
+    draftRef: Dynamic = (0, reactForUseVectorEditor.useRef)([]),
+    setDraft: Dynamic = (0, reactForUseVectorEditor.useCallback)(
       (nextRequest?: Dynamic): Dynamic => {
         draftRef.current = nextRequest;
         setRequest(nextRequest);
@@ -17,34 +17,34 @@ function useVectorEditor(request?: Dynamic): Dynamic {
       [],
     ),
     [hoveredPoint, setHoveredPoint]: Dynamic = (0,
-    reactHooksLatestCallback_4.useState)(undefined),
-    activePointerRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+    reactForUseVectorEditor.useState)(undefined),
+    activePointerRef: Dynamic = (0, reactForUseVectorEditor.useRef)(
       undefined,
     ),
-    pointerTypeRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)("mouse"),
-    pointerIdRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+    pointerTypeRef: Dynamic = (0, reactForUseVectorEditor.useRef)("mouse"),
+    pointerIdRef: Dynamic = (0, reactForUseVectorEditor.useRef)(
       undefined,
     ),
-    shiftKeyRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(false),
-    pathRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+    shiftKeyRef: Dynamic = (0, reactForUseVectorEditor.useRef)(false),
+    pathRef: Dynamic = (0, reactForUseVectorEditor.useRef)(
       request.path,
     );
   pathRef.current = request.path;
-  let viewRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+  let viewRef: Dynamic = (0, reactForUseVectorEditor.useRef)(
     request.view,
   );
   viewRef.current = request.view;
-  let interactionModeRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+  let interactionModeRef: Dynamic = (0, reactForUseVectorEditor.useRef)(
       undefined,
     ),
-    gestureRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+    gestureRef: Dynamic = (0, reactForUseVectorEditor.useRef)(
       undefined,
     ),
-    livePathRef: Dynamic = (0, reactHooksLatestCallback_4.useRef)(null),
+    livePathRef: Dynamic = (0, reactForUseVectorEditor.useRef)(null),
     hitRadius: Dynamic = vectorUsesCoarsePointer()
       ? TOUCH_HIT_RADIUS_PX
       : VectorPathEditingConstant,
-    getPointAtEvent: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+    getPointAtEvent: Dynamic = (0, reactForUseVectorEditor.useCallback)(
       (point?: Dynamic, radius?: Dynamic): Dynamic => {
         let modelRadius: Dynamic = radius / request.view.scale,
           radiusSquared: Dynamic = modelRadius * modelRadius,
@@ -106,7 +106,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
       },
       [request.path, request.view.scale, request.controls, request.selected],
     ),
-    getChordOrigin: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+    getChordOrigin: Dynamic = (0, reactForUseVectorEditor.useCallback)(
       (selection?: Dynamic): Dynamic => {
         let contour: Dynamic = request.path.contours[selection.contour];
         if (!contour) return;
@@ -145,7 +145,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
       },
       [request.path],
     ),
-    handlePointerDown: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+    handlePointerDown: Dynamic = (0, reactForUseVectorEditor.useCallback)(
       (event?: Dynamic): Dynamic => {
         if (event.button !== 0) return;
         let modelPoint: Dynamic = request.view.toModel(
@@ -252,7 +252,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
         getChordOrigin,
       ],
     ),
-    handlePointerMove: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+    handlePointerMove: Dynamic = (0, reactForUseVectorEditor.useCallback)(
       (pointerEvent?: Dynamic): Dynamic => {
         let modelPoint: Dynamic = request.view.toModel(
           pointerEvent.clientX,
@@ -316,7 +316,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
       },
       [request.tool, request.view, request.onLive, value, getChordOrigin],
     ),
-    handlePointerUp: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+    handlePointerUp: Dynamic = (0, reactForUseVectorEditor.useCallback)(
       (pointerEvent?: Dynamic): Dynamic => {
         if (pointerIdRef.current === pointerEvent.pointerId) {
           pointerIdRef.current = undefined;
@@ -357,7 +357,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
       [request.onCommit],
     ),
     cancelSession: Dynamic = (0,
-    reactHooksLatestCallback_4.useCallback)((): Dynamic => {
+    reactForUseVectorEditor.useCallback)((): Dynamic => {
       pointerIdRef.current = undefined;
       let current: Dynamic = gestureRef.current;
       gestureRef.current = undefined;
@@ -365,7 +365,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
         ((livePathRef.current = null),
         current.moved && request.onLive(current.before));
     }, [request.onLive]);
-  (0, reactHooksLatestCallback_4.useEffect)((): Dynamic => {
+  (0, reactForUseVectorEditor.useEffect)((): Dynamic => {
     let callback: Dynamic = (keyboardEvent?: Dynamic): Dynamic => {
       if (keyboardEvent.key !== "Shift") return;
       let isShiftKeyDown: Dynamic = keyboardEvent.type === "keydown";
@@ -408,7 +408,7 @@ function useVectorEditor(request?: Dynamic): Dynamic {
       (window as Dynamic).removeEventListener("keyup", callback);
     };
   }, [request.tool, request.onLive]);
-  (0, reactHooksLatestCallback_4.useEffect)((): Dynamic => {
+  (0, reactForUseVectorEditor.useEffect)((): Dynamic => {
     request.tool !== "pen" &&
       ((pointerIdRef.current = undefined),
       draftRef.current.length > 0 && setDraft([]),
@@ -458,11 +458,11 @@ function useVectorEditor(request?: Dynamic): Dynamic {
     resetInteraction();
     request.onToolDone?.();
   }
-  let cancelGesture: Dynamic = (0, reactHooksLatestCallback_4.useRef)(
+  let cancelGesture: Dynamic = (0, reactForUseVectorEditor.useRef)(
     buildPath,
   );
   cancelGesture.current = buildPath;
-  let handleKeyboard: Dynamic = (0, reactHooksLatestCallback_4.useCallback)(
+  let handleKeyboard: Dynamic = (0, reactForUseVectorEditor.useCallback)(
     (event?: Dynamic): Dynamic => {
       if (request.tool === "pen") {
         if (

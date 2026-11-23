@@ -16,7 +16,7 @@ import { reactPlatformFrameHostBridge } from "../../platform/frame-host-bridge";
 
 var jsxToolbarPrimitives: Dynamic;
 var ToolbarPrimitivesContext: Dynamic;
-var ToolbarPrimitivesContext_2: Dynamic;
+var toolbarReadOnlyContext: Dynamic;
 var ToolbarPrimitivesCtrlControlAltConfig: Dynamic;
 var ToolbarPrimitivesControlCtrlOptionValues: Dynamic;
 var ToolbarPrimitivesEscEscapeEnterConfig: Dynamic;
@@ -283,7 +283,7 @@ export {
   toolbarItemTooltip,
   ToolbarPrimitivesComponent,
   ToolbarPrimitivesContext,
-  ToolbarPrimitivesContext_2,
+  toolbarReadOnlyContext,
   ToolbarPrimitivesControlCtrlOptionValues,
   ToolbarPrimitivesCtrlControlAltConfig,
   ToolbarPrimitivesEscEscapeEnterConfig,
@@ -303,7 +303,7 @@ export function installEditorToolbarPrimitives(): () => void {
     );
     ToolbarPrimitivesContext = (0,
     reactPlatformFrameHostBridge.createContext)(false);
-    ToolbarPrimitivesContext_2 = (0,
+    toolbarReadOnlyContext = (0,
     reactPlatformFrameHostBridge.createContext)(false);
     ToolbarPrimitivesCtrlControlAltConfig = {
       get ctrl() { return [uiMessage("inspector.primitives.control"), "Ctrl"]; },

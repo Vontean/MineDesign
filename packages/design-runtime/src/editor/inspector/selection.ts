@@ -7,7 +7,7 @@ import { parseStyleDeclarations } from "../css/declarations";
 import { getElementInspector } from "./element";
 import { InspectorPropertySchemaBackgroundFontWeightFontStyleConfig, InspectorPropertySchemaCursorPointerEventsObjectFitValues } from "./property-schema";
 import { InspectorStyleMetadataStrokeStrokeWidthFillValues, InspectorStyleMetadataSubscribers, InspectorStyleMetadataTextTspanTextpathSet, svgShapeTags } from "./style-metadata";
-import { SvgArrowPropertiesLabel, SvgArrowPropertiesLabel_2 as mixedArrowheadReason } from "../svg/arrow-properties";
+import { SvgArrowPropertiesLabel, allArrowsNeedThicknessMessage as mixedArrowheadReason } from "../svg/arrow-properties";
 
 var InspectorSelectionSubscribers: Dynamic;
 function orderInspectorSections(sections?: Dynamic): Dynamic {
@@ -326,7 +326,7 @@ function inspectElementSelection(elements?: Dynamic): Dynamic {
     textIndex >= 0 &&
       (mergedSections[textIndex] = {
         ...mergedSections[textIndex],
-        title: uiMessage("inspector.selection.text", { value1: String(elements.length) }),
+        title: uiMessage("inspector.selection.text", { count: String(elements.length) }),
       });
   }
   orderInspectorSections(mergedSections);

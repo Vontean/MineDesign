@@ -4,7 +4,7 @@ import {
 } from "../../runtime-types";
 import { validateStyleColor } from "./color-and-font";
 import { isStyleObject, validateOptionalStyleNumber, validateStyleNumber } from "./validation";
-import { StyleSchemaValuesClosestSideClosestCornerFarthestSideValues, StyleSchemaValuesHandler, StyleSchemaValuesHandler_2 } from "./values";
+import { StyleSchemaValuesClosestSideClosestCornerFarthestSideValues, StyleSchemaValuesHandler, numberRangeSpec } from "./values";
 
 var gradientAngleRange: Dynamic;
 var gradientStopPositionRange: Dynamic;
@@ -154,24 +154,24 @@ export {
   radialGradientFunction,
   radialGradientPrefix,
   StyleSchemaGradientLimit,
-  maxGradientStops as StyleSchemaGradientLimit_2,
-  gradientAngleRange as StyleSchemaValuesHandlerValue_4,
-  gradientStopPositionRange as StyleSchemaValuesHandlerValue_5,
-  radialCenterRange as StyleSchemaValuesHandlerValue_6,
-  gradientRepeatRange as StyleSchemaValuesHandlerValue_7,
+  maxGradientStops,
+  gradientAngleRange,
+  gradientStopPositionRange,
+  radialCenterRange,
+  gradientRepeatRange,
   validateStyleGradient,
 };
 export function installEditorStyleSchemaGradient(): () => void {
   return () => {
-    gradientAngleRange = StyleSchemaValuesHandler_2(
+    gradientAngleRange = numberRangeSpec(
       0,
       360,
     );
-    gradientStopPositionRange = StyleSchemaValuesHandler_2(
+    gradientStopPositionRange = numberRangeSpec(
       0,
       100,
     );
-    radialCenterRange = StyleSchemaValuesHandler_2(
+    radialCenterRange = numberRangeSpec(
       -100,
       200,
     );

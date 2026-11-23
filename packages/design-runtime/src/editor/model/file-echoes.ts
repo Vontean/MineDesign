@@ -7,9 +7,9 @@ import { getEditorEventRuntime } from "../events/runtime";
 var ModelFileEchoesCache: Dynamic;
 var ModelFileEchoesConstant: Dynamic;
 var ModelFileEchoesRegistry: Dynamic;
-var ModelFileEchoesCache_2: Dynamic;
+var expectedChangesByProject: Dynamic;
 var ModelFileEchoesResolvedValue: Dynamic;
-var ModelFileEchoesCache_3: Dynamic;
+var landedChangesByProject: Dynamic;
 function normalizeSmartPunctuation(text?: Dynamic): Dynamic {
   return text
     .replace(/[\u2018\u2019\u201A\u201B\u2039\u203A]/g, "'")
@@ -62,8 +62,8 @@ function markExpectedFileChange(
   projectPath?: Dynamic,
   ...changedPaths: Dynamic[]
 ): Dynamic {
-  let entry: Dynamic = ModelFileEchoesCache_2.get(projectPath);
-  entry || ((entry = new Map()), ModelFileEchoesCache_2.set(projectPath, entry));
+  let entry: Dynamic = expectedChangesByProject.get(projectPath);
+  entry || ((entry = new Map()), expectedChangesByProject.set(projectPath, entry));
   let now: Dynamic = Date.now(),
     recordExpectedChange: Dynamic = (changedPath?: Dynamic): Dynamic =>
       entry.set(changedPath, {
@@ -78,10 +78,10 @@ function markLandedFileChange(
   ...landedPaths: Dynamic[]
 ): Dynamic {
   if (!landedPaths.some(Boolean)) return;
-  let entry: Dynamic = ModelFileEchoesCache_3.get(projectPath);
-  entry || ((entry = new Map()), ModelFileEchoesCache_3.set(projectPath, entry));
+  let entry: Dynamic = landedChangesByProject.get(projectPath);
+  entry || ((entry = new Map()), landedChangesByProject.set(projectPath, entry));
   let now: Dynamic = Date.now(),
-    expectedEntries: Dynamic = ModelFileEchoesCache_2.get(projectPath);
+    expectedEntries: Dynamic = expectedChangesByProject.get(projectPath);
   for (let landedPath of landedPaths as Dynamic) {
     if (!landedPath) continue;
     let expectedChange: Dynamic = expectedEntries?.get(landedPath);
@@ -96,7 +96,7 @@ function markLocalFileChange(
   markExpectedFileChange(projectPath, ...changedPaths);
   markLandedFileChange(projectPath, ...changedPaths);
   if (!changedPaths.some(Boolean)) {
-    let emptyPathChange: Dynamic = ModelFileEchoesCache_2.get(projectPath)?.get("");
+    let emptyPathChange: Dynamic = expectedChangesByProject.get(projectPath)?.get("");
     emptyPathChange && (emptyPathChange.landed = true);
   }
 }
@@ -107,8 +107,8 @@ export {
   markLandedFileChange,
   markLocalFileChange,
   ModelFileEchoesCache,
-  ModelFileEchoesCache_2,
-  ModelFileEchoesCache_3,
+  expectedChangesByProject,
+  landedChangesByProject,
   ModelFileEchoesConstant,
   ModelFileEchoesRegistry,
   ModelFileEchoesResolvedValue,
@@ -121,9 +121,9 @@ export function installEditorModelFileEchoes(): () => void {
     ModelFileEchoesCache = new Map();
     ModelFileEchoesConstant = 5e3;
     ModelFileEchoesRegistry = {};
-    ModelFileEchoesCache_2 = new Map();
+    expectedChangesByProject = new Map();
     ModelFileEchoesResolvedValue = 10 * 6e4;
-    ModelFileEchoesCache_3 = new Map();
+    landedChangesByProject = new Map();
     {
       let unsubscribe: Dynamic = getEditorEventRuntime().onOmEvent(
         "files-changed",

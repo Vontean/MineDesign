@@ -25,7 +25,7 @@ it('完整动态句子保留零值，用户传入文本保持原样，不当作�
   expect(uiText(getUiLocale()).tabComments(0)).toBe('评论');
   expect(uiText(getUiLocale()).tabComments(1)).toBe('评论 1');
   expect(uiText(getUiLocale()).tabComments(3)).toBe('评论 3');
-  expect(uiMessage('inspector.unsavedEditsDialog.itWasUpdatedOutsideThisEditorWhatDoYouWantToDoWith',{value1:'Fill {private}'})).toContain('Fill {private}');
+  expect(uiMessage('inspector.unsavedEditsDialog.itWasUpdatedOutsideThisEditorWhatDoYouWantToDoWith',{edits:'Fill {private}'})).toContain('Fill {private}');
   setUiLocale('en');
   expect(uiText(getUiLocale()).tabComments(3)).toBe('Comments 3');
 });

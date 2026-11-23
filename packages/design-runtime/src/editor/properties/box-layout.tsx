@@ -14,7 +14,7 @@ import { NumericInput } from "./numeric-input";
 import { PropertyRow } from "./row";
 import { PropertySegments } from "./segments";
 import { PropertySidesRow } from "./sides";
-import { PropertiesSizingRowFlexStartStartCenterConfig as justifyGlyphs, PropertiesSizingRowFlexStartStartCenterConfig_2 as alignGlyphs } from "./sizing-row";
+import { PropertiesSizingRowFlexStartStartCenterConfig as justifyGlyphs, alignItemsIcons as alignGlyphs } from "./sizing-row";
 import { PropertyOptionIcon } from "./tool-options";
 
 var PropertiesBoxLayoutStaticRelativeAbsoluteConfig: Dynamic;
@@ -401,7 +401,7 @@ function PropertyFlexAlignment({
             }
             aria-label={uiMessage("inspector.boxLayout.distribute")}
             tooltip={
-              isDistributed ? (uiMessage("inspector.boxLayout.distributeSpaceBetweenClickTo", { value1: String(isSpaceValue ? ("") : (uiMessage("inspector.boxLayout.inherited"))) })) : (uiMessage("inspector.boxLayout.distributeSpaceBetween"))
+              isDistributed ? (uiMessage("inspector.boxLayout.distributeSpaceBetweenClickTo", { inheritedSuffix: String(isSpaceValue ? ("") : (uiMessage("inspector.boxLayout.inherited"))) })) : (uiMessage("inspector.boxLayout.distributeSpaceBetween"))
             }
             pressed={isDistributed}
             disabled={isDisabled}
@@ -466,7 +466,7 @@ function PropertyFlexAlignment({
             options={justifyOptions.map(
               (optionValue?: Dynamic, optionIndex?: Dynamic): Dynamic => ({
                 value: optionValue,
-                get label() { return uiMessage("inspector.boxLayout.justify2", { value1: String(["start", "center", "end"][optionIndex]) }); },
+                get label() { return uiMessage("inspector.boxLayout.justifyValue", { alignment: String(["start", "center", "end"][optionIndex]) }); },
                 glyph: lookupGlyph(
                   justifyGlyphs,
                   optionValue,
@@ -512,7 +512,7 @@ function PropertyFlexAlignment({
             options={items.map(
               (optionValue?: Dynamic, optionIndex?: Dynamic): Dynamic => ({
                 value: optionValue,
-                get label() { return uiMessage("inspector.boxLayout.align2", { value1: String(["start", "center", "end"][optionIndex]) }); },
+                get label() { return uiMessage("inspector.boxLayout.alignValue", { alignment: String(["start", "center", "end"][optionIndex]) }); },
                 glyph: lookupGlyph(
                   alignGlyphs,
                   optionValue,

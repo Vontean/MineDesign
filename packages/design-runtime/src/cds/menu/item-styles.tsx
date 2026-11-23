@@ -11,10 +11,10 @@ import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
 import { initializeDomRefComposition, useMergedRefs } from "../dom/ref-composition";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
-import { initializeHooksStableCallback_2, useStableCallback } from "../hooks/stable-callback";
+import { initializeStableCallbackReact, useStableCallback } from "../hooks/stable-callback";
 import { PointerEventsNoneValue, reactSheetsMenuPopup, SheetsMenuPopupLimit } from "../sheets/menu-popup";
 import { initializeSheetsPopupStack, SheetPopupContext } from "../sheets/popup-stack";
-import { initializeSheetsScrollArea_5, initializeSheetsScrollArea_6, initializeSheetsScrollArea_8, registerOpenerReturn, useMenuInnerOverlay, useOpenerReturn } from "../sheets/scroll-area";
+import { initializeOpenerResolverCache, initializeFocusHooks, initializeMenuInnerOverlay, registerOpenerReturn, useMenuInnerOverlay, useOpenerReturn } from "../sheets/scroll-area";
 import { initializeNpm__base_ui_react_jj, initializeNpm_class_variance_authority_Zhe, load_react, load_react_jsx_runtime, npm_cva_Kj, npm_Menu_La } from "../../dependencies";
 import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 
@@ -30,11 +30,11 @@ var ParentMenuContext: React.Context<
 var MenuItemStylesProviderValue: React.Provider<
   React.RefObject<HTMLElement | null> | undefined
 >;
-var initializeMenuItemStyles_2: () => void;
-var reactMenuItemStyles_2: typeof React;
+var initializeParentMenuContext: () => void;
+var reactForMenuPopupElement: typeof React;
 var jsxMenuItemStyles: typeof import("react/jsx-runtime");
 var MenuPopupElement: ForwardComponent<HTMLDivElement, MenuPopupElementProps>;
-var initializeMenuItemStyles_3: () => void;
+var initializeMenuPopupElementComponent: () => void;
 function wasTriggerOpenCanceled(
   details: import("@base-ui/react/menu").Menu.Root.ChangeEventDetails,
 ): boolean {
@@ -264,8 +264,8 @@ function usePopupEntryAnimation({
 }
 export {
   initializeMenuItemStyles,
-  initializeMenuItemStyles_2,
-  initializeMenuItemStyles_3,
+  initializeParentMenuContext,
+  initializeMenuPopupElementComponent,
   jsxMenuItemStyles,
   MenuItemStylesClassNames,
   MenuItemStylesProviderValue,
@@ -275,7 +275,7 @@ export {
   popupPlacementAttributes,
   popupUsesReverseEntry,
   reactMenuItemStyles,
-  reactMenuItemStyles_2,
+  reactForMenuPopupElement,
   samePopupPlacement,
   useMenuPopupFocus,
   useMenuTriggerRef,
@@ -305,12 +305,12 @@ export function installCdsMenuItemStyles(): () => void {
       MenuItemStylesClassNames =
         "pb-[calc((var(--cds-h-control)-var(--cds-font-size-body)-var(--cds-leading-footnote)+var(--cds-font-size-footnote))/2)]";
     });
-    initializeMenuItemStyles_2 = initializeOnce(() => {
+    initializeParentMenuContext = initializeOnce(() => {
       "use client";
 
       initializeHooksLayoutEffect();
-      initializeHooksStableCallback_2();
-      initializeSheetsScrollArea_5();
+      initializeStableCallbackReact();
+      initializeOpenerResolverCache();
       reactMenuItemStyles = toModuleNamespace(
         load_react(),
       );
@@ -319,22 +319,22 @@ export function installCdsMenuItemStyles(): () => void {
       >(undefined);
       MenuItemStylesProviderValue = ParentMenuContext.Provider;
     });
-    initializeMenuItemStyles_3 = initializeOnce(() => {
+    initializeMenuPopupElementComponent = initializeOnce(() => {
       "use client";
 
       initializeDomRefComposition();
       initializeSheetsPopupStack();
-      initializeSheetsScrollArea_6();
-      initializeSheetsScrollArea_8();
-      initializeMenuItemStyles_2();
-      reactMenuItemStyles_2 = toModuleNamespace(
+      initializeFocusHooks();
+      initializeMenuInnerOverlay();
+      initializeParentMenuContext();
+      reactForMenuPopupElement = toModuleNamespace(
         load_react(),
       );
       jsxMenuItemStyles = toModuleNamespace(
         load_react_jsx_runtime(),
       );
       initializeNpm__base_ui_react_jj();
-      MenuPopupElement = (0, reactMenuItemStyles_2.forwardRef)<
+      MenuPopupElement = (0, reactForMenuPopupElement.forwardRef)<
         HTMLDivElement,
         MenuPopupElementProps
       >(
@@ -348,7 +348,7 @@ export function installCdsMenuItemStyles(): () => void {
           forwardedRef: React.ForwardedRef<HTMLDivElement>,
         ): React.ReactElement => {
           let isOpen =
-              (0, reactMenuItemStyles_2.useContext)(SheetPopupContext)
+              (0, reactForMenuPopupElement.useContext)(SheetPopupContext)
                 ?.open ?? true,
             { elementRef: overlayElementRef, overlayAttrs: overlayAttrs } = useMenuInnerOverlay(),
             openerReturn = useOpenerReturn({

@@ -20,7 +20,6 @@ var initializeComponentsSwitch: () => void;
 export {
   ComponentsSwitchClassNames,
   ComponentsSwitchLabel,
-  thumbSizeClasses as ComponentsSwitchLabel_2,
   initializeComponentsSwitch,
   jsxComponentsSwitch,
   reactComponentsSwitch,

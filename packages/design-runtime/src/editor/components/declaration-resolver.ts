@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { ComponentsTypeInferenceLimit, ComponentsTypeInferenceLimit_5 as typeInferenceMaxDepth, ComponentsTypeInferenceSubscribers_2 as reservedPropNames, ComponentsTypeInferenceTextsRsConfig, inferJSDocDefault, isValidTypeDeclarationName, TYPE_INFERENCE_OVER_BUDGET, TypeDeclarationResolver, typeExpressionReferences } from "./type-inference";
+import { ComponentsTypeInferenceLimit, maxReferenceDepth as typeInferenceMaxDepth, reservedPropNames, ComponentsTypeInferenceTextsRsConfig, inferJSDocDefault, isValidTypeDeclarationName, TYPE_INFERENCE_OVER_BUDGET, TypeDeclarationResolver, typeExpressionReferences } from "./type-inference";
 
 import { set_ComponentsTypeInferenceTextsRsConfig, set_typeInferenceIncomplete } from "./type-inference";
 var ComponentsDeclarationResolverNameTypeValueValues: Dynamic;

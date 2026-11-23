@@ -25,7 +25,7 @@ import { CANVAS_LOAD_ERROR_TITLE, createErrorDocumentState, logFilesBootstrapErr
 import { frameAnalyticsReporter, healthReporter } from "../platform/health-and-analytics";
 import { createLiveDocument } from "../platform/live-document";
 import { CouldnTLoadThisCanvasReloadToMessage, CouldnTOpenTheCurrentVersionOfMessage, isMovedToFiles, setCanvasLoadFailure } from "../platform/migration-input";
-import { installMigrationRestartHandler, markMigrationLoaded, PlatformMigrationStateNow, PlatformMigrationStateNow_2, subscribeMigrationRestart, subscribeMovedToFiles, ThisCanvasNowSavesInAMessage } from "../platform/migration-state";
+import { installMigrationRestartHandler, markMigrationLoaded, PlatformMigrationStateNow, wasMigrationEventRecent, subscribeMigrationRestart, subscribeMovedToFiles, ThisCanvasNowSavesInAMessage } from "../platform/migration-state";
 import { reactDomClientPlatformReactRuntime, runtimeEmbeddedReact } from "../platform/react-runtime";
 import { monitorDocumentLoadHealth, monitorDocumentSaveHealth } from "../platform/sync-health";
 import { completeThumbnailAfterPromise, initializeDatabaseThumbnail, waitForThumbnailPaint, watchThumbnailDocumentReady } from "../platform/thumbnail";
@@ -282,7 +282,7 @@ function bootstrapArtifactApplication(bootOptions: Dynamic = {}): Dynamic {
               (liveDoc.flushNow(),
               installMigrationRestartHandler({
                 isTyping: (): Dynamic =>
-                  PlatformMigrationStateNow_2(),
+                  wasMigrationEventRecent(),
                 flush: (): Dynamic => liveDoc.flushNow(),
                 drained: (): Dynamic => !liveDoc.dirty(),
                 ...(currentEditingArtboard() !== null

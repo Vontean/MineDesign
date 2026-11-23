@@ -18,24 +18,24 @@ import { editorThemeTokens } from "../chrome/theme";
 import { useToast } from "../chrome/toast";
 import { PropertyColorWell, PropertyPickerButton } from "./primitives";
 import { PropertyRow } from "./row";
-import { AssetPickerContext, reactPropertiesTokenColorPicker, reactPropertiesTokenColorPicker_2 } from "./token-color-picker";
+import { AssetPickerContext, reactPropertiesTokenColorPicker, reactForAssetPickerContext } from "./token-color-picker";
 import { toModuleNamespace } from "../../module-helpers";
 import { projectFilesystem, resolveProjectAssetUrl, trackEmbeddedWrite } from "../../platform/file-content";
 import { blobAssetPathPattern } from "../../platform/image-upload";
 
 var reactPropertiesAssetPicker: Dynamic;
-var reactPropertiesAssetPicker_2: Dynamic;
+var reactForPropertyAssetPopup: Dynamic;
 var jsxPropertiesAssetPicker: Dynamic;
 var W155remValue: Dynamic;
 var W64Value: Dynamic;
-var jsxPropertiesAssetPicker_2: Dynamic;
+var jsxForImageAssetPicker: Dynamic;
 var PropertiesAssetPickerWebpAvifPattern: Dynamic;
-var reactPropertiesAssetPicker_3: Dynamic;
-var jsxPropertiesAssetPicker_3: Dynamic;
+var reactForUseBackgroundEditor: Dynamic;
+var jsxForUseBackgroundEditor: Dynamic;
 var PropertiesAssetPickerPattern: Dynamic;
 var PropertiesAssetPickerAZAZPattern: Dynamic;
 function useAssetPickerContext(): Dynamic {
-  return (0, reactPropertiesTokenColorPicker_2.useContext)(
+  return (0, reactForAssetPickerContext.useContext)(
     AssetPickerContext,
   );
 }
@@ -79,13 +79,13 @@ function PropertyAssetPopup({
   "data-testid": dataTestid,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let contentRef: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(null),
-    anchorRef: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(null),
-    [placement, setPlacement]: Dynamic = (0, reactPropertiesAssetPicker_2.useState)({
+  let contentRef: Dynamic = (0, reactForPropertyAssetPopup.useRef)(null),
+    anchorRef: Dynamic = (0, reactForPropertyAssetPopup.useRef)(null),
+    [placement, setPlacement]: Dynamic = (0, reactForPropertyAssetPopup.useState)({
       side: "bottom",
       maxHeight: undefined,
     });
-  (0, reactPropertiesAssetPicker_2.useLayoutEffect)((): Dynamic => {
+  (0, reactForPropertyAssetPopup.useLayoutEffect)((): Dynamic => {
     open &&
       setPlacement(
         planHeight !== undefined
@@ -99,9 +99,9 @@ function PropertyAssetPopup({
             },
       );
   }, [open]);
-  let activeTextInputRef: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(null),
-    activeInputValueRef: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(""),
-    swallowEscapeRef: Dynamic = (0, reactPropertiesAssetPicker_2.useRef)(false);
+  let activeTextInputRef: Dynamic = (0, reactForPropertyAssetPopup.useRef)(null),
+    activeInputValueRef: Dynamic = (0, reactForPropertyAssetPopup.useRef)(""),
+    swallowEscapeRef: Dynamic = (0, reactForPropertyAssetPopup.useRef)(false);
   return (
     <PopoverPopoverRootTriggerPopupConfig.Root
       open={open}
@@ -359,7 +359,7 @@ function ImageAssetPicker({
     previewUrl: Dynamic = resolveAssetPreviewUrl(projectPath, value),
     checkerboardBackground: Dynamic = `repeating-conic-gradient(${editorThemeTokens.bg.muted} 0% 25%, ${editorThemeTokens.bg.elevated} 0% 50%) 0 / 8px 8px`;
   return (
-    <jsxPropertiesAssetPicker_2.Fragment>
+    <jsxForImageAssetPicker.Fragment>
       {previewSize && (<PropertyRow className={"my-[3px]"}>
           <div
             data-testid={"dc-image-preview"}
@@ -471,7 +471,7 @@ function ImageAssetPicker({
             {uploadOnlyReason !== undefined ? (uiMessage("inspector.assetPicker.noImagesInThisProject")) : (uiMessage("inspector.assetPicker.noImagesInThisProject2"))}
           </span>
         </PropertyPopupField>)}
-    </jsxPropertiesAssetPicker_2.Fragment>
+    </jsxForImageAssetPicker.Fragment>
   );
 }
 function PropertyImageRow({
@@ -504,7 +504,7 @@ function PropertyImageRow({
       data-testid={"dc-image-popover"}
       trigger={
         <PropertyPickerButton
-          aria-label={uiMessage("inspector.assetPicker.undefined", { value1: String(label), value2: String(triggerText) })}
+          aria-label={uiMessage("inspector.assetPicker.assetValue", { label: String(label), value: String(triggerText) })}
           className={"w-full"}
           disabled={disabled}
           chip={<AssetColorWell src={value} />}
@@ -535,8 +535,8 @@ export {
   escapeCssUrl,
   ImageAssetPicker,
   jsxPropertiesAssetPicker,
-  jsxPropertiesAssetPicker_2,
-  jsxPropertiesAssetPicker_3,
+  jsxForImageAssetPicker,
+  jsxForUseBackgroundEditor,
   PropertiesAssetPickerAZAZPattern,
   PropertiesAssetPickerPattern,
   PropertiesAssetPickerWebpAvifPattern,
@@ -544,8 +544,8 @@ export {
   PropertyImageRow,
   PropertyPopupField,
   reactPropertiesAssetPicker,
-  reactPropertiesAssetPicker_2,
-  reactPropertiesAssetPicker_3,
+  reactForPropertyAssetPopup,
+  reactForUseBackgroundEditor,
   resolveAssetPreviewUrl,
   useAssetPickerContext,
   useProjectFiles,
@@ -558,7 +558,7 @@ export function installEditorPropertiesAssetPicker(): () => void {
       load_react(),
       1,
     );
-    reactPropertiesAssetPicker_2 = toModuleNamespace(
+    reactForPropertyAssetPopup = toModuleNamespace(
       load_react(),
       1,
     );
@@ -569,17 +569,17 @@ export function installEditorPropertiesAssetPicker(): () => void {
     );
     W155remValue = "w-[15.5rem]";
     W64Value = "w-64";
-    jsxPropertiesAssetPicker_2 = toModuleNamespace(
+    jsxForImageAssetPicker = toModuleNamespace(
       load_react_jsx_runtime(),
       1,
     );
     PropertiesAssetPickerWebpAvifPattern = /\.(png|jpe?g|gif|webp|svg|avif)$/i;
-    reactPropertiesAssetPicker_3 = toModuleNamespace(
+    reactForUseBackgroundEditor = toModuleNamespace(
       load_react(),
       1,
     );
     initializeCdsIndex();
-    jsxPropertiesAssetPicker_3 = toModuleNamespace(
+    jsxForUseBackgroundEditor = toModuleNamespace(
       load_react_jsx_runtime(),
       1,
     );

@@ -145,7 +145,7 @@ function usePanelWidth(initialWidth: Dynamic = 304, onWidthChange?: Dynamic): Dy
 }
 export {
   ChromePanelWidthConstant,
-  compactMinPanelWidth as ChromePanelWidthConstant_2,
+  compactMinPanelWidth,
   ChromePanelWidthHandler,
   clampPanelWidth,
   McSideValue,

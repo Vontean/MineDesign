@@ -12,10 +12,10 @@ import { PropertyCssEnumRow, PropertyCssTextRow, propertyOptionLabel } from "./c
 import { inspectorFieldDisplay } from "./inherited-field";
 import { PropertyRow } from "./row";
 import { PropertySegments } from "./segments";
-import { PropertiesSizingRowFlexStartStartCenterConfig, PropertiesSizingRowFlexStartStartCenterConfig_2 as PropertiesSizingRowAlignIcons } from "./sizing-row";
+import { PropertiesSizingRowFlexStartStartCenterConfig, alignItemsIcons as PropertiesSizingRowAlignIcons } from "./sizing-row";
 import { TextAlignCenterValue, TextAlignJustifyValue, TextAlignLeftValue, TextAlignRightValue } from "./tooltip";
 import { PropertiesTransformRowRowColumnRowReverseConfig } from "./transform-row";
-import { TypographyFontCatalogItems, TypographyFontCatalogItems_2 as TypographyFontCatalogWebFonts } from "../typography/font-catalog";
+import { TypographyFontCatalogItems, GOOGLE_FONT_CATALOG as TypographyFontCatalogWebFonts } from "../typography/font-catalog";
 
 var PropertiesAlignmentRowSansSerifMonoConfig: Dynamic;
 var PropertiesAlignmentRowCache: Dynamic;

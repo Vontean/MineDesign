@@ -54,7 +54,7 @@ export {
   TypographyFontCatalogCache,
   TypographyFontCatalogFromEntriesValue,
   TypographyFontCatalogItems,
-  GOOGLE_FONT_CATALOG as TypographyFontCatalogItems_2,
+  GOOGLE_FONT_CATALOG,
   TypographyFontCatalogMapValue,
   TypographyFontCatalogSerifSansSerifPattern,
 };

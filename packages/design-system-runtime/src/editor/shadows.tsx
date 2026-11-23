@@ -465,7 +465,7 @@ function ShadowValueEditor({
                                     shadowValueW === shadowOptionF
                                       ? {
                                           role: "group",
-                                          get "aria-label"() { return uiMessage("design-system.shadows.layer", { value1: String(label), value2: String(String(shadowOptionF + 1)) }); },
+                                          get "aria-label"() { return uiMessage("design-system.shadows.layer", { subject: String(label), detail: String(String(shadowOptionF + 1)) }); },
                                           ...commentTargetProps(
                                             "editor",
                                             "shadow/" +
@@ -523,7 +523,7 @@ function ShadowValueCell({
   if (edit === undefined) {
     let shadowValueY = boxShadowSummary(value);
     return (
-      <TooltipWrapper tip={uiMessage("design-system.shadows.copy2", { value1: String(value) })}>
+      <TooltipWrapper tip={uiMessage("design-system.shadows.copy2", { subject: String(value) })}>
         <Button
           variant={"ghost"}
           size={"sm"}
@@ -539,7 +539,7 @@ function ShadowValueCell({
               aria-hidden={"true"}
             />
           }
-          aria-label={uiMessage("design-system.shadows.copy", { value1: String(t.name), value2: String(theme.name), value3: String(value) })}
+          aria-label={uiMessage("design-system.shadows.copy", { subject: String(t.name), detail: String(theme.name), suffix: String(value) })}
           data-testid={testid}
           onClick={() =>
             void copyTextToClipboard(value).then(
@@ -688,7 +688,7 @@ function ShadowTokenRow({
               data-testid={"ds-shadow-usage-" + t.name}
             />, edit !== undefined ? (
               <RemoveRowButton
-                label={uiMessage("design-system.shadows.remove", { value1: String(t.name) })}
+                label={uiMessage("design-system.shadows.remove", { subject: String(t.name) })}
                 onRemove={() => edit.remove(t.name)}
                 data-testid={"ds-shadow-remove-" + t.name}
               />
@@ -704,7 +704,7 @@ function ShadowTokenRow({
               ? {
                   rename: callback,
                   remove: () => edit.remove(t.name),
-                  get removeLabel() { return uiMessage("design-system.shadows.remove", { value1: String(t.name) }); },
+                  get removeLabel() { return uiMessage("design-system.shadows.remove", { subject: String(t.name) }); },
                 }
               : {}),
             copy: t.value[preview.id] ?? "",

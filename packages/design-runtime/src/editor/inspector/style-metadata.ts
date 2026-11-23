@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { InspectorPropertySchemaCursorPointerEventsObjectFitValues, InspectorPropertySchemaItems_2 as propertySpecs } from "./property-schema";
+import { InspectorPropertySchemaCursorPointerEventsObjectFitValues, propertySpecifications as propertySpecs } from "./property-schema";
 
 var cssPropertyToComputedKey: Dynamic;
 var InspectorStyleMetadataItems: Dynamic;
@@ -13,7 +13,7 @@ var InspectorStyleMetadataStrokeStrokeWidthFillValues: Dynamic;
 var InspectorStyleMetadataTextTspanTextpathSet: Dynamic;
 var InspectorStyleMetadataLineHeightTextAlignSet: Dynamic;
 var InspectorStyleMetadataSubscribers: Dynamic;
-var InspectorStyleMetadataSubscribers_2: Dynamic;
+var intrinsicContentTags: Dynamic;
 var InspectorStyleMetadataBackgroundColorPattern: Dynamic;
 var InspectorStyleMetadataLabel: Dynamic;
 function formatPropertyKey(prop?: Dynamic, getAuthoredValue?: Dynamic): Dynamic {
@@ -51,7 +51,7 @@ export {
   InspectorStyleMetadataLineHeightTextAlignSet,
   InspectorStyleMetadataStrokeStrokeWidthFillValues,
   InspectorStyleMetadataSubscribers,
-  InspectorStyleMetadataSubscribers_2,
+  intrinsicContentTags,
   InspectorStyleMetadataTextTspanTextpathSet,
   isTransparentColor,
   svgShapeTags,
@@ -123,7 +123,7 @@ export function installEditorInspectorStyleMetadata(): () => void {
         " ",
       ),
     );
-    InspectorStyleMetadataSubscribers_2 = new Set([
+    intrinsicContentTags = new Set([
       "img",
       "br",
       "hr",

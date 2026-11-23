@@ -9,7 +9,7 @@ import { Icon } from "../../cds/components/icon";
 import { load_react_jsx_runtime } from "../../dependencies";
 import { normalizeCssColor } from "../../design-system/type-declarations";
 import { ChromeToolIconsColumnRowTextConfig } from "../chrome/tool-icons";
-import { InspectorAnnotationFontFontSizeFontWeightSet, InspectorAnnotationLargerSmallerPattern, reactInspectorAnnotation_2 } from "./annotation";
+import { InspectorAnnotationFontFontSizeFontWeightSet, InspectorAnnotationLargerSmallerPattern, reactForClassStyleTargets } from "./annotation";
 import { ColorWellFace } from "../properties/rows";
 import { EditorTooltip } from "../properties/tooltip";
 import { toModuleNamespace } from "../../module-helpers";
@@ -84,11 +84,11 @@ function ClassStyleTargets({
   onHoverTid: onHoverTid,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let hoverCallbackRef: Dynamic = (0, reactInspectorAnnotation_2.useRef)(
+  let hoverCallbackRef: Dynamic = (0, reactForClassStyleTargets.useRef)(
     onHoverTid,
   );
   hoverCallbackRef.current = onHoverTid;
-  (0, reactInspectorAnnotation_2.useEffect)(
+  (0, reactForClassStyleTargets.useEffect)(
     (): Dynamic => (): Dynamic => hoverCallbackRef.current?.(null),
     [],
   );
@@ -129,20 +129,20 @@ function ClassStyleTargets({
             const GroupComponent = "div";
             const groupProps = {
               role: "group",
-              get "aria-label"() { return uiMessage("inspector.classTargets.from2", { value1: String(group.from) }); },
+              get "aria-label"() { return uiMessage("inspector.classTargets.inheritedFrom", { source: String(group.from) }); },
               className: "flex min-w-0 flex-col",
               children: [
                 <div className={"flex min-w-0 items-center gap-1 text-muted"}>
                   <span className={"shrink-0"}>{uiMessage("inspector.classTargets.from")}</span>
                   {group.fromTid != null && onSelectTid ? (<EditorTooltip
-                      tip={uiMessage("inspector.classTargets.select", { value1: String(group.from) })}
+                      tip={uiMessage("inspector.classTargets.select", { source: String(group.from) })}
                       className={"min-w-0"}
                     >
                       <Button
                         variant={"ghost"}
                         size={"xs"}
                         icon={iconElement}
-                        aria-label={uiMessage("inspector.classTargets.select", { value1: String(group.from) })}
+                        aria-label={uiMessage("inspector.classTargets.select", { source: String(group.from) })}
                         className={
                           "min-w-0 font-mono " + InspectorClassTargetsLabel
                         }
@@ -211,10 +211,10 @@ function ClassStyleTargets({
                           iconOnly={true}
                           icon={"Add"}
                           data-inherited-set={""}
-                          aria-label={uiMessage("inspector.classTargets.setOn", { value1: String(declaration.prop), value2: String(targetLabel) })}
-                          tooltip={uiMessage("inspector.classTargets.setOn2", { value1: String(targetLabel) })}
+                          aria-label={uiMessage("inspector.classTargets.setOn", { property: String(declaration.prop), target: String(targetLabel) })}
+                          tooltip={uiMessage("inspector.classTargets.setOnTarget", { target: String(targetLabel) })}
                           disabled={lockReason !== undefined}
-                          disabledReason={(lockReason) ?? (uiMessage("inspector.classTargets.setOn2", { value1: String(targetLabel) }))}
+                          disabledReason={(lockReason) ?? (uiMessage("inspector.classTargets.setOnTarget", { target: String(targetLabel) }))}
                           className={"shrink-0 " + InspectorClassTargetsLabel}
                           onClick={(): Dynamic =>
                             onSet(declaration.prop, declaration.value)

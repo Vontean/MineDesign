@@ -7,7 +7,7 @@ import { exportBabelStandaloneUrl } from "../export/standalone-html";
 import { scriptPathPattern, imagePathPattern } from "./asset-rewriting";
 import { getProjectFileDependencies } from "./component-imports";
 import { collectProjectDependencyFiles, resolveComponentFile } from "./dependency-graph";
-import { PreviewDependencyInjectionResolvedValue_2 as addressRefusedListenerScript, rewritePreviewAssets } from "./dependency-injection";
+import { addressRefusedListenerScript, rewritePreviewAssets } from "./dependency-injection";
 import { findHtmlTags, getHtmlAttribute, maskHtmlRawContent } from "./html-scanner";
 import { getBabelFileUrl, inlineScriptHtml, previewAssetLoaderRuntimeScript, previewBlobBridgeRuntimeScript, previewDocumentRuntimeScript, previewEvaluationRuntimeScript, previewGuardRuntimeScript, previewResizeRuntimeScript, PreviewRuntimeLoadingResolvedValue as fontVariantLoaderScript, previewViewportRuntimeScript, selectRuntimeUrl, supportsBlobScripts } from "./runtime-loading";
 
@@ -303,10 +303,9 @@ export {
   framelessPreviewChromeHtml,
   prepareExportDcDocument,
   defaultPartMinLength as PreviewBuildDocumentResolvedValue,
-  runtimeBootCheckScript as PreviewBuildDocumentResolvedValue_2,
-  evaluationOnlyDocumentHtml as PreviewBuildDocumentResolvedValue_3,
+  evaluationOnlyDocumentHtml,
   previewDocumentCacheKey as PreviewBuildDocumentStringify,
-  linkedFilesBootCheckScript as PreviewBuildDocumentStringify_2,
+  linkedFilesBootCheckScript,
   isSupportScriptSrc as PreviewBuildDocumentTest,
   previewCaptureScript,
   previewEvaluationScript,

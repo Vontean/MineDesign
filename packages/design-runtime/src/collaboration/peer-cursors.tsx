@@ -12,10 +12,9 @@ import { cachedRoomCapability, hasRoomCapability, roomPeersStore } from "../plat
 import { getUserNames } from "../platform/user-capabilities";
 
 var reactCollaborationPeerCursors: Dynamic;
-var reactCollaborationPeerCursors_2: Dynamic;
-var reactCollaborationPeerCursors_3: Dynamic;
+var reactForUsePeerSelectionGroups: Dynamic;
+var reactForUsePresenceComposer: Dynamic;
 var jsxCollaborationPeerCursors: Dynamic;
-var jsxCollaborationPeerCursors_2: Dynamic;
 var CollaborationPeerCursorsResolvedValue: Dynamic;
 var CollaborationPeerCursorsLimit: Dynamic;
 var CollaborationPeerCursorsDelayMs: Dynamic;
@@ -26,10 +25,10 @@ var CollaborationPeerCursorsConstant: Dynamic;
 var peerMessageMaxLength: Dynamic;
 var peerChatHoldMs: Dynamic;
 var peerChatFadeMs: Dynamic;
-var CollaborationPeerCursorsDelayMs_2: Dynamic;
+var peerChatExitDelayMs: Dynamic;
 var CollaborationPeerCursorsMcChatHoldMcChatFadeMcChatExitConfig: Dynamic;
 var PeerCursorLabel: Dynamic;
-var CollaborationPeerCursorsCache_2: Dynamic;
+var emptyPeerUserNames: Dynamic;
 function PeerCursorGlyph({ color: color }: Dynamic): Dynamic {
   useUiLocale();
   return (
@@ -82,14 +81,14 @@ function peerMotionReduced(): Dynamic {
   );
 }
 function usePeerMessageVisibility(messageShape?: Dynamic): Dynamic {
-  let elementRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(null),
-    lastLayoutRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(null),
+  let elementRef: Dynamic = (0, reactForUsePresenceComposer.useRef)(null),
+    lastLayoutRef: Dynamic = (0, reactForUsePresenceComposer.useRef)(null),
     current: Dynamic = elementRef.current,
     isFaded: Dynamic =
       current != null &&
       typeof getComputedStyle == "function" &&
       parseFloat(getComputedStyle(current).opacity) < 0.2;
-  (0, reactCollaborationPeerCursors_3.useLayoutEffect)((): Dynamic => {
+  (0, reactForUsePresenceComposer.useLayoutEffect)((): Dynamic => {
     let element: Dynamic = elementRef.current;
     if (!element) return;
     let state: Dynamic = {
@@ -319,7 +318,7 @@ function getPeerCursors(
   peers?: Dynamic,
   surfaceId?: Dynamic,
   nowMs?: Dynamic,
-  userNames: Dynamic = CollaborationPeerCursorsCache_2,
+  userNames: Dynamic = emptyPeerUserNames,
 ): Dynamic {
   let items: Dynamic = [];
   for (let peer of peers as Dynamic) {
@@ -382,10 +381,10 @@ function usePeerProfiles(peers?: Dynamic): Dynamic {
       ),
     ].sort().join(`
 `),
-    [userNames, setUserNames]: Dynamic = (0, reactCollaborationPeerCursors_3.useState)(
-      CollaborationPeerCursorsCache_2,
+    [userNames, setUserNames]: Dynamic = (0, reactForUsePresenceComposer.useState)(
+      emptyPeerUserNames,
     );
-  (0, reactCollaborationPeerCursors_3.useEffect)((): Dynamic => {
+  (0, reactForUsePresenceComposer.useEffect)((): Dynamic => {
     if (userIdsKey === "") return;
     let flag: Dynamic = true;
     getUserNames(
@@ -405,14 +404,14 @@ function usePeerCursors(
   getNow: Dynamic = Date.now,
 ): Dynamic {
   let peers: Dynamic = (0,
-    reactCollaborationPeerCursors_3.useSyncExternalStore)(
+    reactForUsePresenceComposer.useSyncExternalStore)(
       roomPeersStore.subscribe,
       roomPeersStore.getSnapshot,
       roomPeersStore.getSnapshot,
     ),
     userNames: Dynamic = usePeerProfiles(peers),
-    [, setTick]: Dynamic = (0, reactCollaborationPeerCursors_3.useState)(0);
-  (0, reactCollaborationPeerCursors_3.useEffect)((): Dynamic => {
+    [, setTick]: Dynamic = (0, reactForUsePresenceComposer.useState)(0);
+  (0, reactForUsePresenceComposer.useEffect)((): Dynamic => {
     let intervalId: Dynamic = setInterval(
       (): Dynamic => setTick((tick?: Dynamic): Dynamic => tick + 1),
       5e3,
@@ -482,13 +481,13 @@ function PeerCursors({
 }
 export {
   CollaborationPeerCursorsCache,
-  CollaborationPeerCursorsCache_2,
+  emptyPeerUserNames,
   CollaborationPeerCursorsConstant,
-  peerMessageMaxLength as CollaborationPeerCursorsConstant_2,
-  peerChatHoldMs as CollaborationPeerCursorsConstant_3,
-  peerChatFadeMs as CollaborationPeerCursorsConstant_4,
+  peerMessageMaxLength,
+  peerChatHoldMs,
+  peerChatFadeMs,
   CollaborationPeerCursorsDelayMs,
-  CollaborationPeerCursorsDelayMs_2,
+  peerChatExitDelayMs,
   CollaborationPeerCursorsItems,
   CollaborationPeerCursorsLimit,
   CollaborationPeerCursorsMcChatHoldMcChatFadeMcChatExitConfig,
@@ -497,7 +496,6 @@ export {
   createPresenceReporter,
   getPeerCursors,
   jsxCollaborationPeerCursors,
-  jsxCollaborationPeerCursors_2,
   normalizePeerMessage,
   peerCollaboratorIndex,
   peerCollaboratorToken,
@@ -507,8 +505,8 @@ export {
   PeerCursors,
   peerMotionReduced,
   reactCollaborationPeerCursors,
-  reactCollaborationPeerCursors_2,
-  reactCollaborationPeerCursors_3,
+  reactForUsePeerSelectionGroups,
+  reactForUsePresenceComposer,
   usePeerCursors,
   usePeerMessageVisibility,
   usePeerProfiles,
@@ -519,21 +517,17 @@ export function installCollaborationPeerCursors(): () => void {
       load_react(),
       1,
     );
-    reactCollaborationPeerCursors_2 = toModuleNamespace(
+    reactForUsePeerSelectionGroups = toModuleNamespace(
       load_react(),
       1,
     );
     initializeCdsIndex();
-    reactCollaborationPeerCursors_3 = toModuleNamespace(
+    reactForUsePresenceComposer = toModuleNamespace(
       load_react(),
       1,
     );
     initializeCdsIndex();
     jsxCollaborationPeerCursors = toModuleNamespace(
-      load_react_jsx_runtime(),
-      1,
-    );
-    jsxCollaborationPeerCursors_2 = toModuleNamespace(
       load_react_jsx_runtime(),
       1,
     );
@@ -562,20 +556,20 @@ export function installCollaborationPeerCursors(): () => void {
     peerMessageMaxLength = 50;
     peerChatHoldMs = 5e3;
     peerChatFadeMs = 600;
-    CollaborationPeerCursorsDelayMs_2 = 150;
+    peerChatExitDelayMs = 150;
     CollaborationPeerCursorsMcChatHoldMcChatFadeMcChatExitConfig = {
       get "--mc-chat-hold"() { return (peerChatHoldMs) + ("ms"); },
       get "--mc-chat-fade"() { return (peerChatFadeMs) + ("ms"); },
-      get "--mc-chat-exit"() { return (CollaborationPeerCursorsDelayMs_2) + ("ms"); },
+      get "--mc-chat-exit"() { return (peerChatExitDelayMs) + ("ms"); },
     };
-    PeerCursorLabel = (0, reactCollaborationPeerCursors_3.memo)(function ({
+    PeerCursorLabel = (0, reactForUsePresenceComposer.memo)(function ({
       name: name,
       color: color,
       message: message,
       dim: dim,
       working: working,
     }: Dynamic): Dynamic {
-      let messageStateRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)({
+      let messageStateRef: Dynamic = (0, reactForUsePresenceComposer.useRef)({
         m: "",
         n: 0,
       });
@@ -585,7 +579,7 @@ export function installCollaborationPeerCursors(): () => void {
           n: message === "" ? messageStateRef.current.n : messageStateRef.current.n + 1,
         });
       let [seenBeat, setSeenBeat]: Dynamic = (0,
-        reactCollaborationPeerCursors_3.useState)(0),
+        reactForUsePresenceComposer.useState)(0),
         mode: Dynamic =
           message !== "" && seenBeat !== messageStateRef.current.n ? "line" : "name",
         labelRef: Dynamic = usePeerMessageVisibility(mode);
@@ -623,6 +617,6 @@ export function installCollaborationPeerCursors(): () => void {
         </span>
       );
     });
-    CollaborationPeerCursorsCache_2 = new Map();
+    emptyPeerUserNames = new Map();
   };
 }

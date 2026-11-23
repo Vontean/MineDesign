@@ -9,9 +9,8 @@ import { toModuleNamespace } from "../../module-helpers";
 
 var reactChromePanelClose: Dynamic;
 var jsxChromePanelClose: Dynamic;
-var jsxChromePanelClose_2: Dynamic;
 var ChromePanelCloseClassNames: Dynamic;
-var ChromePanelCloseClassNames_2: Dynamic;
+var compactSegmentedControlClassName: Dynamic;
 function usePanelClose(isOpen?: Dynamic, isOpenNowCheck?: Dynamic): Dynamic {
   let latestStateRef: Dynamic = (0, reactChromeResizeGrip.useRef)({
     open: isOpen,
@@ -71,9 +70,8 @@ function panelCanRestoreFocus(): Dynamic {
 }
 export {
   ChromePanelCloseClassNames,
-  ChromePanelCloseClassNames_2,
+  compactSegmentedControlClassName,
   jsxChromePanelClose,
-  jsxChromePanelClose_2,
   panelCanRestoreFocus,
   reactChromePanelClose,
   usePanelClose,
@@ -89,13 +87,9 @@ export function installEditorChromePanelClose(): () => void {
       1,
     );
     initializeCdsIndex();
-    jsxChromePanelClose_2 = toModuleNamespace(
-      load_react_jsx_runtime(),
-      1,
-    );
     ChromePanelCloseClassNames =
       "[&_[role=radio]]:px-0 [&_[role=radio]]:min-w-[calc(var(--cds-h-control)_-_2px)]";
-    ChromePanelCloseClassNames_2 =
+    compactSegmentedControlClassName =
       "[&_[data-cds=SegmentedControl]]:gap-0 [&_[data-cds=SegmentedControl]]:p-0 [&_[role=radio]]:px-0 [&_[role=radio]]:min-w-[var(--cds-h-control)]";
   };
 }

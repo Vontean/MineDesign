@@ -9,7 +9,7 @@ import { designSystemTypographyOptions, hasDesignSystems, useDesignSystems } fro
 import { colorTokenGroupLabels } from "../design-system/type-declarations";
 import { textContrastContext } from "../editor/accessibility/announcements";
 import { initializeEditorAttributeValidation, sanitizeEditableLink } from "../editor/attribute-validation";
-import { ColorContrastCopyLabel_4 as inTheseArtboardsLabel, InThisArtboardMessage } from "../editor/color/contrast-copy";
+import { ColorContrastCopyInTheseArtboardsLabel as inTheseArtboardsLabel, InThisArtboardMessage } from "../editor/color/contrast-copy";
 import { parseHsvaColor } from "../editor/color/picker-primitives";
 import { InspectorComputedDataPattern } from "../editor/inspector/computed-data";
 import { hasTextBackgroundClip, InspectorPropertySchemaItems } from "../editor/inspector/property-schema";
@@ -413,7 +413,7 @@ function SelectionQuickActions({
           data-testid={"mega-sel-duplicate"}
           icon={"Copy"}
           title={
-            uiMessage("inspector.selectionQuickActions.duplicate2", { value1: String(crossFileSummary), value2: String(keyboardShortcutLabel("D")) })
+            uiMessage("inspector.selectionQuickActions.duplicateWithShortcut", { selection: String(crossFileSummary), shortcut: String(keyboardShortcutLabel("D")) })
           }
           aria-label={uiMessage("inspector.selectionQuickActions.duplicate")}
           onClick={crossFile.onDuplicate}
@@ -421,7 +421,7 @@ function SelectionQuickActions({
         <SessionStripButton
           data-testid={"mega-sel-delete"}
           icon={"Trash"}
-          title={uiMessage("inspector.selectionQuickActions.delete2", { value1: String(crossFileSummary) })}
+          title={uiMessage("inspector.selectionQuickActions.deleteSelection", { selection: String(crossFileSummary) })}
           aria-label={uiMessage("inspector.selectionQuickActions.delete")}
           onClick={crossFile.onDelete}
         />

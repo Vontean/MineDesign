@@ -4,8 +4,8 @@ import {
 } from "../../runtime-types";
 import { coarsePointerMediaQuery, initializeHooksMediaQuery, useWindowMediaQuery } from "../hooks/media-query";
 import { initializePlatformFeatureLoader, loadApplicationFeature } from "../platform/feature-loader";
-import { initializeSheetsChrome_3, MobileSheetsSheetPopupHost } from "./chrome";
-import { initializeSheetsMenuPopup_4, initializeSheetsMenuPopup_5, initializeSheetsMenuPopup_6, MenuSheetPopup, MobileSheetsComboboxSheetBackdrop, MobileSheetsPopoverSheetBackdrop, MobileSheetsPopoverSheetContent } from "./menu-popup";
+import { initializeSheetPopupHostHook, MobileSheetsSheetPopupHost } from "./chrome";
+import { initializeMenuSheetPopupComponent, initializeSheetPopupPresentationJsx, initializeSheetPopupMotionJsx, MenuSheetPopup, MobileSheetsComboboxSheetBackdrop, MobileSheetsPopoverSheetBackdrop, MobileSheetsPopoverSheetContent } from "./menu-popup";
 import { load_react } from "../../dependencies";
 import { defineLiveExports, initializeOnce, toModuleNamespace } from "../../module-helpers";
 
@@ -19,13 +19,13 @@ var loadGeneration: Dynamic;
 var mobileSheetsLoadPromise: Dynamic;
 var SheetsLazyLoaderSubscribers: Dynamic;
 var SheetsLazyLoaderHandler: Dynamic;
-var SheetsLazyLoaderHandler_2: Dynamic;
-var SheetsLazyLoaderHandler_3: Dynamic;
-var SheetsLazyLoaderHandler_4: Dynamic;
-var SheetsLazyLoaderHandler_5: Dynamic;
+var getMobileSheetsLoadedSnapshot: Dynamic;
+var getMobileSheetsFailedSnapshot: Dynamic;
+var getMobileSheetComponentsServerSnapshot: Dynamic;
+var getMobileSheetsFlagServerSnapshot: Dynamic;
 var initializeMobileSheetLoader: Dynamic;
-var reactSheetsLazyLoader_2: Dynamic;
-var initializeSheetsLazyLoader_2: Dynamic;
+var reactForUseMobileSheetPreload: Dynamic;
+var initializeMobileSheetPreload: Dynamic;
 function subscribeMobileSheets(listener?: Dynamic): Dynamic {
   SheetsLazyLoaderSubscribers.add(listener);
   return (): Dynamic => {
@@ -71,22 +71,22 @@ function areMobileSheetsLoaded(): Dynamic {
 function useMobileSheetsLoaded(): Dynamic {
   return (0, reactSheetsLazyLoader.useSyncExternalStore)(
     subscribeMobileSheets,
-    SheetsLazyLoaderHandler_2,
-    SheetsLazyLoaderHandler_5,
+    getMobileSheetsLoadedSnapshot,
+    getMobileSheetsFlagServerSnapshot,
   );
 }
 function useMobileSheetsUnavailable(): Dynamic {
   return (0, reactSheetsLazyLoader.useSyncExternalStore)(
     subscribeMobileSheets,
-    SheetsLazyLoaderHandler_3,
-    SheetsLazyLoaderHandler_5,
+    getMobileSheetsFailedSnapshot,
+    getMobileSheetsFlagServerSnapshot,
   );
 }
 function useMobileSheetComponents(): Dynamic {
   return (0, reactSheetsLazyLoader.useSyncExternalStore)(
     subscribeMobileSheets,
     SheetsLazyLoaderHandler,
-    SheetsLazyLoaderHandler_4,
+    getMobileSheetComponentsServerSnapshot,
   );
 }
 function useMobileSheetPreload(shouldPreload?: Dynamic, preloadWindow?: Dynamic): Dynamic {
@@ -94,7 +94,7 @@ function useMobileSheetPreload(shouldPreload?: Dynamic, preloadWindow?: Dynamic)
     shouldPreload ? preloadWindow : undefined,
     coarsePointerMediaQuery,
   );
-  (0, reactSheetsLazyLoader_2.useEffect)((): Dynamic => {
+  (0, reactForUseMobileSheetPreload.useEffect)((): Dynamic => {
     shouldPreload && isCoarsePointer && preloadMobileSheets();
   }, [shouldPreload, isCoarsePointer]);
 }
@@ -102,22 +102,20 @@ export {
   areMobileSheetsLoaded,
   initializeMobileSheetLoader,
   initializeSheetsLazyLoader,
-  initializeSheetsLazyLoader_2,
+  initializeMobileSheetPreload,
   loadMobileSheets,
   MobileSheetsExports,
   mobileSheetsFailed,
   preloadMobileSheets,
   reactSheetsLazyLoader,
-  reactSheetsLazyLoader_2,
+  reactForUseMobileSheetPreload,
   SheetsLazyLoaderConstant,
-  loadGeneration as SheetsLazyLoaderConstant_2,
   SheetsLazyLoaderCurrentState,
-  mobileSheetsLoadPromise as SheetsLazyLoaderCurrentState_2,
   SheetsLazyLoaderHandler,
-  SheetsLazyLoaderHandler_2,
-  SheetsLazyLoaderHandler_3,
-  SheetsLazyLoaderHandler_4,
-  SheetsLazyLoaderHandler_5,
+  getMobileSheetsLoadedSnapshot,
+  getMobileSheetsFailedSnapshot,
+  getMobileSheetComponentsServerSnapshot,
+  getMobileSheetsFlagServerSnapshot,
   SheetsLazyLoaderSubscribers,
   subscribeMobileSheets,
   useMobileSheetComponents,
@@ -141,10 +139,10 @@ export function installCdsSheetsLazyLoader(): () => void {
     initializeSheetsLazyLoader = initializeOnce((): Dynamic => {
       "use client";
 
-      initializeSheetsChrome_3();
-      initializeSheetsMenuPopup_4();
-      initializeSheetsMenuPopup_5();
-      initializeSheetsMenuPopup_6();
+      initializeSheetPopupHostHook();
+      initializeMenuSheetPopupComponent();
+      initializeSheetPopupPresentationJsx();
+      initializeSheetPopupMotionJsx();
     });
     initializeMobileSheetLoader = initializeOnce((): Dynamic => {
       "use client";
@@ -160,18 +158,18 @@ export function installCdsSheetsLazyLoader(): () => void {
       mobileSheetsLoadPromise = null;
       SheetsLazyLoaderSubscribers = new Set();
       SheetsLazyLoaderHandler = (): Dynamic => SheetsLazyLoaderCurrentState;
-      SheetsLazyLoaderHandler_2 = (): Dynamic =>
+      getMobileSheetsLoadedSnapshot = (): Dynamic =>
         SheetsLazyLoaderCurrentState !== null;
-      SheetsLazyLoaderHandler_3 = (): Dynamic => mobileSheetsFailed;
-      SheetsLazyLoaderHandler_4 = (): Dynamic => null;
-      SheetsLazyLoaderHandler_5 = (): Dynamic => false;
+      getMobileSheetsFailedSnapshot = (): Dynamic => mobileSheetsFailed;
+      getMobileSheetComponentsServerSnapshot = (): Dynamic => null;
+      getMobileSheetsFlagServerSnapshot = (): Dynamic => false;
     });
-    initializeSheetsLazyLoader_2 = initializeOnce((): Dynamic => {
+    initializeMobileSheetPreload = initializeOnce((): Dynamic => {
       "use client";
 
       initializeMobileSheetLoader();
       initializeHooksMediaQuery();
-      reactSheetsLazyLoader_2 = toModuleNamespace(
+      reactForUseMobileSheetPreload = toModuleNamespace(
         load_react(),
       );
     });

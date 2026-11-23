@@ -145,7 +145,7 @@ function MigrationLeftOutBanner(): React.ReactElement | null {
         className={"ds-left-out-banner"}
       >
         <span className={"ds-left-out-banner-text"}>
-          {[uiMessage("design-system.pipelineBanners.couldnTBeKeptWhen", { value1: String(value.carriedMore > 0 ? (uiMessage("design-system.pipelineBanners.atLeast")) : ("")), value2: String(countedChangeNoun(carriedCount, "file")) }), visibleFiles.map((file, index) =>
+          {[uiMessage("design-system.pipelineBanners.couldnTBeKeptWhen", { subject: String(value.carriedMore > 0 ? (uiMessage("design-system.pipelineBanners.atLeast")) : ("")), detail: String(countedChangeNoun(carriedCount, "file")) }), visibleFiles.map((file, index) =>
               (() => {
                 const _Element = "span";
                 const _elementProps = {
@@ -160,7 +160,7 @@ function MigrationLeftOutBanner(): React.ReactElement | null {
                 const _elementKey = file.path;
                 return <_Element key={_elementKey} {..._elementProps} />;
               })(),
-            ), carriedFiles.length > visibleFiles.length ? (uiMessage("design-system.pipelineBanners.andMore", { value1: String(String(carriedCount - visibleFiles.length)) })) : ("."), uiMessage("design-system.pipelineBanners.theyRemainInThisArtifact"), "’", uiMessage("design-system.pipelineBanners.sEarlierVersions")]}
+            ), carriedFiles.length > visibleFiles.length ? (uiMessage("design-system.pipelineBanners.andMore", { subject: String(String(carriedCount - visibleFiles.length)) })) : ("."), uiMessage("design-system.pipelineBanners.theyRemainInThisArtifact"), "’", uiMessage("design-system.pipelineBanners.sEarlierVersions")]}
         </span>
       </Callout>
     </div>
@@ -194,7 +194,7 @@ function IndexRecoveryBanner(): React.ReactElement | null {
         className={"ds-left-out-banner"}
       >
         <span className={"ds-left-out-banner-text"}>
-          {[uiMessage("design-system.pipelineBanners.addedHereCouldNotBe", { value1: String(countedChangeNoun(value.size, "file")) }), recentChanges.map(([filePath, reason], index) =>
+          {[uiMessage("design-system.pipelineBanners.addedHereCouldNotBe", { subject: String(countedChangeNoun(value.size, "file")) }), recentChanges.map(([filePath, reason], index) =>
               (() => {
                 const FileLabel = "span";
                 const fileProps = {
@@ -209,7 +209,7 @@ function IndexRecoveryBanner(): React.ReactElement | null {
                 const fileKey = filePath;
                 return <FileLabel key={fileKey} {...fileProps} />;
               })(),
-            ), value.size > recentChanges.length ? (uiMessage("design-system.pipelineBanners.andMore", { value1: String(String(value.size - recentChanges.length)) })) : (".")]}
+            ), value.size > recentChanges.length ? (uiMessage("design-system.pipelineBanners.andMore", { subject: String(String(value.size - recentChanges.length)) })) : (".")]}
         </span>
       </Callout>
     </div>

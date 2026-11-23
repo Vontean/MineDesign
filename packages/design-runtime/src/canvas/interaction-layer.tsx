@@ -14,18 +14,18 @@ import { ArtboardFocusOverlay } from "./focus-overlay";
 import { focusCanvasDocument } from "./focus";
 import { selectionChromeCoordinateOverscan } from "./frame-payloads";
 import { artboardHeaderTheme, quickActionImagePreviewMaxBytes } from "./header-theme";
-import { applyElementRectStyle, artboardOverlayIdPrefixes, canvasContextMenuTargetFromElement, canvasFacePointerAction, inclusiveRectIntersects, isCanvasContextMenuPointer, objectsWithinCanvasMarquee, selectionPointerDownDecision, shouldBeginCanvasMarquee, shouldPassFileDropThroughOverlay } from "./hit-testing";
-import { isTouchSelectionStart, prefersDragGesture, preventTouchScroll, watchPointerRelease } from "./image-decode-scheduler";
-import { bothTransformAxes, canvasDragActivationDelayMs, canvasDragThresholdPixels, canvasLongPressDelayMs, canvasTouchDragActivationDelayMs, canvasTouchDragThresholdPixels, freehandDrawingAnnotation, freehandSimplifyTolerance, isPrimaryModifierEvent, jsx_Nn, maximumArtboardSize, minimumArtboardSize, placementGhostAnnotation } from "./interaction-geometry";
+import { applyElementRectStyle, artboardOverlayIdPrefixes, canvasContextMenuTargetFromElement, inclusiveRectIntersects, isCanvasContextMenuPointer, objectsWithinCanvasMarquee, shouldBeginCanvasMarquee, shouldPassFileDropThroughOverlay } from "./hit-testing";
+import { isTouchSelectionStart, prefersDragGesture, preventTouchScroll } from "./image-decode-scheduler";
+import { bothTransformAxes, canvasDragThresholdPixels, freehandDrawingAnnotation, freehandSimplifyTolerance, jsx_Nn, placementGhostAnnotation } from "./interaction-geometry";
 import { buttonKeyboardActivation } from "./keyboard-activation";
 import { ArtboardLayoutGuides } from "./layout-guides";
 import { CanvasNote } from "./note";
 import { installCanvasPanZoom_binding } from "./pan-zoom";
 import { clampPointToRect, insertionPointerMatchesContent, pointerCoordinates, resolveInsertionPointer, visibleArtboardCenter } from "./paste-placement";
-import { artboardAboveDistances, artboardTitleHeight, isAboveTitleRect, PendingArtboardFace, PendingArtboards, PendingArtboardTitle, shouldHideArtboardTitle } from "./pending-artboards";
+import { artboardAboveDistances, artboardTitleHeight, PendingArtboardFace, PendingArtboards, PendingArtboardTitle, shouldHideArtboardTitle } from "./pending-artboards";
 import { PictureDropGhosts, UploadingOverlay } from "./picture-drop-ghost";
 import { PlacementGhostFrame } from "./placement-ghost";
-import { chooseMountedPreviews, distanceBetweenRects, isPreviewHighlighted, limitMountedPreviewPixels, maxInteractivePreviews, maxMountedPreviews, nextPreviewExpiry, previewMountPriority, previewScaleChanged, recordVisiblePreviewTimes, samePreviewFiles, shouldDelayPreviewMount } from "./preview-mounting";
+import { isPreviewHighlighted, limitMountedPreviewPixels, maxInteractivePreviews, maxMountedPreviews, shouldDelayPreviewMount } from "./preview-mounting";
 import { handleQuickActionsArrowKeys } from "./quick-action-keys";
 import { CanvasShape, CanvasShape as CanvasShape_r } from "./shape";
 import { useSpacePanKeyboard } from "./space-pan";
@@ -37,73 +37,52 @@ import { renderMenuItems } from "../cds/menu/menu";
 import { serializeDesignCommentAnchor } from "../comments/anchor-codec";
 import { useCanvasComments as R_useCanvasComments } from "../comments/canvas-controller";
 import { commentAnchorShortLabel, commentArtboardElementDetail, describeCommentElement } from "../comments/labels";
-import { npm_useEventListener_bc } from "../dependencies";
 import { AccessibilityAnnouncementsResolvedValue, artboardPositionAnnouncement, PressReturnToGoIntoThisMessage } from "../editor/accessibility/announcements";
-import { announce } from "../editor/accessibility/announcer";
 import { useInspectorPosture } from "../editor/chrome/inspector-sheet";
 import { joinClassNames } from "../editor/chrome/overlay-state";
-import { CropDoesNotWorkWhileThisMessage, imageFlipCss } from "../editor/geometry/flip-annotations";
-import { resizeRect, resizeRectKeepingAspect, unionRects } from "../editor/geometry/resize";
+import { unionRects } from "../editor/geometry/resize";
 import { angleBetweenPoints, resizeRotatedRect, snapRotation } from "../editor/geometry/rotation";
-import { activeResizeGuides, rectangleSnapGuides, snapResize } from "../editor/geometry/snapping";
+import { rectangleSnapGuides } from "../editor/geometry/snapping";
 import { useLatestCallback } from "../editor/hooks/latest-callback";
-import { InspectorColorPickResolvedValue_2 as isDesktopMac } from "../editor/inspector/color-pick";
-import { blurBeforeCrop, MediaCropEditor } from "../editor/media/crop-editor";
-import { mediaNaturalDimensions, normalizeCenteredImageCrop, rotatedCropFrame, sameImageCrop } from "../editor/media/crop-geometry";
-import { cropFromObjectStyles, parseObjectPosition } from "../editor/media/object-crop";
+import { isDesktopMac } from "../editor/inspector/color-pick";
 import { Fef3a2Value, NotesLinkEditingKind, NotesLinkEditingLh } from "../editor/notes/link-editing";
 import { OutlineDcOutlineHandler } from "../editor/outline/dc-outline";
-import { suppressNativeContextMenu } from "../editor/outline/native-menu";
-import { pickerCommentFor, pickerHoverAt } from "../editor/picker/bridge";
+import { pickerCommentFor } from "../editor/picker/bridge";
 import { pickerCursorCss, PickerRuntimeScriptTAppAccentConfig } from "../editor/picker/runtime-script";
-import { schedulePrimaryModifierHeld, setPrimaryModifierHeld, subscribePrimaryModifierHeld } from "../editor/primary-modifier";
 import { SelectionActionsReplace } from "../editor/selection/actions";
-import { boardSelectionItems, emptyBoardSelection, hasBoardSelection } from "../editor/selection/canvas-selection";
+import { boardSelectionItems, emptyBoardSelection } from "../editor/selection/canvas-selection";
 import { getSessionStripScrollRow } from "../editor/session-strip/reveal";
 import { SessionStrip } from "../editor/session-strip/session-strip";
 import { useActiveCropElement } from "../editor/session/element-state";
-import { shortenLineEnd, SvgArrowsConstant, SvgArrowsConstant_2 as arrowHeadHalfHeight, SvgArrowsConstant_3 as arrowHeadTipInset, SvgArrowsCss } from "../editor/svg/arrows";
+import { shortenLineEnd, SvgArrowsConstant, arrowHeadCenterY as arrowHeadHalfHeight, arrowHeadTipInset, SvgArrowsCss } from "../editor/svg/arrows";
 import { constrainLineAngle, SvgDrawingConstant } from "../editor/svg/drawing";
-import { toolbarOverlayHeight, useTouchToolbar } from "../editor/toolbar/layout";
+import { useTouchToolbar } from "../editor/toolbar/layout";
 import { supportsClickPlacement } from "../editor/tools";
-import { reactDomVectorToolState, reactVectorToolState_2 } from "../editor/vector/tool-state";
+import { vectorToolStateReact as React } from "../editor/vector/tool-state";
 import { artboardExportMenuItems } from "../export/artboard-menu";
-import { canvasSnapReferenceLines, canvasSnapReferenceObjects, preserveUnroundedDragPosition, snapCanvasDrag } from "../geometry/canvas-snapping";
+import { canvasSnapReferenceLines, canvasSnapReferenceObjects } from "../geometry/canvas-snapping";
 import { annotationTransformSnapshot, artboardTransformSnapshot, rotateAnnotationAboutPoint, selectionScaleLimits, selectionTransformMembers, selectionUniformScaleTransform, transformAnnotationBounds, transformArtboardBounds, transformTouchedProperties, translatedSelectionTransform } from "../geometry/selection-transform";
-import { annotationBounds, annotationRotation, annotationVisibleBounds, artboardRadiusCss, artboardStackOrder, isShapeAnnotation, moveAnnotation, PlatformFileContentConstant_20 as unusedNoteConstant, PlatformFileContentConstant_8 as defaultNoteWidth, replaceDesignArtboards, rotatedAnnotationBounds, updateAnnotationCrop, updateAnnotationCss, updateAnnotationTextStyle, updateShapeColor } from "../platform/file-content";
-import { getLinkedArtboards, resolveComponentFile } from "../preview/dependency-graph";
-import { createPreviewHandle } from "../preview/evaluation";
+import { annotationBounds, annotationRotation, annotationVisibleBounds, artboardRadiusCss, artboardStackOrder, isShapeAnnotation, moveAnnotation, minImageDimension as unusedNoteConstant, defaultTextAnnotationWidth as defaultNoteWidth, replaceDesignArtboards, rotatedAnnotationBounds, updateAnnotationTextStyle, updateShapeColor } from "../platform/file-content";
 import { CanvasObjectQuickActions, EditingNoteQuickActions, NoteQuickActions } from "../properties/annotation-quick-actions";
 import { hasSelectionQuickActions } from "../properties/selection-quick-actions";
 import { openCanvasContextMenu, pressCanvasBackground } from "./interaction-layer/canvas-events";
+import { deriveArtboardSlot } from "./interaction-layer/artboard-slot";
 import { composeSelectedElementComment } from "./interaction-layer/comments";
-import { beginBoardDrag, beginHandedOffBoardDrag, subscribeHostDragPointer } from "./interaction-layer/drag";
+import { beginBoardDrag, beginHandedOffBoardDrag, canvasDragSequence, resetCanvasDragSequence, subscribeHostDragPointer, updateBoardDrag } from "./interaction-layer/drag";
+import { useImageCropLifecycle, useImageCropState } from "./interaction-layer/image-crop";
+import { useCanvasGestures } from "./interaction-layer/gestures";
 import { beginCanvasMarquee } from "./interaction-layer/marquee";
 import { placePastedImagesOnCanvas, resolvePointerInsertionPoint } from "./interaction-layer/paste";
 import { buildObjectPressHandlers, pressArtboardCover, waitPointerReleaseTravel } from "./interaction-layer/press";
-import { pickMountedArtboardPreviews } from "./interaction-layer/preview";
+import { toggleArtboardDragCurtain, useArtboardHoverCurtain } from "./interaction-layer/hover-curtain";
+import { useArtboardTitleHover } from "./interaction-layer/title-hover";
+import { beginArtboardResize, commitArtboardRename, doubleClickArtboardFace, doubleClickFramelessFace, enterArtboardSlot, leaveArtboardSlot, pressArtboardFace, pressOffloadedPreview, pressRenameKey, releaseArtboardFace, startArtboardRename } from "./interaction-layer/artboard-slot-events";
+import { pressArtboardTitle } from "./interaction-layer/title-press";
+import { useLinkedArtboards } from "./interaction-layer/linked-artboards";
+import { usePreviewMountLifecycle } from "./interaction-layer/preview-lifecycle";
 import { renderAnnotationQuickActions, renderCanvasObjects, renderImageCropEditor, renderSelectionQuickActions } from "./interaction-layer/render";
 import { beginSelectionGroupResize, runSelectionTransformGesture, trackHandleDragGesture } from "./interaction-layer/resize";
 
-var canvasDragSequence: Dynamic;
-function toggleArtboardDragCurtain(
-  artboard?: Dynamic,
-  enabled?: Dynamic,
-  templateIds: Dynamic = [],
-  passthrough: Dynamic = false,
-): Dynamic {
-  let previewHandle: Dynamic = artboard
-    ? createPreviewHandle(artboard.webviewRef.current)
-    : null;
-  previewHandle &&
-    pickerHoverAt(
-      previewHandle,
-      enabled,
-      templateIds,
-      passthrough,
-      (enabled && artboard?.textTids()) ?? [],
-    );
-}
 function CanvasInteractionLayer(props?: Dynamic): Dynamic {
   useUiLocale();
   let {
@@ -242,7 +221,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
     }: Dynamic = props,
     isNotArtboardPicking: Dynamic = !artboardPicking,
     entry: Dynamic = camera.get(),
-    artboardHandlesRef: Dynamic = (0, reactVectorToolState_2.useRef)(new Map()),
+    artboardHandlesRef: Dynamic = (0, React.useRef)(new Map()),
     registerArtboardHandle: Dynamic = useLatestCallback(
       (file?: Dynamic, handle?: Dynamic, handleMeta?: Dynamic): Dynamic => {
         handle
@@ -251,14 +230,14 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
         onHandle(file, handle, handleMeta);
       },
     ),
-    [commentsController, setCommentsController]: Dynamic = (0, reactVectorToolState_2.useState)(
+    [commentsController, setCommentsController]: Dynamic = (0, React.useState)(
       null,
     ),
-    commentsControllerRef: Dynamic = (0, reactVectorToolState_2.useRef)(commentsController);
+    commentsControllerRef: Dynamic = (0, React.useRef)(commentsController);
   commentsControllerRef.current = commentsController;
   let composeElementComment: Dynamic =
       commentsController && !crossFile && elementSelection?.tids?.length
-        ? (...args: Dynamic[]): Dynamic => (composeSelectedElementComment as Dynamic)({ get callback16() { return clientToCanvasPoint; }, get camera() { return camera; }, get elementSelection() { return elementSelection; }, get manifest() { return manifest; }, get value2() { return artboardHandlesRef; }, get value20() { return focusedContentRect; }, get value4() { return commentsController; }, get value9() { return canvasRootRef; } }, ...args)
+        ? (...args: Dynamic[]): Dynamic => (composeSelectedElementComment as Dynamic)({ get clientToCanvasPoint() { return clientToCanvasPoint; }, get camera() { return camera; }, get elementSelection() { return elementSelection; }, get manifest() { return manifest; }, get artboardHandlesRef() { return artboardHandlesRef; }, get focusedContentRect() { return focusedContentRect; }, get commentsController() { return commentsController; }, get canvasRootRef() { return canvasRootRef; } }, ...args)
         : null,
     composeNoteComment: Dynamic = commentsController
       ? (noteId?: Dynamic, noteElement?: Dynamic): Dynamic => {
@@ -293,10 +272,10 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
               .catch((): Dynamic => {});
         }
       : null,
-    canvasRootRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
+    canvasRootRef: Dynamic = (0, React.useRef)(null),
     [measuredNoteSizes, setMeasuredNoteSizes]: Dynamic = (0,
-    reactVectorToolState_2.useState)({}),
-    getAnnotationWidth: Dynamic = (0, reactVectorToolState_2.useCallback)(
+    React.useState)({}),
+    getAnnotationWidth: Dynamic = (0, React.useCallback)(
       (source?: Dynamic): Dynamic =>
         isShapeAnnotation(source)
           ? annotationBounds(source).w
@@ -306,12 +285,12 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
             : source.w,
       [measuredNoteSizes],
     ),
-    artboardOrderRef: Dynamic = (0, reactVectorToolState_2.useRef)([]),
+    artboardOrderRef: Dynamic = (0, React.useRef)([]),
     stackedArtboards: Dynamic = artboardStackOrder(
       artboardOrderRef.current,
       manifest.artboards,
     );
-  (0, reactVectorToolState_2.useLayoutEffect)((): Dynamic => {
+  (0, React.useLayoutEffect)((): Dynamic => {
     artboardOrderRef.current = stackedArtboards.map(
       (item?: Dynamic): Dynamic => item.spec.file,
     );
@@ -329,25 +308,21 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
     inspectorPosture: Dynamic = useInspectorPosture(),
     hasTouchToolbar: Dynamic = useTouchToolbar(),
     isInspectorSheet: Dynamic = inspectorPosture === "sheet" && !hasTouchToolbar,
-    flag: Dynamic = false,
-    canEditCanvas: Dynamic = editing && (fullscreenFile == null || flag),
-    canEditCanvasRef: Dynamic = (0, reactVectorToolState_2.useRef)(canEditCanvas);
+    canEditCanvas: Dynamic = editing && fullscreenFile == null,
+    canEditCanvasRef: Dynamic = (0, React.useRef)(canEditCanvas);
   canEditCanvasRef.current = canEditCanvas;
   let focusedContentRect: Dynamic = focusedArtboardContentRect(
       manifest.artboards,
       fullscreenFile,
       fullscreenBox,
-      flag,
-      tweakRows,
     ),
     isPhoneCanvas: Dynamic = phone && fullscreenFile == null,
     isCanvasInteractive: Dynamic =
-      canEditCanvas || (!isPhoneCanvas && inspect && (fullscreenFile == null || flag)),
-    isCanvasInteractiveRef: Dynamic = (0, reactVectorToolState_2.useRef)(isCanvasInteractive);
+      canEditCanvas || (!isPhoneCanvas && inspect && fullscreenFile == null),
+    isCanvasInteractiveRef: Dynamic = (0, React.useRef)(isCanvasInteractive);
   isCanvasInteractiveRef.current = isCanvasInteractive;
   let shouldDelayArtboardMount: Dynamic = (artboard?: Dynamic): Dynamic =>
       isPhoneCanvas &&
-      !flag &&
       shouldDelayPreviewMount(artboard, {
         editing: canEditCanvas,
         runsNothing: props.phoneCanvasRunsNothing === true,
@@ -362,7 +337,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       return artboard != null && shouldDelayArtboardMount(artboard);
     },
     overBudgetPreviewFile: Dynamic =
-      isPhoneCanvas && !flag
+      isPhoneCanvas
         ? (limitMountedPreviewPixels(
             [...(livePins ?? [])],
             [canEditCanvas ? focusedFile : null, playingFile],
@@ -372,116 +347,31 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
             (file?: Dynamic): Dynamic => livePins?.has(file) !== true,
           ) ?? null)
         : null,
-    hoverCurtainRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    selectedTidsByFileRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+    selectedTidsByFileRef: Dynamic = (0, React.useRef)(
       selectedTidsByFile,
     );
   selectedTidsByFileRef.current = selectedTidsByFile;
   let [isTouchPointer, setIsTouchPointer]: Dynamic = (0,
-    reactVectorToolState_2.useState)(false),
-    coverPressRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
+    React.useState)(false),
+    coverPressRef: Dynamic = (0, React.useRef)(null),
     [hasPressedSinceSelection, setHasPressedSinceSelection]: Dynamic = (0,
-    reactVectorToolState_2.useState)(false);
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
+    React.useState)(false);
+  (0, React.useEffect)((): Dynamic => {
     setHasPressedSinceSelection(false);
   }, [selectedArtboards, selectedNotes, selectedTidsByFile]);
-  let cancelHoverCurtain: Dynamic = (0,
-    reactVectorToolState_2.useCallback)((): Dynamic => {
-      let current: Dynamic = hoverCurtainRef.current;
-      current &&
-        (current.raf && cancelAnimationFrame(current.raf),
-        (hoverCurtainRef.current = null),
-        toggleArtboardDragCurtain(artboardHandlesRef.current.get(current.file), null));
-    }, []),
-    scheduleHoverCurtain: Dynamic = (file?: Dynamic, event?: Dynamic): Dynamic => {
-      if (
-        !canEditCanvas ||
-        event.pointerType === "touch" ||
-        event.buttons !== 0 ||
-        (armedTool != null &&
-          armedTool !== "select" &&
-          armedTool !== "vector")
-      ) {
-        cancelHoverCurtain();
-        return;
-      }
-      hoverCurtainRef.current && hoverCurtainRef.current.file !== file && cancelHoverCurtain();
-      let hoverState: Dynamic = (hoverCurtainRef.current ??= {
-        file: file,
-        x: 0,
-        y: 0,
-        deep: false,
-        raf: 0,
-      });
-      hoverState.x = event.nativeEvent.offsetX;
-      hoverState.y = event.nativeEvent.offsetY;
-      hoverState.deep = isPrimaryModifierEvent(event);
-      setPrimaryModifierHeld(hoverState.deep);
-      !hoverState.raf &&
-        (hoverState.raf = requestAnimationFrame((): Dynamic => {
-          hoverState.raf = 0;
-          hoverCurtainRef.current === hoverState &&
-            toggleArtboardDragCurtain(
-              artboardHandlesRef.current.get(file),
-              {
-                x: hoverState.x,
-                y: hoverState.y,
-              },
-              selectedTidsByFileRef.current?.[file],
-              hoverState.deep,
-            );
-        }));
-    };
-  (0, reactVectorToolState_2.useEffect)(
-    (): Dynamic => cancelHoverCurtain,
-    [focusedFile, armedTool, canEditCanvas, fullscreenFile, playingFile, cancelHoverCurtain],
-  );
-  let hoverFocusedFile: Dynamic =
-    canEditCanvas &&
-    !isTouchPointer &&
-    (armedTool == null || armedTool === "select") &&
-    fullscreenFile == null &&
-    focusedFile != null &&
-    selectedArtboards.has(focusedFile)
-      ? focusedFile
-      : null;
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
-    let current: Dynamic = hoverCurtainRef.current;
-    hoverFocusedFile == null &&
-      current?.file === focusedFile &&
-      (current.raf && cancelAnimationFrame(current.raf),
-      (hoverCurtainRef.current = null));
-  }, [hoverFocusedFile, focusedFile]);
-  (0, reactVectorToolState_2.useEffect)(
-    (): Dynamic =>
-      subscribePrimaryModifierHeld(
-        (isDeep?: Dynamic): Dynamic => {
-          let current: Dynamic = hoverCurtainRef.current;
-          current &&
-            ((current.deep = isDeep),
-            !current.raf &&
-              toggleArtboardDragCurtain(
-                artboardHandlesRef.current.get(current.file),
-                {
-                  x: current.x,
-                  y: current.y,
-                },
-                selectedTidsByFileRef.current?.[current.file],
-                isDeep,
-              ));
-        },
-      ),
-    [],
-  );
-  let cameraRef: Dynamic = (0, reactVectorToolState_2.useRef)(camera);
+  const { cancelHoverCurtain, scheduleHoverCurtain } = useArtboardHoverCurtain({
+    artboardHandlesRef, selectedTidsByFileRef, canEditCanvas, armedTool,
+    focusedFile, fullscreenFile, playingFile, isTouchPointer, selectedArtboards,
+  });
+  let cameraRef: Dynamic = (0, React.useRef)(camera);
   cameraRef.current = camera;
-  (0, reactVectorToolState_2.useLayoutEffect)(
+  (0, React.useLayoutEffect)(
     (): Dynamic => camera.paint(),
   );
-  let usesCameraPortal: Dynamic = phone && !flag,
+  let usesCameraPortal: Dynamic = phone,
     [artboardsPortalHost, setArtboardsPortalHost]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
-    portalPlacementsRef: Dynamic = (0, reactVectorToolState_2.useRef)(new Map()),
+    React.useState)(null),
+    portalPlacementsRef: Dynamic = (0, React.useRef)(new Map()),
     applyPortalTransform: Dynamic = (placement?: Dynamic): Dynamic => {
       let cameraState: Dynamic = camera.get();
       placement.el.style.transform =
@@ -494,8 +384,8 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
         ")";
     },
     [artboardHeaderThemes, setArtboardHeaderThemes]: Dynamic = (0,
-    reactVectorToolState_2.useState)((): Dynamic => new Map()),
-    headerThemeRequestedRef: Dynamic = (0, reactVectorToolState_2.useRef)(new Set()),
+    React.useState)((): Dynamic => new Map()),
+    headerThemeRequestedRef: Dynamic = (0, React.useRef)(new Set()),
     loadHeaderTheme: Dynamic = useLatestCallback(
       (file?: Dynamic): Dynamic => {
         let handle: Dynamic = artboardHandlesRef.current.get(file),
@@ -522,9 +412,9 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       },
     ),
     [expandingFile, setExpandingFile]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
-    expandingSeenFullscreenRef: Dynamic = (0, reactVectorToolState_2.useRef)(false);
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
+    React.useState)(null),
+    expandingSeenFullscreenRef: Dynamic = (0, React.useRef)(false);
+  (0, React.useEffect)((): Dynamic => {
     if (expandingFile == null) return void (expandingSeenFullscreenRef.current = false);
     let clearExpandingFile: Dynamic = (): Dynamic =>
         setExpandingFile(
@@ -548,7 +438,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       clearFrame && cancelAnimationFrame(clearFrame);
     };
   }, [expandingFile, fullscreenFile]);
-  (0, reactVectorToolState_2.useEffect)(
+  (0, React.useEffect)(
     (): Dynamic =>
       expandingFile == null
         ? undefined
@@ -556,8 +446,8 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
     [expandingFile],
   );
   let [chromePortalHost, setChromePortalHost]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
-    transformTargetsRef: Dynamic = (0, reactVectorToolState_2.useRef)(new Set()),
+    React.useState)(null),
+    transformTargetsRef: Dynamic = (0, React.useRef)(new Set()),
     registerTransformTarget: Dynamic = (element?: Dynamic): Dynamic => {
       if (element) {
         transformTargetsRef.current.add(element);
@@ -577,8 +467,8 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       });
     }),
     [objectsPortalHost, setObjectsPortalHost]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
-    annotationUnderCacheRef: Dynamic = (0, reactVectorToolState_2.useRef)(new Map()),
+    React.useState)(null),
+    annotationUnderCacheRef: Dynamic = (0, React.useRef)(new Map()),
     isAnnotationUnder: Dynamic = (source?: Dynamic): Dynamic => {
       if (!usesCameraPortal || !isShapeAnnotation(source)) return false;
       let cachedUnder: Dynamic =
@@ -600,7 +490,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       return isUnder;
     },
     [notesPortalHost, setNotesPortalHost]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
+    React.useState)(null),
     wrapInCameraPortal: Dynamic = (portalKey?: Dynamic, children?: Dynamic): Dynamic =>
       usesCameraPortal ? (
         <ConditionalPortal key={portalKey} on={true} to={notesPortalHost}>
@@ -632,22 +522,22 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
           portalPlacementsRef.current.delete(file);
         };
       };
-  (0, reactVectorToolState_2.useLayoutEffect)((): Dynamic => {
+  (0, React.useLayoutEffect)((): Dynamic => {
     usesCameraPortal && syncTransforms();
   });
-  (0, reactVectorToolState_2.useEffect)(
+  (0, React.useEffect)(
     (): Dynamic => (usesCameraPortal ? camera.subscribe(syncTransforms) : undefined),
     [camera, usesCameraPortal, syncTransforms],
   );
-  let fullscreenFileRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+  let fullscreenFileRef: Dynamic = (0, React.useRef)(
     fullscreenFile,
   );
   fullscreenFileRef.current = fullscreenFile;
-  let playingFileRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+  let playingFileRef: Dynamic = (0, React.useRef)(
     playingFile,
   );
   playingFileRef.current = playingFile;
-  let selectionRef: Dynamic = (0, reactVectorToolState_2.useRef)({
+  let selectionRef: Dynamic = (0, React.useRef)({
     files: selectedArtboards,
     notes: selectedNotes,
   });
@@ -655,7 +545,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
     files: selectedArtboards,
     notes: selectedNotes,
   };
-  let mountedPreviewsRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+  let mountedPreviewsRef: Dynamic = (0, React.useRef)(
       new Set(),
     ),
     singleSelectedNoteId: Dynamic =
@@ -671,7 +561,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
           isToggle ? "toggle" : "replace",
         ),
     ),
-    onSelectObjectsRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+    onSelectObjectsRef: Dynamic = (0, React.useRef)(
       onSelectObjects,
     );
   onSelectObjectsRef.current = onSelectObjects;
@@ -763,7 +653,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
         event.target instanceof Element &&
         event.target.closest("[data-mega-chrome], [data-mega-artboard]") ==
           null);
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
+  (0, React.useEffect)((): Dynamic => {
     let current: Dynamic = canvasRootRef.current;
     if (!current) return;
     let panZoomBinding: Dynamic = installCanvasPanZoom_binding({
@@ -798,12 +688,12 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
     });
     return (): Dynamic => panZoomBinding.destroy();
   }, []);
-  let isWheelingRef: Dynamic = (0, reactVectorToolState_2.useRef)(false),
-    wheelStartRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    markWheelingRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+  let isWheelingRef: Dynamic = (0, React.useRef)(false),
+    wheelStartRef: Dynamic = (0, React.useRef)(null),
+    markWheelingRef: Dynamic = (0, React.useRef)(
       (): Dynamic => {},
     );
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
+  (0, React.useEffect)((): Dynamic => {
     let current: Dynamic = canvasRootRef.current;
     if (!current) return;
     let wheelTimer: Dynamic = null,
@@ -827,11 +717,11 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       current.removeEventListener("wheel", markWheeling, true);
     };
   }, []);
-  let onPanZoomRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+  let onPanZoomRef: Dynamic = (0, React.useRef)(
     onPanZoom,
   );
   onPanZoomRef.current = onPanZoom;
-  let handlePanZoom: Dynamic = (0, reactVectorToolState_2.useCallback)(
+  let handlePanZoom: Dynamic = (0, React.useCallback)(
       (view?: Dynamic, change?: Dynamic): Dynamic => {
         let isHandled: Dynamic = onPanZoomRef.current?.(view, change) === true;
         isHandled &&
@@ -843,44 +733,44 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       },
       [],
     ),
-    dragSessionRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    dragReleaseRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
+    dragSessionRef: Dynamic = (0, React.useRef)(null),
+    dragReleaseRef: Dynamic = (0, React.useRef)(null),
     [snapGuides, setSnapGuides]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
+    React.useState)(null),
     [gapGuides, setGapGuides]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
+    React.useState)(null),
     [dragPreviewItems, setDragPreviewItems]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
+    React.useState)(null),
     [notePlacement, setNotePlacement]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null);
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
+    React.useState)(null);
+  (0, React.useEffect)((): Dynamic => {
     armedTool !== "note" && setNotePlacement(null);
   }, [armedTool]);
   let [pointerGhost, setPointerGhost]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
-    backgroundPressRef: Dynamic = (0, reactVectorToolState_2.useRef)(false),
+    React.useState)(null),
+    backgroundPressRef: Dynamic = (0, React.useRef)(false),
     [shapeDraft, setShapeDraft]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
+    React.useState)(null),
     [frameDraft, setFrameDraft]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
-    onAddPenRef: Dynamic = (0, reactVectorToolState_2.useRef)(onAddPen);
+    React.useState)(null),
+    onAddPenRef: Dynamic = (0, React.useRef)(onAddPen);
   onAddPenRef.current = onAddPen;
-  let armedToolRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+  let armedToolRef: Dynamic = (0, React.useRef)(
     armedTool,
   );
   armedToolRef.current = armedTool;
   let [isMarqueeActive, setIsMarqueeActive]: Dynamic = (0,
-    reactVectorToolState_2.useState)(false),
-    marqueeRectRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    marqueeElementRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    setMarqueeElement: Dynamic = (0, reactVectorToolState_2.useCallback)(
+    React.useState)(false),
+    marqueeRectRef: Dynamic = (0, React.useRef)(null),
+    marqueeElementRef: Dynamic = (0, React.useRef)(null),
+    setMarqueeElement: Dynamic = (0, React.useCallback)(
       (element?: Dynamic): Dynamic => {
         marqueeElementRef.current = element;
         applyElementRectStyle(element, marqueeRectRef.current);
       },
       [],
     ),
-    marqueeStateRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
+    marqueeStateRef: Dynamic = (0, React.useRef)(null),
     clientToCanvasPoint: Dynamic = (
       clientX?: Dynamic,
       clientY?: Dynamic,
@@ -892,14 +782,14 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
         y: cameraState.y + (clientY - rect.top) / cameraState.scale,
       };
     },
-    waitPointerRelease: Dynamic = (...args: Dynamic[]): Dynamic => (waitPointerReleaseTravel as Dynamic)({ get value9() { return canvasRootRef; } }, ...args),
-    pressArtboardCoverBound: Dynamic = (...args: Dynamic[]): Dynamic => (pressArtboardCover as Dynamic)({ get callback17() { return waitPointerRelease; }, get callback19() { return beginMarquee; }, get callback46() { return beginBoardDragBound; }, get callback53() { return beginElementMove; }, get onArmArtboard() { return onArmArtboard; }, get onCoverPick() { return onCoverPick; }, get onCoverPress() { return onCoverPress; }, get onElementPress() { return onElementPress; }, get onFocus() { return onFocus; }, get onPressIntent() { return onPressIntent; }, get onSelectObjects() { return onSelectObjects; }, get onSetMoveCommit() { return onSetMoveCommit; }, get pressIntentIs() { return pressIntentIs; }, get value2() { return artboardHandlesRef; }, get value222() { return setHeldCover; }, get value26() { return selectedTidsByFileRef; }, get value29() { return coverPressRef; }, get value57() { return selectionRef; }, get value60() { return selectArtboard; }, get value92() { return onMarqueeBeginRef; } }, ...args),
-    onMarqueeBeginRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+    waitPointerRelease: Dynamic = (...args: Dynamic[]): Dynamic => (waitPointerReleaseTravel as Dynamic)({ get canvasRootRef() { return canvasRootRef; } }, ...args),
+    pressArtboardCoverBound: Dynamic = (...args: Dynamic[]): Dynamic => (pressArtboardCover as Dynamic)({ get waitPointerRelease() { return waitPointerRelease; }, get beginMarquee() { return beginMarquee; }, get beginBoardDragBound() { return beginBoardDragBound; }, get beginElementMove() { return beginElementMove; }, get onArmArtboard() { return onArmArtboard; }, get onCoverPick() { return onCoverPick; }, get onCoverPress() { return onCoverPress; }, get onElementPress() { return onElementPress; }, get onFocus() { return onFocus; }, get onPressIntent() { return onPressIntent; }, get onSelectObjects() { return onSelectObjects; }, get onSetMoveCommit() { return onSetMoveCommit; }, get pressIntentIs() { return pressIntentIs; }, get artboardHandlesRef() { return artboardHandlesRef; }, get setHeldCover() { return setHeldCover; }, get selectedTidsByFileRef() { return selectedTidsByFileRef; }, get coverPressRef() { return coverPressRef; }, get selectionRef() { return selectionRef; }, get selectArtboard() { return selectArtboard; }, get onMarqueeBeginRef() { return onMarqueeBeginRef; } }, ...args),
+    onMarqueeBeginRef: Dynamic = (0, React.useRef)(
       onMarqueeBegin,
     );
   onMarqueeBeginRef.current = onMarqueeBegin;
-  let beginMarquee: Dynamic = (...args: Dynamic[]): Dynamic => (beginCanvasMarquee as Dynamic)({ get callback16() { return clientToCanvasPoint; }, get value134() { return trackGesture; }, get value146() { return manifestRef; }, get value19() { return canEditCanvasRef; }, get value2() { return artboardHandlesRef; }, get value216() { return annotationBoxRef; }, get value34() { return cameraRef; }, get value57() { return selectionRef; }, get value61() { return onSelectObjectsRef; }, get value87() { return setIsMarqueeActive; }, get value88() { return marqueeRectRef; }, get value89() { return marqueeElementRef; }, get value9() { return canvasRootRef; }, get value91() { return marqueeStateRef; }, get value92() { return onMarqueeBeginRef; } }, ...args),
-    handleDragEvent: Dynamic = (0, reactVectorToolState_2.useCallback)(
+  let beginMarquee: Dynamic = (...args: Dynamic[]): Dynamic => (beginCanvasMarquee as Dynamic)({ get clientToCanvasPoint() { return clientToCanvasPoint; }, get trackGesture() { return trackGesture; }, get manifestRef() { return manifestRef; }, get canEditCanvasRef() { return canEditCanvasRef; }, get artboardHandlesRef() { return artboardHandlesRef; }, get annotationBoxRef() { return annotationBoxRef; }, get cameraRef() { return cameraRef; }, get selectionRef() { return selectionRef; }, get onSelectObjectsRef() { return onSelectObjectsRef; }, get setIsMarqueeActive() { return setIsMarqueeActive; }, get marqueeRectRef() { return marqueeRectRef; }, get marqueeElementRef() { return marqueeElementRef; }, get canvasRootRef() { return canvasRootRef; }, get marqueeStateRef() { return marqueeStateRef; }, get onMarqueeBeginRef() { return onMarqueeBeginRef; } }, ...args),
+    handleDragEvent: Dynamic = (0, React.useCallback)(
       (file?: Dynamic, dragEvent?: Dynamic): Dynamic => {
         if (dragEvent.type === "drop") {
           let artboard: Dynamic = manifestRef.current.artboards.find(
@@ -932,9 +822,9 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       },
       [onDragEvent, camera],
     ),
-    onHostDragRef: Dynamic = (0, reactVectorToolState_2.useRef)(onHostDrag);
+    onHostDragRef: Dynamic = (0, React.useRef)(onHostDrag);
   onHostDragRef.current = onHostDrag;
-  (0, reactVectorToolState_2.useEffect)((...args: Dynamic[]): Dynamic => (subscribeHostDragPointer as Dynamic)({ get callback16() { return clientToCanvasPoint; }, get streamDragFile() { return streamDragFile; }, get value9() { return canvasRootRef; }, get value94() { return onHostDragRef; } }, ...args), [streamDragFile]);
+  (0, React.useEffect)((...args: Dynamic[]): Dynamic => (subscribeHostDragPointer as Dynamic)({ get clientToCanvasPoint() { return clientToCanvasPoint; }, get streamDragFile() { return streamDragFile; }, get canvasRootRef() { return canvasRootRef; }, get onHostDragRef() { return onHostDragRef; } }, ...args), [streamDragFile]);
   let isEventInsideTarget: Dynamic = (event?: Dynamic): Dynamic =>
       event.target instanceof Node &&
       event.currentTarget.contains(event.target),
@@ -943,77 +833,11 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       heldRef: spaceHeldRef,
       claimPan: claimSpacePan,
     }: Dynamic = useSpacePanKeyboard(),
-    [hoveredFile, setHoveredFile]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
-    titleHoverRef: Dynamic = (0, reactVectorToolState_2.useRef)(null);
-  (0, reactVectorToolState_2.useEffect)(
-    (): Dynamic => (): Dynamic => titleHoverRef.current?.release(),
-    [],
-  );
-  let trackTitleHover: Dynamic = (
-      element?: Dynamic,
-      file?: Dynamic,
-    ): Dynamic => {
-      titleHoverRef.current?.release();
-      let stopTitleHover: Dynamic = (): Dynamic => {
-          (window as Dynamic).removeEventListener(
-            "pointermove",
-            handleTitleHoverMove,
-            true,
-          );
-          (window as Dynamic).removeEventListener(
-            "pointerout",
-            handleTitleHoverMove,
-            true,
-          );
-          titleHoverRef.current = null;
-        },
-        handleTitleHoverMove: Dynamic = (event?: Dynamic): Dynamic => {
-          let hoverTarget: Dynamic =
-            event.type !== "pointerout"
-              ? event.target
-              : event.relatedTarget instanceof HTMLIFrameElement
-                ? event.relatedTarget
-                : null;
-          (event.type === "pointerout"
-            ? event.relatedTarget != null && hoverTarget == null
-            : isAboveTitleRect(
-                event.clientX,
-                event.clientY,
-                element.getBoundingClientRect(),
-              )) ||
-            (stopTitleHover(),
-            setHoveredFile(
-              hoverTarget instanceof Element
-                ? (hoverTarget
-                    .closest("[data-mega-artboard]")
-                    ?.getAttribute("data-mega-artboard") ?? null)
-                : null,
-            ));
-        };
-      (window as Dynamic).addEventListener("pointermove", handleTitleHoverMove, true);
-      (window as Dynamic).addEventListener("pointerout", handleTitleHoverMove, true);
-      titleHoverRef.current = {
-        el: element,
-        file: file,
-        release: stopTitleHover,
-      };
-    },
-    isPointerAboveOtherTitle: Dynamic = (event?: Dynamic, file?: Dynamic): Dynamic => {
-      let current: Dynamic = titleHoverRef.current;
-      return (
-        current != null &&
-        current.file !== file &&
-        isAboveTitleRect(
-          event.clientX,
-          event.clientY,
-          current.el.getBoundingClientRect(),
-        )
-      );
-    },
+    titleHover = useArtboardTitleHover(),
+    { hoveredFile, setHoveredFile, titleHoverRef, trackTitleHover, isPointerAboveOtherTitle } = titleHover,
     [chromeSlots, setChromeSlots]: Dynamic = (0,
-    reactVectorToolState_2.useState)(new Map()),
-    chromeSlotRefs: Dynamic = (0, reactVectorToolState_2.useRef)(new Map()),
+    React.useState)(new Map()),
+    chromeSlotRefs: Dynamic = (0, React.useRef)(new Map()),
     getChromeSlotRef: Dynamic = (file?: Dynamic): Dynamic => {
       let slotRef: Dynamic = chromeSlotRefs.current.get(file);
       slotRef ||
@@ -1028,8 +852,8 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       return slotRef;
     },
     [renamingFile, setRenamingFile]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
-    renameCancelledRef: Dynamic = (0, reactVectorToolState_2.useRef)(false),
+    React.useState)(null),
+    renameCancelledRef: Dynamic = (0, React.useRef)(false),
     startRename: Dynamic = (file?: Dynamic): Dynamic => {
       renameCancelledRef.current = false;
       setRenamingFile(file);
@@ -1046,15 +870,15 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
         onCanvasMenu?.(menuTarget, menuPoint);
       },
     ),
-    [deferredContextClick]: Dynamic = (0, reactVectorToolState_2.useState)(
+    [deferredContextClick]: Dynamic = (0, React.useState)(
       (): Dynamic =>
         createDeferredPointerClick(
           (menuPoint?: Dynamic, menuTarget?: Dynamic): Dynamic =>
             handleCanvasMenu(menuTarget, menuPoint),
         ),
     ),
-    scrimRightClickRef: Dynamic = (0, reactVectorToolState_2.useRef)(null);
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
+    scrimRightClickRef: Dynamic = (0, React.useRef)(null);
+  (0, React.useEffect)((): Dynamic => {
     let recordScrimPointerDown: Dynamic = (event?: Dynamic): Dynamic => {
       scrimRightClickRef.current =
         event.button === 2 &&
@@ -1075,303 +899,41 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       );
   }, []);
   let [artboardPanel, setArtboardPanel]: Dynamic = (0,
-  reactVectorToolState_2.useState)(null);
+  React.useState)(null);
   artboardPanel &&
     !manifest.artboards.some(
       (artboard?: Dynamic): Dynamic => artboard.file === artboardPanel.file,
     ) &&
     setArtboardPanel(null);
   let [quickActionsState, setQuickActionsState]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
-    [cropSession, setCropSession]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
-    cropSessionRef: Dynamic = (0, reactVectorToolState_2.useRef)(cropSession);
-  cropSessionRef.current = cropSession;
+    React.useState)(null);
+  let cropState = useImageCropState(),
+    { cropSession, setCropSession } = cropState;
   let activeCropElement: Dynamic = useActiveCropElement(),
-    [, setRenderTick]: Dynamic = (0, reactVectorToolState_2.useState)(0),
-    forceRender: Dynamic = (0, reactVectorToolState_2.useCallback)(
+    [, setRenderTick]: Dynamic = (0, React.useState)(0),
+    forceRender: Dynamic = (0, React.useCallback)(
       (): Dynamic => setRenderTick((count?: Dynamic): Dynamic => count + 1),
       [],
-    ),
-    findPictureElements: Dynamic = (noteId?: Dynamic): Dynamic => {
-      let pictureBody: Dynamic = canvasRootRef.current?.querySelector(
-          '[data-testid="mega-shape-body-' + noteId + '"]',
-        ),
-        pictureImage: Dynamic = pictureBody?.matches("img, video")
-          ? pictureBody
-          : pictureBody?.querySelector("img, video");
-      return pictureBody &&
-        pictureImage &&
-        pictureImage.dataset.megaPicture === "" &&
-        mediaNaturalDimensions(pictureImage)
-        ? {
-            img: pictureImage,
-            body: pictureBody,
-          }
-        : null;
-    },
-    isCropFrameChanged: Dynamic = (session?: Dynamic): Dynamic =>
-      session.local.x !== 0 ||
-      session.local.y !== 0 ||
-      session.local.w !== session.pad0.w ||
-      session.local.h !== session.pad0.h,
-    cropAnnotationFrame: Dynamic = (session?: Dynamic): Dynamic => {
-      if (!isCropFrameChanged(session)) return null;
-      let cropFrame: Dynamic = rotatedCropFrame(
-        session.pad0,
-        (session.rot * Math.PI) / 180,
-        session.local,
-      );
-      return {
-        x: cropFrame.x - session.edge.l,
-        y: cropFrame.y - session.edge.t,
-        w: cropFrame.w + session.edge.l + session.edge.r,
-        h: cropFrame.h + session.edge.t + session.edge.b,
-      };
-    },
-    beginImageCrop: Dynamic = (annotationId?: Dynamic): Dynamic => {
-      if (!findPictureElements(annotationId)) return;
-      let flipCheckAnnotation: Dynamic = (manifestRef.current.annotations ?? []).find(
-        (item?: Dynamic): Dynamic => item.id === annotationId,
-      );
-      if (flipCheckAnnotation && imageFlipCss(flipCheckAnnotation))
-        return void onSetMoveSay?.(CropDoesNotWorkWhileThisMessage);
-      (0, reactDomVectorToolState.flushSync)(blurBeforeCrop);
-      let imageAnnotation: Dynamic = (manifestRef.current.annotations ?? []).find(
-          (item?: Dynamic): Dynamic => item.id === annotationId,
-        ),
-        picture: Dynamic = findPictureElements(annotationId);
-      if (imageAnnotation?.kind !== "image" || !picture) return;
-      let naturalSize: Dynamic = mediaNaturalDimensions(
-          picture.img,
-        ),
-        edge: Dynamic = {
-          l: picture.body.clientLeft,
-          t: picture.body.clientTop,
-          r:
-            imageAnnotation.w - picture.body.clientLeft - picture.body.clientWidth,
-          b:
-            imageAnnotation.h - picture.body.clientTop - picture.body.clientHeight,
-        },
-        localFrame: Dynamic = {
-          x: 0,
-          y: 0,
-          w: picture.body.clientWidth,
-          h: picture.body.clientHeight,
-        },
-        imageStyle: Dynamic = getComputedStyle(picture.img),
-        initialCrop: Dynamic =
-          imageAnnotation.crop ??
-          cropFromObjectStyles(localFrame, naturalSize, {
-            fit: imageStyle.objectFit,
-            pos: parseObjectPosition(imageStyle.objectPosition),
-            box: null,
-          });
-      setCropSession({
-        id: annotationId,
-        src: imageAnnotation.src,
-        natural: naturalSize,
-        rot: annotationRotation(imageAnnotation),
-        pad0: {
-          x: imageAnnotation.x + edge.l,
-          y: imageAnnotation.y + edge.t,
-          w: localFrame.w,
-          h: localFrame.h,
-        },
-        edge: edge,
-        local: localFrame,
-        live: initialCrop,
-        before: initialCrop,
-      });
-    },
-    finishImageCrop: Dynamic = useLatestCallback(
-      (shouldCommit?: Dynamic): Dynamic => {
-        let current: Dynamic = cropSessionRef.current;
-        if (!current) return;
-        cropSessionRef.current = null;
-        setCropSession(null);
-        let cropTarget: Dynamic = (manifestRef.current.annotations ?? []).find(
-            (item?: Dynamic): Dynamic => item.id === current.id,
-          ),
-          normalizedCrop: Dynamic = normalizeCenteredImageCrop(
-            current.local,
-            current.natural,
-            current.live,
-          ),
-          isFrameChanged: Dynamic = isCropFrameChanged(current);
-        if (
-          !shouldCommit ||
-          cropTarget?.kind !== "image" ||
-          cropTarget.src !== current.src ||
-          (!isFrameChanged &&
-            sameImageCrop(
-              normalizedCrop,
-              normalizeCenteredImageCrop(
-                current.pad0,
-                current.natural,
-                current.before,
-              ),
-            ))
-        )
-          return;
-        let { "object-position": objectPositionUnused, ...cssRest }: Dynamic =
-            cropTarget.css ?? {},
-          frameUpdate: Dynamic = cropAnnotationFrame(current);
-        updateAnnotation(
-          current.id,
-          (source?: Dynamic): Dynamic =>
-            source.kind === "image"
-              ? updateAnnotationCrop(
-                  {
-                    ...updateAnnotationCss(source, {
-                      ...cssRest,
-                      "object-fit": "cover",
-                    }),
-                    ...frameUpdate,
-                  },
-                  normalizedCrop,
-                )
-              : source,
-          true,
-        );
-        announce(
-          normalizedCrop || isFrameChanged ? "Cropped." : uiMessage("canvas.interactionLayer.cropRemoved"),
-        );
-      },
-    ),
-    cropAnnotation: Dynamic = cropSession
-      ? (manifest.annotations ?? []).find(
-          (item?: Dynamic): Dynamic => item.id === cropSession.id,
-        )
-      : undefined,
-    shouldCancelCrop: Dynamic =
-      cropSession !== null &&
-      (!canEditCanvas ||
-        cropAnnotation?.kind !== "image" ||
-        cropAnnotation.src !== cropSession.src),
-    shouldCommitCrop: Dynamic =
-      cropSession !== null &&
-      (singleSelectedNoteId !== cropSession.id ||
-        supportsClickPlacement(armedTool) ||
-        armedTool === "draw" ||
-        fullscreenFile != null);
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
-    shouldCancelCrop ? finishImageCrop(false) : shouldCommitCrop && finishImageCrop(true);
-  }, [shouldCancelCrop, shouldCommitCrop, finishImageCrop]);
-  let [isGestureActive, setIsGestureActive]: Dynamic = (0,
-    reactVectorToolState_2.useState)(false),
-    [isCanvasInert, setIsCanvasInert]: Dynamic = (0,
-    reactVectorToolState_2.useState)(false),
-    isCanvasInertRef: Dynamic = (0, reactVectorToolState_2.useRef)(isCanvasInert);
-  isCanvasInertRef.current = isCanvasInert;
-  let isPanBlanketActive: Dynamic = spaceHeld || (armedTool === "hand" && !isCanvasInert),
-    activeGesturesRef: Dynamic = (0, reactVectorToolState_2.useRef)(new Set()),
-    isMouseDownRef: Dynamic = (0, reactVectorToolState_2.useRef)(false),
-    onHostGesturingRef: Dynamic = (0, reactVectorToolState_2.useRef)(
-      onHostGesturing,
     );
-  onHostGesturingRef.current = onHostGesturing;
-  let syncFramesInert: Dynamic = (): Dynamic => {
-      let isGesturing: Dynamic = activeGesturesRef.current.size > 0 || isMouseDownRef.current;
-      canvasRootRef.current?.toggleAttribute("data-mega-frames-inert", isGesturing);
-      onHostGesturingRef.current?.(isGesturing);
-    },
-    gestureStartRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    trackGesture: Dynamic = useLatestCallback(
-      (gestureKind?: Dynamic, isActive?: Dynamic): Dynamic => {
-        let current: Dynamic = activeGesturesRef.current;
-        isActive &&
-          current.size === 0 &&
-          (gestureStartRef.current = performance.now());
-        isActive ? current.add(gestureKind) : current.delete(gestureKind);
-        current.size === 0 && (gestureStartRef.current = null);
-        setIsGestureActive(current.size > 0);
-        syncFramesInert();
-      },
-    ),
-    handleModifierKey: Dynamic = (0, reactVectorToolState_2.useCallback)(
-      (
-        modifierEvent?: Dynamic,
-        modifierKey?: Dynamic,
-        isModifierHeld?: Dynamic,
-        isFromFrame?: Dynamic,
-      ): Dynamic => {
-        activeGesturesRef.current.size > 0 ||
-          (isFromFrame && !isModifierHeld && (document as Dynamic).hasFocus()) ||
-          schedulePrimaryModifierHeld(isModifierHeld);
-      },
-      [],
-    ),
-    trackPointerGesture: Dynamic = (
-      gestureKind?: Dynamic,
-      buttonMask: Dynamic = 0,
-    ): Dynamic => {
-      let handleGestureMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
-        buttonMask === 2 && deferredContextClick.move(moveEvent);
-        moveEvent.pointerType !== "touch" &&
-          (moveEvent.buttons & buttonMask) === 0 &&
-          endGesture(moveEvent);
-      };
-      buttonMask === 2 && suppressNativeContextMenu(true);
-      let endGesture: Dynamic = (endEvent?: Dynamic): Dynamic => {
-        (window as Dynamic).removeEventListener("pointerup", endGesture);
-        (window as Dynamic).removeEventListener("pointercancel", endGesture);
-        buttonMask &&
-          (window as Dynamic).removeEventListener("pointermove", handleGestureMove);
-        buttonMask === 2 && suppressNativeContextMenu(false);
-        buttonMask === 2 && deferredContextClick.end(endEvent.type !== "pointercancel");
-        trackGesture(gestureKind, false);
-        gestureKind === "pan" &&
-          canvasRootRef.current?.removeAttribute("data-mega-grabbing");
-        gestureKind === "frame-drag" && endBoardDragRef.current(endEvent.pointerId);
-      };
-      (window as Dynamic).addEventListener("pointerup", endGesture);
-      (window as Dynamic).addEventListener("pointercancel", endGesture);
-      buttonMask &&
-        (window as Dynamic).addEventListener("pointermove", handleGestureMove);
-    };
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
-    let setMouseDown: Dynamic = (isDown?: Dynamic): Dynamic => {
-        isMouseDownRef.current = isDown;
-        syncFramesInert();
-      },
-      releaseMouse: Dynamic = (): Dynamic => setMouseDown(false),
-      handleWindowPointerDown: Dynamic = (event?: Dynamic): Dynamic => {
-        event.pointerType === "mouse" &&
-          event.button === 0 &&
-          setMouseDown(true);
-      },
-      handleWindowBlur: Dynamic = (): Dynamic => {
-        (document as Dynamic).hasFocus() || releaseMouse();
-      };
-    (window as Dynamic).addEventListener("pointerdown", handleWindowPointerDown, true);
-    (window as Dynamic).addEventListener("pointerup", releaseMouse, true);
-    (window as Dynamic).addEventListener("pointercancel", releaseMouse, true);
-    (window as Dynamic).addEventListener("contextmenu", releaseMouse, true);
-    (window as Dynamic).addEventListener("blur", handleWindowBlur);
-    return (): Dynamic => {
-      (window as Dynamic).removeEventListener(
-        "pointerdown",
-        handleWindowPointerDown,
-        true,
-      );
-      (window as Dynamic).removeEventListener("pointerup", releaseMouse, true);
-      (window as Dynamic).removeEventListener(
-        "pointercancel",
-        releaseMouse,
-        true,
-      );
-      (window as Dynamic).removeEventListener(
-        "contextmenu",
-        releaseMouse,
-        true,
-      );
-      (window as Dynamic).removeEventListener("blur", handleWindowBlur);
-    };
-  }, []);
+  let { findPictureElements, cropAnnotationFrame, beginImageCrop, finishImageCrop, cropAnnotation } =
+    useImageCropLifecycle({
+      cropState, canvasRootRef, manifest,
+      getCurrentManifest: (): Dynamic => manifestRef.current,
+      updateAnnotation: (...args: Dynamic[]): Dynamic => updateAnnotation(...args),
+      onSetMoveSay, canEditCanvas, singleSelectedNoteId, armedTool, fullscreenFile,
+    });
+  let {
+    isGestureActive, isCanvasInert, setIsCanvasInert, isCanvasInertRef,
+    activeGesturesRef, gestureStartRef, trackGesture, handleModifierKey,
+    trackPointerGesture,
+  }: Dynamic = useCanvasGestures({
+    canvasRootRef, onHostGesturing, deferredContextClick,
+    endBoardDrag: (pointerId?: Dynamic): Dynamic => endBoardDragRef.current(pointerId),
+  });
+  let isPanBlanketActive: Dynamic = spaceHeld || (armedTool === "hand" && !isCanvasInert);
   let [isGestureStreaming, setIsGestureStreaming]: Dynamic = (0,
-    reactVectorToolState_2.useState)(false),
-    streamTimerRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
+    React.useState)(false),
+    streamTimerRef: Dynamic = (0, React.useRef)(null),
     handleGestureStream: Dynamic = useLatestCallback(
       (file?: Dynamic, isStreaming?: Dynamic): Dynamic => {
         file === focusedFile &&
@@ -1382,34 +944,34 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
           setIsGestureStreaming(isStreaming));
       },
     );
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
+  (0, React.useEffect)((): Dynamic => {
     setIsGestureStreaming(false);
     streamTimerRef.current != null &&
       (clearTimeout(streamTimerRef.current), (streamTimerRef.current = null));
   }, [focusedFile]);
   let [textEditState, setTextEditState]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
+    React.useState)(null),
     handleTextEditState: Dynamic = useLatestCallback(
       (file?: Dynamic, editState?: Dynamic): Dynamic => {
         file === focusedFile && setTextEditState(editState);
       },
     );
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
+  (0, React.useEffect)((): Dynamic => {
     setTextEditState(null);
   }, [focusedFile]);
-  (0, reactVectorToolState_2.useLayoutEffect)((): Dynamic => {
+  (0, React.useLayoutEffect)((): Dynamic => {
     for (let stripElement of (canvasRootRef.current?.querySelectorAll(
       "[data-mega-selection-strip]",
     ) ?? []) as Dynamic)
       getSessionStripScrollRow(stripElement).scrollLeft = 0;
   }, [elementSelection?.identity, singleSelectedNoteId, textEditState != null, quickActionsState]);
-  let hintId: Dynamic = (0, reactVectorToolState_2.useId)(),
+  let hintId: Dynamic = (0, React.useId)(),
     keyboardInsideFile: Dynamic = keyboardController?.inside ?? null,
     shouldYieldEscape: Dynamic = useLatestCallback(
       (): Dynamic =>
         (armedTool != null && armedTool !== "select") || isGestureStreaming,
     );
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
+  (0, React.useEffect)((): Dynamic => {
     let suppressEscapeRepeat: Dynamic = (event?: Dynamic): Dynamic => {
       event.key !== "Escape" ||
         !event.repeat ||
@@ -1421,11 +983,11 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
     return (): Dynamic =>
       (window as Dynamic).removeEventListener("keydown", suppressEscapeRepeat, true);
   }, []);
-  let manifestRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+  let manifestRef: Dynamic = (0, React.useRef)(
     manifest,
   );
   manifestRef.current = manifest;
-  let frameSizesRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+  let frameSizesRef: Dynamic = (0, React.useRef)(
       new Map(),
     ),
     stableFrameSize: Dynamic = (spec?: Dynamic): Dynamic => {
@@ -1439,8 +1001,8 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       frameSizesRef.current.set(spec.file, state);
       return state;
     },
-    lastPointerRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    pendingInsertRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
+    lastPointerRef: Dynamic = (0, React.useRef)(null),
+    pendingInsertRef: Dynamic = (0, React.useRef)(null),
     trackPointerOver: Dynamic = (event?: Dynamic): Dynamic => {
       let isFrameTarget: Dynamic =
           event.target instanceof Element &&
@@ -1531,7 +1093,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
               ? [...replacerValue.entries()]
               : replacerValue,
     ),
-    stableSeedRef: Dynamic = (0, reactVectorToolState_2.useRef)({
+    stableSeedRef: Dynamic = (0, React.useRef)({
       key: quickPropsSeedKey,
       seed: quickPropsSeed,
     });
@@ -1605,16 +1167,16 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
           });
       },
     ),
-    resolveInsertionPoint: Dynamic = (0, reactVectorToolState_2.useCallback)(
-      (...args: Dynamic[]): Dynamic => (resolvePointerInsertionPoint as Dynamic)({ get callback11() { return isHandToolActive; }, get callback16() { return clientToCanvasPoint; }, get value146() { return manifestRef; }, get value148() { return lastPointerRef; }, get value182() { return focusedFileRef; }, get value183() { return enteredFileRef; }, get value55() { return fullscreenFileRef; }, get value56() { return playingFileRef; }, get value9() { return canvasRootRef; }, get value96() { return spaceHeldRef; } }, ...args),
+    resolveInsertionPoint: Dynamic = (0, React.useCallback)(
+      (...args: Dynamic[]): Dynamic => (resolvePointerInsertionPoint as Dynamic)({ get isHandToolActive() { return isHandToolActive; }, get clientToCanvasPoint() { return clientToCanvasPoint; }, get manifestRef() { return manifestRef; }, get lastPointerRef() { return lastPointerRef; }, get focusedFileRef() { return focusedFileRef; }, get enteredFileRef() { return enteredFileRef; }, get fullscreenFileRef() { return fullscreenFileRef; }, get playingFileRef() { return playingFileRef; }, get canvasRootRef() { return canvasRootRef; }, get spaceHeldRef() { return spaceHeldRef; } }, ...args),
       [],
     ),
-    getPastePoint: Dynamic = (0, reactVectorToolState_2.useCallback)(
+    getPastePoint: Dynamic = (0, React.useCallback)(
       (): Dynamic => resolveInsertionPoint("content"),
       [resolveInsertionPoint],
     ),
     getArtboardLandingPoint: Dynamic = (0,
-    reactVectorToolState_2.useCallback)((): Dynamic => {
+    React.useCallback)((): Dynamic => {
       let current: Dynamic = lastPointerRef.current,
         canvasRoot: Dynamic = canvasRootRef.current,
         focusedArtboardFile: Dynamic = focusedFileRef.current;
@@ -1671,11 +1233,11 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
   props.pastePointRef && (props.pastePointRef.current = getPastePoint);
   props.artboardLandingRef &&
     (props.artboardLandingRef.current = getArtboardLandingPoint);
-  let pasteImages: Dynamic = (0, reactVectorToolState_2.useCallback)(
-      (...args: Dynamic[]): Dynamic => (placePastedImagesOnCanvas as Dynamic)({ get camera() { return camera; }, get onImageDrop() { return onImageDrop; }, get value146() { return manifestRef; }, get value177() { return getPastePoint; }, get value55() { return fullscreenFileRef; }, get value57() { return selectionRef; }, get value9() { return canvasRootRef; } }, ...args),
+  let pasteImages: Dynamic = (0, React.useCallback)(
+      (...args: Dynamic[]): Dynamic => (placePastedImagesOnCanvas as Dynamic)({ get camera() { return camera; }, get onImageDrop() { return onImageDrop; }, get manifestRef() { return manifestRef; }, get getPastePoint() { return getPastePoint; }, get fullscreenFileRef() { return fullscreenFileRef; }, get selectionRef() { return selectionRef; }, get canvasRootRef() { return canvasRootRef; } }, ...args),
       [onImageDrop, getPastePoint, camera],
     ),
-    dropVideos: Dynamic = (0, reactVectorToolState_2.useCallback)(
+    dropVideos: Dynamic = (0, React.useCallback)(
       (file?: Dynamic, videos?: Dynamic, dropContext?: Dynamic): Dynamic => {
         let artboard: Dynamic = manifestRef.current.artboards.find(
           (item?: Dynamic): Dynamic => item.file === file,
@@ -1709,7 +1271,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       },
       [onImageDrop, camera],
     ),
-    resolvePreviewUrl: Dynamic = (0, reactVectorToolState_2.useCallback)(
+    resolvePreviewUrl: Dynamic = (0, React.useCallback)(
       (source?: Dynamic): Dynamic =>
         resolveImagePreviewUrl(source, doc.content().files),
       [doc],
@@ -1731,75 +1293,31 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
         updateMeta,
       );
     },
-    focusedFileRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+    focusedFileRef: Dynamic = (0, React.useRef)(
       focusedFile,
     );
   focusedFileRef.current = focusedFile;
-  let enteredFileRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+  let enteredFileRef: Dynamic = (0, React.useRef)(
     enteredFile,
   );
   enteredFileRef.current = enteredFile;
-  let livePinsRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+  let livePinsRef: Dynamic = (0, React.useRef)(
     livePins,
   );
   livePinsRef.current = livePins;
-  let inUseFilesRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+  let inUseFilesRef: Dynamic = (0, React.useRef)(
     inUseFiles,
   );
   inUseFilesRef.current = inUseFiles;
-  let recentPreviewsRef: Dynamic = (0, reactVectorToolState_2.useRef)([]),
-    [maxInteractivePreviewCount]: Dynamic = (0, reactVectorToolState_2.useState)(
+  let recentPreviewsRef: Dynamic = (0, React.useRef)([]),
+    [maxInteractivePreviewCount]: Dynamic = (0, React.useState)(
       maxInteractivePreviews,
     ),
-    [maxMountedPreviewCount]: Dynamic = (0, reactVectorToolState_2.useState)(
+    [maxMountedPreviewCount]: Dynamic = (0, React.useState)(
       maxMountedPreviews,
-    ),
-    [linkedArtboards, setLinkedArtboards]: Dynamic = (0,
-    reactVectorToolState_2.useState)(
-      (): Dynamic => getLinkedArtboards(doc.content().files),
-    ),
-    pendingContentRef: Dynamic = (0, reactVectorToolState_2.useRef)({}),
-    linkedRefreshTimerRef: Dynamic = (0, reactVectorToolState_2.useRef)(undefined),
-    scheduleLinkedRefresh: Dynamic = (): Dynamic => {
-      clearTimeout(linkedRefreshTimerRef.current);
-      linkedRefreshTimerRef.current = setTimeout((): Dynamic => {
-        linkedRefreshTimerRef.current = undefined;
-        let nextLinked: Dynamic = getLinkedArtboards({
-          ...doc.content().files,
-          ...pendingContentRef.current,
-        });
-        setLinkedArtboards(
-          (current?: Dynamic): Dynamic =>
-            samePreviewFiles(current, nextLinked) ? current : nextLinked,
-        );
-      }, 150);
-    };
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
-    pendingContentRef.current = {};
-    scheduleLinkedRefresh();
-    let unsubscribeDoc: Dynamic = doc.subscribe((): Dynamic => {
-      pendingContentRef.current = {};
-      headerThemeRequestedRef.current.clear();
-      scheduleLinkedRefresh();
-    });
-    return (): Dynamic => {
-      unsubscribeDoc();
-      clearTimeout(linkedRefreshTimerRef.current);
-      linkedRefreshTimerRef.current = undefined;
-    };
-  }, [doc]);
-  npm_useEventListener_bc(
-    "dc-update",
-    (event?: Dynamic): Dynamic => {
-      let componentFile: Dynamic = resolveComponentFile(
-        doc.content().files,
-        event.detail,
-      );
-      componentFile != null &&
-        ((pendingContentRef.current[componentFile] = event.detail.content), scheduleLinkedRefresh());
-    },
-  );
-  let outlineWithComponents: Dynamic = (0, reactVectorToolState_2.useMemo)(
+    );
+  let linkedArtboards = useLinkedArtboards(doc, headerThemeRequestedRef);
+  let outlineWithComponents: Dynamic = (0, React.useMemo)(
       (): Dynamic =>
         outlineArtboards
           ? {
@@ -1808,233 +1326,16 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
             }
           : null,
       [outlineArtboards, linkedArtboards],
-    ),
-    touchRecentPreview: Dynamic = (file?: Dynamic): Dynamic => {
-      let others: Dynamic = recentPreviewsRef.current.filter(
-        (item?: Dynamic): Dynamic => item !== file,
-      );
-      others.unshift(file);
-      recentPreviewsRef.current = others.slice(0, maxMountedPreviewCount);
-    },
-    mountedFilesRef: Dynamic = (0, reactVectorToolState_2.useRef)(new Set()),
-    previewVisibleTimesRef: Dynamic = (0, reactVectorToolState_2.useRef)(new Map()),
-    cachedViewRectRef: Dynamic = (0, reactVectorToolState_2.useRef)(undefined),
-    previewScaleRef: Dynamic = (0, reactVectorToolState_2.useRef)(undefined),
-    expiryTimerRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    getViewRect: Dynamic = (): Dynamic => {
-      let cameraState: Dynamic = cameraRef.current.get(),
-        current: Dynamic = canvasRootRef.current,
-        viewWidth: Dynamic = current?.clientWidth || 1200,
-        viewHeight: Dynamic = current?.clientHeight || 800,
-        toolbarHeight: Dynamic = current
-          ? toolbarOverlayHeight(current)
-          : 0;
-      return {
-        x: cameraState.x,
-        y: cameraState.y + toolbarHeight / cameraState.scale,
-        w: viewWidth / cameraState.scale,
-        h: (viewHeight - toolbarHeight) / cameraState.scale,
-      };
-    };
-  (0, reactVectorToolState_2.useLayoutEffect)(
-    (): Dynamic => (
-      artboardBootScheduler.configure({
-        busySince: (): Dynamic => {
-          let current: Dynamic = wheelStartRef.current,
-            gestureStart: Dynamic = gestureStartRef.current;
-          return current == null
-            ? gestureStart
-            : gestureStart == null
-              ? current
-              : Math.min(current, gestureStart);
-        },
-        rank: (file?: Dynamic): Dynamic => {
-          if (
-            (phone && !flag && fullscreenFileRef.current == null
-              ? canEditCanvasRef.current && file === focusedFileRef.current
-              : file === focusedFileRef.current ||
-                file === recentPreviewsRef.current[0]) ||
-            file === fullscreenFileRef.current ||
-            file === playingFileRef.current ||
-            livePinsRef.current?.has(file)
-          )
-            return -1;
-          let artboard: Dynamic = manifestRef.current.artboards.find(
-            (item?: Dynamic): Dynamic => item.file === file,
-          );
-          return artboard
-            ? previewMountPriority(artboard, getViewRect())
-            : 1 / 0;
-        },
-      }),
-      (): Dynamic => artboardBootScheduler.configure(null)
-    ),
-    [],
-  );
-  let previewPickStateRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    hasFullscreenedRef: Dynamic = (0, reactVectorToolState_2.useRef)(false),
-    pickMountedPreviews: Dynamic = (...args: Dynamic[]): Dynamic => (pickMountedArtboardPreviews as Dynamic)({ get callback37() { return getViewRect; }, get options() { return props; }, get phone() { return phone; }, get value130() { return activeGesturesRef; }, get value146() { return manifestRef; }, get value182() { return focusedFileRef; }, get value184() { return livePinsRef; }, get value185() { return inUseFilesRef; }, get value186() { return recentPreviewsRef; }, get value187() { return maxInteractivePreviewCount; }, get value188() { return maxMountedPreviewCount; }, get value19() { return canEditCanvasRef; }, get value194() { return mountedFilesRef; }, get value195() { return previewVisibleTimesRef; }, get value196() { return cachedViewRectRef; }, get value197() { return previewScaleRef; }, get value199() { return previewPickStateRef; }, get value200() { return hasFullscreenedRef; }, get value34() { return cameraRef; }, get value35() { return usesCameraPortal; }, get value55() { return fullscreenFileRef; }, get value56() { return playingFileRef; }, get value57() { return selectionRef; }, get value58() { return mountedPreviewsRef; }, get value62() { return isWheelingRef; }, get value9() { return canvasRootRef; } }, ...args),
-    isViewUnsettledRef: Dynamic = (0, reactVectorToolState_2.useRef)(
-      usesCameraPortal && props.viewSettled === false,
-    ),
-    [mountedFiles, setMountedFiles]: Dynamic = (0,
-    reactVectorToolState_2.useState)(
-      (): Dynamic => (isViewUnsettledRef.current ? new Set() : pickMountedPreviews()),
     );
-  mountedFilesRef.current = mountedFiles;
-  let refreshMountedPreviews: Dynamic = (): Dynamic => {
-      if (isViewUnsettledRef.current) return;
-      let current: Dynamic = fullscreenFileRef.current;
-      current != null && (hasFullscreenedRef.current = true);
-      if (
-        current != null &&
-        mountedFilesRef.current.has(current) &&
-        [...(livePinsRef.current ?? [])].every(
-          (file?: Dynamic): Dynamic => mountedFilesRef.current.has(file),
-        )
-      )
-        return;
-      let now: Dynamic = performance.now(),
-        nextMounted: Dynamic = pickMountedPreviews(now);
-      samePreviewFiles(nextMounted, mountedFilesRef.current) ||
-        setMountedFiles(nextMounted);
-      expiryTimerRef.current != null && clearTimeout(expiryTimerRef.current);
-      let expiryTime: Dynamic =
-        maxMountedPreviewCount > maxInteractivePreviewCount && fullscreenFileRef.current == null
-          ? nextPreviewExpiry(
-              nextMounted,
-              manifestRef.current.artboards,
-              cachedViewRectRef.current ?? getViewRect(),
-              previewVisibleTimesRef.current,
-              now,
-            )
-          : null;
-      expiryTimerRef.current =
-        expiryTime == null
-          ? null
-          : setTimeout(scheduleRefresh, expiryTime - now + 50);
-    },
-    prevLivePinsRef: Dynamic = (0, reactVectorToolState_2.useRef)(undefined),
-    prevFocusedFileRef: Dynamic = (0, reactVectorToolState_2.useRef)(undefined),
-    prevPlayingFileRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    prevFullscreenFileRef: Dynamic = (0, reactVectorToolState_2.useRef)(undefined);
-  (0, reactVectorToolState_2.useLayoutEffect)((): Dynamic => {
-    prevFullscreenFileRef.current !== fullscreenFile &&
-      (usesCameraPortal && fullscreenFile != null && touchRecentPreview(fullscreenFile),
-      (prevFullscreenFileRef.current = fullscreenFile));
-    prevFocusedFileRef.current !== focusedFile &&
-      ((!usesCameraPortal || canEditCanvas) &&
-        prevFocusedFileRef.current != null &&
-        touchRecentPreview(prevFocusedFileRef.current),
-      (!usesCameraPortal || canEditCanvas) && focusedFile != null && touchRecentPreview(focusedFile),
-      (prevFocusedFileRef.current = focusedFile));
-    prevPlayingFileRef.current !== playingFile &&
-      (prevPlayingFileRef.current != null && touchRecentPreview(prevPlayingFileRef.current),
-      playingFile != null && touchRecentPreview(playingFile),
-      (prevPlayingFileRef.current = playingFile));
-    let isMarqueeGesture: Dynamic = activeGesturesRef.current.has("marquee");
-    if (!isMarqueeGesture) {
-      for (let file of selectedArtboards as Dynamic)
-        (!usesCameraPortal || canEditCanvas) &&
-          !mountedPreviewsRef.current.has(file) &&
-          touchRecentPreview(file);
-      mountedPreviewsRef.current = selectedArtboards;
-    }
-    for (let file of (livePins ?? []) as Dynamic)
-      prevLivePinsRef.current?.has(file) || touchRecentPreview(file);
-    prevLivePinsRef.current = livePins;
-    props.viewSettled !== false && (isViewUnsettledRef.current = false);
-    isMarqueeGesture ? scheduleRefresh() : refreshMountedPreviews();
-    for (let file of (isPhoneCanvas
-      ? [canEditCanvas ? focusedFile : null, playingFile, ...(livePins ?? [])]
-      : [
-          focusedFile,
-          fullscreenFile,
-          playingFile,
-          recentPreviewsRef.current[0],
-          ...(livePins ?? []),
-        ]) as Dynamic)
-      artboardBootScheduler.expedite(file);
-  }, [
-    selectedArtboards,
-    manifest.artboards,
-    focusedFile,
-    fullscreenFile,
-    playingFile,
-    livePins,
-    inUseFiles,
-    isMarqueeActive,
-    usesCameraPortal ? props.viewSettled : undefined,
-    usesCameraPortal ? canEditCanvas : undefined,
-  ]);
-  let hasArtboards: Dynamic = manifest.artboards.length > 0,
-    flushUnsettledMount: Dynamic = useLatestCallback((): Dynamic => {
-      isViewUnsettledRef.current && ((isViewUnsettledRef.current = false), refreshMountedPreviews());
-    });
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
-    if (!isViewUnsettledRef.current || !hasArtboards) return;
-    let flushTimer: Dynamic = setTimeout(flushUnsettledMount, 1e3);
-    return (): Dynamic => clearTimeout(flushTimer);
-  }, [hasArtboards, flushUnsettledMount]);
-  let refreshTimerRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    refreshStartRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    busyStartRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    runScheduledRefresh: Dynamic = (): Dynamic => {
-      refreshTimerRef.current = null;
-      if (
-        (isWheelingRef.current || activeGesturesRef.current.size > 0) &&
-        ((busyStartRef.current ??= Date.now()),
-        Date.now() - busyStartRef.current < canvasLongPressDelayMs)
-      ) {
-        refreshStartRef.current = null;
-        refreshTimerRef.current = setTimeout(runScheduledRefresh, 120);
-        return;
-      }
-      busyStartRef.current = null;
-      refreshStartRef.current = null;
-      refreshMountedPreviews();
-    },
-    scheduleRefresh: Dynamic = (): Dynamic => {
-      let now: Dynamic = Date.now();
-      refreshTimerRef.current != null && clearTimeout(refreshTimerRef.current);
-      refreshStartRef.current ??= now;
-      let waited: Dynamic = now - refreshStartRef.current;
-      refreshTimerRef.current = setTimeout(
-        runScheduledRefresh,
-        Math.max(
-          0,
-          Math.min(
-            canvasDragActivationDelayMs,
-            canvasTouchDragActivationDelayMs - waited,
-          ),
-        ),
-      );
-    };
-  (0, reactVectorToolState_2.useEffect)(
-    (): Dynamic => (
-      scheduleRefresh(),
-      camera.subscribe((): Dynamic => {
-        scheduleRefresh();
-        marqueeStateRef.current?.();
-      })
-    ),
-    [camera],
-  );
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
-    let current: Dynamic = canvasRootRef.current,
-      resizeObserver: Dynamic =
-        current && typeof ResizeObserver !== "undefined"
-          ? new ResizeObserver((): Dynamic => scheduleRefresh())
-          : null;
-    current && resizeObserver?.observe(current);
-    return (): Dynamic => {
-      resizeObserver?.disconnect();
-      refreshTimerRef.current != null && clearTimeout(refreshTimerRef.current);
-      expiryTimerRef.current != null && clearTimeout(expiryTimerRef.current);
-    };
-  }, []);
+  let { mountedFiles, refreshMountedPreviews, touchRecentPreview } = usePreviewMountLifecycle({
+    view: { camera, canvasRootRef, cameraRef, usesCameraPortal, isPhoneCanvas, phone, options: props },
+    selection: { selectedArtboards, selectionRef, mountedPreviewsRef, isMarqueeActive, marqueeStateRef },
+    files: { manifest, manifestRef, focusedFile, focusedFileRef, fullscreenFile, fullscreenFileRef, playingFile, playingFileRef, livePins, livePinsRef, inUseFiles, inUseFilesRef, recentPreviewsRef },
+    interaction: { canEditCanvas, canEditCanvasRef, activeGesturesRef, isWheelingRef, wheelStartRef, gestureStartRef },
+    limits: { maxInteractivePreviewCount, maxMountedPreviewCount },
+  });
   let [blockedFiles, setBlockedFiles]: Dynamic = (0,
-    reactVectorToolState_2.useState)((): Dynamic => new Set()),
+    React.useState)((): Dynamic => new Set()),
     handleBlockedChange: Dynamic = useLatestCallback(
       (file?: Dynamic, isBlocked?: Dynamic): Dynamic => {
         setBlockedFiles((files?: Dynamic): Dynamic => {
@@ -2090,7 +1391,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
               measuredNoteSizes[annotation.id]?.h ??
               annotationVisibleBounds(annotation).h,
           },
-    annotationBoxRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+    annotationBoxRef: Dynamic = (0, React.useRef)(
       getAnnotationBox,
     );
   annotationBoxRef.current = getAnnotationBox;
@@ -2112,7 +1413,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
         },
         false,
       ),
-    beginBoardDragBound: Dynamic = (...args: Dynamic[]): Dynamic => (beginBoardDrag as Dynamic)({ get callback30() { return trackPointerGesture; }, get callback47() { return endBoardDrag; }, get manifest() { return manifest; }, get onDuplicateObjects() { return onDuplicateObjects; }, get value134() { return trackGesture; }, get value216() { return annotationBoxRef; }, get value218() { return endBoardDragRef; }, get value219() { return updateBoardDragRef; }, get value67() { return dragSessionRef; } }, ...args),
+    beginBoardDragBound: Dynamic = (...args: Dynamic[]): Dynamic => (beginBoardDrag as Dynamic)({ get trackPointerGesture() { return trackPointerGesture; }, get endBoardDrag() { return endBoardDrag; }, get manifest() { return manifest; }, get onDuplicateObjects() { return onDuplicateObjects; }, get trackGesture() { return trackGesture; }, get annotationBoxRef() { return annotationBoxRef; }, get endBoardDragRef() { return endBoardDragRef; }, get updateBoardDragRef() { return updateBoardDragRef; }, get dragSessionRef() { return dragSessionRef; } }, ...args),
     endBoardDrag: Dynamic = (pointerId?: Dynamic): Dynamic => {
       let current: Dynamic = dragSessionRef.current;
       !current ||
@@ -2150,7 +1451,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
             ctrl: false,
           }));
     },
-    onObjectHoverRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+    onObjectHoverRef: Dynamic = (0, React.useRef)(
       onObjectHover,
     );
   onObjectHoverRef.current = onObjectHover;
@@ -2166,23 +1467,23 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
         );
       onManifestChange(manifestWithDragPositions(artboardPositions, notePositions), false);
     },
-    endBoardDragRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+    endBoardDragRef: Dynamic = (0, React.useRef)(
       endBoardDrag,
     );
   endBoardDragRef.current = endBoardDrag;
   let endBoardDragForEvent: Dynamic = (event?: Dynamic): Dynamic =>
     endBoardDrag(event.pointerId);
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
+  (0, React.useEffect)((): Dynamic => {
     !canEditCanvas &&
       dragSessionRef.current &&
       endBoardDragRef.current(dragSessionRef.current.pointerId);
   }, [canEditCanvas]);
-  let updateBoardDragBound: Dynamic = (...args: Dynamic[]): Dynamic => (updateBoardDrag as Dynamic)({ get callback16() { return clientToCanvasPoint; }, get callback43() { return manifestWithDragPositions; }, get callback44() { return getAnnotationBox; }, get callback48() { return applyDragPositions; }, get camera() { return camera; }, get manifest() { return manifest; }, get onDropObjectInto() { return onDropObjectInto; }, get onDuplicateObjects() { return onDuplicateObjects; }, get onFocus() { return onFocus; }, get onManifestChange() { return onManifestChange; }, get onObjectHover() { return onObjectHover; }, get onSelectObjects() { return onSelectObjects; }, get value134() { return trackGesture; }, get value18() { return canEditCanvas; }, get value67() { return dragSessionRef; }, get value70() { return setSnapGuides; }, get value72() { return setGapGuides; }, get value74() { return setDragPreviewItems; }, get value9() { return canvasRootRef; } }, ...args),
-    updateBoardDragRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+  let updateBoardDragBound: Dynamic = (...args: Dynamic[]): Dynamic => (updateBoardDrag as Dynamic)({ get clientToCanvasPoint() { return clientToCanvasPoint; }, get manifestWithDragPositions() { return manifestWithDragPositions; }, get getAnnotationBox() { return getAnnotationBox; }, get applyDragPositions() { return applyDragPositions; }, get camera() { return camera; }, get manifest() { return manifest; }, get onDropObjectInto() { return onDropObjectInto; }, get onDuplicateObjects() { return onDuplicateObjects; }, get onFocus() { return onFocus; }, get onManifestChange() { return onManifestChange; }, get onObjectHover() { return onObjectHover; }, get onSelectObjects() { return onSelectObjects; }, get trackGesture() { return trackGesture; }, get canEditCanvas() { return canEditCanvas; }, get dragSessionRef() { return dragSessionRef; }, get setSnapGuides() { return setSnapGuides; }, get setGapGuides() { return setGapGuides; }, get setDragPreviewItems() { return setDragPreviewItems; }, get canvasRootRef() { return canvasRootRef; } }, ...args),
+    updateBoardDragRef: Dynamic = (0, React.useRef)(
       updateBoardDragBound,
     );
   updateBoardDragRef.current = updateBoardDragBound;
-  let beginHandedOffBoardDragBound: Dynamic = (...args: Dynamic[]): Dynamic => (beginHandedOffBoardDrag as Dynamic)({ get value146() { return manifestRef; }, get value218() { return endBoardDragRef; }, get value67() { return dragSessionRef; } }, ...args),
+  let beginHandedOffBoardDragBound: Dynamic = (...args: Dynamic[]): Dynamic => (beginHandedOffBoardDrag as Dynamic)({ get manifestRef() { return manifestRef; }, get endBoardDragRef() { return endBoardDragRef; }, get dragSessionRef() { return dragSessionRef; } }, ...args),
     updateSetMoveDrag: Dynamic = (
       setMove?: Dynamic,
       pointerId?: Dynamic,
@@ -2214,20 +1515,20 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
           ),
           true);
     },
-    onSetMoveCommitRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+    onSetMoveCommitRef: Dynamic = (0, React.useRef)(
       onSetMoveCommit,
     );
   onSetMoveCommitRef.current = onSetMoveCommit;
   let [heldCover, setHeldCover]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
-    onSetMoveSayRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+    React.useState)(null),
+    onSetMoveSayRef: Dynamic = (0, React.useRef)(
       onSetMoveSay,
     );
   onSetMoveSayRef.current = onSetMoveSay;
   let [setMoveGhost, setSetMoveGhost]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
-    elementMoveSessionsRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    setMovePiecesRef: Dynamic = (0, reactVectorToolState_2.useRef)(
+    React.useState)(null),
+    elementMoveSessionsRef: Dynamic = (0, React.useRef)(null),
+    setMovePiecesRef: Dynamic = (0, React.useRef)(
       setMovePieces,
     );
   setMovePiecesRef.current = setMovePieces;
@@ -2334,7 +1635,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
         selectedTidsByFile,
         selectedArtboards.size + selectedNotes.size,
       ),
-    hasMultiGroupSelectionRef: Dynamic = (0, reactVectorToolState_2.useRef)(hasMultiGroupSelection);
+    hasMultiGroupSelectionRef: Dynamic = (0, React.useRef)(hasMultiGroupSelection);
   hasMultiGroupSelectionRef.current = hasMultiGroupSelection;
   let beginElementMove: Dynamic = (moveRequest?: Dynamic): Dynamic => {
       let tidsByFile: Dynamic =
@@ -2360,7 +1661,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       Object.values(selectedTidsByFileRef.current ?? {}).some(
         (items?: Dynamic): Dynamic => items.length > 0,
       ),
-    buildObjectPressHandlersBound: Dynamic = (...args: Dynamic[]): Dynamic => (buildObjectPressHandlers as Dynamic)({ get callback46() { return beginBoardDragBound; }, get callback49() { return endBoardDragForEvent; }, get callback50() { return updateBoardDragBound; }, get callback53() { return beginElementMove; }, get callback54() { return hasSelectedElements; }, get onSelectObjects() { return onSelectObjects; }, get onSetMoveCommit() { return onSetMoveCommit; }, get value57() { return selectionRef; } }, ...args),
+    buildObjectPressHandlersBound: Dynamic = (...args: Dynamic[]): Dynamic => (buildObjectPressHandlers as Dynamic)({ get beginBoardDragBound() { return beginBoardDragBound; }, get endBoardDragForEvent() { return endBoardDragForEvent; }, get updateBoardDragBound() { return updateBoardDragBound; }, get beginElementMove() { return beginElementMove; }, get hasSelectedElements() { return hasSelectedElements; }, get onSelectObjects() { return onSelectObjects; }, get onSetMoveCommit() { return onSetMoveCommit; }, get selectionRef() { return selectionRef; } }, ...args),
     enterVectorEdit: Dynamic = (noteId?: Dynamic): Dynamic => {
       let current: Dynamic = selectionRef.current;
       (current.notes.size === 1 &&
@@ -2374,7 +1675,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
         );
       actionsRef.current?.setTool("vector");
     },
-    trackHandleDragGestureBound: Dynamic = (...args: Dynamic[]): Dynamic => (trackHandleDragGesture as Dynamic)({ get callback30() { return trackPointerGesture; }, get value130() { return activeGesturesRef; }, get value134() { return trackGesture; }, get value18() { return canEditCanvas; }, get value19() { return canEditCanvasRef; } }, ...args),
+    trackHandleDragGestureBound: Dynamic = (...args: Dynamic[]): Dynamic => (trackHandleDragGesture as Dynamic)({ get trackPointerGesture() { return trackPointerGesture; }, get activeGesturesRef() { return activeGesturesRef; }, get trackGesture() { return trackGesture; }, get canEditCanvas() { return canEditCanvas; }, get canEditCanvasRef() { return canEditCanvasRef; } }, ...args),
     selectedArtboardSpecs: Dynamic = manifest.artboards.filter(
       (artboard?: Dynamic): Dynamic => selectedArtboards.has(artboard.file),
     ),
@@ -2390,9 +1691,9 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       }),
     isMultiSelection: Dynamic = selectedArtboardSpecs.length + selectedNoteEntries.length > 1,
     [groupTransformPreview, setGroupTransformPreview]: Dynamic = (0,
-    reactVectorToolState_2.useState)(null),
+    React.useState)(null),
     [groupSnapTransforms, setGroupSnapTransforms]: Dynamic = (0,
-    reactVectorToolState_2.useState)([]),
+    React.useState)([]),
     translatedTransform: Dynamic = ((): Dynamic => {
       if (!isMultiSelection || groupSnapTransforms.length === 0) return null;
       let transformMembers: Dynamic = selectionTransformMembers(
@@ -2414,8 +1715,8 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       "	" +
       [...selectedNotes].join(`
 `),
-    selectionKeyRef: Dynamic = (0, reactVectorToolState_2.useRef)(selectionKey);
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
+    selectionKeyRef: Dynamic = (0, React.useRef)(selectionKey);
+  (0, React.useEffect)((): Dynamic => {
     selectionKeyRef.current !== selectionKey &&
       ((selectionKeyRef.current = selectionKey),
       setGroupSnapTransforms(
@@ -2499,8 +1800,8 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
       supportsClickPlacement(armedTool) ||
       armedTool === "draw" ||
       elementGroupBox != null,
-    runSelectionTransform: Dynamic = (...args: Dynamic[]): Dynamic => (runSelectionTransformGesture as Dynamic)({ get callback57() { return trackHandleDragGestureBound; }, get onManifestChange() { return onManifestChange; }, get value146() { return manifestRef; }, get value230() { return selectedArtboardSpecs; }, get value231() { return selectedNoteEntries; }, get value234() { return setGroupTransformPreview; }, get value236() { return setGroupSnapTransforms; }, get value241() { return selectionBox; }, get value242() { return selectionRotation; }, get value70() { return setSnapGuides; } }, ...args),
-    beginGroupResize: Dynamic = (...args: Dynamic[]): Dynamic => (beginSelectionGroupResize as Dynamic)({ get callback45() { return buildSnapReferenceLines; }, get callback58() { return runSelectionTransform; }, get camera() { return camera; }, get selectedArtboards() { return selectedArtboards; }, get selectedNotes() { return selectedNotes; }, get value230() { return selectedArtboardSpecs; }, get value231() { return selectedNoteEntries; }, get value241() { return selectionBox; }, get value242() { return selectionRotation; }, get value243() { return isRotatedSelection; }, get value70() { return setSnapGuides; } }, ...args),
+    runSelectionTransform: Dynamic = (...args: Dynamic[]): Dynamic => (runSelectionTransformGesture as Dynamic)({ get trackHandleDragGestureBound() { return trackHandleDragGestureBound; }, get onManifestChange() { return onManifestChange; }, get manifestRef() { return manifestRef; }, get selectedArtboardSpecs() { return selectedArtboardSpecs; }, get selectedNoteEntries() { return selectedNoteEntries; }, get setGroupTransformPreview() { return setGroupTransformPreview; }, get setGroupSnapTransforms() { return setGroupSnapTransforms; }, get selectionBox() { return selectionBox; }, get selectionRotation() { return selectionRotation; }, get setSnapGuides() { return setSnapGuides; } }, ...args),
+    beginGroupResize: Dynamic = (...args: Dynamic[]): Dynamic => (beginSelectionGroupResize as Dynamic)({ get buildSnapReferenceLines() { return buildSnapReferenceLines; }, get runSelectionTransform() { return runSelectionTransform; }, get camera() { return camera; }, get selectedArtboards() { return selectedArtboards; }, get selectedNotes() { return selectedNotes; }, get selectedArtboardSpecs() { return selectedArtboardSpecs; }, get selectedNoteEntries() { return selectedNoteEntries; }, get selectionBox() { return selectionBox; }, get selectionRotation() { return selectionRotation; }, get isRotatedSelection() { return isRotatedSelection; }, get setSnapGuides() { return setSnapGuides; } }, ...args),
     beginGroupRotate: Dynamic = (handleEvent?: Dynamic, pointerEvent?: Dynamic): Dynamic => {
       if (!selectionBox) return;
       let box: Dynamic = selectionBox,
@@ -2740,8 +2041,8 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
               (event.clientY - bounds.top) / camera.get().scale,
           );
         }}
-        onContextMenu={(...args: Dynamic[]): Dynamic => (openCanvasContextMenu as Dynamic)({ get callback12() { return isContextMenuPointerEvent; }, get callback20() { return isEventInsideTarget; }, get onCanvasMenu() { return onCanvasMenu; }, get value107() { return handleCanvasMenu; }, get value108() { return deferredContextClick; }, get value109() { return scrimRightClickRef; }, get value128() { return isCanvasInertRef; }, get value130() { return activeGesturesRef; }, get value55() { return fullscreenFileRef; } }, ...args)}
-        onPointerDown={(...args: Dynamic[]): Dynamic => (pressCanvasBackground as Dynamic)({ get callback10() { return shouldPanFromTarget; }, get callback13() { return isPanPointerEvent; }, get callback14() { return shouldStartMarquee; }, get callback16() { return clientToCanvasPoint; }, get callback19() { return beginMarquee; }, get callback20() { return isEventInsideTarget; }, get callback30() { return trackPointerGesture; }, get camera() { return camera; }, get manifest() { return manifest; }, get onAddAnnotation() { return onAddAnnotation; }, get onAddPen() { return onAddPen; }, get onAddShape() { return onAddShape; }, get onClearSelection() { return onClearSelection; }, get onDrawArtboard() { return onDrawArtboard; }, get onPlaceBlocked() { return onPlaceBlocked; }, get onPlaceTool() { return onPlaceTool; }, get value108() { return deferredContextClick; }, get value128() { return isCanvasInertRef; }, get value130() { return activeGesturesRef; }, get value134() { return trackGesture; }, get value183() { return enteredFileRef; }, get value19() { return canEditCanvasRef; }, get value213() { return blockedFiles; }, get value55() { return fullscreenFileRef; }, get value78() { return setPointerGhost; }, get value79() { return backgroundPressRef; }, get value81() { return setShapeDraft; }, get value83() { return setFrameDraft; }, get value85() { return armedToolRef; }, get value96() { return spaceHeldRef; } }, ...args)}
+        onContextMenu={(...args: Dynamic[]): Dynamic => (openCanvasContextMenu as Dynamic)({ get isContextMenuPointerEvent() { return isContextMenuPointerEvent; }, get isEventInsideTarget() { return isEventInsideTarget; }, get onCanvasMenu() { return onCanvasMenu; }, get handleCanvasMenu() { return handleCanvasMenu; }, get deferredContextClick() { return deferredContextClick; }, get scrimRightClickRef() { return scrimRightClickRef; }, get isCanvasInertRef() { return isCanvasInertRef; }, get activeGesturesRef() { return activeGesturesRef; }, get fullscreenFileRef() { return fullscreenFileRef; } }, ...args)}
+        onPointerDown={(...args: Dynamic[]): Dynamic => (pressCanvasBackground as Dynamic)({ get shouldPanFromTarget() { return shouldPanFromTarget; }, get isPanPointerEvent() { return isPanPointerEvent; }, get shouldStartMarquee() { return shouldStartMarquee; }, get clientToCanvasPoint() { return clientToCanvasPoint; }, get beginMarquee() { return beginMarquee; }, get isEventInsideTarget() { return isEventInsideTarget; }, get trackPointerGesture() { return trackPointerGesture; }, get camera() { return camera; }, get manifest() { return manifest; }, get onAddAnnotation() { return onAddAnnotation; }, get onAddPen() { return onAddPen; }, get onAddShape() { return onAddShape; }, get onClearSelection() { return onClearSelection; }, get onDrawArtboard() { return onDrawArtboard; }, get onPlaceBlocked() { return onPlaceBlocked; }, get onPlaceTool() { return onPlaceTool; }, get deferredContextClick() { return deferredContextClick; }, get isCanvasInertRef() { return isCanvasInertRef; }, get activeGesturesRef() { return activeGesturesRef; }, get trackGesture() { return trackGesture; }, get enteredFileRef() { return enteredFileRef; }, get canEditCanvasRef() { return canEditCanvasRef; }, get blockedFiles() { return blockedFiles; }, get fullscreenFileRef() { return fullscreenFileRef; }, get setPointerGhost() { return setPointerGhost; }, get backgroundPressRef() { return backgroundPressRef; }, get setShapeDraft() { return setShapeDraft; }, get setFrameDraft() { return setFrameDraft; }, get armedToolRef() { return armedToolRef; }, get spaceHeldRef() { return spaceHeldRef; } }, ...args)}
       >
         <span id={hintId} hidden={true}>
           {PressReturnToGoIntoThisMessage}
@@ -2851,103 +2152,26 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
               }}
             >
               {stackedArtboards.map(({ spec: spec, z: z }: Dynamic): Dynamic => {
-                let isFocused: Dynamic = spec.file === focusedFile,
-                  isSelected: Dynamic = selectedArtboards.has(spec.file),
-                  isFrameless: Dynamic = spec.frameless === true,
-                  isEntered: Dynamic = isFrameless && enteredFile === spec.file,
-                  isEmptyPieces: Dynamic =
-                    isFrameless && (emptyPieces?.has(spec.file) ?? false),
-                  isKeyboardInside: Dynamic = keyboardInsideFile === spec.file,
-                  isComponent: Dynamic = linkedArtboards.has(spec.file),
-                  displayTitle: Dynamic =
-                    spec.title ?? spec.file.replace(/\.dc\.html$/, ""),
-                  tweaksRowHeight: Dynamic =
-                    spec.file === fullscreenFile &&
-                    flag &&
-                    tweakRows?.[spec.file]
-                      ? artboardTweaksRowHeight
-                      : 0,
-                  isPlaying: Dynamic = spec.file === playingFile,
-                  usesFaceOverlay: Dynamic =
-                    !isFrameless &&
-                    isFocused &&
-                    isSelected &&
-                    canEditCanvas &&
-                    !isTouchPointer &&
-                    (armedTool == null || armedTool === "select") &&
-                    fullscreenFile == null,
-                  usesSetOverlay: Dynamic =
-                    !isFrameless &&
-                    isFocused &&
-                    !isSelected &&
-                    canEditCanvas &&
-                    !isTouchPointer &&
-                    (armedTool == null || armedTool === "select") &&
-                    fullscreenFile == null &&
-                    onSetMoveCommit != null &&
-                    (hasMultiGroupSelection || armedEmpty === true),
-                  chromeKind: Dynamic = usesFaceOverlay
-                    ? "face-overlay"
-                    : usesSetOverlay
-                      ? "set-overlay"
-                      : "focus-overlay",
-                  isHeldCover: Dynamic = heldCover === spec.file,
-                  isMountDelayed: Dynamic =
-                    shouldDelayArtboardMount(spec) && !(isFocused && canEditCanvas),
-                  canFocusArtboard: Dynamic = isCanvasInteractive && !isMountDelayed,
-                  shouldShowFocusOverlay: Dynamic =
-                    canFocusArtboard &&
-                    !isPlaying &&
-                    (isFrameless
-                      ? !(isEntered && isFocused)
-                      : !isFocused || usesFaceOverlay || usesSetOverlay || isHeldCover),
-                  aboveDistance: Dynamic =
-                    isFrameless || fullscreenFile != null
-                      ? undefined
-                      : artboardAboveDistances(
-                          manifest.artboards,
-                        ).get(spec.file),
-                  shouldHideTitle: Dynamic = shouldHideArtboardTitle({
-                    phoneCanvas: isPhoneCanvas,
-                    selected: isSelected,
-                    renaming: renamingFile === spec.file,
-                    playing: isPlaying,
-                    tweaksOpen: tweaksOpenFile === spec.file,
-                    armedByTouch: isFocused && isTouchPointer,
-                    hovered: hoveredFile === spec.file,
-                  }),
-                  isLive: Dynamic =
-                    phone && !flag && fullscreenFile != null
-                      ? isPreviewHighlighted(
-                          spec.file,
-                          fullscreenFile,
-                          livePins,
-                        )
-                      : (!usesCameraPortal && manifest.artboards.length <= maxInteractivePreviewCount) ||
-                        mountedFiles.has(spec.file) ||
-                        (isPhoneCanvas
-                          ? spec.file === overBudgetPreviewFile
-                          : isFocused || isPlaying) ||
-                        spec.file === fullscreenFile,
-                  phoneHeaderTheme: Dynamic =
-                    isPhoneCanvas && !isLive && !isFrameless
-                      ? (artboardHeaderThemes.get(spec.file) ?? null)
-                      : null,
-                  hasCoverOverlay: Dynamic =
-                    props.coverFiles?.has(spec.file) === true &&
-                    shouldShowArtboardFaceOverlay({
-                      live: isLive,
-                      blocked: blockedFiles.has(spec.file),
-                      frameless: isFrameless,
-                      focused: isFocused,
-                      selected: isSelected,
-                      playing: isPlaying,
-                      fullWindow: fullscreenFile != null,
-                    }),
-                  noticeContent: Dynamic =
-                    fullscreenFile === spec.file
-                      ? (artboardNotice?.(spec.file) ?? null)
-                      : null;
+                const {
+                  isFocused, isSelected, isFrameless, isEntered, isEmptyPieces, isKeyboardInside,
+                  isComponent, displayTitle, isPlaying, usesFaceOverlay,
+                  usesSetOverlay, chromeKind, isHeldCover, isMountDelayed, canFocusArtboard,
+                  shouldShowFocusOverlay, aboveDistance, shouldHideTitle, isLive, phoneHeaderTheme,
+                  hasCoverOverlay, noticeContent,
+                }: Dynamic = deriveArtboardSlot({
+                  spec, focusedFile, selectedArtboards, enteredFile, emptyPieces, keyboardInsideFile,
+                  linkedArtboards, fullscreenFile,
+                  playingFile, canEditCanvas, isTouchPointer, armedTool, armedEmpty,
+                  hasSetMoveCommit: onSetMoveCommit != null, hasMultiGroupSelection, heldCover,
+                  isCanvasInteractive, shouldDelayArtboardMount,
+                  manifestArtboardCount: manifest.artboards.length,
+                  getAboveDistance: (file: string): Dynamic =>
+                    artboardAboveDistances(manifest.artboards).get(file),
+                  isPhoneCanvas, phone, renamingFile,
+                  tweaksOpenFile, hoveredFile, livePins, usesCameraPortal,
+                  maxInteractivePreviewCount, mountedFiles, overBudgetPreviewFile,
+                  artboardHeaderThemes, coverFiles: props.coverFiles, blockedFiles, artboardNotice,
+                });
                 return (() => {
                   const _Component = "div";
                   const _props = {
@@ -2999,28 +2223,12 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
                             height: fullscreenBox.h,
                           }
                         : {}),
-                      ...(tweaksRowHeight && !fullscreenBox
-                        ? {
-                            top: spec.y - tweaksRowHeight,
-                            height: spec.h + tweaksRowHeight,
-                          }
-                        : {}),
                     },
                     onPointerEnter: (event?: Dynamic): Dynamic => {
-                      (!(event.target instanceof HTMLIFrameElement) &&
-                        isPointerAboveOtherTitle(event, spec.file)) ||
-                        (titleHoverRef.current?.release(), setHoveredFile(spec.file));
+                      enterArtboardSlot(event, { spec, titleHoverRef, setHoveredFile, isPointerAboveOtherTitle });
                     },
                     onPointerLeave: (event?: Dynamic): Dynamic => {
-                      isPointerAboveOtherTitle(event, spec.file) ||
-                        (aboveDistance !== undefined &&
-                        isAboveTitleRect(
-                          event.clientX,
-                          event.clientY,
-                          event.currentTarget.getBoundingClientRect(),
-                        )
-                          ? trackTitleHover(event.currentTarget, spec.file)
-                          : setHoveredFile(null));
+                      leaveArtboardSlot(event, { spec, aboveDistance, isPointerAboveOtherTitle, trackTitleHover, setHoveredFile });
                     },
                     children: [
                       aboveDistance !== undefined && shouldHideTitle && (
@@ -3064,96 +2272,11 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
                             marginBottom: "calc(4px * var(--mega-inv-scale))",
                           }}
                           onPointerDown={(event?: Dynamic): Dynamic => {
-                            if (
-                              event.button !== 0 ||
-                              renamingFile === spec.file ||
-                              !isEventInsideTarget(event)
-                            )
-                              return;
-                            if (
-                              isTouchSelectionStart(
-                                event.pointerType,
-                                isSelected,
-                              )
-                            ) {
-                              let touchShiftKey: Dynamic = event.shiftKey,
-                                shouldFocusAfterSelect: Dynamic =
-                                  !touchShiftKey && !event.altKey;
-                              watchPointerRelease(
-                                event.nativeEvent,
-                                (): Dynamic => {
-                                  selectArtboard(spec.file, touchShiftKey);
-                                  canFocusArtboard &&
-                                    shouldFocusAfterSelect &&
-                                    !isPlaying &&
-                                    !artboardPicking &&
-                                    onFocus(spec.file);
-                                },
-                              );
-                              return;
-                            }
-                            let shiftKey: Dynamic = event.shiftKey;
-                            if (
-                              onSetMoveCommit &&
-                              event.pointerType !== "touch" &&
-                              !shiftKey &&
-                              !event.altKey &&
-                              hasBoardSelection(
-                                selectionRef.current,
-                                {
-                                  file: spec.file,
-                                },
-                              ) &&
-                              hasSelectedElements()
-                            ) {
-                              let shouldFocusOnStill: Dynamic =
-                                canFocusArtboard && !isPlaying && !artboardPicking;
-                              beginElementMove({
-                                pointerId: event.pointerId,
-                                captureEl: event.currentTarget,
-                                clientX: event.clientX,
-                                clientY: event.clientY,
-                                leader: {
-                                  canvas: {
-                                    file: spec.file,
-                                  },
-                                },
-                                stillAction: (): Dynamic => {
-                                  onSelectObjects(
-                                    boardSelectionItems({
-                                      file: spec.file,
-                                    }),
-                                    "replace",
-                                  );
-                                  shouldFocusOnStill && onFocus(spec.file);
-                                },
-                                armWait: null,
-                                heldCover: null,
-                              });
-                              return;
-                            }
-                            let pressDecision: Dynamic = selectionPointerDownDecision(
-                              selectionRef.current,
-                              {
-                                file: spec.file,
-                              },
-                              shiftKey,
-                            );
-                            pressDecision.selectNow &&
-                              selectArtboard(spec.file, shiftKey);
-                            beginBoardDragBound(
-                              event,
-                              {
-                                file: spec.file,
-                              },
-                              spec,
-                              pressDecision.carry,
-                              pressDecision.click,
-                              canFocusArtboard &&
-                                !shiftKey &&
-                                !isPlaying &&
-                                !artboardPicking,
-                            );
+                            pressArtboardTitle(event, {
+                              spec, renamingFile, isSelected, canFocusArtboard, isPlaying, artboardPicking,
+                              selectionRef, onSetMoveCommit, onFocus, onSelectObjects, isEventInsideTarget,
+                              selectArtboard, hasSelectedElements, beginElementMove, beginBoardDragBound,
+                            });
                           }}
                           onPointerMove={(event?: Dynamic): Dynamic =>
                             updateBoardDragBound(event, false)
@@ -3165,12 +2288,10 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
                             endBoardDragForEvent(event)
                           }
                           onDoubleClick={(event?: Dynamic): Dynamic => {
-                            isEventInsideTarget(event) &&
-                              onRenameArtboard &&
-                              canEditCanvas &&
-                              ((renameCancelledRef.current = false),
-                              isKeyboardInside && keyboardController?.onAbandon(),
-                              setRenamingFile(spec.file));
+                            startArtboardRename(event, {
+                              spec, isEventInsideTarget, onRenameArtboard, canEditCanvas, renameCancelledRef,
+                              isKeyboardInside, keyboardController, setRenamingFile,
+                            });
                           }}
                         >
                           {renamingFile === spec.file ? (<input
@@ -3194,23 +2315,10 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
                                 event.stopPropagation()
                               }
                               onKeyDown={(event?: Dynamic): Dynamic => {
-                                event.stopPropagation();
-                                event.key === "Enter"
-                                  ? event.currentTarget.blur()
-                                  : event.key === "Escape" &&
-                                    ((renameCancelledRef.current = true),
-                                    setRenamingFile(null));
+                                pressRenameKey(event, { renameCancelledRef, setRenamingFile });
                               }}
                               onBlur={(event?: Dynamic): Dynamic => {
-                                if (renameCancelledRef.current) {
-                                  renameCancelledRef.current = false;
-                                  return;
-                                }
-                                setRenamingFile(null);
-                                onRenameArtboard?.(
-                                  spec.file,
-                                  event.currentTarget.value,
-                                );
+                                commitArtboardRename(event, { spec, renameCancelledRef, setRenamingFile, onRenameArtboard });
                               }}
                             />) : (<ArtboardFocusOverlay
                               file={spec.file}
@@ -3372,164 +2480,9 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
                                   resizeHandle?: Dynamic,
                                   pointerEvent?: Dynamic,
                                 ): Dynamic => {
-                                  let state: Dynamic = {
-                                      x: spec.x,
-                                      y: spec.y,
-                                      w: spec.w,
-                                      h: spec.h,
-                                    },
-                                    [items, startClientY]: Dynamic = [
-                                      pointerEvent.clientX,
-                                      pointerEvent.clientY,
-                                    ],
-                                    resizeKeys: Dynamic = [
-                                      ...(resizeHandle.x
-                                        ? resizeHandle.x === "left"
-                                          ? ["x", "w"]
-                                          : ["w"]
-                                        : []),
-                                      ...(resizeHandle.y
-                                        ? resizeHandle.y === "top"
-                                          ? ["y", "h"]
-                                          : ["h"]
-                                        : []),
-                                    ],
-                                    isCornerResize: Dynamic =
-                                      resizeHandle.x !== null && resizeHandle.y !== null,
-                                    snapReferenceLines: Dynamic = buildSnapReferenceLines({
-                                      files: [spec.file],
-                                    }),
-                                    computeResize: Dynamic = (
-                                      moveEvent?: Dynamic,
-                                    ): Dynamic => {
-                                      let scale: Dynamic = camera.get().scale,
-                                        pointerDelta: Dynamic = {
-                                          dx:
-                                            (moveEvent.clientX - items) / scale,
-                                          dy:
-                                            (moveEvent.clientY - startClientY) / scale,
-                                        },
-                                        snapped: Dynamic =
-                                          moveEvent.metaKey || moveEvent.ctrlKey
-                                            ? {
-                                                ...pointerDelta,
-                                                guides: [],
-                                              }
-                                            : snapResize(
-                                                state,
-                                                resizeHandle,
-                                                pointerDelta.dx,
-                                                pointerDelta.dy,
-                                                snapReferenceLines,
-                                                canvasTouchDragThresholdPixels /
-                                                  scale,
-                                              ),
-                                        [deltaX, deltaY]: Dynamic = [
-                                          Math.round(snapped.dx),
-                                          Math.round(snapped.dy),
-                                        ],
-                                        rawBox: Dynamic =
-                                          isCornerResize && moveEvent.shiftKey
-                                            ? resizeRectKeepingAspect(
-                                                state,
-                                                resizeHandle,
-                                                deltaX,
-                                                deltaY,
-                                                minimumArtboardSize,
-                                                maximumArtboardSize,
-                                              )
-                                            : resizeRect(
-                                                state,
-                                                resizeHandle,
-                                                deltaX,
-                                                deltaY,
-                                                minimumArtboardSize,
-                                                maximumArtboardSize,
-                                              ),
-                                        roundedBox: Dynamic =
-                                          isCornerResize && moveEvent.shiftKey
-                                            ? {
-                                                x: Math.round(rawBox.x),
-                                                y: Math.round(rawBox.y),
-                                                w: Math.round(rawBox.w),
-                                                h: Math.round(rawBox.h),
-                                              }
-                                            : rawBox;
-                                      return {
-                                        box: roundedBox,
-                                        guides: activeResizeGuides(
-                                          roundedBox,
-                                          resizeHandle,
-                                          snapped.guides,
-                                        ),
-                                      };
-                                    },
-                                    pickResizeKeys: Dynamic = (
-                                      box?: Dynamic,
-                                    ): Dynamic =>
-                                      Object.fromEntries(
-                                        resizeKeys.map(
-                                          (key?: Dynamic): Dynamic => [
-                                            key,
-                                            box[key],
-                                          ],
-                                        ),
-                                      ),
-                                    applyArtboardBox: Dynamic = (
-                                      boxChange?: Dynamic,
-                                      changeMeta?: Dynamic,
-                                    ): Dynamic => {
-                                      let currentArtboard: Dynamic =
-                                        manifestRef.current.artboards.find(
-                                          (item?: Dynamic): Dynamic =>
-                                            item.file === spec.file,
-                                        );
-                                      onManifestChange(
-                                        replaceDesignArtboards(
-                                          manifestRef.current,
-                                          manifestRef.current.artboards.map(
-                                            (item?: Dynamic): Dynamic =>
-                                              item.file === spec.file
-                                                ? {
-                                                    ...item,
-                                                    ...pickResizeKeys(boxChange),
-                                                  }
-                                                : item,
-                                          ),
-                                        ),
-                                        changeMeta,
-                                        changeMeta && currentArtboard
-                                          ? {
-                                              resizedFrom: {
-                                                file: spec.file,
-                                                x: currentArtboard.x,
-                                                y: currentArtboard.y,
-                                                w: currentArtboard.w,
-                                                h: currentArtboard.h,
-                                                ...pickResizeKeys(state),
-                                              },
-                                            }
-                                          : undefined,
-                                      );
-                                    },
-                                    currentBox: Dynamic = state;
-                                  trackHandleDragGestureBound(pointerEvent, "resize", {
-                                    live: (moveEvent?: Dynamic): Dynamic => {
-                                      let resizeResult: Dynamic =
-                                        computeResize(moveEvent);
-                                      currentBox = resizeResult.box;
-                                      applyArtboardBox(currentBox, false);
-                                      setSnapGuides(
-                                        resizeResult.guides.length > 0
-                                          ? resizeResult.guides
-                                          : null,
-                                      );
-                                    },
-                                    commit: (): Dynamic =>
-                                      applyArtboardBox(currentBox, true),
-                                    revert: (): Dynamic =>
-                                      applyArtboardBox(state, false),
-                                    end: (): Dynamic => setSnapGuides(null),
+                                  beginArtboardResize(resizeHandle, pointerEvent, {
+                                    spec, camera, manifestRef, onManifestChange, buildSnapReferenceLines,
+                                    trackHandleDragGestureBound, setSnapGuides,
                                   });
                                 }}
                               />
@@ -3542,7 +2495,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
                           a={spec}
                           fullscreenFile={fullscreenFile ?? null}
                           fullscreenBox={fullscreenBox ?? null}
-                          rowH={tweaksRowHeight}
+                          rowH={0}
                           overlay={props.artboardOverlay}
                         />
                       ),
@@ -3558,13 +2511,13 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
                           style={
                             fullscreenFile === spec.file && fullscreenBox
                               ? {
-                                  top: tweaksRowHeight,
+                                  top: 0,
                                   width: fullscreenBox.w,
-                                  height: fullscreenBox.h - tweaksRowHeight,
+                                  height: fullscreenBox.h,
                                   ...PickerRuntimeScriptTAppAccentConfig,
                                 }
                               : {
-                                  top: tweaksRowHeight,
+                                  top: 0,
                                   width: spec.w,
                                   height: spec.h,
                                   ...PickerRuntimeScriptTAppAccentConfig,
@@ -3625,18 +2578,13 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
                           expanded={spec.file === fullscreenFile}
                           onPagePointer={props.onPagePointer}
                           onPageScroll={props.onPageScroll}
-                          migrated={flag}
+                          migrated={false}
                           frameless={isFrameless}
                           onContentHull={onContentHull}
                           box={
                             fullscreenFile === spec.file && fullscreenBox
                               ? fullscreenBox
                               : stableFrameSize(spec)
-                          }
-                          boxRowH={
-                            fullscreenFile === spec.file && fullscreenBox
-                              ? tweaksRowHeight
-                              : 0
                           }
                           component={isComponent}
                           chromeSlot={chromeSlots.get(spec.file) ?? null}
@@ -3805,24 +2753,10 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
                                               "repeating-linear-gradient(135deg, transparent 0 10px, var(--om-bg-canvas) 10px 20px)",
                                           }
                                   }
-                                  onPointerDown={(
-                                    event?: Dynamic,
-                                  ): Dynamic => {
-                                    if (
-                                      event.button !== 0 ||
-                                      armedToolRef.current === "note" ||
-                                      armedToolRef.current === "frame" ||
-                                      supportsClickPlacement(
-                                        armedToolRef.current,
-                                      )
-                                    )
-                                      return;
-                                    let shiftKey: Dynamic = event.shiftKey;
-                                    watchPointerRelease(
-                                      event.nativeEvent,
-                                      (): Dynamic =>
-                                        activateArtboardPreview(spec.file, shiftKey),
-                                    );
+                                  onPointerDown={(event?: Dynamic): Dynamic => {
+                                    pressOffloadedPreview(event, {
+                                      spec, armedToolRef, supportsClickPlacement, activateArtboardPreview,
+                                    });
                                   }}
                                   {...buttonKeyboardActivation(
                                     (event?: Dynamic): Dynamic =>
@@ -3963,239 +2897,32 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
                                             event.shiftKey || event.metaKey,
                                           ));
                                   },
-                                  onDoubleClick: (
-                                    event?: Dynamic,
-                                  ): Dynamic => {
-                                    canEditCanvas &&
-                                      onEnterPiece?.(
-                                        spec.file,
-                                        event.nativeEvent.offsetX,
-                                        event.nativeEvent.offsetY,
-                                      );
+                                  onDoubleClick: (event?: Dynamic): Dynamic => {
+                                    doubleClickFramelessFace(event, { spec, canEditCanvas, onEnterPiece });
                                   },
                                 }
                               : {
-                                  onDoubleClick: (
-                                    event?: Dynamic,
-                                  ): Dynamic => {
-                                    if (
-                                      event.shiftKey ||
-                                      event.metaKey ||
-                                      event.ctrlKey ||
-                                      event.altKey ||
-                                      !onFaceDoubleClick ||
-                                      !canEditCanvas ||
-                                      isTouchPointer ||
-                                      (armedTool != null &&
-                                        armedTool !== "select") ||
-                                      fullscreenFile != null
-                                    )
-                                      return;
-                                    let state: Dynamic = {
-                                      x: event.nativeEvent.offsetX,
-                                      y: event.nativeEvent.offsetY,
-                                    };
-                                    (
-                                      coverPressRef.current ?? Promise.resolve()
-                                    ).then(
-                                      (): Dynamic =>
-                                        onFaceDoubleClick(spec.file, state),
-                                    );
+                                  onDoubleClick: (event?: Dynamic): Dynamic => {
+                                    doubleClickArtboardFace(event, {
+                                      spec, onFaceDoubleClick, canEditCanvas, isTouchPointer, armedTool,
+                                      fullscreenFile, coverPressRef,
+                                    });
                                   },
                                 })}
                             onPointerDown={(event?: Dynamic): Dynamic => {
-                              cancelHoverCurtain();
-                              if (event.button !== 0) return;
-                              let shiftKey: Dynamic = event.shiftKey;
-                              if (isFrameless) {
-                                if (
-                                  isTouchSelectionStart(
-                                    event.pointerType,
-                                    isSelected,
-                                  )
-                                ) {
-                                  watchPointerRelease(
-                                    event.nativeEvent,
-                                    (): Dynamic =>
-                                      selectArtboard(spec.file, shiftKey),
-                                  );
-                                  return;
-                                }
-                                if (
-                                  onSetMoveCommit &&
-                                  event.pointerType !== "touch" &&
-                                  !shiftKey &&
-                                  !event.altKey &&
-                                  hasBoardSelection(
-                                    selectionRef.current,
-                                    {
-                                      file: spec.file,
-                                    },
-                                  ) &&
-                                  hasSelectedElements()
-                                ) {
-                                  beginElementMove({
-                                    pointerId: event.pointerId,
-                                    captureEl: event.currentTarget,
-                                    clientX: event.clientX,
-                                    clientY: event.clientY,
-                                    leader: {
-                                      canvas: {
-                                        file: spec.file,
-                                      },
-                                    },
-                                    stillAction: (): Dynamic =>
-                                      selectArtboard(spec.file, false),
-                                    armWait: null,
-                                    heldCover: null,
-                                  });
-                                  return;
-                                }
-                                let pressDecision: Dynamic = selectionPointerDownDecision(
-                                  selectionRef.current,
-                                  {
-                                    file: spec.file,
-                                  },
-                                  shiftKey,
-                                );
-                                pressDecision.selectNow &&
-                                  selectArtboard(spec.file, shiftKey);
-                                beginBoardDragBound(
-                                  event,
-                                  {
-                                    file: spec.file,
-                                  },
-                                  spec,
-                                  pressDecision.carry,
-                                  pressDecision.click,
-                                );
-                                return;
-                              }
-                              let facePointerAction: Dynamic = canvasFacePointerAction({
-                                  editing: canEditCanvas,
-                                  pointerType: event.pointerType,
-                                  tool: armedTool,
-                                  fullscreen: fullscreenFile != null,
-                                  faceOverlay: usesFaceOverlay,
-                                }),
-                                isDeepKey: Dynamic = isPrimaryModifierEvent(event),
-                                state: Dynamic = {
-                                  x: event.nativeEvent.offsetX,
-                                  y: event.nativeEvent.offsetY,
-                                },
-                                pressFace: Dynamic = (
-                                  isStill?: Dynamic,
-                                ): Dynamic => {
-                                  facePointerAction === "pick" &&
-                                  !(usesSetOverlay && event.pointerType === "touch")
-                                    ? pressArtboardCoverBound(event, spec, {
-                                        toggle: shiftKey,
-                                        deepKey: isDeepKey,
-                                        still: isStill,
-                                        face: usesFaceOverlay,
-                                        kind: usesFaceOverlay
-                                          ? "face"
-                                          : usesSetOverlay
-                                            ? "set"
-                                            : "focus",
-                                        at: state,
-                                      })
-                                    : facePointerAction === "leave"
-                                      ? selectArtboard(spec.file, true)
-                                      : (selectArtboard(spec.file, shiftKey),
-                                        shiftKey || onFocus(spec.file));
-                                };
-                              if (event.pointerType === "touch") {
-                                watchPointerRelease(
-                                  event.nativeEvent,
-                                  (): Dynamic => pressFace(true),
-                                );
-                                return;
-                              }
-                              if (
-                                canEditCanvas &&
-                                isSelected &&
-                                !shiftKey &&
-                                !event.altKey &&
-                                !isDeepKey &&
-                                fullscreenFile == null
-                              ) {
-                                if (onSetMoveCommit && hasSelectedElements()) {
-                                  beginElementMove({
-                                    pointerId: event.pointerId,
-                                    captureEl: event.currentTarget,
-                                    clientX: event.clientX,
-                                    clientY: event.clientY,
-                                    leader: {
-                                      canvas: {
-                                        file: spec.file,
-                                      },
-                                    },
-                                    stillAction: (): Dynamic =>
-                                      pressFace(true),
-                                    armWait: null,
-                                    heldCover: null,
-                                  });
-                                  return;
-                                }
-                                dragReleaseRef.current = (): Dynamic =>
-                                  pressFace(true);
-                                beginBoardDragBound(
-                                  event,
-                                  {
-                                    file: spec.file,
-                                  },
-                                  spec,
-                                  selectionRef.current,
-                                  null,
-                                );
-                                return;
-                              }
-                              if (
-                                event.altKey &&
-                                !shiftKey &&
-                                !usesSetOverlay &&
-                                onDuplicateObjects &&
-                                fullscreenFile == null
-                              ) {
-                                let altPressDecision: Dynamic = selectionPointerDownDecision(
-                                  selectionRef.current,
-                                  {
-                                    file: spec.file,
-                                  },
-                                  false,
-                                );
-                                altPressDecision.selectNow &&
-                                  selectArtboard(spec.file, false);
-                                beginBoardDragBound(
-                                  event,
-                                  {
-                                    file: spec.file,
-                                  },
-                                  spec,
-                                  altPressDecision.carry,
-                                  altPressDecision.click,
-                                );
-                                return;
-                              }
-                              pressFace(false);
+                              pressArtboardFace(event, {
+                                spec, isFrameless, isSelected, usesFaceOverlay, usesSetOverlay, canEditCanvas,
+                                armedTool, fullscreenFile, onSetMoveCommit, onDuplicateObjects, onFocus,
+                                selectionRef, dragReleaseRef, cancelHoverCurtain, hasSelectedElements,
+                                beginElementMove, beginBoardDragBound, selectArtboard, pressArtboardCoverBound,
+                              });
                             }}
                             onPointerMove={(event?: Dynamic): Dynamic => {
                               updateBoardDragBound(event, false);
                               isFrameless || scheduleHoverCurtain(spec.file, event);
                             }}
                             onPointerUp={(event?: Dynamic): Dynamic => {
-                              let [dragSession, releaseHandler]: Dynamic = [
-                                dragSessionRef.current,
-                                dragReleaseRef.current,
-                              ];
-                              dragReleaseRef.current = null;
-                              updateBoardDragBound(event, true);
-                              releaseHandler &&
-                                dragSession &&
-                                dragSession.pointerId === event.pointerId &&
-                                !dragSession.live &&
-                                releaseHandler();
+                              releaseArtboardFace(event, { dragSessionRef, dragReleaseRef, updateBoardDragBound });
                             }}
                             onPointerCancel={(event?: Dynamic): Dynamic => {
                               dragReleaseRef.current = null;
@@ -4217,7 +2944,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
               })}
             </div>
           </ConditionalPortal>
-          {fullscreenFile == null && (((...args: Dynamic[]): Dynamic => (renderCanvasObjects as Dynamic)({ get armedTool() { return armedTool; }, get callback27() { return cropAnnotationFrame; }, get callback28() { return beginImageCrop; }, get callback30() { return trackPointerGesture; }, get callback34() { return updateAnnotation; }, get callback45() { return buildSnapReferenceLines; }, get callback5() { return registerTransformTarget; }, get callback55() { return buildObjectPressHandlersBound; }, get callback56() { return enterVectorEdit; }, get callback6() { return isAnnotationUnder; }, get camera() { return camera; }, get entry() { return entry; }, get manifest() { return manifest; }, get selectedNotes() { return selectedNotes; }, get value11() { return setMeasuredNoteSizes; }, get value113() { return setQuickActionsState; }, get value114() { return cropSession; }, get value119() { return forceRender; }, get value126() { return isCanvasInert; }, get value134() { return trackGesture; }, get value18() { return canEditCanvas; }, get value181() { return resolvePreviewUrl; }, get value232() { return isMultiSelection; }, get value35() { return usesCameraPortal; }, get value46() { return chromePortalHost; }, get value50() { return objectsPortalHost; }, get value59() { return singleSelectedNoteId; }, get value70() { return setSnapGuides; } }, ...args))())}
+          {fullscreenFile == null && (((...args: Dynamic[]): Dynamic => (renderCanvasObjects as Dynamic)({ get armedTool() { return armedTool; }, get cropAnnotationFrame() { return cropAnnotationFrame; }, get beginImageCrop() { return beginImageCrop; }, get trackPointerGesture() { return trackPointerGesture; }, get updateAnnotation() { return updateAnnotation; }, get buildSnapReferenceLines() { return buildSnapReferenceLines; }, get registerTransformTarget() { return registerTransformTarget; }, get buildObjectPressHandlersBound() { return buildObjectPressHandlersBound; }, get enterVectorEdit() { return enterVectorEdit; }, get isAnnotationUnder() { return isAnnotationUnder; }, get camera() { return camera; }, get entry() { return entry; }, get manifest() { return manifest; }, get selectedNotes() { return selectedNotes; }, get setMeasuredNoteSizes() { return setMeasuredNoteSizes; }, get setQuickActionsState() { return setQuickActionsState; }, get cropSession() { return cropSession; }, get forceRender() { return forceRender; }, get isCanvasInert() { return isCanvasInert; }, get trackGesture() { return trackGesture; }, get canEditCanvas() { return canEditCanvas; }, get resolvePreviewUrl() { return resolvePreviewUrl; }, get isMultiSelection() { return isMultiSelection; }, get usesCameraPortal() { return usesCameraPortal; }, get chromePortalHost() { return chromePortalHost; }, get objectsPortalHost() { return objectsPortalHost; }, get singleSelectedNoteId() { return singleSelectedNoteId; }, get setSnapGuides() { return setSnapGuides; } }, ...args))())}
           {artboardNotice &&
             fullscreenFile == null && (manifest.artboards.map((artboard?: Dynamic): Dynamic => {
               let notice: Dynamic = artboardNotice(artboard.file);
@@ -4286,7 +3013,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
               </div>,
             ))}
           {cropSession &&
-            cropAnnotation?.kind === "image" && (((...args: Dynamic[]): Dynamic => (renderImageCropEditor as Dynamic)({ get callback27() { return cropAnnotationFrame; }, get callback30() { return trackPointerGesture; }, get callback7() { return wrapInCameraPortal; }, get value114() { return cropSession; }, get value115() { return setCropSession; }, get value120() { return finishImageCrop; }, get value121() { return cropAnnotation; }, get value134() { return trackGesture; }, get value181() { return resolvePreviewUrl; } }, ...args))())}
+            cropAnnotation?.kind === "image" && (((...args: Dynamic[]): Dynamic => (renderImageCropEditor as Dynamic)({ get cropAnnotationFrame() { return cropAnnotationFrame; }, get trackPointerGesture() { return trackPointerGesture; }, get wrapInCameraPortal() { return wrapInCameraPortal; }, get cropSession() { return cropSession; }, get setCropSession() { return setCropSession; }, get finishImageCrop() { return finishImageCrop; }, get cropAnnotation() { return cropAnnotation; }, get trackGesture() { return trackGesture; }, get resolvePreviewUrl() { return resolvePreviewUrl; } }, ...args))())}
           {notePlacement && armedTool === "note" && (<div
               data-testid={"mega-note-ghost"}
               aria-hidden={"true"}
@@ -4606,7 +3333,7 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
           fullscreenFile == null &&
           singleSelectedNoteId != null &&
           !supportsClickPlacement(armedTool) &&
-          armedTool !== "draw" && (((...args: Dynamic[]): Dynamic => (renderAnnotationQuickActions as Dynamic)({ get callback25() { return findPictureElements; }, get callback28() { return beginImageCrop; }, get callback34() { return updateAnnotation; }, get callback44() { return getAnnotationBox; }, get manifest() { return manifest; }, get onAnnotationCss() { return onAnnotationCss; }, get onDeleteAnnotation() { return onDeleteAnnotation; }, get onOpenPropsPanel() { return onOpenPropsPanel; }, get onReplaceAnnotationMedia() { return onReplaceAnnotationMedia; }, get value112() { return quickActionsState; }, get value114() { return cropSession; }, get value120() { return finishImageCrop; }, get value15() { return inspectorPosture; }, get value162() { return openPropsPanel; }, get value17() { return isInspectorSheet; }, get value18() { return canEditCanvas; }, get value181() { return resolvePreviewUrl; }, get value21() { return isPhoneCanvas; }, get value59() { return singleSelectedNoteId; }, get value8() { return composeNoteComment; } }, ...args))())}
+          armedTool !== "draw" && (((...args: Dynamic[]): Dynamic => (renderAnnotationQuickActions as Dynamic)({ get findPictureElements() { return findPictureElements; }, get beginImageCrop() { return beginImageCrop; }, get updateAnnotation() { return updateAnnotation; }, get getAnnotationBox() { return getAnnotationBox; }, get manifest() { return manifest; }, get onAnnotationCss() { return onAnnotationCss; }, get onDeleteAnnotation() { return onDeleteAnnotation; }, get onOpenPropsPanel() { return onOpenPropsPanel; }, get onReplaceAnnotationMedia() { return onReplaceAnnotationMedia; }, get quickActionsState() { return quickActionsState; }, get cropSession() { return cropSession; }, get finishImageCrop() { return finishImageCrop; }, get inspectorPosture() { return inspectorPosture; }, get openPropsPanel() { return openPropsPanel; }, get isInspectorSheet() { return isInspectorSheet; }, get canEditCanvas() { return canEditCanvas; }, get resolvePreviewUrl() { return resolvePreviewUrl; }, get isPhoneCanvas() { return isPhoneCanvas; }, get singleSelectedNoteId() { return singleSelectedNoteId; }, get composeNoteComment() { return composeNoteComment; } }, ...args))())}
         <R_useCanvasComments
           manifest={manifest}
           annBox={getAnnotationBox}
@@ -4654,352 +3381,11 @@ function CanvasInteractionLayer(props?: Dynamic): Dynamic {
             textEdit: textEditState,
             editDoor: quickProps?.onEditText != null,
             commentDoor: composeElementComment != null,
-          }) && (((...args: Dynamic[]): Dynamic => (renderSelectionQuickActions as Dynamic)({ get crossFile() { return crossFile; }, get elementSelection() { return elementSelection; }, get flag() { return flag; }, get fullscreenBox() { return fullscreenBox; }, get fullscreenFile() { return fullscreenFile; }, get manifest() { return manifest; }, get quickProps() { return quickProps; }, get seed() { return seed; }, get tweakRows() { return tweakRows; }, get value140() { return textEditState; }, get value15() { return inspectorPosture; }, get value16() { return hasTouchToolbar; }, get value162() { return openPropsPanel; }, get value163() { return applyQuickProps; }, get value164() { return handleQuickGesture; }, get value165() { return handleTextFormat; }, get value166() { return editQuickText; }, get value167() { return replaceQuickImage; }, get value168() { return cropQuickImage; }, get value169() { return replaceQuickVideo; }, get value17() { return isInspectorSheet; }, get value170() { return findQuickVideo; }, get value171() { return linkQuickElement; }, get value172() { return composeElementCommentLatest; }, get value7() { return composeElementComment; } }, ...args))())}
+          }) && (((...args: Dynamic[]): Dynamic => (renderSelectionQuickActions as Dynamic)({ get crossFile() { return crossFile; }, get elementSelection() { return elementSelection; }, get manifest() { return manifest; }, get quickProps() { return quickProps; }, get seed() { return seed; }, get textEditState() { return textEditState; }, get inspectorPosture() { return inspectorPosture; }, get hasTouchToolbar() { return hasTouchToolbar; }, get openPropsPanel() { return openPropsPanel; }, get applyQuickProps() { return applyQuickProps; }, get handleQuickGesture() { return handleQuickGesture; }, get handleTextFormat() { return handleTextFormat; }, get editQuickText() { return editQuickText; }, get replaceQuickImage() { return replaceQuickImage; }, get cropQuickImage() { return cropQuickImage; }, get replaceQuickVideo() { return replaceQuickVideo; }, get isInspectorSheet() { return isInspectorSheet; }, get findQuickVideo() { return findQuickVideo; }, get linkQuickElement() { return linkQuickElement; }, get composeElementCommentLatest() { return composeElementCommentLatest; }, get composeElementComment() { return composeElementComment; } }, ...args))())}
       </div>
     </ViewportContext.Provider>
   );
 }
-
-/** 拖动画板或便签时随指针移动与松开运行：超过阈值后计算吸附与参考线、更新位置并检测放入目标，松开时提交到画布清单（或复制、放入画板），未移动则按单击处理选中与聚焦。 */
-function updateBoardDrag(deps: { readonly callback16: Dynamic; readonly callback43: Dynamic; readonly callback44: Dynamic; readonly callback48: Dynamic; readonly camera: Dynamic; readonly manifest: Dynamic; readonly onDropObjectInto: Dynamic; readonly onDuplicateObjects: Dynamic; readonly onFocus: Dynamic; readonly onManifestChange: Dynamic; readonly onObjectHover: Dynamic; readonly onSelectObjects: Dynamic; readonly value134: Dynamic; readonly value18: Dynamic; readonly value67: Dynamic; readonly value70: Dynamic; readonly value72: Dynamic; readonly value74: Dynamic; readonly value9: Dynamic }, dragEvent?: Dynamic,
-      isRelease?: Dynamic): Dynamic {
-      let current: Dynamic = deps.value67.current;
-      if (
-        !current ||
-        dragEvent.pointerId !== current.pointerId ||
-        (current.setMove && dragEvent.fromSetMove !== true)
-      )
-        return;
-      isRelease &&
-        ((deps.value67.current = null),
-        current.unlisten(),
-        deps.value134("frame-drag", false));
-      if (!current.live) {
-        if (
-          Math.hypot(
-            dragEvent.clientX - current.startX,
-            dragEvent.clientY - current.startY,
-          ) <
-          (dragEvent.pointerType === "touch"
-            ? 10
-            : canvasDragThresholdPixels)
-        ) {
-          isRelease &&
-            (current.click &&
-              deps.onSelectObjects(
-                boardSelectionItems(current.ref),
-                current.click === "toggle" ? "toggle" : "replace",
-              ),
-            current.focus &&
-              "file" in current.ref &&
-              deps.onFocus(current.ref.file));
-          return;
-        }
-        if (!deps.value18) return;
-        current.live = true;
-      }
-      current.last = {
-        clientX: dragEvent.clientX,
-        clientY: dragEvent.clientY,
-        metaKey: dragEvent.metaKey,
-        ctrlKey: dragEvent.ctrlKey,
-        pointerType: dragEvent.pointerType,
-      };
-      let isCopying: Dynamic = dragEvent.altKey && deps.onDuplicateObjects != null;
-      isCopying !== current.alt &&
-        (isCopying ? deps.callback48(current.set, current.notes) : deps.value74(null),
-        (current.alt = isCopying));
-      let { scale: zoomScale }: Dynamic = deps.camera.get(),
-        {
-          dx: deltaX,
-          dy: deltaY,
-          guides: snapGuideLines,
-          gaps: snapGaps,
-        }: Dynamic = snapCanvasDrag(
-          (dragEvent.clientX - current.startX) / zoomScale,
-          (dragEvent.clientY - current.startY) / zoomScale,
-          current.snap
-            ? {
-                box: current.snap.box,
-                lines: isCopying
-                  ? current.snap.copyLines
-                  : current.snap.moveLines,
-                boxes: isCopying
-                  ? current.snap.copyStill
-                  : current.snap.moveStill,
-              }
-            : null,
-          canvasTouchDragThresholdPixels / zoomScale,
-          dragEvent.metaKey || dragEvent.ctrlKey,
-        );
-      deps.value70(isRelease || snapGuideLines.length === 0 ? null : snapGuideLines);
-      deps.value72(isRelease || snapGaps.length === 0 ? null : snapGaps);
-      let movedPosition: Dynamic = (item?: Dynamic): Dynamic => ({
-          x: Math.round(item.x + deltaX),
-          y: Math.round(item.y + deltaY),
-        }),
-        movedOrigin: Dynamic = movedPosition({
-          x: current.origX,
-          y: current.origY,
-        }),
-        hasMoved: Dynamic = !(
-          movedOrigin.x === Math.round(current.origX) &&
-          movedOrigin.y === Math.round(current.origY)
-        );
-      if (current.alt) {
-        current.hoverKey &&
-          deps.onObjectHover?.({
-            key: current.hoverKey,
-            target: null,
-            point: {
-              x: 0,
-              y: 0,
-            },
-            object: current.set[0]
-              ? {
-                  file: current.set[0].file,
-                }
-              : {
-                  note: current.notes[0].id,
-                },
-            at: {
-              x: 0,
-              y: 0,
-              w: 0,
-              h: 0,
-            },
-            ctrl: false,
-          });
-        if (!isRelease) {
-          deps.value74([
-            ...current.set.map(
-              (item?: Dynamic): Dynamic => ({
-                ...movedPosition(item),
-                w: item.w,
-                h: item.h,
-              }),
-            ),
-            ...current.notes.map((item?: Dynamic): Dynamic => {
-              let noteBounds: Dynamic = rotatedAnnotationBounds(
-                item,
-                deps.callback44(item),
-              );
-              return {
-                ...noteBounds,
-                ...movedPosition(noteBounds),
-              };
-            }),
-          ]);
-          return;
-        }
-        deps.value74(null);
-        hasMoved
-          ? deps.onDuplicateObjects?.(
-              current.set.map(
-                (item?: Dynamic): Dynamic => ({
-                  file: item.file,
-                  ...movedPosition(item),
-                }),
-              ),
-              current.notes.map(
-                (item?: Dynamic): Dynamic => ({
-                  id: item.id,
-                  ...movedPosition(item),
-                }),
-              ),
-              current.bound,
-              current.setMove != null,
-            )
-          : current.setMove != null &&
-            current.bound !== undefined &&
-            deps.onDuplicateObjects?.([], [], current.bound, true);
-        return;
-      }
-      if (isRelease && !hasMoved) {
-        deps.callback48(current.set, current.notes);
-        current.hoverKey &&
-          deps.onObjectHover?.({
-            key: current.hoverKey,
-            target: null,
-            point: {
-              x: 0,
-              y: 0,
-            },
-            object: current.set[0]
-              ? {
-                  file: current.set[0].file,
-                }
-              : {
-                  note: current.notes[0].id,
-                },
-            at: {
-              x: 0,
-              y: 0,
-              w: 0,
-              h: 0,
-            },
-            ctrl: false,
-          });
-        return;
-      }
-      if (
-        !current.alt &&
-        !current.setMove &&
-        (deps.onDropObjectInto || deps.onObjectHover) &&
-        current.set.length + current.notes.length === 1
-      ) {
-        let dragObject: Dynamic = current.set[0]
-            ? {
-                file: current.set[0].file,
-              }
-            : {
-                note: current.notes[0].id,
-              },
-          isFramelessOrNote: Dynamic =
-            "note" in dragObject ||
-            deps.manifest.artboards.find(
-              (item?: Dynamic): Dynamic => item.file === dragObject.file,
-            )?.frameless === true,
-          surfaceRect: Dynamic = deps.value9.current?.getBoundingClientRect(),
-          pointerPoint: Dynamic =
-            isFramelessOrNote && surfaceRect
-              ? deps.callback16(dragEvent.clientX, dragEvent.clientY, surfaceRect)
-              : null;
-        if (pointerPoint) {
-          let containsPoint: Dynamic = (
-            rect?: Dynamic,
-            point?: Dynamic,
-          ): Dynamic =>
-            point.x >= rect.x &&
-            point.x <= rect.x + rect.w &&
-            point.y >= rect.y &&
-            point.y <= rect.y + rect.h;
-          current.left ??= new Set();
-          for (let artboardItem of deps.manifest.artboards as Dynamic)
-            !artboardItem.frameless &&
-              !containsPoint(artboardItem, pointerPoint) &&
-              current.left.add(artboardItem.file);
-          let dropCandidate: Dynamic =
-              [...deps.manifest.artboards]
-                .reverse()
-                .find(
-                  (item?: Dynamic): Dynamic =>
-                    !item.frameless &&
-                    item.file !==
-                      ("file" in dragObject ? dragObject.file : "") &&
-                    containsPoint(item, pointerPoint),
-                ) ?? null,
-            dropTarget: Dynamic =
-              dropCandidate && current.left.has(dropCandidate.file) ? dropCandidate : null,
-            objectBox: Dynamic = current.set[0]
-              ? {
-                  ...movedPosition(current.set[0]),
-                  w: current.set[0].w,
-                  h: current.set[0].h,
-                }
-              : ((): Dynamic => {
-                  let draggedNote: Dynamic = current.notes[0],
-                    draggedNoteBox: Dynamic = deps.callback44(draggedNote);
-                  return {
-                    ...movedPosition(draggedNoteBox),
-                    w: draggedNoteBox.w,
-                    h: draggedNoteBox.h,
-                  };
-                })();
-          current.hoverKey ??= "obj-" + String(++canvasDragSequence);
-          if (!isRelease)
-            deps.onObjectHover?.({
-              key: current.hoverKey,
-              target: dropTarget?.file ?? null,
-              point: pointerPoint,
-              object: dragObject,
-              at: objectBox,
-              ctrl: dragEvent.ctrlKey,
-            });
-          else if (dropTarget && deps.onDropObjectInto) {
-            deps.callback48(current.set, current.notes);
-            if (
-              deps.onDropObjectInto({
-                key: current.hoverKey,
-                target: dropTarget.file,
-                point: pointerPoint,
-                object: dragObject,
-                at: objectBox,
-                ctrl: dragEvent.ctrlKey,
-              })
-            )
-              return;
-            deps.onObjectHover?.({
-              key: current.hoverKey,
-              target: null,
-              point: pointerPoint,
-              object: dragObject,
-              at: objectBox,
-              ctrl: dragEvent.ctrlKey,
-            });
-          } else
-            deps.onObjectHover?.({
-              key: current.hoverKey,
-              target: null,
-              point: pointerPoint,
-              object: dragObject,
-              at: objectBox,
-              ctrl: dragEvent.ctrlKey,
-            });
-        }
-      }
-      let artboardPositions: Dynamic = new Map(
-          current.set.map(
-            (item?: Dynamic): Dynamic => [
-              item.file,
-              preserveUnroundedDragPosition(
-                item,
-                movedPosition(item),
-              ),
-            ],
-          ),
-        ),
-        notePositions: Dynamic = new Map(
-          current.notes.map(
-            (item?: Dynamic): Dynamic => [
-              item.id,
-              preserveUnroundedDragPosition(
-                item,
-                movedPosition(item),
-              ),
-            ],
-          ),
-        );
-      deps.onManifestChange(
-        deps.callback43(artboardPositions, notePositions),
-        isRelease,
-        isRelease
-          ? {
-              moved: new Map(
-                current.set.map(
-                  (item?: Dynamic): Dynamic => [
-                    item.file,
-                    {
-                      x: item.x,
-                      y: item.y,
-                    },
-                  ],
-                ),
-              ),
-              movedNotes: new Map(
-                current.notes.map(
-                  (item?: Dynamic): Dynamic => [item.id, item],
-                ),
-              ),
-              ...(current.bound !== undefined
-                ? {
-                    bound: current.bound,
-                  }
-                : {}),
-            }
-          : undefined,
-      );
-    }
 
 export {
   canvasDragSequence,
@@ -5008,6 +3394,6 @@ export {
 };
 export function installCanvasInteractionLayer(): () => void {
   return () => {
-    canvasDragSequence = 0;
+    resetCanvasDragSequence();
   };
 }

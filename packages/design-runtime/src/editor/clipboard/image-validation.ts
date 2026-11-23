@@ -11,7 +11,7 @@ var ClipboardImageValidationHandler: Dynamic;
 var ClipboardImageValidationFromCharCode: Dynamic;
 var ClipboardImageValidationResolvedValue: Dynamic;
 var ClipboardImageValidationDecode: Dynamic;
-var ClipboardImageValidationDecode_2: Dynamic;
+var decodeImageTextCandidates: Dynamic;
 var ClipboardImageValidationNow: Dynamic;
 var ClipboardImageValidationSinceSpentMsConfig: Dynamic;
 var spendWindowMs: Dynamic;
@@ -333,7 +333,7 @@ function chargeEmbeddedImageBudget(
   )
     return false;
   if (!isFirstCharge) return true;
-  let decodedTexts: Dynamic = ClipboardImageValidationDecode_2(bytes, contentType),
+  let decodedTexts: Dynamic = decodeImageTextCandidates(bytes, contentType),
     uniqueTexts: Dynamic = [
       ...new Set(
         decodedTexts.map(
@@ -630,19 +630,19 @@ export {
   ClipboardImageValidationCharsetPattern,
   ClipboardImageValidationConstant,
   ClipboardImageValidationDecode,
-  ClipboardImageValidationDecode_2,
+  decodeImageTextCandidates,
   ClipboardImageValidationFromCharCode,
   ClipboardImageValidationHandler,
   ClipboardImageValidationIso2022JpReplacementShiftJisSet,
   ClipboardImageValidationLimit,
-  maxTotalPixels as ClipboardImageValidationLimit_2,
-  spendWindowMs as ClipboardImageValidationLimit_3,
-  maxSpentMs as ClipboardImageValidationLimit_4,
-  maxPlainDataUrls as ClipboardImageValidationLimit_5,
+  maxTotalPixels,
+  spendWindowMs,
+  maxSpentMs,
+  maxPlainDataUrls,
   ClipboardImageValidationNow,
   ClipboardImageValidationPattern,
   ClipboardImageValidationResolvedValue,
-  maxDecodableImageBytes as ClipboardImageValidationResolvedValue_2,
+  maxDecodableImageBytes,
   ClipboardImageValidationScriptIframeObjectSet,
   ClipboardImageValidationSinceSpentMsConfig,
   ClipboardImageValidationSubscribers,
@@ -768,7 +768,7 @@ export function installEditorClipboardImageValidation(): () => void {
         encoding === "utf-16be" || encoding === "utf-16le" ? encoding : "utf-8",
       ).decode(bytes);
     };
-    ClipboardImageValidationDecode_2 = (
+    decodeImageTextCandidates = (
       bytes?: Dynamic,
       contentType?: Dynamic,
     ): Dynamic => {

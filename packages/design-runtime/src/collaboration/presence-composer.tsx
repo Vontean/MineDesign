@@ -3,7 +3,7 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../runtime-types";
-import { CollaborationPeerCursorsConstant_2 as peerMessageMaxLength, CollaborationPeerCursorsConstant_3 as peerChatHoldMs, CollaborationPeerCursorsConstant_4 as peerChatFadeMs, CollaborationPeerCursorsDelayMs_2, CollaborationPeerCursorsMcChatHoldMcChatFadeMcChatExitConfig, normalizePeerMessage, peerCollaboratorIndex, peerCollaboratorToken, reactCollaborationPeerCursors_3 } from "./peer-cursors";
+import { peerMessageMaxLength, peerChatHoldMs, peerChatFadeMs, peerChatExitDelayMs, CollaborationPeerCursorsMcChatHoldMcChatFadeMcChatExitConfig, normalizePeerMessage, peerCollaboratorIndex, peerCollaboratorToken, reactForUsePresenceComposer } from "./peer-cursors";
 import { hasBlockingOverlay } from "../editor/chrome/overlay-state";
 import { roomPeersStore } from "../platform/file-content";
 
@@ -24,40 +24,40 @@ function usePresenceComposer({
   idleMs = peerChatHoldMs,
 }: Dynamic): Dynamic {
   let [isOpen, setIsOpen]: Dynamic = (0,
-    reactCollaborationPeerCursors_3.useState)(false),
+    reactForUsePresenceComposer.useState)(false),
     [isLeaving, setIsLeaving]: Dynamic = (0,
-    reactCollaborationPeerCursors_3.useState)(false),
+    reactForUsePresenceComposer.useState)(false),
     [draft, setDraft]: Dynamic = (0,
-    reactCollaborationPeerCursors_3.useState)(""),
+    reactForUsePresenceComposer.useState)(""),
     [isFading, setIsFading]: Dynamic = (0,
-    reactCollaborationPeerCursors_3.useState)(false),
-    closeTimerRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+    reactForUsePresenceComposer.useState)(false),
+    closeTimerRef: Dynamic = (0, reactForUsePresenceComposer.useRef)(
       undefined,
     ),
     [bubbleColor, setBubbleColor]: Dynamic = (0,
-    reactCollaborationPeerCursors_3.useState)(""),
+    reactForUsePresenceComposer.useState)(""),
     [anchorPoint, setAnchorPoint]: Dynamic = (0,
-    reactCollaborationPeerCursors_3.useState)(null),
-    pointerRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+    reactForUsePresenceComposer.useState)(null),
+    pointerRef: Dynamic = (0, reactForUsePresenceComposer.useRef)(
       null,
     ),
-    isActiveRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+    isActiveRef: Dynamic = (0, reactForUsePresenceComposer.useRef)(
       false,
     );
   isActiveRef.current = isOpen && !isLeaving;
-  let bubbleRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+  let bubbleRef: Dynamic = (0, reactForUsePresenceComposer.useRef)(
       null,
     ),
-    inputRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+    inputRef: Dynamic = (0, reactForUsePresenceComposer.useRef)(
       null,
     ),
-    previousFocusRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+    previousFocusRef: Dynamic = (0, reactForUsePresenceComposer.useRef)(
       null,
     ),
-    timersRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+    timersRef: Dynamic = (0, reactForUsePresenceComposer.useRef)(
       [],
     ),
-    latestPropsRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)({
+    latestPropsRef: Dynamic = (0, reactForUsePresenceComposer.useRef)({
       reporter: reporter,
       canOpen: canOpen,
       idleMs: idleMs,
@@ -83,7 +83,7 @@ function usePresenceComposer({
         setIsLeaving(false);
         setDraft("");
         setIsFading(false);
-      }, CollaborationPeerCursorsDelayMs_2);
+      }, peerChatExitDelayMs);
       let current: Dynamic = previousFocusRef.current;
       previousFocusRef.current = null;
       let activeElement: Dynamic = (document as Dynamic).activeElement;
@@ -97,7 +97,7 @@ function usePresenceComposer({
       (document as Dynamic).activeElement === inputRef.current &&
         inputRef.current?.blur();
     },
-    closeComposerRef: Dynamic = (0, reactCollaborationPeerCursors_3.useRef)(
+    closeComposerRef: Dynamic = (0, reactForUsePresenceComposer.useRef)(
       closeComposer,
     );
   closeComposerRef.current = closeComposer;
@@ -118,7 +118,7 @@ function usePresenceComposer({
         .reporter()
         ?.say(normalizePeerMessage(message).trim());
     };
-  (0, reactCollaborationPeerCursors_3.useEffect)((): Dynamic => {
+  (0, reactForUsePresenceComposer.useEffect)((): Dynamic => {
     let handlePointerMove: Dynamic = (event?: Dynamic): Dynamic => {
         pointerRef.current = {
           x: event.clientX,
@@ -212,7 +212,7 @@ function usePresenceComposer({
       (window as Dynamic).removeEventListener("blur", resetEscapeGuard);
     };
   }, []);
-  (0, reactCollaborationPeerCursors_3.useEffect)(
+  (0, reactForUsePresenceComposer.useEffect)(
     (): Dynamic => (): Dynamic => {
       for (let timerId of timersRef.current as Dynamic) clearTimeout(timerId);
       clearTimeout(closeTimerRef.current);
@@ -220,7 +220,7 @@ function usePresenceComposer({
     },
     [],
   );
-  (0, reactCollaborationPeerCursors_3.useLayoutEffect)(
+  (0, reactForUsePresenceComposer.useLayoutEffect)(
     (): Dynamic => {
       let current: Dynamic = bubbleRef.current;
       if (!current) return;

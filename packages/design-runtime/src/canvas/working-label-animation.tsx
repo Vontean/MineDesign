@@ -9,10 +9,10 @@ import { load_react, load_react_jsx_runtime } from "../dependencies";
 import { toModuleNamespace } from "../module-helpers";
 
 var reactCanvasWorkingLabelAnimation: Dynamic;
-var reactCanvasWorkingLabelAnimation_2: Dynamic;
+var reactForClaudeWorkingLabel: Dynamic;
 var CanvasWorkingLabelAnimationHandler: Dynamic;
 var CanvasWorkingLabelAnimationPow: Dynamic;
-var CanvasWorkingLabelAnimationHandler_2: Dynamic;
+var pulseEnvelope: Dynamic;
 var CanvasWorkingLabelAnimationReduce: Dynamic;
 var jsxCanvasWorkingLabelAnimation: Dynamic;
 var CanvasWorkingLabelAnimationLabel: Dynamic;
@@ -48,7 +48,7 @@ function workingLabelPosition(
     let length: Dynamic = Math.hypot(stroke.dx, stroke.dy);
     if (length > 0 && stroke.bend !== 0 && progress < 1) {
       let bendScale: Dynamic =
-        (stroke.bend * CanvasWorkingLabelAnimationHandler_2(progress)) / length;
+        (stroke.bend * pulseEnvelope(progress)) / length;
       x += -stroke.dy * bendScale;
       y += stroke.dx * bendScale;
     }
@@ -302,10 +302,10 @@ function ClaudeWorkingLabel({
   busy: busy,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let containerRef: Dynamic = (0, reactCanvasWorkingLabelAnimation_2.useRef)(null),
-    cursorRef: Dynamic = (0, reactCanvasWorkingLabelAnimation_2.useRef)(null),
-    tagRef: Dynamic = (0, reactCanvasWorkingLabelAnimation_2.useRef)(null);
-  (0, reactCanvasWorkingLabelAnimation_2.useLayoutEffect)((): Dynamic => {
+  let containerRef: Dynamic = (0, reactForClaudeWorkingLabel.useRef)(null),
+    cursorRef: Dynamic = (0, reactForClaudeWorkingLabel.useRef)(null),
+    tagRef: Dynamic = (0, reactForClaudeWorkingLabel.useRef)(null);
+  (0, reactForClaudeWorkingLabel.useLayoutEffect)((): Dynamic => {
     let containerElement: Dynamic = containerRef.current,
       cursorElement: Dynamic = cursorRef.current,
       tagElement: Dynamic = tagRef.current;
@@ -377,14 +377,8 @@ function ClaudeWorkingLabel({
 export {
   animateWorkingLabel,
   labelBoxWidth as CanvasWorkingLabelAnimationConstant,
-  labelBoxHeight as CanvasWorkingLabelAnimationConstant_2,
-  edgePadding as CanvasWorkingLabelAnimationConstant_3,
-  springStiffness as CanvasWorkingLabelAnimationConstant_4,
-  springDamping as CanvasWorkingLabelAnimationConstant_5,
-  wanderDelayMin as CanvasWorkingLabelAnimationConstant_6,
-  wanderDelayJitter as CanvasWorkingLabelAnimationConstant_7,
   CanvasWorkingLabelAnimationHandler,
-  CanvasWorkingLabelAnimationHandler_2,
+  pulseEnvelope,
   CanvasWorkingLabelAnimationLabel,
   CanvasWorkingLabelAnimationPow,
   CanvasWorkingLabelAnimationReduce,
@@ -392,7 +386,7 @@ export {
   createSeededRandom,
   jsxCanvasWorkingLabelAnimation,
   reactCanvasWorkingLabelAnimation,
-  reactCanvasWorkingLabelAnimation_2,
+  reactForClaudeWorkingLabel,
   workingLabelPosition,
   workingLabelSweep,
   workingLabelTravel,
@@ -404,7 +398,7 @@ export function installCanvasWorkingLabelAnimation(): () => void {
       load_react(),
       1,
     );
-    reactCanvasWorkingLabelAnimation_2 = toModuleNamespace(
+    reactForClaudeWorkingLabel = toModuleNamespace(
       load_react(),
       1,
     );
@@ -417,7 +411,7 @@ export function installCanvasWorkingLabelAnimation(): () => void {
       );
       return smoothed * smoothed * smoothed * (10 + smoothed * (6 * smoothed - 15));
     };
-    CanvasWorkingLabelAnimationHandler_2 = (t?: Dynamic): Dynamic => {
+    pulseEnvelope = (t?: Dynamic): Dynamic => {
       let parabola: Dynamic =
         CanvasWorkingLabelAnimationHandler(t) *
         (1 - CanvasWorkingLabelAnimationHandler(t));

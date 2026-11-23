@@ -365,7 +365,7 @@ function BrandUploadGrid({
                     size={"sm"}
                     iconOnly={true}
                     icon={"X"}
-                    aria-label={uiMessage("design-system.welcome.remove2", { value1: String(file.name) })}
+                    aria-label={uiMessage("design-system.welcome.remove2", { subject: String(file.name) })}
                     tooltip={uiMessage("design-system.welcome.remove")}
                     disabled={removeDisabledReason !== undefined}
                     onClick={() => onRemove(fileIndex)}

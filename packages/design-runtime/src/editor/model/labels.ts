@@ -61,7 +61,7 @@ function isImportedIcon(element?: Dynamic): Dynamic {
 }
 function slideElementLabel(element?: Dynamic): Dynamic {
   let slideAttribute: Dynamic = (element.getAttribute("data-deck-slide") ?? "").trim();
-  if (/^\d+$/.test(slideAttribute)) return uiMessage("inspector.labels.slideValue1", { value1: String(parseInt(slideAttribute, 10) + 1) });
+  if (/^\d+$/.test(slideAttribute)) return uiMessage("inspector.labels.slideNumber", { number: String(parseInt(slideAttribute, 10) + 1) });
   let parentElement: Dynamic = element.parentElement;
   if (!parentElement || parentElement.tagName.toLowerCase() !== "deck-stage")
     return null;
@@ -70,7 +70,7 @@ function slideElementLabel(element?: Dynamic): Dynamic {
     index: Dynamic = 0;
   for (let child of parentElement.children as Dynamic)
     if (!ignoredTagPattern.test(child.tagName.toLowerCase())) {
-      if (child === element) return uiMessage("inspector.labels.slideValue1", { value1: String(index + 1) });
+      if (child === element) return uiMessage("inspector.labels.slideNumber", { number: String(index + 1) });
       index++;
     }
   return null;

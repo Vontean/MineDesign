@@ -8,8 +8,8 @@ import { ComponentsCollapsibleRootTriggerPanelConfig } from "../../cds/component
 import { initializeCdsIndex } from "../../cds/index";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { joinClassNames } from "../chrome/overlay-state";
-import { reactInspectorContext_4 } from "../inspector/context-part-2";
-import { EditorIcon, isNestedPropertyControl, jsxPropertiesPrimitives_2, PropertiesPrimitivesClassNames_3, PropertiesPrimitivesClassNames_4, PropertyActions } from "./primitives";
+import { reactForPropertyRow } from "../inspector/context-part-2";
+import { EditorIcon, isNestedPropertyControl, jsxForPropertySection, propertyGutterClassName, secondaryIconButtonClassName, PropertyActions } from "./primitives";
 import { toModuleNamespace } from "../../module-helpers";
 
 var sectionControlWarningShown: Dynamic;
@@ -28,7 +28,7 @@ function PropertySectionHeader({
   let isToggleable: Dynamic = onToggle !== undefined,
     headerClassName: Dynamic = joinClassNames(
       "flex min-w-0 shrink-0 items-center gap-xs select-none",
-      PropertiesPrimitivesClassNames_3,
+      propertyGutterClassName,
       subsection
         ? "pt-2 pb-1 text-footnote font-semibold text-secondary"
         : "min-h-10 border-t border-alpha-2 py-2 text-body-semibold text-primary first:border-t-0",
@@ -101,7 +101,7 @@ function PropertySectionHeader({
       {actions ? (<span
           className={joinClassNames(
             "-my-1 flex shrink-0 items-center gap-0.5",
-            PropertiesPrimitivesClassNames_4,
+            secondaryIconButtonClassName,
           )}
           onClick={
             isToggleable
@@ -148,8 +148,8 @@ function PropertySection({
 }: Dynamic): Dynamic {
   useUiLocale();
   let hasChildren: Dynamic =
-      reactInspectorContext_4.Children.toArray(children).length > 0,
-    [isOpen, setIsOpen]: Dynamic = (0, reactInspectorContext_4.useState)(
+      reactForPropertyRow.Children.toArray(children).length > 0,
+    [isOpen, setIsOpen]: Dynamic = (0, reactForPropertyRow.useState)(
       defaultOpen,
     ),
     isControlled: Dynamic = collapsed !== undefined;
@@ -178,10 +178,10 @@ function PropertySection({
       ) : null,
     headerTrailing: Dynamic =
       addMenu !== null || hasHeaderActions ? (
-        <jsxPropertiesPrimitives_2.Fragment>
+        <jsxForPropertySection.Fragment>
           {addMenu}
           {hasHeaderActions ? (headerActions) : (null)}
-        </jsxPropertiesPrimitives_2.Fragment>
+        </jsxForPropertySection.Fragment>
       ) : undefined,
     sectionClassName: Dynamic = joinClassNames(
       "flex min-w-0 shrink-0 flex-col",

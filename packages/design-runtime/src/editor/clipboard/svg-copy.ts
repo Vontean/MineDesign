@@ -3,8 +3,8 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { injected_svgCapture as injected_svgCapture_r } from "../../dependencies";
-import { AccessibilityAnnouncementsLabel_4 as genericCopyFailureMessage } from "../accessibility/announcements";
-import { ClipboardPngCopyASwitchSet, ClipboardPngCopyDataImagePattern, ClipboardPngCopyPattern, ClipboardPngCopySubscribers, ClipboardPngCopySubscribers_2 as svgUrlAttributeNames, HttpWwwW3Org1999XlinkValue, HttpWwwW3Org2000SvgValue_2, HttpWwwW3Org2000XmlnsValue, HttpWwwW3OrgXML1998NamespaceValue } from "./png-copy";
+import { conversionFailedMessage as genericCopyFailureMessage } from "../accessibility/announcements";
+import { ClipboardPngCopyASwitchSet, ClipboardPngCopyDataImagePattern, ClipboardPngCopyPattern, ClipboardPngCopySubscribers, ClipboardPngCopyUrlAttributeSet as svgUrlAttributeNames, HttpWwwW3Org1999XlinkValue, svgNamespaceUriForCopy, HttpWwwW3Org2000XmlnsValue, HttpWwwW3OrgXML1998NamespaceValue } from "./png-copy";
 import { describeCaptureFailure } from "../../export/capture-warnings";
 
 function containsSvgExternalResource(cssValue?: Dynamic): Dynamic {
@@ -27,11 +27,11 @@ function sanitizeSvgClipboardDom(element?: Dynamic): Dynamic {
     else if (child.nodeType === Node.ELEMENT_NODE) {
       let childElement: Dynamic = child;
       if (
-        childElement.namespaceURI === HttpWwwW3Org2000SvgValue_2 &&
+        childElement.namespaceURI === svgNamespaceUriForCopy &&
         ClipboardPngCopyASwitchSet.has(childElement.localName)
       ) {
         let groupElement: Dynamic = element.ownerDocument.createElementNS(
-          HttpWwwW3Org2000SvgValue_2,
+          svgNamespaceUriForCopy,
           "g",
         );
         if (childElement.localName === "switch") {
@@ -48,7 +48,7 @@ function sanitizeSvgClipboardDom(element?: Dynamic): Dynamic {
         childElement.replaceWith(groupElement);
         blankImageCount += sanitizeSvgClipboardDom(groupElement);
       } else
-        childElement.namespaceURI !== HttpWwwW3Org2000SvgValue_2 ||
+        childElement.namespaceURI !== svgNamespaceUriForCopy ||
         !ClipboardPngCopySubscribers.has(childElement.localName)
           ? childElement.remove()
           : (blankImageCount += sanitizeSvgClipboardDom(childElement));
@@ -62,7 +62,7 @@ function sanitizeSvgClipboardDom(element?: Dynamic): Dynamic {
           attribute.namespaceURI === HttpWwwW3Org1999XlinkValue);
     if (
       attribute.namespaceURI === HttpWwwW3Org2000XmlnsValue &&
-      (attribute.value === HttpWwwW3Org2000SvgValue_2 ||
+      (attribute.value === svgNamespaceUriForCopy ||
         attribute.value === HttpWwwW3Org1999XlinkValue)
     )
       continue;
@@ -95,7 +95,7 @@ function sanitizeSvgClipboard(svgText?: Dynamic): Dynamic {
     ),
     documentElement: Dynamic = svgDocument.documentElement;
   if (
-    documentElement.namespaceURI !== HttpWwwW3Org2000SvgValue_2 ||
+    documentElement.namespaceURI !== svgNamespaceUriForCopy ||
     documentElement.localName !== "svg" ||
     svgDocument.getElementsByTagNameNS("*", "parsererror").length > 0
   )

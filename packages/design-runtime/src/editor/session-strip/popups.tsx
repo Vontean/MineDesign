@@ -11,12 +11,12 @@ import { editableElementSelector, preventInputEnterSubmit } from "../chrome/focu
 import { EditorMenuItem, getFocusableElements } from "../chrome/menu-item";
 import { blockingOverlaySelector, isClosedOverlay, joinClassNames } from "../chrome/overlay-state";
 import { EditorPopover } from "../chrome/popover";
-import { ColorContrastCopyLabel_3, ColorContrastCopyLabel_5 } from "../color/contrast-copy";
+import { ColorContrastCopyNoMatchesLabel as noMatchesLabel, ColorContrastCopySearchStylesLabel as searchStylesLabel } from "../color/contrast-copy";
 import { summarizeContrastResults } from "../color/contrast-ui";
 import { evaluateColorContrast } from "../color/contrast";
 import { PickerListHeader } from "../color/picker-primitives";
 import { ColorHexInput, ColorPickerConstant, ColorPickerLabel } from "../color/picker";
-import { reactInspectorArtboardRadius_2 } from "../inspector/artboard-radius";
+import { reactForSessionTypographyPopup } from "../inspector/artboard-radius";
 import { ColorSwatchPicker, colorWellStyle } from "../properties/color-swatches";
 import { NumericInput, PropertiesNumericInputLimit } from "../properties/numeric-input";
 import { pickerSearchInitialIndex, PickerSearchInput, pickerSearchKeyHandler, pickerSearchMatches } from "../properties/picker-search";
@@ -35,14 +35,14 @@ var SessionStripPopupsClosest: Dynamic;
 var SessionStripPopupsDataSessionStripConfig: Dynamic;
 var SessionStripPopupsItems: Dynamic;
 var SessionStripPopupsJoinValue: Dynamic;
-var SessionStripPopupsJoinValue_2: Dynamic;
+var enabledPopupControlSelector: Dynamic;
 var SessionStripPopupsHandler: Dynamic;
 var SessionStripPopupsTarget: Dynamic;
 var SessionStripPopupsLabel: Dynamic;
 function useSessionPopupFocus(isOpen?: Dynamic, openPopup?: Dynamic): Dynamic {
   let [isByKey, setIsByKey]: Dynamic = (0,
-    reactInspectorArtboardRadius_2.useState)(false),
-    bodyRef: Dynamic = (0, reactInspectorArtboardRadius_2.useRef)(
+    reactForSessionTypographyPopup.useState)(false),
+    bodyRef: Dynamic = (0, reactForSessionTypographyPopup.useRef)(
       null,
     ),
     findInitialFocus: Dynamic = (): Dynamic =>
@@ -118,7 +118,7 @@ function SessionPopup({
 }: Dynamic): Dynamic {
   useUiLocale();
   let [isOpen, setIsOpen]: Dynamic = (0,
-    reactInspectorArtboardRadius_2.useState)(false),
+    reactForSessionTypographyPopup.useState)(false),
     {
       byKey: usesKeyboard,
       body: bodyRef,
@@ -264,7 +264,7 @@ function SessionTypographyPopup({
 }: Dynamic): Dynamic {
   useUiLocale();
   let [isOpen, setIsOpen]: Dynamic = (0,
-    reactInspectorArtboardRadius_2.useState)(false),
+    reactForSessionTypographyPopup.useState)(false),
     {
       byKey: usesKeyboard,
       body: bodyRef,
@@ -273,13 +273,13 @@ function SessionTypographyPopup({
     }: Dynamic = useSessionPopupFocus(isOpen, (): Dynamic => setIsOpen(true)),
     hasStylePicker: Dynamic = typographyOptions.length > 0 || systemHeader != null,
     [styleMode, setStyleMode]: Dynamic = (0,
-    reactInspectorArtboardRadius_2.useState)("system"),
+    reactForSessionTypographyPopup.useState)("system"),
     activeMode: Dynamic = hasStylePicker ? styleMode : "custom",
     isSearchable: Dynamic =
       typographyOptions.some((option?: Dynamic): Dynamic => option.group !== undefined) ||
       typographyOptions.length > PropertiesNumericInputLimit,
     [searchText, setSearchText]: Dynamic = (0,
-    reactInspectorArtboardRadius_2.useState)("");
+    reactForSessionTypographyPopup.useState)("");
   !isOpen && searchText !== "" && setSearchText("");
   let searchQuery: Dynamic = isSearchable ? searchText.trim().toLowerCase() : "",
     filteredOptions: Dynamic = typographyOptions.filter(
@@ -374,7 +374,7 @@ function SessionTypographyPopup({
                 {isSearchable ? (<PickerSearchInput
                     value={searchText}
                     onChange={setSearchText}
-                    label={ColorContrastCopyLabel_5}
+                    label={searchStylesLabel}
                     rowSelector={'[data-kit="MenuItem"]'}
                     onEnterIndex={(): Dynamic =>
                       pickerSearchInitialIndex(
@@ -388,7 +388,7 @@ function SessionTypographyPopup({
                     role={"status"}
                     className={"px-2 py-1 text-footnote text-muted"}
                   >
-                    {ColorContrastCopyLabel_3}
+                    {noMatchesLabel}
                   </p>) : (null)}
                 <div
                   className={
@@ -407,7 +407,7 @@ function SessionTypographyPopup({
                               filteredOptions[index - 1]?.subgroup);
                       return (() => {
                         const OptionFragment =
-                          reactInspectorArtboardRadius_2.Fragment;
+                          reactForSessionTypographyPopup.Fragment;
                         const optionProps = {
                           children: [
                             startsGroup ? (
@@ -541,12 +541,12 @@ function CustomTypographyEditor({ c: c }: Dynamic): Dynamic {
 function SessionActionsPopover(source?: Dynamic): Dynamic {
   useUiLocale();
   let [isOpen, setIsOpen]: Dynamic = (0,
-    reactInspectorArtboardRadius_2.useState)(false),
-    onOpenChangeRef: Dynamic = (0, reactInspectorArtboardRadius_2.useRef)(
+    reactForSessionTypographyPopup.useState)(false),
+    onOpenChangeRef: Dynamic = (0, reactForSessionTypographyPopup.useRef)(
       source.onOpenChange,
     );
   onOpenChangeRef.current = source.onOpenChange;
-  (0, reactInspectorArtboardRadius_2.useEffect)(
+  (0, reactForSessionTypographyPopup.useEffect)(
     (): Dynamic => onOpenChangeRef.current?.(isOpen),
     [isOpen],
   );
@@ -720,7 +720,7 @@ export {
   SessionStripPopupsHandler,
   SessionStripPopupsItems,
   SessionStripPopupsJoinValue,
-  SessionStripPopupsJoinValue_2,
+  enabledPopupControlSelector,
   SessionStripPopupsLabel,
   SessionStripPopupsTarget,
   SessionTypographyPopup,
@@ -749,12 +749,12 @@ export function installEditorSessionStripPopups(): () => void {
       (selector?: Dynamic): Dynamic =>
         selector + '[aria-pressed="true"]:not(:disabled)',
     ).join(", ");
-    SessionStripPopupsJoinValue_2 = SessionStripPopupsItems.map(
+    enabledPopupControlSelector = SessionStripPopupsItems.map(
       (selector?: Dynamic): Dynamic => selector + ":not(:disabled)",
     ).join(", ");
     SessionStripPopupsHandler = (root?: Dynamic): Dynamic =>
       root?.querySelector(SessionStripPopupsJoinValue) ??
-      root?.querySelector(SessionStripPopupsJoinValue_2) ??
+      root?.querySelector(enabledPopupControlSelector) ??
       null;
     SessionStripPopupsTarget = (event?: Dynamic): Dynamic => {
       !SessionStripPopupsClosest(event.target) &&

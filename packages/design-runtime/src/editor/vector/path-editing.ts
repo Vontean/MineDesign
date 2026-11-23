@@ -512,7 +512,7 @@ export {
   vectorHitRadius,
   vectorPartPoint,
   VectorPathEditingConstant,
-  TOUCH_HIT_RADIUS_PX as VectorPathEditingConstant_2,
+  TOUCH_HIT_RADIUS_PX,
   VectorPathEditingLimit,
   vectorUsesCoarsePointer,
 };

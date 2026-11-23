@@ -21,7 +21,7 @@ import { buildStaticFastEditPreview } from "./static-preview";
 import { validateFastEditTemplate } from "./template-validation";
 import { toModuleNamespace } from "../module-helpers";
 import { awaitHostCapability } from "../platform/host-capabilities";
-import { PlatformSaveEventsHandler_2, subscribeSaveEvents } from "../platform/save-events";
+import { isSaveReporterActive, subscribeSaveEvents } from "../platform/save-events";
 import { createPreviewHandle } from "../preview/evaluation";
 
 var ReactSamplingCapability: Dynamic;
@@ -57,7 +57,7 @@ function rankVisibleArtboards(files?: Dynamic): Dynamic {
   return files
     .map((input?: Dynamic): Dynamic => {
       let value: Dynamic = getArtboardViewportBounds(input),
-        value2: Dynamic =
+        visibleArea: Dynamic =
           value === undefined
             ? 0
             : Math.max(
@@ -72,7 +72,7 @@ function rankVisibleArtboards(files?: Dynamic): Dynamic {
               );
       return {
         f: input,
-        area: value2,
+        area: visibleArea,
       };
     })
     .filter((input?: Dynamic): Dynamic => input.area > 0)
@@ -137,22 +137,22 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
         let html: Dynamic = input.html;
         html !== "" &&
           (async (): Promise<Dynamic> => {
-            let value3: Dynamic = await hostRef.current.handlesRef.current
+            let originalTemplate: Dynamic = await hostRef.current.handlesRef.current
               ?.get(input.path)
               ?.askTemplate()
               .catch((): Dynamic => null);
-            if (typeof value3 != "string" || !value.holds(input.path)) return;
-            let value4: Dynamic = validateFastEditTemplate(
-              value3,
+            if (typeof originalTemplate != "string" || !value.holds(input.path)) return;
+            let validation: Dynamic = validateFastEditTemplate(
+              originalTemplate,
               html,
             );
-            if (value4.ok)
+            if (validation.ok)
               try {
                 draftHtmlPreviewStore.hold(
                   input.path,
                   true,
                   buildStaticFastEditPreview(
-                    value4.template,
+                    validation.template,
                     {},
                   ),
                 );
@@ -162,14 +162,14 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
       (input?: Dynamic): Dynamic =>
         hostRef.current.canvas
           .boards()
-          .some((input2?: Dynamic): Dynamic => input2.file === input),
+          .some((board?: Dynamic): Dynamic => board.file === input),
     );
     controllerRef.current = value;
-    let value2: Dynamic = setInterval((): Dynamic => {
+    let sweepTimer: Dynamic = setInterval((): Dynamic => {
       value.sweep();
     }, 2e3);
     return (): Dynamic => {
-      clearInterval(value2);
+      clearInterval(sweepTimer);
       value.stop();
       controllerRef.current = null;
     };
@@ -179,15 +179,15 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
     let callback: Dynamic = (): Dynamic => {
         busyRef.current = true;
       },
-      callback2: Dynamic = (): Dynamic => {
+      releaseBusy: Dynamic = (): Dynamic => {
         busyRef.current = false;
       };
     (window as Dynamic).addEventListener("pointerdown", callback, {
       capture: true,
       passive: true,
     });
-    for (let value2 of ["pointerup", "pointercancel", "blur"] as Dynamic)
-      (window as Dynamic).addEventListener(value2, callback2, {
+    for (let eventName of ["pointerup", "pointercancel", "blur"] as Dynamic)
+      (window as Dynamic).addEventListener(eventName, releaseBusy, {
         capture: true,
         passive: true,
       });
@@ -195,17 +195,17 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
       (input?: Dynamic): Dynamic => {
         let current: Dynamic = sessionRef.current;
         if (input.type === "event" && input.name === "apply")
-          for (let value2 of (input.data?.boardsReread ?? []) as Dynamic)
-            typeof value2 == "string" &&
+          for (let file of (input.data?.boardsReread ?? []) as Dynamic)
+            typeof file == "string" &&
               current.othersChanged.size < 24 &&
-              current.othersChanged.add(value2);
+              current.othersChanged.add(file);
         else if (input.type === "landed" && current.busy === null) {
-          let value2: Dynamic = input.paths
+          let touchedFile: Dynamic = input.paths
             .map(
-              (input2?: Dynamic): Dynamic => input2.replace(/^project\//, ""),
+              (path?: Dynamic): Dynamic => path.replace(/^project\//, ""),
             )
-            .find((input2?: Dynamic): Dynamic => input2.endsWith(".dc.html"));
-          value2 !== undefined && (current.lastTouched = value2);
+            .find((path?: Dynamic): Dynamic => path.endsWith(".dc.html"));
+          touchedFile !== undefined && (current.lastTouched = touchedFile);
         }
       },
     );
@@ -213,8 +213,8 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
       (window as Dynamic).removeEventListener("pointerdown", callback, {
         capture: true,
       });
-      for (let value2 of ["pointerup", "pointercancel", "blur"] as Dynamic)
-        (window as Dynamic).removeEventListener(value2, callback2, {
+      for (let eventName of ["pointerup", "pointercancel", "blur"] as Dynamic)
+        (window as Dynamic).removeEventListener(eventName, releaseBusy, {
           capture: true,
         });
       value();
@@ -235,7 +235,7 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
         inView: rankVisibleArtboards,
         pointerDown: (): Dynamic => busyRef.current,
         maxBytes: historyLimitRef.current,
-        ...(PlatformSaveEventsHandler_2()
+        ...(isSaveReporterActive()
           ? {
               onDocEvent: subscribeSaveEvents,
             }
@@ -249,44 +249,44 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
           input?: Dynamic,
           options?: Dynamic,
         ): Promise<Dynamic> => {
-          let value2: Dynamic =
+          let artboard: Dynamic =
               hostRef.current.handlesRef.current?.get(input),
-            value3: Dynamic =
-              value2?.isReady() === true && !value2.isBlocked()
-                ? createPreviewHandle(value2.webviewRef.current)
+            preview: Dynamic =
+              artboard?.isReady() === true && !artboard.isBlocked()
+                ? createPreviewHandle(artboard.previewFrameRef.current)
                 : null;
-          return value3 == null
+          return preview == null
             ? null
-            : pickerCommentRects(value3, options);
+            : pickerCommentRects(preview, options);
         },
         layoutOf: async (
           input?: Dynamic,
           options?: Dynamic,
         ): Promise<Dynamic> => {
-          let value2: Dynamic =
+          let artboard: Dynamic =
               hostRef.current.handlesRef.current?.get(input),
-            value3: Dynamic =
-              value2?.isReady() === true && !value2.isBlocked()
-                ? createPreviewHandle(value2.webviewRef.current)
+            preview: Dynamic =
+              artboard?.isReady() === true && !artboard.isBlocked()
+                ? createPreviewHandle(artboard.previewFrameRef.current)
                 : null;
-          return value3 == null
+          return preview == null
             ? null
-            : probeRenderedElementLayout(value3, options);
+            : probeRenderedElementLayout(preview, options);
         },
         drawnAt: async (
           input?: Dynamic,
           options?: Dynamic,
           context?: Dynamic,
         ): Promise<Dynamic> => {
-          let value2: Dynamic =
+          let artboard: Dynamic =
               hostRef.current.handlesRef.current?.get(input),
-            value3: Dynamic =
-              value2?.isReady() === true && !value2.isBlocked()
-                ? createPreviewHandle(value2.webviewRef.current)
+            preview: Dynamic =
+              artboard?.isReady() === true && !artboard.isBlocked()
+                ? createPreviewHandle(artboard.previewFrameRef.current)
                 : null;
-          return value3 == null
+          return preview == null
             ? null
-            : probeRenderedElementHit(value3, options, context);
+            : probeRenderedElementHit(preview, options, context);
         },
       }),
       {
@@ -298,13 +298,13 @@ function FastEditComposer({ host: host, parts: parts }: Dynamic): Dynamic {
     let flag: Dynamic = true;
     (async (): Promise<Dynamic> => {
       for (; flag; ) {
-        let value2: Dynamic = await captureFastEditCanvasState({
+        let capturedCount: Dynamic = await captureFastEditCanvasState({
           host: (): Dynamic => hostRef.current,
           session: sessionRef.current,
         }).catch((): Dynamic => 1);
         await new Promise(
           (input?: Dynamic): Dynamic =>
-            setTimeout(input, value2 > 0 ? 400 : 2500),
+            setTimeout(input, capturedCount > 0 ? 400 : 2500),
         );
       }
     })();

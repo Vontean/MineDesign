@@ -11,11 +11,11 @@ import { resolveColorTokenValue } from "../accessibility/announcements";
 import { InThisArtboardMessage } from "../color/contrast-copy";
 import { hsvaToRgbaCss, parseHsvaColor } from "../color/picker-primitives";
 import { ColorSwatchPicker, mergeDesignSystemSwatches } from "./color-swatches";
-import { PropertiesDropShadowEditorTest, reactPropertiesDropShadowEditor_3 } from "./drop-shadow-editor";
+import { PropertiesDropShadowEditorTest, reactForTokenColorPicker } from "./drop-shadow-editor";
 import { toModuleNamespace } from "../../module-helpers";
 
 var reactPropertiesTokenColorPicker: Dynamic;
-var reactPropertiesTokenColorPicker_2: Dynamic;
+var reactForAssetPickerContext: Dynamic;
 var AssetPickerContext: Dynamic;
 function matchArtboardColorToken(
   cssValue?: Dynamic,
@@ -135,12 +135,12 @@ function TokenColorPicker({
 }: Dynamic): Dynamic {
   useUiLocale();
   let resolvedColor: Dynamic = (0,
-    reactPropertiesDropShadowEditor_3.useMemo)(
+    reactForTokenColorPicker.useMemo)(
       (): Dynamic =>
         resolveColorTokenValue(colorValue, tokenList) ?? colorValue,
       [colorValue, tokenList],
     ),
-    allSwatches: Dynamic = (0, reactPropertiesDropShadowEditor_3.useMemo)(
+    allSwatches: Dynamic = (0, reactForTokenColorPicker.useMemo)(
       (): Dynamic =>
         mergeDesignSystemSwatches(
           artboardSwatches,
@@ -149,7 +149,7 @@ function TokenColorPicker({
       [tokenList, artboardSwatches],
     ),
     authoredColor: Dynamic = authoredValue ?? (unset ? undefined : colorValue),
-    selectedSwatchName: Dynamic = (0, reactPropertiesDropShadowEditor_3.useMemo)(
+    selectedSwatchName: Dynamic = (0, reactForTokenColorPicker.useMemo)(
       (): Dynamic =>
         matchAuthoredColorToken(authoredColor, allSwatches, iframeDefinedVars),
       [authoredColor, allSwatches, iframeDefinedVars],
@@ -189,7 +189,7 @@ export {
   matchArtboardColorToken,
   matchAuthoredColorToken,
   reactPropertiesTokenColorPicker,
-  reactPropertiesTokenColorPicker_2,
+  reactForAssetPickerContext,
   resolveColorSwatchValue,
   TokenColorPicker,
 };
@@ -200,11 +200,11 @@ export function installEditorPropertiesTokenColorPicker(): () => void {
       1,
     );
     initializeCdsIndex();
-    reactPropertiesTokenColorPicker_2 = toModuleNamespace(
+    reactForAssetPickerContext = toModuleNamespace(
       load_react(),
       1,
     );
-    AssetPickerContext = (0, reactPropertiesTokenColorPicker_2.createContext)({
+    AssetPickerContext = (0, reactForAssetPickerContext.createContext)({
       projectPath: "appifact",
       canEdit: true,
     });

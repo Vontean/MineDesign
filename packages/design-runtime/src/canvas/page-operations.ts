@@ -3,7 +3,8 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../runtime-types";
-import { designPageId } from "../platform/file-content";
+import { createPageId, designPageId, defaultDesignPageLimit as newPageLimit } from "../platform/file-content";
+import { defaultCanvasPage, type CanvasHistoryStep, type CanvasManifest } from "./manifest-history";
 
 var pluralCanvasObjectCount: Dynamic;
 var otherCanvasObjectWord: Dynamic;
@@ -136,6 +137,25 @@ function nextCanvasPageName(pages?: Dynamic): Dynamic {
     pageNumber += 1;
   return uiMessage("canvas.pageOperations.page") + String(pageNumber);
 }
+/** 生成要保存的页面列表及对应的撤销步骤。 */
+export function planCanvasPageAddition(manifest: CanvasManifest, randomizeId: boolean):
+  | { ok: false; limit: number }
+  | { ok: true; manifest: CanvasManifest; history: Extract<CanvasHistoryStep, { kind: "page-add" }> } {
+  const existingPages = manifest.pages;
+  const hadPages = existingPages !== undefined && existingPages.length > 0;
+  const pages = hadPages ? [...existingPages] : [defaultCanvasPage];
+  if (pages.length >= newPageLimit) return { ok: false, limit: newPageLimit };
+  const page = {
+    id: createPageId(pages, randomizeId),
+    name: nextCanvasPageName(pages),
+  };
+  return {
+    ok: true,
+    manifest: { ...manifest, pages: [...pages, page] },
+    history: { kind: "page-add", page, ...(hadPages ? {} : { first: pages[0] }) },
+  };
+}
+
 function canvasPageDeleteConfirmation(
   pageName?: Dynamic,
   artboardCount?: Dynamic,
@@ -155,7 +175,7 @@ function canvasPageDeleteConfirmation(
       : "",
   ].filter((phrase?: Dynamic): Dynamic => phrase !== "");
   return {
-    get title() { return uiMessage("canvas.pageOperations.deletePage2", { value1: String(pageName) }); },
+    get title() { return uiMessage("canvas.pageOperations.confirmDeletePage", { pageName: String(pageName) }); },
     message:
       uiMessage("canvas.pageOperations.its") +
       objectPhrases.join(" and ") +
@@ -174,7 +194,6 @@ export {
   canvasPageDeleteSnapshot,
   isCanvasPageMatch,
   neighboringCanvasPageId,
-  nextCanvasPageName,
   otherCanvasObjectWord,
   pluralCanvasObjectCount,
   remainingCanvasPageObjects,

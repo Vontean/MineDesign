@@ -8,7 +8,7 @@ import { initializeNpm_usehooks_ts_p0, load_react } from "../../dependencies";
 import { discardedCodeChangesAnnouncement, sourceLineErrorAnnouncement } from "../accessibility/announcements";
 import { announce } from "../accessibility/announcer";
 import { ChromeScrollbarLabel, FloatingScrollbar } from "../chrome/scrollbar";
-import { CodePropertyCodeConstant_2 as discardAnnouncementDelayMs, CodePropertyCodeResolvedValue, getSelectionCodeEntries, parseInspectorCode, selectionCodeText, serializeSelectionCode, useCodeErrorAnnouncement } from "./property-code";
+import { CodePropertyCodeDiscardDelayMs as discardAnnouncementDelayMs, CodePropertyCodeResolvedValue, getSelectionCodeEntries, parseInspectorCode, selectionCodeText, serializeSelectionCode, useCodeErrorAnnouncement } from "./property-code";
 import { reactInspectorAnnotation } from "../inspector/annotation";
 import { ClassStyleTargets, findInspectorOutlineNode, isTextStyleProperty, sharedInheritedTextStyle } from "../inspector/class-targets";
 import { toModuleNamespace } from "../../module-helpers";
@@ -295,7 +295,7 @@ function InspectorCodePanel({
           aria-invalid={codeError != null}
           aria-describedby={errorAnnouncement === undefined ? undefined : errorId}
           title={
-            codeError ? (uiMessage("inspector.inspectorCodePanel.line", { value1: String(String(codeError.line)), value2: String(codeError.message) })) : (undefined)
+            codeError ? (uiMessage("inspector.inspectorCodePanel.line", { line: String(String(codeError.line)), message: String(codeError.message) })) : (undefined)
           }
           onChange={(event?: Dynamic): Dynamic =>
             handleCodeChange(event.target.value)

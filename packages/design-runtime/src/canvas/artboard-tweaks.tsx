@@ -128,7 +128,7 @@ function ArtboardTweaksRow({
           readonly ? (ViewOnlyYouCanInspectThisMessage) : (uiMessage("canvas.artboardTweaks.showAllTweaks"))
         }
         aria-label={
-          chipCount === tweakEntries.length ? (undefined) : (uiMessage("canvas.artboardTweaks.showAllTweaks2", { value1: String(String(chipCount)), value2: String(String(tweakEntries.length)) }))
+          chipCount === tweakEntries.length ? (undefined) : (uiMessage("canvas.artboardTweaks.showRemainingTweaks", { remaining: String(String(chipCount)), total: String(String(tweakEntries.length)) }))
         }
         className={
           "pointer-events-auto inline-flex h-6 shrink-0 items-center whitespace-nowrap text-secondary hover:text-primary disabled:opacity-50"

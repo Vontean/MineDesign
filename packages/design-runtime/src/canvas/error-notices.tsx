@@ -4,7 +4,9 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../runtime-types";
-import { clearDismissedArtboardErrors, errorMessagesMatch, retainMatchingDismissedErrors, setDismissedArtboardErrors } from "./artboard-errors";
+import { clearDismissedArtboardErrors, errorMessagesMatch, retainMatchingDismissedErrors, setDismissedArtboardErrors, updateArtboardErrorMap } from "./artboard-errors";
+import { useArtboardErrorReporting } from "./error-reporting";
+import { embedMemoryPrefix } from "../platform/file-content";
 import { claudeSendStatusMessage, getAvailableClaudeSendSession, react_sm } from "./claude-handoff";
 import { artboardErrorsFallbackPrompt, sendArtboardErrorsToClaude } from "./error-prompt";
 import { Button } from "../cds/button/button";
@@ -305,6 +307,56 @@ function useArtboardErrorNotices(
     restore: restoreNotice,
   };
 }
+interface ArtboardProblem {
+  file: string;
+  path: string;
+  title: string;
+  messages: string[];
+}
+
+export function useCanvasArtboardProblems({
+  artboards, editable, phoneCanvas,
+}: {
+  artboards: { file: string; title?: string | null }[];
+  editable: boolean;
+  phoneCanvas: boolean;
+}) {
+  const { useState, useCallback, useMemo } = react_Xd;
+  const [messagesByFile, setMessagesByFile] = useState(() => new Map<string, string[]>());
+  const [open, setOpen] = useState(false);
+  const update = useCallback((file: string, messages: string[]) => {
+    setMessagesByFile((previous: Map<string, string[]>) => updateArtboardErrorMap(previous, file, messages));
+  }, []);
+  const showAll = useCallback(() => setOpen(true), []);
+  const problems: ArtboardProblem[] = useMemo(() => artboards.flatMap(({ file, title }) => {
+    const messages = messagesByFile.get(file);
+    return messages ? [{ file, path: file, title: title ?? file.replace(/\.dc\.html$/, ""), messages }] : [];
+  }), [artboards, messagesByFile]);
+  const hasProblems = problems.length > 0;
+  const hosted = embedMemoryPrefix() !== "";
+  const canvasTitle = document.title;
+  useArtboardErrorReporting(hasProblems);
+  const notices = useArtboardErrorNotices(messagesByFile, problems, {
+    canvasTitle,
+    canAsk: editable && !hosted,
+    large: phoneCanvas,
+    onShowAll: showAll,
+  });
+  if (!hasProblems && open) setOpen(false);
+
+  const popover = hasProblems ? (
+    <ArtboardErrorsPopover
+      problems={problems}
+      canvasTitle={canvasTitle}
+      canEdit={editable}
+      hosted={hosted}
+      open={open}
+      onOpenChange={setOpen}
+    />
+  ) : null;
+  return { update, problems, popover, chips: notices.chipProblems, restore: notices.restore, notice: notices.notice };
+}
+
 export {
   artboardErrorChipElement,
   ArtboardErrorNotice,
@@ -353,7 +405,7 @@ export function installCanvasErrorNotices(): () => void {
       dismiss: (artboardName?: Dynamic): Dynamic =>
         uiMessage("canvas.errorNotices.dismissErrorNoticeOnArtboard") + artboardName,
       dismissTip: "Dismiss",
-      refused: uiMessage("canvas.errorNotices.couldnTCopyThePrompt", { value1: String(artboardErrorsUiLabels.ask), value2: String(artboardErrorsUiLabels.title) }),
+      refused: uiMessage("canvas.errorNotices.couldnTCopyThePrompt", { action: String(artboardErrorsUiLabels.ask), menu: String(artboardErrorsUiLabels.title) }),
     };
     stopErrorNoticePropagation = (event?: Dynamic): Dynamic =>
       event.stopPropagation();

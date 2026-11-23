@@ -7,14 +7,14 @@ import {
 import { initializeCdsIndex } from "../../cds/index";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { reactComponentsPropsPanel } from "../components/props-panel";
-import { PropertiesCssEffectsXYBlurConfig_2 as shadowBounds, useEditorColorSwatches } from "./css-effects";
+import { shadowControlRanges as shadowBounds, useEditorColorSwatches } from "./css-effects";
 import { ColorEffectButton, PropertyEditorPopover, RemovePropertyButton, ShadowEditor } from "./effect-popup";
 import { PropertyRow } from "./row";
 import { toModuleNamespace } from "../../module-helpers";
 
 var reactPropertiesDropShadowEditor: Dynamic;
-var reactPropertiesDropShadowEditor_2: Dynamic;
-var reactPropertiesDropShadowEditor_3: Dynamic;
+var reactForPropertyInspectorField: Dynamic;
+var reactForTokenColorPicker: Dynamic;
 var jsxPropertiesDropShadowEditor: Dynamic;
 var PropertiesDropShadowEditorTest: Dynamic;
 function DropShadowEditor({
@@ -102,8 +102,8 @@ export {
   jsxPropertiesDropShadowEditor,
   PropertiesDropShadowEditorTest,
   reactPropertiesDropShadowEditor,
-  reactPropertiesDropShadowEditor_2,
-  reactPropertiesDropShadowEditor_3,
+  reactForPropertyInspectorField,
+  reactForTokenColorPicker,
 };
 export function installEditorPropertiesDropShadowEditor(): () => void {
   return () => {
@@ -112,11 +112,11 @@ export function installEditorPropertiesDropShadowEditor(): () => void {
       1,
     );
     initializeCdsIndex();
-    reactPropertiesDropShadowEditor_2 = toModuleNamespace(
+    reactForPropertyInspectorField = toModuleNamespace(
       load_react(),
       1,
     );
-    reactPropertiesDropShadowEditor_3 = toModuleNamespace(
+    reactForTokenColorPicker = toModuleNamespace(
       load_react(),
       1,
     );

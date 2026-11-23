@@ -2,13 +2,13 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { StyleSchemaNodeTypesAutoNoneValues, StyleSchemaNodeTypesBlockInlineBlockFlexValues, StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues, StyleSchemaNodeTypesDefaultPointerTextValues, StyleSchemaNodeTypesFlat, StyleSchemaNodeTypesFlatValue, StyleSchemaNodeTypesFlatValue_2 as nodesSupportingBorderSidesAndTransform, StyleSchemaNodeTypesFlatValue_3 as typographyNodes, StyleSchemaNodeTypesFlatValue_4 as effectNodes, StyleSchemaNodeTypesFlatValue_5 as richDocumentLayoutNodes, StyleSchemaNodeTypesItems, StyleSchemaNodeTypesLeftCenterRightValues, StyleSchemaNodeTypesNoneLeftRightValues, StyleSchemaNodeTypesNoneSolidDashedValues, StyleSchemaNodeTypesNoneUnderlineLineThroughValues, StyleSchemaNodeTypesNoneUppercaseLowercaseValues, StyleSchemaNodeTypesNormalItalicValues, StyleSchemaNodeTypesNormalMultiplyScreenValues, StyleSchemaNodeTypesNormalTabularNumsValues, StyleSchemaNodeTypesParagraphHeadingCodeBlockValues, StyleSchemaNodeTypesSansSerifMonoValues, StyleSchemaNodeTypesSlidesIconValues, StyleSchemaNodeTypesSlidesImgValues, StyleSchemaNodeTypesSlidesShapeValues, StyleSchemaNodeTypesSlidesStackValues, StyleSchemaNodeTypesSlidesTableValues, StyleSchemaNodeTypesSlidesTextValues, StyleSchemaNodeTypesSolidDoubleDottedValues, StyleSchemaNodeTypesStaticRelativeAbsoluteValues, StyleSchemaNodeTypesTableTableCellTableHeaderValues, StyleSchemaNodeTypesVisibleHiddenClipValues, StyleSchemaNodeTypesVisibleHiddenValues } from "./node-types";
+import { StyleSchemaNodeTypesAutoNoneValues, StyleSchemaNodeTypesBlockInlineBlockFlexValues, StyleSchemaNodeTypesBlockquoteBulletListOrderedListValues, StyleSchemaNodeTypesDefaultPointerTextValues, StyleSchemaNodeTypesFlat, StyleSchemaNodeTypesFlatValue, nodesSupportingBorderSidesAndTransform, typographyNodes, effectNodes, richDocumentLayoutNodes, StyleSchemaNodeTypesItems, StyleSchemaNodeTypesLeftCenterRightValues, StyleSchemaNodeTypesNoneLeftRightValues, StyleSchemaNodeTypesNoneSolidDashedValues, StyleSchemaNodeTypesNoneUnderlineLineThroughValues, StyleSchemaNodeTypesNoneUppercaseLowercaseValues, StyleSchemaNodeTypesNormalItalicValues, StyleSchemaNodeTypesNormalMultiplyScreenValues, StyleSchemaNodeTypesNormalTabularNumsValues, StyleSchemaNodeTypesParagraphHeadingCodeBlockValues, StyleSchemaNodeTypesSansSerifMonoValues, StyleSchemaNodeTypesSlidesIconValues, StyleSchemaNodeTypesSlidesImgValues, StyleSchemaNodeTypesSlidesShapeValues, StyleSchemaNodeTypesSlidesStackValues, StyleSchemaNodeTypesSlidesTableValues, StyleSchemaNodeTypesSlidesTextValues, StyleSchemaNodeTypesSolidDoubleDottedValues, StyleSchemaNodeTypesStaticRelativeAbsoluteValues, StyleSchemaNodeTypesTableTableCellTableHeaderValues, StyleSchemaNodeTypesVisibleHiddenClipValues, StyleSchemaNodeTypesVisibleHiddenValues } from "./node-types";
 
 var StyleSchemaValuesSansSerifMonoConfig: Dynamic;
 var StyleSchemaValuesHandler: Dynamic;
-var StyleSchemaValuesHandler_2: Dynamic;
-var StyleSchemaValuesHandler_3: Dynamic;
-var StyleSchemaValuesHandler_4: Dynamic;
+var numberRangeSpec: Dynamic;
+var integerRangeSpec: Dynamic;
+var enumSpec: Dynamic;
 var StyleSchemaValuesKindConfig: Dynamic;
 var StyleSchemaValuesLimit: Dynamic;
 var StyleSchemaValuesClosestSideClosestCornerFarthestSideValues: Dynamic;
@@ -28,20 +28,20 @@ export {
   StyleSchemaValuesClosestSideClosestCornerFarthestSideValues,
   StyleSchemaValuesColorBackgroundColorBackgroundGradientValues,
   StyleSchemaValuesHandler,
-  StyleSchemaValuesHandler_2,
-  StyleSchemaValuesHandler_3,
-  StyleSchemaValuesHandler_4,
+  numberRangeSpec,
+  integerRangeSpec,
+  enumSpec,
   StyleSchemaValuesItems,
-  transformFieldSpecs as StyleSchemaValuesItems_2,
-  supportedStyleProperties as StyleSchemaValuesItems_3,
+  transformFieldSpecs,
+  supportedStyleProperties,
   StyleSchemaValuesKindConfig,
   StyleSchemaValuesLimit,
   StyleSchemaValuesRegistry,
   StyleSchemaValuesSansSerifMonoConfig,
   StyleSchemaValuesSubscribers,
-  effectProperties as StyleSchemaValuesSubscribers_2,
-  animatableProperties as StyleSchemaValuesSubscribers_3,
-  hoverProperties as StyleSchemaValuesSubscribers_4,
+  effectProperties,
+  animatableProperties,
+  hoverProperties,
   StyleSchemaValuesTransformOpacityColorValues,
 };
 export function installEditorStyleSchemaValues(): () => void {
@@ -60,7 +60,7 @@ export function installEditorStyleSchemaValues(): () => void {
       lo: minValue,
       hi: maxValue,
     });
-    StyleSchemaValuesHandler_2 = (
+    numberRangeSpec = (
       minValue?: Dynamic,
       maxValue?: Dynamic,
     ): Dynamic => ({
@@ -68,7 +68,7 @@ export function installEditorStyleSchemaValues(): () => void {
       lo: minValue,
       hi: maxValue,
     });
-    StyleSchemaValuesHandler_3 = (
+    integerRangeSpec = (
       minValue?: Dynamic,
       maxValue?: Dynamic,
       stepValue?: Dynamic,
@@ -78,7 +78,7 @@ export function installEditorStyleSchemaValues(): () => void {
       hi: maxValue,
       step: stepValue,
     });
-    StyleSchemaValuesHandler_4 = (enumValues?: Dynamic): Dynamic => ({
+    enumSpec = (enumValues?: Dynamic): Dynamic => ({
       kind: "enum",
       values: enumValues,
     });
@@ -100,43 +100,43 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       {
         field: "brightness",
-        cls: StyleSchemaValuesHandler_2(0, 2),
+        cls: numberRangeSpec(0, 2),
         fn: "brightness",
         unit: "",
       },
       {
         field: "contrast",
-        cls: StyleSchemaValuesHandler_2(0, 2),
+        cls: numberRangeSpec(0, 2),
         fn: "contrast",
         unit: "",
       },
       {
         field: "saturate",
-        cls: StyleSchemaValuesHandler_2(0, 3),
+        cls: numberRangeSpec(0, 3),
         fn: "saturate",
         unit: "",
       },
       {
         field: "grayscale",
-        cls: StyleSchemaValuesHandler_2(0, 1),
+        cls: numberRangeSpec(0, 1),
         fn: "grayscale",
         unit: "",
       },
       {
         field: "sepia",
-        cls: StyleSchemaValuesHandler_2(0, 1),
+        cls: numberRangeSpec(0, 1),
         fn: "sepia",
         unit: "",
       },
       {
         field: "invert",
-        cls: StyleSchemaValuesHandler_2(0, 1),
+        cls: numberRangeSpec(0, 1),
         fn: "invert",
         unit: "",
       },
       {
         field: "hueRotate",
-        cls: StyleSchemaValuesHandler_2(0, 360),
+        cls: numberRangeSpec(0, 360),
         fn: "hue-rotate",
         unit: "deg",
       },
@@ -152,19 +152,19 @@ export function installEditorStyleSchemaValues(): () => void {
       },
       {
         field: "rotate",
-        cls: StyleSchemaValuesHandler_2(-180, 180),
+        cls: numberRangeSpec(-180, 180),
       },
       {
         field: "scale",
-        cls: StyleSchemaValuesHandler_2(0.5, 2),
+        cls: numberRangeSpec(0.5, 2),
       },
       {
         field: "skewX",
-        cls: StyleSchemaValuesHandler_2(-60, 60),
+        cls: numberRangeSpec(-60, 60),
       },
       {
         field: "skewY",
-        cls: StyleSchemaValuesHandler_2(-60, 60),
+        cls: numberRangeSpec(-60, 60),
       },
     ];
     supportedStyleProperties = [
@@ -280,18 +280,18 @@ export function installEditorStyleSchemaValues(): () => void {
         on: typographyNodes,
       },
       fontWeight: {
-        v: StyleSchemaValuesHandler_3(100, 900, 100),
+        v: integerRangeSpec(100, 900, 100),
         on: typographyNodes,
       },
       fontStyle: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesNormalItalicValues,
         ),
         on: typographyNodes,
       },
       lineHeight: {
-        v: StyleSchemaValuesHandler_2(0.75, 4),
-        slides: StyleSchemaValuesHandler_2(0.5, 4),
+        v: numberRangeSpec(0.75, 4),
+        slides: numberRangeSpec(0.5, 4),
         on: typographyNodes,
       },
       letterSpacing: {
@@ -300,7 +300,7 @@ export function installEditorStyleSchemaValues(): () => void {
         on: typographyNodes,
       },
       textAlign: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesLeftCenterRightValues,
         ),
         on: StyleSchemaNodeTypesFlat(
@@ -311,19 +311,19 @@ export function installEditorStyleSchemaValues(): () => void {
         routed: StyleSchemaNodeTypesSlidesTextValues,
       },
       textTransform: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesNoneUppercaseLowercaseValues,
         ),
         on: typographyNodes,
       },
       textDecorationLine: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesNoneUnderlineLineThroughValues,
         ),
         on: typographyNodes,
       },
       textDecorationStyle: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesSolidDoubleDottedValues,
         ),
         on: typographyNodes,
@@ -333,7 +333,7 @@ export function installEditorStyleSchemaValues(): () => void {
         on: typographyNodes,
       },
       fontFamily: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesSansSerifMonoValues,
         ),
         slides: {
@@ -342,7 +342,7 @@ export function installEditorStyleSchemaValues(): () => void {
         on: typographyNodes,
       },
       fontVariantNumeric: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesNormalTabularNumsValues,
         ),
         on: typographyNodes,
@@ -441,7 +441,7 @@ export function installEditorStyleSchemaValues(): () => void {
         on: StyleSchemaNodeTypesFlatValue,
       },
       borderStyle: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesNoneSolidDashedValues,
         ),
         on: StyleSchemaNodeTypesFlatValue,
@@ -451,7 +451,7 @@ export function installEditorStyleSchemaValues(): () => void {
         on: StyleSchemaNodeTypesFlatValue,
       },
       borderSides: {
-        v: StyleSchemaValuesHandler_4(StyleSchemaNodeTypesItems),
+        v: enumSpec(StyleSchemaNodeTypesItems),
         on: nodesSupportingBorderSidesAndTransform,
       },
       borderTopWidth: {
@@ -531,7 +531,7 @@ export function installEditorStyleSchemaValues(): () => void {
         ),
       },
       opacity: {
-        v: StyleSchemaValuesHandler_2(0, 1),
+        v: numberRangeSpec(0, 1),
         on: StyleSchemaNodeTypesFlatValue,
       },
       boxShadow: {
@@ -593,13 +593,13 @@ export function installEditorStyleSchemaValues(): () => void {
         routed: StyleSchemaNodeTypesSlidesShapeValues,
       },
       mixBlendMode: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesNormalMultiplyScreenValues,
         ),
         on: effectNodes,
       },
       position: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesStaticRelativeAbsoluteValues,
         ),
         on: richDocumentLayoutNodes,
@@ -621,29 +621,29 @@ export function installEditorStyleSchemaValues(): () => void {
         on: richDocumentLayoutNodes,
       },
       zIndex: {
-        v: StyleSchemaValuesHandler_3(-999, 999, 1),
+        v: integerRangeSpec(-999, 999, 1),
         on: richDocumentLayoutNodes,
       },
       float: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesNoneLeftRightValues,
         ),
         on: richDocumentLayoutNodes,
       },
       display: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesBlockInlineBlockFlexValues,
         ),
         on: richDocumentLayoutNodes,
       },
       visibility: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesVisibleHiddenValues,
         ),
         on: StyleSchemaNodeTypesFlatValue,
       },
       overflow: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesVisibleHiddenClipValues,
         ),
         on: StyleSchemaNodeTypesFlat(
@@ -653,13 +653,13 @@ export function installEditorStyleSchemaValues(): () => void {
         ),
       },
       pointerEvents: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesAutoNoneValues,
         ),
         on: StyleSchemaNodeTypesFlatValue,
       },
       cursor: {
-        v: StyleSchemaValuesHandler_4(
+        v: enumSpec(
           StyleSchemaNodeTypesDefaultPointerTextValues,
         ),
         on: StyleSchemaNodeTypesFlatValue,

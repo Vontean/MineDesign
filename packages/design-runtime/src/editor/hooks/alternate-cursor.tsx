@@ -9,7 +9,7 @@ import { toModuleNamespace } from "../../module-helpers";
 var reactHooksAlternateCursor: Dynamic;
 var HooksAlternateCursorProgressCrosshairConfig: Dynamic;
 var HooksAlternateCursorRegistry: Dynamic;
-var HooksAlternateCursorProgressCrosshairConfig_2: Dynamic;
+var cursorOverrideStyles: Dynamic;
 var HooksAlternateCursorCrosshairProgressValues: Dynamic;
 var HooksAlternateCursorHandler: Dynamic;
 var HooksAlternateCursorSubscribers: Dynamic;
@@ -23,7 +23,7 @@ function getAlternateCursorStyle(cursorKind?: Dynamic): Dynamic {
     ((styleElement = (document as Dynamic).createElement("style")),
     styleElement.setAttribute("data-alt-cursor", cursorKind),
     (styleElement.textContent =
-      HooksAlternateCursorProgressCrosshairConfig_2[cursorKind]),
+      cursorOverrideStyles[cursorKind]),
     (HooksAlternateCursorRegistry[cursorKind] = styleElement));
   return styleElement;
 }
@@ -54,7 +54,7 @@ export {
   HooksAlternateCursorCrosshairProgressValues,
   HooksAlternateCursorHandler,
   HooksAlternateCursorProgressCrosshairConfig,
-  HooksAlternateCursorProgressCrosshairConfig_2,
+  cursorOverrideStyles,
   HooksAlternateCursorRegistry,
   HooksAlternateCursorSubscribers,
   HooksAlternateCursorTest,
@@ -75,7 +75,7 @@ export function installEditorHooksAlternateCursor(): () => void {
       crosshair: 0,
     };
     HooksAlternateCursorRegistry = {};
-    HooksAlternateCursorProgressCrosshairConfig_2 = {
+    cursorOverrideStyles = {
       progress: "* { cursor: progress !important; }",
       crosshair: "* { cursor: crosshair !important; }",
     };

@@ -87,12 +87,10 @@ function designSystemTypographyOptions(systems?: Dynamic): Dynamic {
 export {
   designSystemColorOptions,
   DesignSystemStoreAlias,
-  serializedDesignSystems as DesignSystemStoreAlias_2,
   DesignSystemStoreItems,
   DesignSystemStoreResolvedValue,
   DesignSystemStoreResolvedValueAlias,
   DesignSystemStoreSubscribers,
-  colorVariableNames as DesignSystemStoreSubscribers_2,
   designSystemTypographyOptions,
   getDesignSystemColorVariables,
   getDesignSystems,

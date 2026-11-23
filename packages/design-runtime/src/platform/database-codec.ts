@@ -5,7 +5,7 @@ import {
 } from "../runtime-types";
 import { DesignSystemsKey } from "../design-system/type-declarations";
 import { createDesignIndexFromFiles, INDEX_DESIGN_SYSTEM_TOKENS_KEY, INDEX_LEFT_OUT_KEY, INDEX_SOURCE_KEY, isPrototypeProperty, MAX_NOTE_INLINE_PATH_CHARS, normalizeDesignIndex, orderedDesignMapKeys } from "./design-index";
-import { BoardsValue, canvasMetadataFile, DesignValue, encodeStorePathSegment, FilesValue, isArtboardFile, isProjectTextFilePath, isSafeProjectPath, isSupportedProjectAsset, isTypeDeclarationPath, NotesValue, parseCanvasMetadata, parseDesignSource, PlatformFileContentResolvedValue_4 as designMetadataPath, PlatformFileContentResolvedValue_5 as designSourceDocumentPath, PlatformFileContentXYWValues, serializeCanvasMetadata } from "./file-content";
+import { BoardsValue, canvasMetadataFile, DesignValue, encodeStorePathSegment, FilesValue, isArtboardFile, isProjectTextFilePath, isSafeProjectPath, isSupportedProjectAsset, isTypeDeclarationPath, NotesValue, parseCanvasMetadata, parseDesignSource, designMetadataPath as designMetadataPath, designSourceDocumentPath as designSourceDocumentPath, PlatformFileContentXYWValues, serializeCanvasMetadata } from "./file-content";
 import { canSaveDesignFile, encodeDesignPortFile } from "./files-design-document";
 import { isBlobAssetUrl } from "./image-upload";
 import { cloneIndexValue, equalIndexValue } from "./index-merge";

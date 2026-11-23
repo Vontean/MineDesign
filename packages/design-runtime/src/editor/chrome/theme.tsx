@@ -6,19 +6,19 @@ import { initializeCdsIndex } from "../../cds/index";
 import { load_react } from "../../dependencies";
 import { toModuleNamespace } from "../../module-helpers";
 
-var reactChromeTheme: Dynamic;
+var React: Dynamic;
 var editorThemeTokens: Dynamic;
-var reactChromeTheme_2: Dynamic;
-var reactChromeTheme_3: Dynamic;
+var reactForEditorContextMenu: Dynamic;
+var reactForEditorPopover: Dynamic;
 export {
   editorThemeTokens,
-  reactChromeTheme,
-  reactChromeTheme_2,
-  reactChromeTheme_3,
+  React as reactChromeTheme,
+  reactForEditorContextMenu,
+  reactForEditorPopover,
 };
 export function installEditorChromeTheme(): () => void {
   return () => {
-    reactChromeTheme = toModuleNamespace(
+    React = toModuleNamespace(
       load_react(),
       1,
     );
@@ -106,12 +106,12 @@ export function installEditorChromeTheme(): () => void {
       },
     };
     initializeCdsIndex();
-    reactChromeTheme_2 = toModuleNamespace(
+    reactForEditorContextMenu = toModuleNamespace(
       load_react(),
       1,
     );
     initializeCdsIndex();
-    reactChromeTheme_3 = toModuleNamespace(
+    reactForEditorPopover = toModuleNamespace(
       load_react(),
       1,
     );

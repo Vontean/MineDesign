@@ -78,7 +78,7 @@ function AssetContextMenu({
           <jsxAssetActions.Fragment>
             {[<Menu.Separator />, <Menu.Group>
                 {[<Menu.GroupLabel>
-                    {length > 1 ? (uiMessage("design-system.assetContextMenu.moveFilesTo", { value1: String(String(length)) })) : (uiMessage("design-system.assetContextMenu.moveTo"))}
+                    {length > 1 ? (uiMessage("design-system.assetContextMenu.moveFilesTo", { subject: String(String(length)) })) : (uiMessage("design-system.assetContextMenu.moveTo"))}
                   </Menu.GroupLabel>, groups.map((group) =>
                     (() => {
                       const _Element = Menu.Item;
@@ -117,7 +117,7 @@ function AssetContextMenu({
                 onClick={() => edit.remove(items)}
                 data-testid={"ds-amenu-remove"}
               >
-                {length > 1 ? (uiMessage("design-system.assetContextMenu.removeFiles", { value1: String(String(length)) })) : (uiMessage("design-system.assetContextMenu.remove"))}
+                {length > 1 ? (uiMessage("design-system.assetContextMenu.removeFiles", { subject: String(String(length)) })) : (uiMessage("design-system.assetContextMenu.remove"))}
               </Menu.Item>]}
           </jsxAssetActions.Fragment>
         ) : null]}

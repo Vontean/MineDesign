@@ -7,8 +7,8 @@ import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
 import { detectCompiledPageStorageMode, truncateUtf16Safely } from "../platform/compiled-page";
 
-var THUMBNAIL_READY_ATTRIBUTE: string;
-var BLANK_THUMBNAIL_ATTRIBUTE: string;
+const THUMBNAIL_READY_ATTRIBUTE = "data-thumb-ready";
+const BLANK_THUMBNAIL_ATTRIBUTE = "data-thumb-blank";
 function stateEnvelopeTitle(envelope: Boot.RawEnvelope): string | undefined {
   let title = envelope.title;
   if (typeof title === "string" && title.length > 0) {
@@ -179,9 +179,3 @@ export {
   waitForThumbnailAssets,
   waitForThumbnailResources,
 };
-export function installFilesThumbnailReadiness(): () => void {
-  return () => {
-    THUMBNAIL_READY_ATTRIBUTE = "data-thumb-ready";
-    BLANK_THUMBNAIL_ATTRIBUTE = "data-thumb-blank";
-  };
-}

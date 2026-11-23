@@ -4,11 +4,11 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { reactCanvasShape_2 } from "../../canvas/shape";
+import { canvasShapeReact as React } from "../../canvas/shape";
 import { SegmentedControl } from "../../cds/components/selection-points";
 import { ArtboardRadiusRow } from "./artboard-radius";
 import { InspectorContext, useInspectorContext } from "./context-part-2";
-import { InspectorEditorItems_2 as emptyArtboardColors, InspectorEditorLabel_4 as contentSizedReason, InspectorEditorPropLabelSpecConfig, InspectorEditorSubscribers, inspectorSingleSelectionMessage } from "./editor";
+import { emptyArtboardColors, contentSizedReason, InspectorEditorPropLabelSpecConfig, emptyDefinedVars, inspectorSingleSelectionMessage } from "./editor";
 import { ViewOnlyYouCanInspectThisMessage } from "../outline/annotations";
 import { PropertyInspectorField } from "../properties/inspector-field";
 import { NumericInput } from "../properties/numeric-input";
@@ -40,10 +40,10 @@ function ArtboardInspector({
       ? ViewOnlyYouCanInspectThisMessage
       : undefined,
     inspectorContext: Dynamic = useInspectorContext(),
-    artboardContext: Dynamic = (0, reactCanvasShape_2.useMemo)(
+    artboardContext: Dynamic = (0, React.useMemo)(
       (): Dynamic => ({
         ...inspectorContext,
-        iframeDefinedVars: InspectorEditorSubscribers,
+        iframeDefinedVars: emptyDefinedVars,
         artboardColors: emptyArtboardColors,
         editsAreUndoSteps: false,
       }),
@@ -176,7 +176,7 @@ function ArtboardInspector({
           label={uiMessage("inspector.artboard.paper")}
           data-testid={"dc-artboard-paper"}
           title={
-            readOnlyReason ?? (isPaginated ? (effectiveSettings.paperSet === undefined ? (uiMessage("inspector.artboard.notSetCurrentlyFromThe", { value1: String(paperSizes[effectiveSettings.paper].label) })) : (undefined)) : (uiMessage("inspector.artboard.appliesToFlowFixedExports")))
+            readOnlyReason ?? (isPaginated ? (effectiveSettings.paperSet === undefined ? (uiMessage("inspector.artboard.notSetCurrentlyFromThe", { paper: String(paperSizes[effectiveSettings.paper].label) })) : (undefined)) : (uiMessage("inspector.artboard.appliesToFlowFixedExports")))
           }
         >
           <SegmentedControl
@@ -187,9 +187,9 @@ function ArtboardInspector({
               (paperKey?: Dynamic): Dynamic => ({
                 value: paperKey,
                 label: paperSizes[paperKey].label,
-                get tooltip() { return isPaginated ? (uiMessage("inspector.artboard.pages", { value1: String(isFlow
+                get tooltip() { return isPaginated ? (uiMessage("inspector.artboard.pages", { prefix: String(isFlow
                       ? "Export PDF paginates onto "
-                      : "When Export PDF paginates, it uses "), value2: String(paperSizes[paperKey].label), value3: String(effectiveSettings.paperSet === undefined && effectiveSettings.paper === paperKey
+                      : "When Export PDF paginates, it uses "), paper: String(paperSizes[paperKey].label), defaultSuffix: String(effectiveSettings.paperSet === undefined && effectiveSettings.paper === paperKey
                       ? " (the current default)"
                       : "") })) : (undefined); },
                 disabled: !isPaginated || readOnly,

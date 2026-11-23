@@ -36,7 +36,7 @@ export {
   PickerHiddenTagsItems,
   PickerHiddenTagsPattern,
   PickerHiddenTagsSubscribers,
-  PickerHiddenTagsListeners as PickerHiddenTagsSubscribers_2,
+  PickerHiddenTagsListeners,
   registerHiddenPickerTag,
   subscribeHiddenPickerTags,
 };

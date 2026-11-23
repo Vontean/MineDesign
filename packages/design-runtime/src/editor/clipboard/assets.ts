@@ -2,8 +2,8 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { ClipboardAnnotationsTest_3 as isSupportedDataImage, replaceClipboardPictureSource } from "./annotations";
-import { ClipboardArtboardsLimit, ClipboardArtboardsResolvedValue, ClipboardArtboardsResolvedValue_2 as maxAssetBytes } from "./artboards";
+import { isSupportedDataImage, replaceClipboardPictureSource } from "./annotations";
+import { ClipboardArtboardsLimit, ClipboardArtboardsResolvedValue, maxAssetBytes } from "./artboards";
 import { dataUrlToBlob } from "./file-transfer";
 import { readRasterImagePixels } from "./image-validation";
 

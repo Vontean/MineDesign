@@ -11,7 +11,7 @@ import { InspectorContext, useInspectorContext } from "./context-part-2";
 import { inspectSingleElement } from "./selection";
 import { MediaPlaybackControlsQuerySelector, reactMediaPlaybackControls, VideoSeekControl } from "../media/playback-controls";
 import { ViewOnlyYouCanInspectThisMessage } from "../outline/annotations";
-import { ACanvasPictureShowsAnUploadedMessage, InspectorAppearanceSection, PropertiesAppearanceSectionBoxShadowFilterBackdropFilterSet, PropertiesAppearanceSectionFontSizeFontWeightSet, PropertiesAppearanceSectionHandler, PropertiesAppearanceSectionImageRectOvalConfig, PropertiesAppearanceSectionImageVideoRectConfig, PropertiesAppearanceSectionItems_2 as fontWeightFaces, PropertiesAppearanceSectionLabel, PropertiesAppearanceSectionLabel_2 as fixedCanvasObjectSizeReason, PropertiesAppearanceSectionLabel_3 as noteSizeReason, PropertiesAppearanceSectionLabel_4 as titleSizeReason, PropertiesAppearanceSectionLabel_5 as ovalRoundReason, PropertiesAppearanceSectionLabel_6 as canvasObjectPaintReason, PropertiesAppearanceSectionLabel_7 as videoSourceReason, PropertiesAppearanceSectionNoteTitle1Config, PropertiesAppearanceSectionSubscribers, PropertiesAppearanceSectionSubscribers_2 as canvasCssPropertySet, PropertiesAppearanceSectionSubscribers_3 as imageMediaPropertySet, PropertiesAppearanceSectionWidthHeightPositionSet, useVisibleInspectorProperties } from "../properties/appearance-section";
+import { ACanvasPictureShowsAnUploadedMessage, InspectorAppearanceSection, PropertiesAppearanceSectionBoxShadowFilterBackdropFilterSet, PropertiesAppearanceSectionFontSizeFontWeightSet, PropertiesAppearanceSectionHandler, PropertiesAppearanceSectionImageRectOvalConfig, PropertiesAppearanceSectionImageVideoRectConfig, PropertiesAppearanceSectionFontStyleOptions as fontWeightFaces, PropertiesAppearanceSectionLabel, PropertiesAppearanceSectionFixedSizeMessage as fixedCanvasObjectSizeReason, PropertiesAppearanceSectionNoteHeightMessage as noteSizeReason, PropertiesAppearanceSectionTitleSizeMessage as titleSizeReason, PropertiesAppearanceSectionOvalRoundMessage as ovalRoundReason, PropertiesAppearanceSectionFillOnlyMessage as canvasObjectPaintReason, PropertiesAppearanceSectionReplaceVideoMessage as videoSourceReason, PropertiesAppearanceSectionNoteTitle1Config, PropertiesAppearanceSectionSubscribers, PropertiesAppearanceSectionFillProperties as canvasCssPropertySet, PropertiesAppearanceSectionImageProperties as imageMediaPropertySet, PropertiesAppearanceSectionWidthHeightPositionSet, useVisibleInspectorProperties } from "../properties/appearance-section";
 import { CssEffectsSection } from "../properties/css-effects";
 import { InspectorLayoutSection } from "../properties/layout-section";
 import { PropertyActions } from "../properties/primitives";
@@ -19,10 +19,10 @@ import { PropertySection } from "../properties/section";
 import { SessionArtboardStateEscape } from "../session/artboard-state";
 import { toModuleNamespace } from "../../module-helpers";
 import { initializePlatformCdsIsland } from "../../platform/cds-island";
-import { PlatformFileContentTest_2 as isBlobPath } from "../../platform/file-content";
+import { parseAnnotationImageUrl as isBlobPath } from "../../platform/file-content";
 
 var reactInspectorAnnotation: Dynamic;
-var reactInspectorAnnotation_2: Dynamic;
+var reactForClassStyleTargets: Dynamic;
 var jsxInspectorAnnotation: Dynamic;
 var InspectorAnnotationLargerSmallerPattern: Dynamic;
 var InspectorAnnotationFontFontSizeFontWeightSet: Dynamic;
@@ -616,7 +616,7 @@ export {
   InspectorAnnotationLargerSmallerPattern,
   jsxInspectorAnnotation,
   reactInspectorAnnotation,
-  reactInspectorAnnotation_2,
+  reactForClassStyleTargets,
 };
 export function installEditorInspectorAnnotation(): () => void {
   return () => {
@@ -624,7 +624,7 @@ export function installEditorInspectorAnnotation(): () => void {
       load_react(),
       1,
     );
-    reactInspectorAnnotation_2 = toModuleNamespace(
+    reactForClassStyleTargets = toModuleNamespace(
       load_react(),
       1,
     );

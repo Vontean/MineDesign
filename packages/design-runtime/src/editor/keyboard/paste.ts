@@ -7,11 +7,11 @@ import { hasBlockingOverlay } from "../chrome/overlay-state";
 import { isEditingInputTarget } from "./find";
 
 var KeyboardPasteLabel: Dynamic;
-var KeyboardPasteLabel_2: Dynamic;
+var imagePasteFailureMessage: Dynamic;
 var KeyboardPasteReplace: Dynamic;
 var KeyboardPasteJoinValue: Dynamic;
-var KeyboardPasteLabel_3: Dynamic;
-var KeyboardPasteLabel_4: Dynamic;
+var menuAndListboxSelector: Dynamic;
+var menuTriggerGroupSelector: Dynamic;
 var RoleSwitchValue: Dynamic;
 var KeyboardPasteSubscribers: Dynamic;
 function imagePasteRefusal(
@@ -46,7 +46,7 @@ function imagePasteRefusal(
       ? isTypingSurface
         ? {
             to: "nobody",
-            say: localizeMessage(KeyboardPasteLabel_2),
+            say: localizeMessage(imagePasteFailureMessage),
           }
         : {
             to: "canvas",
@@ -71,7 +71,7 @@ function shouldKeepLocalKeyboardEvent(event?: Dynamic): Dynamic {
     event.metaKey ||
     event.ctrlKey
     ? false
-    : target.closest(KeyboardPasteLabel_3) != null
+    : target.closest(menuAndListboxSelector) != null
       ? true
       : event.shiftKey || event.altKey
         ? false
@@ -81,7 +81,7 @@ function shouldKeepLocalKeyboardEvent(event?: Dynamic): Dynamic {
               target.closest(RoleSwitchValue) != null)
           ? true
           : KeyboardPasteSubscribers.has(event.key) &&
-            target.closest(KeyboardPasteLabel_4) != null;
+            target.closest(menuTriggerGroupSelector) != null;
 }
 function isCanvasEnterAction(event?: Dynamic): Dynamic {
   return event.key !== "Enter" ||
@@ -101,9 +101,9 @@ export {
   isControlTarget,
   KeyboardPasteJoinValue,
   KeyboardPasteLabel,
-  KeyboardPasteLabel_2,
-  KeyboardPasteLabel_3,
-  KeyboardPasteLabel_4,
+  imagePasteFailureMessage,
+  menuAndListboxSelector,
+  menuTriggerGroupSelector,
   KeyboardPasteReplace,
   KeyboardPasteSubscribers,
   RoleSwitchValue,
@@ -113,7 +113,7 @@ export function installEditorKeyboardPaste(): () => void {
   return () => {
     KeyboardPasteLabel =
       uiMessage("inspector.paste.theImageWasnTPasted");
-    KeyboardPasteLabel_2 =
+    imagePasteFailureMessage =
       uiMessage("inspector.paste.theImageWasnTPasted2");
     KeyboardPasteReplace = (message?: Dynamic): Dynamic =>
       message.replace(uiMessage("inspector.paste.theImage"), uiMessage("inspector.paste.theVideo"));
@@ -133,9 +133,9 @@ export function installEditorKeyboardPaste(): () => void {
     ]
       .map((selector?: Dynamic): Dynamic => selector + ':not([aria-disabled="true"])')
       .join(", ");
-    KeyboardPasteLabel_3 =
+    menuAndListboxSelector =
       '[role="menu"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="listbox"], [role="option"]';
-    KeyboardPasteLabel_4 =
+    menuTriggerGroupSelector =
       '[role="tablist"], [role="radiogroup"], [aria-haspopup="menu"], [aria-haspopup="listbox"]';
     RoleSwitchValue = '[role="switch"]';
     KeyboardPasteSubscribers = new Set([

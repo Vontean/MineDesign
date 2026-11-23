@@ -21,11 +21,11 @@ var layersListDefaultSize: Dynamic;
 var OutlineGlyphsClassNames: Dynamic;
 var OutlineGlyphsColorConfig: Dynamic;
 var OutlineGlyphsScForScIfDcImportSet: Dynamic;
-var OutlineGlyphsClassNames_2: Dynamic;
+var outlineRowClassName: Dynamic;
 var outlineTreeRowClasses: Dynamic;
-var OutlineGlyphsClassNames_3: Dynamic;
+var outlineSelectedRowForcedColorsClassName: Dynamic;
 var selectedRowClasses: Dynamic;
-var OutlineGlyphsClassNames_4: Dynamic;
+var outlineGhostButtonClassName: Dynamic;
 var selectedRowSecondaryClasses: Dynamic;
 var treeRowBaseIndent: Dynamic;
 var treeIndentPerLevel: Dynamic;
@@ -46,7 +46,7 @@ function OutlineElementGlyph({ dimmed: dimmed }: Dynamic): Dynamic {
       <span
         className={cn(
           "box-border h-[9px] w-[9px] border border-dotted border-strong",
-          OutlineGlyphsClassNames_3,
+          outlineSelectedRowForcedColorsClassName,
           "forced-colors:group-aria-selected:border-[color:HighlightText]",
         )}
       />
@@ -65,7 +65,7 @@ function OutlineIconGlyph({
     ),
     iconClassName: Dynamic = cn(
       ink == null && "text-disabled",
-      OutlineGlyphsClassNames_3,
+      outlineSelectedRowForcedColorsClassName,
     ),
     iconStyle: Dynamic =
       ink != null
@@ -94,21 +94,21 @@ export {
   jsxOutlineGlyphs,
   OutlineElementGlyph,
   OutlineGlyphsClassNames,
-  OutlineGlyphsClassNames_2,
-  OutlineGlyphsClassNames_3,
-  OutlineGlyphsClassNames_4,
+  outlineRowClassName,
+  outlineSelectedRowForcedColorsClassName,
+  outlineGhostButtonClassName,
   OutlineGlyphsColorConfig,
   OutlineGlyphsConstant,
-  layersListMaxSize as OutlineGlyphsConstant_2,
-  layersListDefaultSize as OutlineGlyphsConstant_3,
-  treeRowBaseIndent as OutlineGlyphsConstant_4,
-  treeIndentPerLevel as OutlineGlyphsConstant_5,
-  treeToggleColumnWidth as OutlineGlyphsConstant_6,
+  layersListMaxSize,
+  layersListDefaultSize,
+  treeRowBaseIndent,
+  treeIndentPerLevel,
+  treeToggleColumnWidth,
   OutlineGlyphsLabel,
   OutlineGlyphsNativeEvent,
   OutlineGlyphsResolvedValue,
-  selectedRowClasses as OutlineGlyphsResolvedValue_2,
-  selectedRowSecondaryClasses as OutlineGlyphsResolvedValue_3,
+  selectedRowClasses,
+  selectedRowSecondaryClasses,
   OutlineGlyphsScForScIfDcImportSet,
   OutlineGlyphsSubscribers,
   OutlineGlyphsTest,
@@ -143,16 +143,16 @@ export function installEditorOutlineGlyphs(): () => void {
       "x-import",
       "helmet",
     ]);
-    OutlineGlyphsClassNames_2 =
+    outlineRowClassName =
       "group flex h-control select-none items-center rounded pr-1 text-footnote outline-none focus-visible:outline-hidden focus-visible:shadow-focus forced-colors:focus-visible:-outline-offset-2";
     outlineTreeRowClasses =
       "forced-colors:bg-[color:Highlight] forced-colors:text-[color:HighlightText] forced-colors:focus-visible:outline-[color:HighlightText] forced-colors:[&_button:focus-visible]:outline-[color:HighlightText] forced-colors:[&_input:focus-visible]:outline-[color:HighlightText] forced-colors:[&_input]:bg-[color:Canvas]";
-    OutlineGlyphsClassNames_3 =
+    outlineSelectedRowForcedColorsClassName =
       "forced-colors:group-aria-selected:forced-color-adjust-none forced-colors:group-aria-selected:text-[color:HighlightText]!";
     selectedRowClasses =
       "bg-fill-ghost-selected font-medium text-primary " +
       outlineTreeRowClasses;
-    OutlineGlyphsClassNames_4 =
+    outlineGhostButtonClassName =
       "bg-transparent text-secondary hover:bg-fill-ghost-hover";
     selectedRowSecondaryClasses =
       "bg-fill-ghost-selected text-secondary " + outlineTreeRowClasses;

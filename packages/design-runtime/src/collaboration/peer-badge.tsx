@@ -12,12 +12,7 @@ var reactCollaborationPeerBadge: Dynamic;
 var jsxCollaborationPeerBadge: Dynamic;
 var CollaborationPeerBadgeConstant: Dynamic;
 var defaultCrossfadeInMs: Dynamic;
-var jsxCollaborationPeerBadge_2: Dynamic;
-var reactCollaborationPeerBadge_2: Dynamic;
-var jsxCollaborationPeerBadge_3: Dynamic;
-var jsxCollaborationPeerBadge_4: Dynamic;
-var reactCollaborationPeerBadge_3: Dynamic;
-var jsxCollaborationPeerBadge_5: Dynamic;
+var reactForSessionStripPopover: Dynamic;
 function CrossfadeLabel({
   text: text,
   outMs: outMs,
@@ -220,18 +215,12 @@ function PeerBadge({
 }
 export {
   CollaborationPeerBadgeConstant,
-  defaultCrossfadeInMs as CollaborationPeerBadgeConstant_2,
   CrossfadeLabel,
   jsxCollaborationPeerBadge,
-  jsxCollaborationPeerBadge_2,
-  jsxCollaborationPeerBadge_3,
-  jsxCollaborationPeerBadge_4,
-  jsxCollaborationPeerBadge_5,
   PeerBadge,
   PeerBadgeLabel,
   reactCollaborationPeerBadge,
-  reactCollaborationPeerBadge_2,
-  reactCollaborationPeerBadge_3,
+  reactForSessionStripPopover,
 };
 export function installCollaborationPeerBadge(): () => void {
   return () => {
@@ -245,30 +234,10 @@ export function installCollaborationPeerBadge(): () => void {
     );
     CollaborationPeerBadgeConstant = 80;
     defaultCrossfadeInMs = 120;
-    jsxCollaborationPeerBadge_2 = toModuleNamespace(
-      load_react_jsx_runtime(),
-      1,
-    );
-    reactCollaborationPeerBadge_2 = toModuleNamespace(
-      load_react(),
-      1,
-    );
-    jsxCollaborationPeerBadge_3 = toModuleNamespace(
-      load_react_jsx_runtime(),
-      1,
-    );
-    jsxCollaborationPeerBadge_4 = toModuleNamespace(
-      load_react_jsx_runtime(),
-      1,
-    );
-    reactCollaborationPeerBadge_3 = toModuleNamespace(
+    reactForSessionStripPopover = toModuleNamespace(
       load_react(),
       1,
     );
     initializeCdsIndex();
-    jsxCollaborationPeerBadge_5 = toModuleNamespace(
-      load_react_jsx_runtime(),
-      1,
-    );
   };
 }

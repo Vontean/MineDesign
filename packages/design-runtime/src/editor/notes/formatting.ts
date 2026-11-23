@@ -8,7 +8,7 @@ var NotesFormattingStyledNestsConfig: Dynamic;
 var noteFormattingExecuting: Dynamic;
 var NotesFormattingHandler: Dynamic;
 var NotesFormattingExecCommand: Dynamic;
-var NotesFormattingHandler_2: Dynamic;
+var findEditableRoot: Dynamic;
 var NotesFormattingGetSelection: Dynamic;
 function getNoteFormattingState(
   ownerDocument: Dynamic = document,
@@ -185,7 +185,7 @@ export {
   NotesFormattingExecCommand,
   NotesFormattingGetSelection,
   NotesFormattingHandler,
-  NotesFormattingHandler_2,
+  findEditableRoot,
   NotesFormattingStyledNestsConfig,
   toggleNoteFormatting,
   toggleNoteList,
@@ -211,12 +211,12 @@ export function installEditorNotesFormatting(): () => void {
         noteFormattingExecuting = false;
       }
     };
-    NotesFormattingHandler_2 = (node?: Dynamic): Dynamic =>
+    findEditableRoot = (node?: Dynamic): Dynamic =>
       (node?.nodeType === 1 ? node : (node?.parentElement ?? null))?.closest(
         '[contenteditable="true"]',
       ) ?? null;
     NotesFormattingGetSelection = (ownerDocument: Dynamic = document): Dynamic => {
-      let editableRoot: Dynamic = NotesFormattingHandler_2(
+      let editableRoot: Dynamic = findEditableRoot(
         ownerDocument.getSelection()?.anchorNode,
       );
       editableRoot && ownerDocument.activeElement !== editableRoot && editableRoot.focus();

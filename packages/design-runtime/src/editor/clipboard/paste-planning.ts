@@ -2,14 +2,14 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { ClipboardAnnotationsGetLength, ClipboardAnnotationsIncludes_2, ClipboardAnnotationsLimit } from "./annotations";
+import { ClipboardAnnotationsGetLength, isNoteOrTitleAnnotation, ClipboardAnnotationsLimit } from "./annotations";
 import { ClipboardArtboardsEncode, ClipboardArtboardsTextEncoder } from "./artboards";
 import { parseClipboardAssets } from "./assets";
 import { ClipboardFileTransferRegistry } from "./file-transfer";
 import { clipboardPictureEntries, normalizeClipboardPictureCss, parseAnnotationClipboard } from "./pictures";
 import { ClipboardStateHandler } from "./state";
 import { noteRichTextCost } from "../notes/blocks";
-import { PlatformFileContentResolvedValue_11 as fileSizeLimit, serializeCanvasMetadata } from "../../platform/file-content";
+import { defaultDocumentFileBytes as fileSizeLimit, serializeCanvasMetadata } from "../../platform/file-content";
 
 var ClipboardPastePlanningResolvedValue: Dynamic;
 var ClipboardPastePlanningLimit: Dynamic;
@@ -45,7 +45,7 @@ function buildAnnotationPaste(
     };
   let noteItems: Dynamic = items.filter(
       (item?: Dynamic): Dynamic =>
-        ClipboardAnnotationsIncludes_2(item.spec),
+        isNoteOrTitleAnnotation(item.spec),
     ),
     exceedsNoteLimit: Dynamic = ClipboardPastePlanningKind(
       noteItems.map((item?: Dynamic): Dynamic => item.spec),
@@ -56,7 +56,7 @@ function buildAnnotationPaste(
       .filter(
         (item?: Dynamic): Dynamic =>
           !(
-            exceedsNoteLimit && ClipboardAnnotationsIncludes_2(item.spec)
+            exceedsNoteLimit && isNoteOrTitleAnnotation(item.spec)
           ),
       )
       .map((item?: Dynamic): Dynamic => {

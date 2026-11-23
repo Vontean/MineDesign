@@ -2,10 +2,10 @@
 import {
   type Dynamic,
 } from "../runtime-types";
-import { CanvasMeasurementsPattern, CanvasMeasurementsPattern_2 as canvasMeasurementsPatternOverride } from "../canvas/measurements";
+import { exportFormatPattern, exportVariantIdPattern } from "../platform/frame-host-validation";
 import { initializeButtonButton } from "../cds/button/button";
-import { initializeComponentsIcon_2 } from "../cds/components/icon";
-import { initializeComponentsSelectionRing_5 } from "../cds/components/selection-ring";
+import { initializeIconSizeMetrics } from "../cds/components/icon";
+import { initializeSelectionRingComponent } from "../cds/components/selection-ring";
 import { load_react } from "../dependencies";
 import { saveThroughHost } from "./downloads";
 import { toModuleNamespace } from "../module-helpers";
@@ -353,10 +353,10 @@ function normalizeExportFormats(formats?: Dynamic): Dynamic {
   let items: Dynamic = [];
   for (let value of formats as Dynamic) {
     if (
-      !CanvasMeasurementsPattern.test(value.format) ||
+      !exportFormatPattern.test(value.format) ||
       (value.variant !== undefined &&
         (value.handoff === true ||
-          !canvasMeasurementsPatternOverride.test(value.variant)))
+          !exportVariantIdPattern.test(value.variant)))
     )
       continue;
     let formatEntry: Dynamic = items.find(
@@ -492,8 +492,8 @@ export function installExportHostRegistry(): () => void {
   return () => {
     react_Su = toModuleNamespace(load_react(), 1);
     initializeButtonButton();
-    initializeComponentsIcon_2();
-    initializeComponentsSelectionRing_5();
+    initializeIconSizeMetrics();
+    initializeSelectionRingComponent();
     react_DB = toModuleNamespace(load_react(), 1);
     noninteractiveExportWindowMs = 6e4;
     interactiveExportWindowMs = 5 * 6e4;

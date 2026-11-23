@@ -4,11 +4,11 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../runtime-types";
-import { fitArtboardsLabel } from "./design-canvas";
+import { fitArtboardsLabel } from "./design-canvas/messages";
 import { CanvasZoomControl } from "./zoom";
 import { Icon } from "../cds/components/icon";
 import { ChromeSkeleton, ChromeTextSkeleton, DocumentLoadGate } from "../editor/chrome/loading";
-import { reactChromeTheme } from "../editor/chrome/theme";
+import { reactChromeTheme as React } from "../editor/chrome/theme";
 import { SessionStripPopover } from "../editor/session-strip/popover";
 import { ToolbarDivider } from "../editor/toolbar/layout";
 import { ToolbarPrimitivesComponent } from "../editor/toolbar/primitives";
@@ -24,10 +24,10 @@ function useCanvasLoadState(canvasDocument?: Dynamic): Dynamic {
         "loadState" in canvasDocument ? canvasDocument.loadState() : "live";
       return currentLoadState === "cached" ? "live" : currentLoadState;
     },
-    [loadState, setLoadState]: Dynamic = (0, reactChromeTheme.useState)(
+    [loadState, setLoadState]: Dynamic = (0, React.useState)(
       readLoadState,
     );
-  (0, reactChromeTheme.useEffect)(
+  (0, React.useEffect)(
     (): Dynamic => (
       setLoadState(readLoadState()),
       "subscribeLoad" in canvasDocument
@@ -62,10 +62,10 @@ function CanvasLoadFailure({
   filePath: filePath,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let [saveState, setSaveState]: Dynamic = (0, reactChromeTheme.useState)(
+  let [saveState, setSaveState]: Dynamic = (0, React.useState)(
     doc.saveState(),
   );
-  (0, reactChromeTheme.useEffect)(
+  (0, React.useEffect)(
     (): Dynamic => doc.subscribeSave(setSaveState),
     [doc],
   );

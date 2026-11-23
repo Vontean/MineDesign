@@ -5,9 +5,9 @@ import {
 } from "../../runtime-types";
 import { initializeNpm_usehooks_ts_p0, load_react } from "../../dependencies";
 import { parseNoteBlocks } from "../notes/blocks";
-import { NotesDomHandler_2 } from "../notes/dom";
+import { unescapeNoteText } from "../notes/dom";
 import { parseNoteInlineMarkdown } from "../notes/inline-markdown";
-import { OutlineNativeMenuLabelGlyphConfig as elementLabelGlyph, OutlineNativeMenuLabelGlyphConfig_2 as videoLabelGlyph, OutlineNativeMenuLimit, OutlineNativeMenuReplace, OutlineNativeMenuSlice, OutlineNativeMenuTitle1RectOvalConfig } from "./native-menu";
+import { OutlineNativeMenuLabelGlyphConfig as elementLabelGlyph, OutlineNativeMenuVideoLabelGlyphConfig as videoLabelGlyph, OutlineNativeMenuLimit, OutlineNativeMenuReplace, OutlineNativeMenuSlice, OutlineNativeMenuTitle1RectOvalConfig } from "./native-menu";
 import { toModuleNamespace } from "../../module-helpers";
 
 var OutlineAnnotationsSlice: Dynamic;
@@ -21,7 +21,7 @@ var OutlineAnnotationsResolvedValue: Dynamic;
 function annotationFirstTextLine(source?: Dynamic): Dynamic {
   if (source.kind === "title1")
     return (
-      NotesDomHandler_2(source.text).trim().split(`
+      unescapeNoteText(source.text).trim().split(`
 `)[0] ?? ""
     );
   let firstBlock: Dynamic = parseNoteBlocks(source.text.trim())[0],

@@ -1,9 +1,10 @@
+import { getPreviewGenerationGate } from "./generation-gate";
 /** Restored application module; prepare first, initialize in original order. */
 import {
   type Dynamic,
 } from "../runtime-types";
 import { buildSettlementScript } from "../export/settlement";
-import { currentHttpOrigin, getPreviewGenerationGate, isPreviewMessage } from "../platform/file-content";
+import { currentHttpOrigin, isPreviewMessage } from "../platform/file-content";
 import { errorMessage } from "../platform/rate-limiter";
 
 var previewEvaluationRequests: Dynamic;

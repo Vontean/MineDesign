@@ -10,7 +10,7 @@ import { CanvasLoadFailure, useCanvasLoadState } from "../canvas/load-state";
 import { ScreenReaderAnnouncer } from "../editor/accessibility/announcer";
 import { PendingEditorToasts } from "../editor/chrome/pending-toasts";
 import { EditorChromeRoot } from "../editor/chrome/root";
-import { reactChromeTheme } from "../editor/chrome/theme";
+import { reactChromeTheme as React } from "../editor/chrome/theme";
 import { EditorToastProvider } from "../editor/chrome/toast";
 import { CodePasteTrustDialog } from "../editor/clipboard/trust-dialog";
 import { blurTextOutsideFind } from "../editor/keyboard/find";
@@ -30,10 +30,10 @@ function DesignDocumentRoot(props?: Dynamic): Dynamic {
   useUiLocale();
   let loadState: Dynamic = useCanvasLoadState(props.doc),
     [restoreCount, setRestoreCount]: Dynamic = (0,
-    reactChromeTheme.useState)(
+    React.useState)(
       (): Dynamic => props.doc.restoreCount(),
     );
-  (0, reactChromeTheme.useEffect)((): Dynamic => {
+  (0, React.useEffect)((): Dynamic => {
     let callback: Dynamic = (): Dynamic => {
       setRestoreCount(props.doc.restoreCount());
       let value: Dynamic = props.doc.title();

@@ -129,7 +129,7 @@ function NumberPropertyRow({
         />, hasUnitMenu ? (
           <Select
             compact={true}
-            aria-label={uiMessage("design-system.propertyRows.unit2", { value1: String(label) })}
+            aria-label={uiMessage("design-system.propertyRows.unit2", { subject: String(label) })}
             title={uiMessage("design-system.propertyRows.unit")}
             items={units!.map((unitOption: string) => ({
               value: unitOption,

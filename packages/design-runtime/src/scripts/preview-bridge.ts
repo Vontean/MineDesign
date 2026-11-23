@@ -270,18 +270,18 @@ const text: Dynamic = "__ARROW_OWNER__";
       typeof (window as Dynamic).__omProjectRoot === "string"
         ? (window as Dynamic).__omProjectRoot
         : null;
-    var text2: Dynamic =
+    var linkSelector: Dynamic =
       "a[*|href],area[href]"; /* *| also catches SVG xlink:href */
     try {
-      (document as Dynamic).createElement("a").matches(text2);
+      (document as Dynamic).createElement("a").matches(linkSelector);
     } catch (value_e: Dynamic) {
-      text2 = "a[href],area[href]";
+      linkSelector = "a[href],area[href]";
     }
     /* A native control between the click and the link owns the click: in current engines these act without the link navigating... */
-    var text3: Dynamic =
+    var nativeControlSelector: Dynamic =
       "input[type=checkbox],input[type=radio],input[type=file],input[type=color],summary,label,video[controls],audio[controls]";
     /* ...while these (buttons, text/number/date/range inputs, selects) would still navigate it, so the navigation is cancelled but nothing opens. */
-    var value_CONTROL_SEL: Dynamic = text3 + ",button,input,select,textarea";
+    var value_CONTROL_SEL: Dynamic = nativeControlSelector + ",button,input,select,textarea";
     /* a label counts only when it labels something, a summary only as its details' first summary: otherwise the link still navigates */
     var value_ownsClick: Dynamic = function (
       this: Dynamic,
@@ -309,7 +309,7 @@ const text: Dynamic = "__ARROW_OWNER__";
       for (var index: Dynamic = 0; index < value_path.length; index += 1) {
         var value_n: Dynamic = value_path[index];
         if (!value_n || value_n.nodeType !== 1 || !value_n.matches) continue;
-        if (value_n.matches(text2))
+        if (value_n.matches(linkSelector))
           return {
             a: value_n,
             control: clickedControl,
@@ -425,7 +425,7 @@ const text: Dynamic = "__ARROW_OWNER__";
       /* untouched: a control that keeps its click (any control, for a middle click), and a middle click in text being edited (paste) */
       if (
         (value_h.control != null &&
-          (value_aux || value_h.control.matches(text3))) ||
+          (value_aux || value_h.control.matches(nativeControlSelector))) ||
         (value_aux && value_editing)
       )
         return;
@@ -505,7 +505,7 @@ const text: Dynamic = "__ARROW_OWNER__";
     function (
       this: Dynamic,
       input?: Dynamic,
-      ..._extraArguments18: Dynamic[]
+      ...messageHandlerArgs: Dynamic[]
     ): Dynamic {
       if (input.source !== parent) return;
       var data: Dynamic = input.data;

@@ -6,8 +6,8 @@ import type {
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
 import { initializeHooksStableCallback } from "../hooks/stable-callback";
-import { initializeMenuPopup_3, PassiveOpenGate } from "./popup";
-import { initializeSheetsScrollArea_4 } from "../sheets/scroll-area";
+import { initializeMenuPopupInputSelectors, PassiveOpenGate } from "./popup";
+import { initializeScrollAreaStableCallback } from "../sheets/scroll-area";
 import { load_react, load_react_dom, load_react_jsx_runtime } from "../../dependencies";
 import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 
@@ -24,7 +24,7 @@ var MenuPassiveOpenGateArrowDownArrowUpHomeSet: Set<string>;
 var MenuPassiveOpenGateSubscribers: Set<string>;
 var MenuPassiveOpenGateHandler: (listener: () => void) => () => void;
 var MenuPassiveOpenGateDefaultText: () => "off";
-var MenuPassiveOpenGateHandler_2: PassivePopupTransform;
+var passThroughPopupProps: PassivePopupTransform;
 var initializeMenuPassiveOpenGate: typeof import("react-dom");
 export {
   FocusOutValue,
@@ -33,7 +33,7 @@ export {
   MenuPassiveOpenGateArrowDownArrowUpHomeSet,
   MenuPassiveOpenGateDefaultText,
   MenuPassiveOpenGateHandler,
-  MenuPassiveOpenGateHandler_2,
+  passThroughPopupProps,
   MenuPassiveOpenGateRegistry,
   MenuPassiveOpenGateSubscribers,
   MenuPassiveOpenGateTabIndexConfig,
@@ -49,8 +49,8 @@ export function installCdsMenuPassiveOpenGate(): () => void {
       "use client";
 
       initializeHooksStableCallback();
-      initializeSheetsScrollArea_4();
-      initializeMenuPopup_3();
+      initializeScrollAreaStableCallback();
+      initializeMenuPopupInputSelectors();
       reactMenuPassiveOpenGate = toModuleNamespace(
         load_react(),
       );
@@ -96,7 +96,7 @@ export function installCdsMenuPassiveOpenGate(): () => void {
       ]);
       MenuPassiveOpenGateHandler = () => () => {};
       MenuPassiveOpenGateDefaultText = () => "off";
-      MenuPassiveOpenGateHandler_2 = (
+      passThroughPopupProps = (
         popupProps: PassivePopupProps,
       ): PassivePopupProps => popupProps;
     });

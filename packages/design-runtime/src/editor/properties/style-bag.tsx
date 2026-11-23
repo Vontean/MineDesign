@@ -5,7 +5,7 @@ import {
 } from "../../runtime-types";
 import { initializeCdsIndex } from "../../cds/index";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
-import { styleFieldBoundsValue, styleFieldBoundsValue_2, StyleSchemaShadowXYBlurConfig } from "../style-schema/shadow";
+import { styleFieldBoundsValue, transformFieldBounds, StyleSchemaShadowXYBlurConfig } from "../style-schema/shadow";
 import { styleSchema } from "../style-schema/validation";
 import { toModuleNamespace } from "../../module-helpers";
 
@@ -395,8 +395,8 @@ export {
   PropertiesStyleBagConstant,
   PropertiesStyleBagFilterBackdropFilterConfig,
   PropertiesStyleBagItems,
-  filterRangeFields as PropertiesStyleBagItems_2,
-  transformRangeFields as PropertiesStyleBagItems_3,
+  filterRangeFields,
+  transformRangeFields,
   PropertiesStyleBagTextAlignTextDecorationLineTextDecorationStyleConfig,
   propertyDefaultEditorValue,
   propertyEffectLabel,
@@ -530,7 +530,7 @@ export function installEditorPropertiesStyleBag(): () => void {
     ];
     transformRangeFields = [
       styleRangeField(
-        styleFieldBoundsValue_2,
+        transformFieldBounds,
         "translateX",
         uiMessage("inspector.styleBag.moveX"),
         "len",
@@ -538,7 +538,7 @@ export function installEditorPropertiesStyleBag(): () => void {
         "px",
       ),
       styleRangeField(
-        styleFieldBoundsValue_2,
+        transformFieldBounds,
         "translateY",
         uiMessage("inspector.styleBag.moveY"),
         "len",
@@ -546,14 +546,14 @@ export function installEditorPropertiesStyleBag(): () => void {
         "px",
       ),
       styleRangeField(
-        styleFieldBoundsValue_2,
+        transformFieldBounds,
         "scale",
         "Scale",
         "num",
         0.05,
       ),
       styleRangeField(
-        styleFieldBoundsValue_2,
+        transformFieldBounds,
         "rotate",
         "Rotate",
         "num",
@@ -561,7 +561,7 @@ export function installEditorPropertiesStyleBag(): () => void {
         "\xB0",
       ),
       styleRangeField(
-        styleFieldBoundsValue_2,
+        transformFieldBounds,
         "skewX",
         uiMessage("inspector.styleBag.skewX"),
         "num",
@@ -569,7 +569,7 @@ export function installEditorPropertiesStyleBag(): () => void {
         "\xB0",
       ),
       styleRangeField(
-        styleFieldBoundsValue_2,
+        transformFieldBounds,
         "skewY",
         uiMessage("inspector.styleBag.skewY"),
         "num",

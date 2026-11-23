@@ -5,27 +5,27 @@ import {
 } from "../../runtime-types";
 import { ClipboardAnnotationsLimit } from "./annotations";
 import { artboardBaseName, ClipboardArtboardsResolvedValue, ClipboardArtboardsTextEncoder, fileBaseName, getBlobAssetReferences } from "./artboards";
-import { canvasMetadataFile, encodeStorePathSegment, isArtboardFile, isSafeProjectPath, isShapeAnnotation, isSupportedProjectAsset, PlatformFileContentLimit_5 as canvasLimit, PlatformFileContentLimit_8 as maxProjectPathLength, PlatformFileContentResolvedValue_11 as maxFileContentBytes, PlatformFileContentResolvedValue_7 as maxInlineFileContentBytes, PlatformFileContentWebpAvifPattern, uniqueArtboardFile } from "../../platform/file-content";
+import { canvasMetadataFile, encodeStorePathSegment, isArtboardFile, isSafeProjectPath, isShapeAnnotation, isSupportedProjectAsset, maxAnnotations as canvasLimit, maxProjectPathChars as maxProjectPathLength, defaultDocumentFileBytes as maxFileContentBytes, maxSyncedFileBytes as maxInlineFileContentBytes, PlatformFileContentWebpAvifPattern, uniqueArtboardFile } from "../../platform/file-content";
 import { isProjectSourcePath, renameComponentImports, rewriteProjectReferences } from "../../preview/component-imports";
 
 var ClipboardFileTransferKind: Dynamic;
 var ClipboardFileTransferHandler: Dynamic;
-var ClipboardFileTransferHandler_2: Dynamic;
-var ClipboardFileTransferHandler_3: Dynamic;
+var unreadableNotesAndShapesMessage: Dynamic;
+var leftOutShapesMessage: Dynamic;
 var VideosCanTBePastedFromAnotherMessage: Dynamic;
 var ClipboardFileTransferToUpperCase: Dynamic;
-var ClipboardFileTransferHandler_4: Dynamic;
-var ClipboardFileTransferHandler_5: Dynamic;
-var ClipboardFileTransferHandler_6: Dynamic;
+var leftOutPicturesAndVideosMessage: Dynamic;
+var copyAgainMessage: Dynamic;
+var includedPictureMessage: Dynamic;
 var ClipboardFileTransferRegistry: Dynamic;
 var ClipboardFileTransferPasted: Dynamic;
 var ClipboardFileTransferSubscribers: Dynamic;
 var ClipboardFileTransferTest: Dynamic;
-var ClipboardFileTransferHandler_7: Dynamic;
+var isPastableProjectPath: Dynamic;
 function isCarryableProjectFile(filePath?: Dynamic): Dynamic {
   let lowerPath: Dynamic = filePath.toLowerCase();
   return (
-    ClipboardFileTransferHandler_7(filePath) &&
+    isPastableProjectPath(filePath) &&
     isSupportedProjectAsset(filePath) &&
     lowerPath !== canvasMetadataFile &&
     !isArtboardFile(lowerPath) &&
@@ -186,7 +186,7 @@ function preparePastedArtboardFiles(
     seenStems: Dynamic = new Set(),
     boards: Dynamic = clipboard.artboards.map((artboard?: Dynamic): Dynamic => {
       let entry: Dynamic =
-          ClipboardFileTransferHandler_7(artboard.stem + ".dc.html") &&
+          isPastableProjectPath(artboard.stem + ".dc.html") &&
           !ClipboardFileTransferTest(artboard.stem)
             ? artboard
             : {
@@ -465,12 +465,12 @@ function remapPastedAssetFiles(
 }
 export {
   ClipboardFileTransferHandler,
-  ClipboardFileTransferHandler_2,
-  ClipboardFileTransferHandler_3,
-  ClipboardFileTransferHandler_4,
-  ClipboardFileTransferHandler_5,
-  ClipboardFileTransferHandler_6,
-  ClipboardFileTransferHandler_7,
+  unreadableNotesAndShapesMessage,
+  leftOutShapesMessage,
+  leftOutPicturesAndVideosMessage,
+  copyAgainMessage,
+  includedPictureMessage,
+  isPastableProjectPath,
   ClipboardFileTransferKind,
   ClipboardFileTransferPasted,
   ClipboardFileTransferRegistry,
@@ -520,15 +520,15 @@ export function installEditorClipboardFileTransfer(): () => void {
       noun?: Dynamic,
     ): Dynamic =>
       count === 1 ? "1 " + noun : String(count) + " " + noun + "s";
-    ClipboardFileTransferHandler_2 = (count?: Dynamic): Dynamic =>
+    unreadableNotesAndShapesMessage = (count?: Dynamic): Dynamic =>
       `; ${count === 1 ? "1 note or shape" : String(count) + " notes and shapes"} could not be read`;
-    ClipboardFileTransferHandler_3 = (count?: Dynamic): Dynamic =>
+    leftOutShapesMessage = (count?: Dynamic): Dynamic =>
       `; ${count === 1 ? "1 shape" : String(count) + " shapes"} left out (copy ${count === 1 ? "it" : "them"} with an artboard to bring ${count === 1 ? "it" : "them"})`;
     VideosCanTBePastedFromAnotherMessage =
       uiMessage("inspector.fileTransfer.videosCanTBePasted");
     ClipboardFileTransferToUpperCase = (text?: Dynamic): Dynamic =>
       text.charAt(0).toUpperCase() + text.slice(1);
-    ClipboardFileTransferHandler_4 = (
+    leftOutPicturesAndVideosMessage = (
       total?: Dynamic,
       videoCount: Dynamic = 0,
     ): Dynamic => {
@@ -538,13 +538,13 @@ export function installEditorClipboardFileTransfer(): () => void {
           ? `; ${ClipboardFileTransferHandler(videoCount, "video")} left out (${VideosCanTBePastedFromAnotherMessage})`
           : "") +
         (pictureCount > 0
-          ? `; ${ClipboardFileTransferHandler(pictureCount, "picture")} left out (${ClipboardFileTransferHandler_5(pictureCount)})`
+          ? `; ${ClipboardFileTransferHandler(pictureCount, "picture")} left out (${copyAgainMessage(pictureCount)})`
           : "")
       );
     };
-    ClipboardFileTransferHandler_5 = (count?: Dynamic): Dynamic =>
+    copyAgainMessage = (count?: Dynamic): Dynamic =>
       `copy ${count === 1 ? "it" : "them"} again, or add ${count === 1 ? "it" : "them"} to this canvas instead`;
-    ClipboardFileTransferHandler_6 = (count?: Dynamic): Dynamic =>
+    includedPictureMessage = (count?: Dynamic): Dynamic =>
       `the copied ${count === 1 ? uiMessage("inspector.fileTransfer.pictureWasnT") : uiMessage("inspector.fileTransfer.picturesWerenT")} included`;
     ClipboardFileTransferRegistry = {
       pasted: (
@@ -559,8 +559,8 @@ export function installEditorClipboardFileTransfer(): () => void {
             ClipboardFileTransferKind(annotations) +
             " from another canvas"
           : uiMessage("inspector.fileTransfer.nothingPasted")) +
-        (unreadCount > 0 ? ClipboardFileTransferHandler_2(unreadCount) : "") +
-        (leftOutShapeCount > 0 ? ClipboardFileTransferHandler_3(leftOutShapeCount) : "") +
+        (unreadCount > 0 ? unreadableNotesAndShapesMessage(unreadCount) : "") +
+        (leftOutShapeCount > 0 ? leftOutShapesMessage(leftOutShapeCount) : "") +
         (annotations.length > 0 && (summary.plain ?? 0) > 0
           ? ClipboardFileTransferRegistry.plainPictures(summary.plain ?? 0, false)
           : "") +
@@ -570,13 +570,13 @@ export function installEditorClipboardFileTransfer(): () => void {
         ((summary.overCap ?? 0) > 0
           ? `; ${ClipboardFileTransferHandler(summary.overCap ?? 0, uiMessage("inspector.fileTransfer.morePicture"))} left out (a paste brings up to ${String(ClipboardAnnotationsLimit)}: copy the rest separately)`
           : "") +
-        ClipboardFileTransferHandler_4(pictureTotal, summary.videos),
+        leftOutPicturesAndVideosMessage(pictureTotal, summary.videos),
       withObjects: (annotations?: Dynamic): Dynamic =>
         " with " + ClipboardFileTransferKind(annotations),
       onlyLeftOut: (pictureTotal?: Dynamic, videoCount: Dynamic = 0): Dynamic =>
         pictureTotal - videoCount <= 0
-          ? uiMessage("inspector.fileTransfer.nothingToPasteValue1Add", { value1: String(VideosCanTBePastedFromAnotherMessage), value2: String(videoCount === 1 ? "the video" : "them") })
-          : uiMessage("inspector.fileTransfer.nothingToPasteValue1Value2", { value1: String(ClipboardFileTransferHandler_6(pictureTotal - videoCount)), value2: String(ClipboardFileTransferToUpperCase(ClipboardFileTransferHandler_5(pictureTotal - videoCount))) }) +
+          ? uiMessage("inspector.fileTransfer.nothingToPasteAddHere", { reason: String(VideosCanTBePastedFromAnotherMessage), items: String(videoCount === 1 ? "the video" : "them") })
+          : uiMessage("inspector.fileTransfer.nothingToPasteReasons", { firstReason: String(includedPictureMessage(pictureTotal - videoCount)), secondReason: String(ClipboardFileTransferToUpperCase(copyAgainMessage(pictureTotal - videoCount))) }) +
             (videoCount > 0
               ? ` ${ClipboardFileTransferToUpperCase(VideosCanTBePastedFromAnotherMessage)}.`
               : ""),
@@ -587,29 +587,29 @@ export function installEditorClipboardFileTransfer(): () => void {
           ? ` ${ClipboardFileTransferToUpperCase(VideosCanTBePastedFromAnotherMessage)}.`
           : "") +
         (pictureTotal - videoCount > 0
-          ? ` ${ClipboardFileTransferToUpperCase(ClipboardFileTransferHandler_6(pictureTotal - videoCount))}: ${ClipboardFileTransferHandler_5(pictureTotal - videoCount)}.`
+          ? ` ${ClipboardFileTransferToUpperCase(includedPictureMessage(pictureTotal - videoCount))}: ${copyAgainMessage(pictureTotal - videoCount)}.`
           : ""),
       notBrought: (count?: Dynamic): Dynamic =>
         `; ${ClipboardFileTransferHandler(count, "picture")} could not be brought over (try again, or add ${count === 1 ? "it" : "them"} to this canvas instead)`,
       bringing: (count?: Dynamic): Dynamic =>
-        uiMessage("inspector.fileTransfer.pastingValue1FromAnotherCanvas", { value1: String(count === 1 ? "a picture" : String(count) + " pictures") }),
+        uiMessage("inspector.fileTransfer.pastingPicturesFromAnotherCanvas", { pictures: String(count === 1 ? "a picture" : String(count) + " pictures") }),
       stillPasting: "Still working on the previous paste\u2026",
       picturesNotReady: (count?: Dynamic): Dynamic =>
-        uiMessage("inspector.fileTransfer.copiedValue1ReadyYetSo", { value1: String(count === 1 ? uiMessage("inspector.fileTransfer.onePictureWasnT") : String(count) + " pictures weren't"), value2: String(count === 1 ? "it" : "them") }),
+        uiMessage("inspector.fileTransfer.copiedPicturesNotReady", { notReady: String(count === 1 ? uiMessage("inspector.fileTransfer.onePictureWasnT") : String(count) + " pictures weren't"), pronoun: String(count === 1 ? "it" : "them") }),
       picturesCantGo: (count?: Dynamic): Dynamic =>
-        uiMessage("inspector.fileTransfer.copiedValue1CanTGo", { value1: String(count === 1 ? uiMessage("inspector.fileTransfer.onePicture") : String(count) + " pictures"), value2: String(count === 1 ? "it" : "them") }),
+        uiMessage("inspector.fileTransfer.copiedPicturesCannotTransfer", { pictures: String(count === 1 ? uiMessage("inspector.fileTransfer.onePicture") : String(count) + " pictures"), pronoun: String(count === 1 ? "it" : "them") }),
       picturesWontFit: (count?: Dynamic): Dynamic =>
-        uiMessage("inspector.fileTransfer.copiedValue1DidnTFit", { value1: String(count === 1 ? uiMessage("inspector.fileTransfer.onePicture") : String(count) + " pictures") }),
+        uiMessage("inspector.fileTransfer.copiedPicturesDidNotFit", { pictures: String(count === 1 ? uiMessage("inspector.fileTransfer.onePicture") : String(count) + " pictures") }),
       picturesOverCap: (count?: Dynamic): Dynamic =>
-        uiMessage("inspector.fileTransfer.copiedAnotherCanvasTakesValue1", { value1: String(String(ClipboardAnnotationsLimit)), value2: String(count === 1 ? "one" : String(count)) }),
+        uiMessage("inspector.fileTransfer.copiedPicturesOverLimit", { limit: String(String(ClipboardAnnotationsLimit)), remaining: String(count === 1 ? "one" : String(count)) }),
       wontFitPictures:
         "Couldn't paste: this would make the canvas too large to save. Delete something here first.",
-      atLimit: uiMessage("inspector.fileTransfer.couldnTPasteThisWould", { value1: String(String(canvasLimit)) }),
+      atLimit: uiMessage("inspector.fileTransfer.couldnTPasteThisWould", { limit: String(String(canvasLimit)) }),
       tooMuchUnasked:
         "Nothing pasted: this is more than can be pasted from another canvas at once. Copy fewer notes at a time.",
       tooMuchStayed:
         "Nothing pasted: this is more than can be pasted from another canvas at once. Copy less at a time.",
-      leftOutCaveat: ClipboardFileTransferHandler_4,
+      leftOutCaveat: leftOutPicturesAndVideosMessage,
       unreadable:
         "Nothing to paste: the copied notes and shapes could not be read.",
       tooLargeToCopy:
@@ -631,14 +631,14 @@ export function installEditorClipboardFileTransfer(): () => void {
         `; ${ClipboardFileTransferHandler(count, "picture")} lost some effects (${canPasteWithCode ? uiMessage("inspector.fileTransfer.pasteWithCodeKeepsThem") : `to keep them, copy ${count === 1 ? "it" : "them"} with an artboard and choose Paste with code`})`,
       notesTooMuch:
         "; the notes were left out: copy fewer at a time (this is more than can be pasted from another canvas at once)",
-      someUnread: ClipboardFileTransferHandler_2,
+      someUnread: unreadableNotesAndShapesMessage,
       alsoUnread: (count?: Dynamic): Dynamic =>
         ` ${count === 1 ? "1 note or shape" : String(count) + " notes and shapes"} could not be read.`,
       notesStayedToo:
         " The notes and shapes are too large to go with the artboards: copy fewer of them with the artboards.",
       notEither: " The notes and shapes were not pasted either.",
       pressAgain: (key?: Dynamic): Dynamic =>
-        uiMessage("inspector.fileTransfer.pressValue1AgainToPaste", { value1: String(key) }),
+        uiMessage("inspector.fileTransfer.pressAgainToPaste", { shortcut: String(key) }),
     };
     ClipboardFileTransferPasted = (message?: Dynamic, annotations?: Dynamic): Dynamic =>
       annotations.length > 0 &&
@@ -650,7 +650,7 @@ export function installEditorClipboardFileTransfer(): () => void {
     ]);
     ClipboardFileTransferTest = (path?: Dynamic): Dynamic =>
       /^(?:artifact-type|project)\//i.test(path);
-    ClipboardFileTransferHandler_7 = (path?: Dynamic): Dynamic =>
+    isPastableProjectPath = (path?: Dynamic): Dynamic =>
       isSafeProjectPath(path) &&
       path.length <= maxProjectPathLength - 16;
   };

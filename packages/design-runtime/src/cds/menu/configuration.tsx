@@ -10,7 +10,7 @@ import type {
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
 import { sheetScrollAttribute } from "../sheets/presentation";
-import { SheetsScrollAreaClassNames, SheetsScrollAreaClassNames_2, SheetsScrollAreaClassNames_3, SheetsScrollAreaClassNames_4, SheetsScrollAreaLabel } from "../sheets/scroll-area";
+import { SheetsScrollAreaClassNames, scrollAreaBodyClassName, scrollAreaHeaderClassName, scrollAreaFooterClassName, SheetsScrollAreaLabel } from "../sheets/scroll-area";
 import { cn } from "../theme/class-names";
 import { load_react, npm_clsx_Ea } from "../../dependencies";
 import { initializeOnce, toModuleNamespace } from "../../module-helpers";
@@ -21,7 +21,7 @@ var MenuConfigurationLabelOpenConfig: MenuItemState;
 var MenuItemContext: React.Context<MenuItemState>;
 var CdsFocusesNothingAttribute: string;
 var MenuConfigurationContext: React.Context<boolean>;
-var MenuConfigurationContext_2: React.Context<boolean>;
+var insideMenuConfigurationContext: React.Context<boolean>;
 var MenuSheetLabelsContext: React.Context<MenuLabels>;
 var MenuConfigurationLabel: string;
 var MenuTriggerContext: React.Context<React.RefObject<OverlayActions | null> | null>;
@@ -67,7 +67,7 @@ function PopupScrollArea({
     >
       {header && (<div
           className={cn(
-            SheetsScrollAreaClassNames_3,
+            scrollAreaHeaderClassName,
             headerClassName,
           )}
         >
@@ -77,14 +77,14 @@ function PopupScrollArea({
         style={{
           maxHeight: value,
         }}
-        className={`${SheetsScrollAreaClassNames_2}${header ? " pt-0" : ""}`}
+        className={`${scrollAreaBodyClassName}${header ? " pt-0" : ""}`}
         {...{
           [sheetScrollAttribute]: "",
         }}
       >
         {children}
       </div>
-      {footer && (<div className={SheetsScrollAreaClassNames_4}>{footer}</div>)}
+      {footer && (<div className={scrollAreaFooterClassName}>{footer}</div>)}
     </div>
   ) : (
     <div
@@ -107,7 +107,7 @@ export {
   CdsFocusesNothingAttribute,
   initializeMenuConfiguration,
   MenuConfigurationContext,
-  MenuConfigurationContext_2,
+  insideMenuConfigurationContext,
   MenuConfigurationLabel,
   MenuConfigurationLabelOpenConfig,
   MenuItemContext,
@@ -143,7 +143,7 @@ export function installCdsMenuConfiguration(): () => void {
       MenuConfigurationContext = (0, reactMenuConfiguration.createContext)(
         false,
       );
-      MenuConfigurationContext_2 = (0, reactMenuConfiguration.createContext)(
+      insideMenuConfigurationContext = (0, reactMenuConfiguration.createContext)(
         false,
       );
       MenuSheetLabelsContext = (0,

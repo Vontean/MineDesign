@@ -251,7 +251,7 @@ function useCanvasPeerSelections({
                   handle: Dynamic =
                     entry?.isReady() && !entry.isBlocked()
                       ? createPreviewHandle(
-                          entry.webviewRef.current,
+                          entry.previewFrameRef.current,
                         )
                       : null;
                 if (!handle) return;
@@ -423,7 +423,6 @@ export {
   clipPeerRects,
   CollaborationSelectionPathsCache,
   CollaborationSelectionPathsConstant,
-  selectionRefreshDirtyDelayMs as CollaborationSelectionPathsConstant_2,
   CollaborationSelectionPathsItems,
   CollaborationSelectionPathsLimit,
   createPeerSelectionStore,

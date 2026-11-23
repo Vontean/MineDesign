@@ -9,7 +9,7 @@ import { load_react_jsx_runtime } from "../../dependencies";
 import { blurPopoverTextInput, choosePopoverPlacement, ChromeFocusConstant, ChromeFocusContext, reactChromeFocus, reactDomChromeFocus } from "./focus";
 import { ChromeMenuItemTarget, getFocusableElements, isBaseUiFocusGuard } from "./menu-item";
 import { hasOpenCdsOverlay, joinClassNames, openCdsOverlaySelector, undoStepOverlayProps } from "./overlay-state";
-import { reactChromeTheme_3 } from "./theme";
+import { reactForEditorPopover } from "./theme";
 import { toModuleNamespace } from "../../module-helpers";
 
 var jsxChromePopover: Dynamic;
@@ -146,7 +146,7 @@ function suppressEscapeRelease(isEnterInitiallyDown?: Dynamic): Dynamic {
   };
 }
 function useEscapeReleaseSuppression(isActive?: Dynamic): Dynamic {
-  (0, reactChromeTheme_3.useEffect)(
+  (0, reactForEditorPopover.useEffect)(
     (): Dynamic => (isActive ? suppressEscapeRelease(false) : undefined),
     [isActive],
   );
@@ -174,20 +174,20 @@ function EditorPopover({
   keepFocus = false,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let popupRef: Dynamic = (0, reactChromeTheme_3.useRef)(null);
+  let popupRef: Dynamic = (0, reactForEditorPopover.useRef)(null);
   useEscapeReleaseSuppression(open && focusOnOpen);
-  let anchorMarkerRef: Dynamic = (0, reactChromeTheme_3.useRef)(null),
-    focusContextSide: Dynamic = (0, reactChromeTheme_3.useContext)(
+  let anchorMarkerRef: Dynamic = (0, reactForEditorPopover.useRef)(null),
+    focusContextSide: Dynamic = (0, reactForEditorPopover.useContext)(
       ChromeFocusContext,
     ),
     contextSide: Dynamic = side === undefined ? focusContextSide : undefined,
     resolvedSide: Dynamic = side ?? contextSide ?? "bottom",
     isVerticalSide: Dynamic = resolvedSide === "bottom" || resolvedSide === "top",
-    [placement, setPlacement]: Dynamic = (0, reactChromeTheme_3.useState)({
+    [placement, setPlacement]: Dynamic = (0, reactForEditorPopover.useState)({
       side: isVerticalSide ? resolvedSide : "bottom",
       maxHeight: undefined,
     });
-  (0, reactChromeTheme_3.useLayoutEffect)((): Dynamic => {
+  (0, reactForEditorPopover.useLayoutEffect)((): Dynamic => {
     open &&
       setPlacement(
         isVerticalSide && planHeight !== undefined
@@ -205,12 +205,12 @@ function EditorPopover({
   }, [open]);
   let shouldLimitHeight: Dynamic = isVerticalSide && planHeight !== undefined,
     popupSide: Dynamic = isVerticalSide ? placement.side : resolvedSide,
-    onCloseRef: Dynamic = (0, reactChromeTheme_3.useRef)(onClose);
+    onCloseRef: Dynamic = (0, reactForEditorPopover.useRef)(onClose);
   onCloseRef.current = onClose;
-  let onOpenRef: Dynamic = (0, reactChromeTheme_3.useRef)(onOpen);
+  let onOpenRef: Dynamic = (0, reactForEditorPopover.useRef)(onOpen);
   onOpenRef.current = onOpen;
-  let hasClosedRef: Dynamic = (0, reactChromeTheme_3.useRef)(false);
-  (0, reactChromeTheme_3.useEffect)((): Dynamic => {
+  let hasClosedRef: Dynamic = (0, reactForEditorPopover.useRef)(false);
+  (0, reactForEditorPopover.useEffect)((): Dynamic => {
     if (!open) return;
     hasClosedRef.current = false;
     let popoverToken: Dynamic = Symbol("popover");

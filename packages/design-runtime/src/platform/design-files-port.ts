@@ -58,7 +58,7 @@ function parsePublishConflictHashes(rawConflicts?: Dynamic): Dynamic {
   }
   return entries;
 }
-function normalizePublishError_2(error?: Dynamic): Dynamic {
+function normalizePublishFailure(error?: Dynamic): Dynamic {
   let record: Dynamic =
       typeof error == "object" && error !== null ? error : {},
     code: Dynamic =
@@ -534,7 +534,7 @@ function createDesignFilesPort(portOptions: Dynamic = {}): Dynamic {
       try {
         portOptions.onPublishError?.(publishError);
       } catch {}
-      let normalizedError: Dynamic = normalizePublishError_2(publishError);
+      let normalizedError: Dynamic = normalizePublishFailure(publishError);
       PUBLISH_ACCESS_ERROR_CODES.has(normalizedError.code) && (canWrite = false);
       return normalizedError;
     }
@@ -933,7 +933,7 @@ export {
   createDesignFilesPort,
   FILE_PORT_REQUEST_TIMEOUT_MS,
   filePortTextDecoder,
-  normalizePublishError_2,
+  normalizePublishFailure,
   normalizeSha256,
   parsePublishConflictHashes,
   parsePublishedFileHashes,

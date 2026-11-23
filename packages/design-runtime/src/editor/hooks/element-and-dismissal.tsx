@@ -6,7 +6,7 @@ import { initializeNpm_usehooks_ts_p0, load_react, npm_useEventListener_bc } fro
 import { toModuleNamespace } from "../../module-helpers";
 
 var reactHooksElementAndDismissal: Dynamic;
-var reactHooksElementAndDismissal_2: Dynamic;
+var reactForUseLiveDismissalGuard: Dynamic;
 var HooksElementAndDismissalSubscribers: Dynamic;
 function useElementById(elementId?: Dynamic): Dynamic {
   let [element, setElement]: Dynamic = (0, reactHooksElementAndDismissal.useState)(
@@ -21,9 +21,9 @@ function useElementById(elementId?: Dynamic): Dynamic {
   return element;
 }
 function useLiveDismissalGuard(dismissalGuard?: Dynamic): Dynamic {
-  let guardRef: Dynamic = (0, reactHooksElementAndDismissal_2.useRef)(dismissalGuard);
+  let guardRef: Dynamic = (0, reactForUseLiveDismissalGuard.useRef)(dismissalGuard);
   guardRef.current = dismissalGuard;
-  (0, reactHooksElementAndDismissal_2.useEffect)((): Dynamic => {
+  (0, reactForUseLiveDismissalGuard.useEffect)((): Dynamic => {
     let callback: Dynamic = (): Dynamic =>
       typeof guardRef.current == "function" ? guardRef.current() : guardRef.current;
     HooksElementAndDismissalSubscribers.add(callback);
@@ -42,7 +42,7 @@ function useLiveDismissalGuard(dismissalGuard?: Dynamic): Dynamic {
 export {
   HooksElementAndDismissalSubscribers,
   reactHooksElementAndDismissal,
-  reactHooksElementAndDismissal_2,
+  reactForUseLiveDismissalGuard,
   useElementById,
   useLiveDismissalGuard,
 };
@@ -52,7 +52,7 @@ export function installEditorHooksElementAndDismissal(): () => void {
       load_react(),
       1,
     );
-    reactHooksElementAndDismissal_2 = toModuleNamespace(
+    reactForUseLiveDismissalGuard = toModuleNamespace(
       load_react(),
       1,
     );

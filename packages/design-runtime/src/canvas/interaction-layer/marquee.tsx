@@ -7,16 +7,16 @@ import { objectsWithinCanvasMarquee } from "../hit-testing";
 import { type Dynamic } from "../../runtime-types";
 
 /** 在画布或画板内开始框选时运行：捕获指针，拖动中计算与框相交的画板、便签和画板内元素并实时更新选中，松手或按 Esc 时结束；移动不足阈值视为单击。 */
-export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonly value134: Dynamic; readonly value146: Dynamic; readonly value19: Dynamic; readonly value2: Dynamic; readonly value216: Dynamic; readonly value34: Dynamic; readonly value57: Dynamic; readonly value61: Dynamic; readonly value87: Dynamic; readonly value88: Dynamic; readonly value89: Dynamic; readonly value9: Dynamic; readonly value91: Dynamic; readonly value92: Dynamic }, pointerEvent?: Dynamic,
+export function beginCanvasMarquee(deps: { readonly clientToCanvasPoint: Dynamic; readonly trackGesture: Dynamic; readonly manifestRef: Dynamic; readonly canEditCanvasRef: Dynamic; readonly artboardHandlesRef: Dynamic; readonly annotationBoxRef: Dynamic; readonly cameraRef: Dynamic; readonly selectionRef: Dynamic; readonly onSelectObjectsRef: Dynamic; readonly setIsMarqueeActive: Dynamic; readonly marqueeRectRef: Dynamic; readonly marqueeElementRef: Dynamic; readonly canvasRootRef: Dynamic; readonly marqueeStateRef: Dynamic; readonly onMarqueeBeginRef: Dynamic }, pointerEvent?: Dynamic,
       marqueeOptions?: Dynamic): Dynamic {
-      let canvasElement: Dynamic = deps.value9.current;
+      let canvasElement: Dynamic = deps.canvasRootRef.current;
       if (!canvasElement) return;
       let {
           pointerId: pointerId,
           clientX: startClientX,
           clientY: startClientY,
         }: Dynamic = pointerEvent,
-        startPoint: Dynamic = deps.callback16(
+        startPoint: Dynamic = deps.clientToCanvasPoint(
           startClientX,
           startClientY,
           canvasElement.getBoundingClientRect(),
@@ -24,8 +24,8 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
         treeSweeper: Dynamic =
           marqueeOptions.tree !== undefined
             ? marqueeOptions.tree
-            : (deps.value92.current?.(marqueeOptions.toggle) ?? null),
-        initialSelection: Dynamic = deps.value57.current,
+            : (deps.onMarqueeBeginRef.current?.(marqueeOptions.toggle) ?? null),
+        initialSelection: Dynamic = deps.selectionRef.current,
         baseSelection: Dynamic = marqueeOptions.toggle
           ? initialSelection
           : emptyBoardSelection;
@@ -33,7 +33,7 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
         marqueeOptions.capture.hasPointerCapture(pointerId) ||
           marqueeOptions.capture.setPointerCapture(pointerId);
       } catch {}
-      deps.value134("marquee", true);
+      deps.trackGesture("marquee", true);
       let lastSelectionKey: Dynamic = null,
         currentClientX: Dynamic = startClientX,
         currentClientY: Dynamic = startClientY,
@@ -62,7 +62,7 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
             queuedRectByFile.set(file, localRect);
             return true;
           }
-          let artboardEntry: Dynamic = deps.value2.current.get(file);
+          let artboardEntry: Dynamic = deps.artboardHandlesRef.current.get(file);
           return !artboardEntry || !artboardEntry.isReady()
             ? false
             : (pendingPickFiles.add(file),
@@ -90,7 +90,7 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
               true);
         },
         computeMarqueeHits: Dynamic = (box?: Dynamic): Dynamic => {
-          let manifest: Dynamic = deps.value146.current,
+          let manifest: Dynamic = deps.manifestRef.current,
             hitFiles: Dynamic = new Set(),
             hitElements: Dynamic = new Map(),
             candidateBoards: Dynamic =
@@ -143,14 +143,14 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
               });
           }
           let annotations: Dynamic =
-              deps.value19.current && marqueeOptions.origin.kind === "canvas"
+              deps.canEditCanvasRef.current && marqueeOptions.origin.kind === "canvas"
                 ? (manifest.annotations ?? [])
                 : [],
             notes: Dynamic = objectsWithinCanvasMarquee(
               {
                 artboards: [],
                 annotations: annotations,
-                annBox: deps.value216.current,
+                annBox: deps.annotationBoxRef.current,
               },
               box,
               emptyBoardSelection,
@@ -193,7 +193,7 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
             ((lastSelectionKey = selectionKey),
             treeSweeper
               ? treeSweeper.sweep(hits)
-              : deps.value61.current(
+              : deps.onSelectObjectsRef.current(
                   {
                     files: new Set([...baseSelection.files, ...hits.files]),
                     notes: new Set([...baseSelection.notes, ...hits.notes]),
@@ -202,7 +202,7 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
                 ));
         },
         updateMarquee: Dynamic = (): Dynamic => {
-          let currentPoint: Dynamic = deps.callback16(
+          let currentPoint: Dynamic = deps.clientToCanvasPoint(
             currentClientX,
             currentClientY,
             canvasElement.getBoundingClientRect(),
@@ -213,20 +213,20 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
             w: Math.abs(currentPoint.x - startPoint.x),
             h: Math.abs(currentPoint.y - startPoint.y),
           };
-          let cameraState: Dynamic = deps.value34.current.get();
-          deps.value88.current = {
+          let cameraState: Dynamic = deps.cameraRef.current.get();
+          deps.marqueeRectRef.current = {
             x: (currentBox.x - cameraState.x) * cameraState.scale,
             y: (currentBox.y - cameraState.y) * cameraState.scale,
             w: currentBox.w * cameraState.scale,
             h: currentBox.h * cameraState.scale,
           };
           applyElementRectStyle(
-            deps.value89.current,
-            deps.value88.current,
+            deps.marqueeElementRef.current,
+            deps.marqueeRectRef.current,
           );
           updateSelection();
         };
-      deps.value91.current = (): Dynamic => {
+      deps.marqueeStateRef.current = (): Dynamic => {
         lastSelectionKey != null && updateMarquee();
       };
       let handlePointerMove: Dynamic = (moveEvent?: Dynamic): Dynamic => {
@@ -240,7 +240,7 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
                 ) < canvasDragThresholdPixels
               )
                 return;
-              deps.value87(true);
+              deps.setIsMarqueeActive(true);
             }
             currentClientX = moveEvent.clientX;
             currentClientY = moveEvent.clientY;
@@ -262,10 +262,10 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
           );
           (window as Dynamic).removeEventListener("blur", handleBlur);
           (window as Dynamic).removeEventListener("contextmenu", endMarquee);
-          deps.value91.current = null;
-          deps.value88.current = null;
-          deps.value87(false);
-          deps.value134("marquee", false);
+          deps.marqueeStateRef.current = null;
+          deps.marqueeRectRef.current = null;
+          deps.setIsMarqueeActive(false);
+          deps.trackGesture("marquee", false);
         },
         handleBlur: Dynamic = (): Dynamic => {
           (document as Dynamic).hasFocus() || ((isCancelled = true), endMarquee());
@@ -288,7 +288,7 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
             endMarquee(),
             treeSweeper
               ? treeSweeper.cancel()
-              : deps.value61.current(initialSelection, "replace"));
+              : deps.onSelectObjectsRef.current(initialSelection, "replace"));
         };
       (window as Dynamic).addEventListener("pointermove", handlePointerMove);
       (window as Dynamic).addEventListener("pointerup", handlePointerUp);
@@ -297,7 +297,7 @@ export function beginCanvasMarquee(deps: { readonly callback16: Dynamic; readonl
       (window as Dynamic).addEventListener("blur", handleBlur);
       (window as Dynamic).addEventListener("contextmenu", endMarquee);
       marqueeOptions.from &&
-        (deps.value87(true),
+        (deps.setIsMarqueeActive(true),
         (currentClientX = marqueeOptions.from.x),
         (currentClientY = marqueeOptions.from.y),
         updateMarquee());

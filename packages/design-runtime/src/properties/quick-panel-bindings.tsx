@@ -12,7 +12,7 @@ import { useBackgroundEditor } from "../editor/properties/background-editor";
 import { samePaint } from "../editor/properties/color-swatches";
 import { PropertyColorRow } from "../editor/properties/rows";
 import { PropertyOptionIcon } from "../editor/properties/tool-options";
-import { CropValue, PropertiesTooltipNameViewBoxPathsConfig as borderWeightIcon, PropertiesTooltipNameViewBoxPathsConfig_3 as cornerRadiusIcon, PropertiesTooltipNameViewBoxPathsConfig_5 as spacingIcon } from "../editor/properties/tooltip";
+import { CropValue, PropertiesTooltipNameViewBoxPathsConfig as borderWeightIcon, cornerRadiusIcon as cornerRadiusIcon, spacingIcon as spacingIcon } from "../editor/properties/tooltip";
 import { SessionActionsPopover, SessionImageReplaceButton, SessionPopup } from "../editor/session-strip/popups";
 import { SessionStripButton, SessionStripDivider, SessionStripGroup } from "../editor/session-strip/session-strip";
 import { normalizeHexColor } from "../editor/typography/census";
@@ -697,7 +697,7 @@ function ImageQuickPanel({
           data-media-crop-keep={""}
           icon={<PropertyOptionIcon icon={CropValue} />}
           title={
-            cropReason ?? (cropping ? (uiMessage("inspector.quickPanelBindings.doneCroppingOrPressEnter")) : (uiMessage("inspector.quickPanelBindings.cropOrDoubleClickThe", { value1: String(noun) })))
+            cropReason ?? (cropping ? (uiMessage("inspector.quickPanelBindings.doneCroppingOrPressEnter")) : (uiMessage("inspector.quickPanelBindings.cropOrDoubleClickThe", { object: String(noun) })))
           }
           aria-label={uiMessage("inspector.quickPanelBindings.crop")}
           aria-pressed={cropping === true}

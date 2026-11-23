@@ -281,7 +281,7 @@ function useAssetGroupEditor(
           focusNextAsset();
         } else {
           ref.current.askRemove({
-            get title() { return uiMessage("design-system.assetGroupEditor.remove", { value1: String(assetFileCountLabel(items.length)) }); },
+            get title() { return uiMessage("design-system.assetGroupEditor.remove", { subject: String(assetFileCountLabel(items.length)) }); },
             body: "The files are deleted from assets/. Anything linking to them will break. Undo brings them back.",
             run: focusNextAsset,
           });
@@ -454,7 +454,7 @@ function useAssetGroupEditor(
                 return;
               }
               ref.current.askRemove({
-                get title() { return uiMessage("design-system.assetGroupEditor.removeAndIts", { value1: String(getGroupName(group.name)), value2: String(assetFileCountLabel(localPaths.length)) }); },
+                get title() { return uiMessage("design-system.assetGroupEditor.removeAndIts", { subject: String(getGroupName(group.name)), detail: String(assetFileCountLabel(localPaths.length)) }); },
                 body:
                   uiMessage("design-system.assetGroupEditor.theFilesAreDeletedFrom") +
                   group.folder +

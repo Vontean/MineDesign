@@ -10,16 +10,16 @@ import { load_react } from "../../dependencies";
 import { parseEqualGridColumns, serializeEqualGridColumns } from "../css/grid";
 import { parseCssTransform, serializeCssTransform } from "../css/transforms";
 import { parseCssNumber } from "../css/values";
-import { jsxMediaPlaybackControls, PropertiesInheritedFieldMixedAlias, PropertiesInheritedFieldValueAlias, reactMediaPlaybackControls_2 } from "../media/playback-controls";
+import { jsxMediaPlaybackControls, PropertiesInheritedFieldMixedAlias, PropertiesInheritedFieldValueAlias, reactForInspectorLayoutSection } from "../media/playback-controls";
 import { PropertiesBoxLayoutStaticRelativeAbsoluteConfig, PropertyBoxSides, PropertyFlexAlignment, PropertyPositionXY } from "./box-layout";
 import { inheritedFieldForEdit, inheritedFieldsDescription, inheritedFieldsDisabledReason } from "./inherited-field";
 import { NumericInput } from "./numeric-input";
-import { PropertiesPrimitivesClassNames_4, PropertyActions } from "./primitives";
+import { secondaryIconButtonClassName, PropertyActions } from "./primitives";
 import { PropertyRow } from "./row";
 import { PropertySection } from "./section";
 import { PropertiesSizingRowLeftHcenterRightConfig } from "./sizing-row";
 import { PropertyOptionIcon } from "./tool-options";
-import { PropertiesTooltipNameViewBoxPathsConfig_10 as tableColumnsIcon, PropertiesTooltipNameViewBoxPathsConfig_9 as tableRowsIcon } from "./tooltip";
+import { tableColumnsIcon, tableRowsIcon } from "./tooltip";
 import { toModuleNamespace } from "../../module-helpers";
 
 var reactPropertiesLayoutSection: Dynamic;
@@ -372,7 +372,7 @@ function LayoutSection({
       <div
         className={cn(
           "flex min-w-0 flex-1 items-center justify-between",
-          PropertiesPrimitivesClassNames_4,
+          secondaryIconButtonClassName,
         )}
       >
         {alignActions.map(
@@ -508,7 +508,7 @@ function PropertyGridTracks({
       label={uiMessage("inspector.layoutSection.grid")}
       data-testid={"dc-grid-row"}
       title={
-        uiMessage("inspector.layoutSection.columnsRowsAsCountsOf", { value1: String(disabledReason ? (disabledReason + ". ") : ("")) })
+        uiMessage("inspector.layoutSection.columnsRowsAsCountsOf", { disabledReasonPrefix: String(disabledReason ? (disabledReason + ". ") : ("")) })
       }
       description={description}
       onReset={
@@ -609,7 +609,7 @@ function InspectorLayoutSection({
         PropertiesInheritedFieldValueAlias(row),
     ),
     [marginEditorKey, setMarginEditorKey]: Dynamic =
-      reactMediaPlaybackControls_2.default.useState(""),
+      reactForInspectorLayoutSection.default.useState(""),
     showMarginBox: Dynamic = hasMarginRows && (hasMarginValue || marginEditorKey === selKey),
     isUnexpectedValue: Dynamic = (entry?: Dynamic, expectedValues?: Dynamic): Dynamic =>
       PropertiesInheritedFieldValueAlias(entry) &&

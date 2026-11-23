@@ -3,7 +3,7 @@ import {
   type Dynamic,
 } from "../runtime-types";
 import { load_react } from "../dependencies";
-import { AccessibilityAnnouncementsLabel_16 as textEditStartedAnnouncement, adjacentOutlineNode, artboardLoadFailureAnnouncement, artboardLoadingAnnouncement, deepestSingleOutlineNode, emptyArtboardSelectionAnnouncement, exitOutlineAnnouncement, findOutlineLocation, firstNestedOutlineNode, NoLayersInsideThisOneMessage, NothingSelectedMessage, outlineLayerAnnouncement, outlineLayerNavigationAnnouncement, outlineNodeDescription, selectingAnnouncement, selectionAnnouncement } from "../editor/accessibility/announcements";
+import { editingTextHintMessage as textEditStartedAnnouncement, adjacentOutlineNode, artboardLoadFailureAnnouncement, artboardLoadingAnnouncement, deepestSingleOutlineNode, emptyArtboardSelectionAnnouncement, exitOutlineAnnouncement, findOutlineLocation, firstNestedOutlineNode, NoLayersInsideThisOneMessage, NothingSelectedMessage, outlineLayerAnnouncement, outlineLayerNavigationAnnouncement, outlineNodeDescription, selectingAnnouncement, selectionAnnouncement } from "../editor/accessibility/announcements";
 import { announce } from "../editor/accessibility/announcer";
 import { canvasElementSelectionCount, selectionFromArtboards } from "../editor/selection/canvas-selection";
 import { toModuleNamespace } from "../module-helpers";

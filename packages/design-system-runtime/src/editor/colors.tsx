@@ -255,7 +255,7 @@ function ColorValueCell({
         )}
         aria-label={ariaLabel}
         tooltip={
-          uiMessage("design-system.colors.copy", { value1: String(themes.length > 1 ? (theme.name + ": ") : ("")), value2: String(themeColor.css ?? ("")) })
+          uiMessage("design-system.colors.copy", { subject: String(themes.length > 1 ? (theme.name + ": ") : ("")), detail: String(themeColor.css ?? ("")) })
         }
         data-testid={"ds-chip-" + token.name + "-" + theme.id}
         onClick={(event: React.MouseEvent<HTMLButtonElement>): void => {
@@ -585,7 +585,7 @@ function ColorTokenRow({
               data-testid={"ds-color-usage-" + token.name}
             />, edit !== undefined ? (
               <RemoveRowButton
-                label={uiMessage("design-system.colors.remove", { value1: String(token.name) })}
+                label={uiMessage("design-system.colors.remove", { subject: String(token.name) })}
                 onRemove={() => edit.remove(token.name)}
                 data-testid={"ds-color-remove-" + token.name}
               />
@@ -601,7 +601,7 @@ function ColorTokenRow({
               ? {
                   rename: openRename,
                   remove: () => edit.remove(token.name),
-                  get removeLabel() { return uiMessage("design-system.colors.remove", { value1: String(token.name) }); },
+                  get removeLabel() { return uiMessage("design-system.colors.remove", { subject: String(token.name) }); },
                 }
               : {}),
             copy: firstThemeColor.css ?? "",
@@ -785,7 +785,7 @@ function ColorsSection({
         <div
           className={"ds-ctable"}
           role={"table"}
-          aria-label={uiMessage("design-system.colors.colors", { value1: String(themeId) })}
+          aria-label={uiMessage("design-system.colors.colors", { subject: String(themeId) })}
           data-edit={edit !== undefined ? "" : undefined}
         >
           {[tokenRows, tokens.map((token) => {
@@ -916,7 +916,7 @@ function ColorsSection({
                       size={"sm"}
                       iconOnly={true}
                       icon={"Add"}
-                      aria-label={uiMessage("design-system.colors.addColorTo", { value1: String(groupLabel) })}
+                      aria-label={uiMessage("design-system.colors.addColorTo", { subject: String(groupLabel) })}
                       tooltip={uiMessage("design-system.colors.addColor")}
                       onClick={() => edit.addTo?.(group)}
                       data-testid={"ds-add-color-" + groupDataKey}

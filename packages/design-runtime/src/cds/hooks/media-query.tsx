@@ -8,7 +8,7 @@ var reactHooksMediaQuery: typeof React;
 var mobileSheetMediaQuery: string;
 var mediaQueryStores: WeakMap<Window, Map<string, MediaQueryStore>>;
 var HooksMediaQueryHandler: MediaQueryStore["subscribe"];
-var HooksMediaQueryHandler_2: () => boolean;
+var getMediaQueryFallbackSnapshot: () => boolean;
 var coarsePointerMediaQuery: string;
 var initializeHooksMediaQuery: () => void;
 function getMediaQueryStore(
@@ -40,15 +40,15 @@ function useWindowMediaQuery(
   let store = view == null ? null : getMediaQueryStore(view, query);
   return (0, reactHooksMediaQuery.useSyncExternalStore)(
     store === null ? HooksMediaQueryHandler : store.subscribe,
-    store === null ? HooksMediaQueryHandler_2 : store.getSnapshot,
-    HooksMediaQueryHandler_2,
+    store === null ? getMediaQueryFallbackSnapshot : store.getSnapshot,
+    getMediaQueryFallbackSnapshot,
   );
 }
 export {
   coarsePointerMediaQuery,
   getMediaQueryStore,
   HooksMediaQueryHandler,
-  HooksMediaQueryHandler_2,
+  getMediaQueryFallbackSnapshot,
   initializeHooksMediaQuery,
   mediaQueryStores,
   mobileSheetMediaQuery,
@@ -64,7 +64,7 @@ export function installCdsHooksMediaQuery(): () => void {
       mobileSheetMediaQuery = "(pointer: coarse) and (max-width: 639.98px)";
       mediaQueryStores = new WeakMap();
       HooksMediaQueryHandler = () => () => {};
-      HooksMediaQueryHandler_2 = () => false;
+      getMediaQueryFallbackSnapshot = () => false;
       coarsePointerMediaQuery = "(pointer: coarse)";
     });
   };

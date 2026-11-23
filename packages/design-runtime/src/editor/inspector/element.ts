@@ -6,9 +6,9 @@ import {
 import { parseStyleDeclarations } from "../css/declarations";
 import { expandCssDeclarations } from "../css/shorthand";
 import { classifyStyleValue, replaceCssVariables } from "../css/values";
-import { getPropertySpecification, hasTextBackgroundClip, InspectorPropertySchemaBackgroundFontWeightFontStyleConfig, InspectorPropertySchemaCursorPointerEventsObjectFitValues, InspectorPropertySchemaItems, InspectorPropertySchemaItems_2 as propertySpecs } from "./property-schema";
+import { getPropertySpecification, hasTextBackgroundClip, InspectorPropertySchemaBackgroundFontWeightFontStyleConfig, InspectorPropertySchemaCursorPointerEventsObjectFitValues, InspectorPropertySchemaItems, propertySpecifications as propertySpecs } from "./property-schema";
 import { orderInspectorSections, resolveInspectorInheritedValues } from "./selection";
-import { cssPropertyToComputedKey, formatPropertyKey, hasVisiblePaint, InspectorStyleMetadataBackgroundColorPattern, InspectorStyleMetadataDataDcTplStyleSet, InspectorStyleMetadataInputTextareaButtonSet, InspectorStyleMetadataLabel, InspectorStyleMetadataLineHeightTextAlignSet, InspectorStyleMetadataStrokeStrokeWidthFillValues, InspectorStyleMetadataSubscribers, InspectorStyleMetadataSubscribers_2 as nonContainerTags, InspectorStyleMetadataTextTspanTextpathSet, isTransparentColor, svgShapeTags } from "./style-metadata";
+import { cssPropertyToComputedKey, formatPropertyKey, hasVisiblePaint, InspectorStyleMetadataBackgroundColorPattern, InspectorStyleMetadataDataDcTplStyleSet, InspectorStyleMetadataInputTextareaButtonSet, InspectorStyleMetadataLabel, InspectorStyleMetadataLineHeightTextAlignSet, InspectorStyleMetadataStrokeStrokeWidthFillValues, InspectorStyleMetadataSubscribers, intrinsicContentTags as nonContainerTags, InspectorStyleMetadataTextTspanTextpathSet, isTransparentColor, svgShapeTags } from "./style-metadata";
 import { arrowHeadPropertyRows } from "../svg/arrow-properties";
 import { firstFontFamily } from "../typography/font-family";
 import { getAvailableFontVariants, resolveFontVariants } from "../typography/font-variants";

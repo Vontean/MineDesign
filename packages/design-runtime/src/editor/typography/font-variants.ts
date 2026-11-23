@@ -172,7 +172,7 @@ export {
   TypographyFontVariants100200300Config,
   TypographyFontVariantsFlatMapValue,
   TypographyFontVariantsItems,
-  DEFAULT_FONT_VARIANTS as TypographyFontVariantsItems_2,
+  DEFAULT_FONT_VARIANTS,
   TypographyFontVariantsSubscribers,
 };
 export function installEditorTypographyFontVariants(): () => void {

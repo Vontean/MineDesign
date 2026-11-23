@@ -5,15 +5,15 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { Button, Button as Button_r, ButtonGroupOptionsContext, buttonIconPadding, initializeButtonButton, useButtonIconSize } from "./button";
-import { Icon, initializeComponentsIcon_2 } from "../components/icon";
-import { initializeDomRefComposition_2, isHtmlElement, isSvgElement } from "../dom/ref-composition";
+import { Icon, initializeIconSizeMetrics } from "../components/icon";
+import { initializeXmlNamespaceUris, isHtmlElement, isSvgElement } from "../dom/ref-composition";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
-import { initializeMenuMenu_5, menuCaretSize, MenuMenuAssignValue } from "../menu/menu";
-import { initializeSheetsStyles_2, useLabel } from "../sheets/styles";
+import { initializeMenuComponents, menuCaretSize, MenuMenuAssignValue } from "../menu/menu";
+import { initializeLabelsProviderContext, useLabel } from "../sheets/styles";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { getSizeAttribute, initializeCdsRoot, useDensity } from "../theme/root";
 import { initializeTooltipTooltip, TooltipGroup } from "../tooltip/tooltip";
-import { getResizeObserver, initializeTooltipTrigger_2 } from "../tooltip/trigger";
+import { getResizeObserver, initializeTooltipTriggerPlaceholder } from "../tooltip/trigger";
 import { initializeNpm_clsx_xh, load_react, load_react_jsx_runtime, npm_clsx_Ea } from "../../dependencies";
 import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 
@@ -24,8 +24,8 @@ var ButtonGroupSecondaryPrimaryDangerConfig: Dynamic;
 var buttonGroupJoinClasses: Dynamic;
 var ButtonGroupLabel: Dynamic;
 var initializeButtonGroup: Dynamic;
-var reactButtonGroup_2: Dynamic;
-var jsxButtonGroup_2: Dynamic;
+var reactForSplitButton: Dynamic;
+var jsxForSplitButton: Dynamic;
 var ButtonGroupAspectRatioPaddingInlineMinWidthConfig: Dynamic;
 var ButtonGroupWidthConfig: Dynamic;
 var ButtonGroupPaddingInlineEndConfig: Dynamic;
@@ -35,19 +35,19 @@ var ButtonGroupPrimarySecondaryGhostConfig: Dynamic;
 var splitStatusTransitionClassName: Dynamic;
 var PeerDisabledNotAriaBusySlotOpacityDisabledValue: Dynamic;
 var ButtonGroupPaddingInlineStartConfig: Dynamic;
-var ButtonGroupClassNames_2: Dynamic;
+var splitSeparatorHitAreaClassName: Dynamic;
 var splitCaretGhostHitAreaClassName: Dynamic;
 var GroupDataPopupOpenSplitPointerEventsNoneValue: Dynamic;
-var ButtonGroupClassNames_3: Dynamic;
-var ButtonGroupClassNames_4: Dynamic;
+var squareEndRadiusClassName: Dynamic;
+var roundedEndClassName: Dynamic;
 var ButtonGroupJoinValue: Dynamic;
 var splitJoinedSegmentPaddingClassName: Dynamic;
-var initializeButtonGroup_2: Dynamic;
+var initializeSplitButton: Dynamic;
 var ButtonGroupObservedElements: Dynamic;
-var initializeButtonGroup_3: Dynamic;
-var reactButtonGroup_3: Dynamic;
-var jsxButtonGroup_3: Dynamic;
-var initializeButtonGroup_4: Dynamic;
+var initializeButtonGroupObserver: Dynamic;
+var reactForButtonGroup: Dynamic;
+var jsxForButtonGroup: Dynamic;
+var initializeButtonGroupComponent: Dynamic;
 function ButtonGroupDivider({ variant: variant }: Dynamic): Dynamic {
   useUiLocale();
   let seamStyle: Dynamic = ButtonGroupSecondaryPrimaryDangerConfig[variant];
@@ -191,7 +191,7 @@ function SplitButton({
     resolvedCaretSize: Dynamic = caretSize ?? menuCaretSize(density, size),
     isCaretMuted: Dynamic =
       !isDisabled && (variant === "secondary" || variant === "ghost"),
-    [internalOpen, setInternalOpen]: Dynamic = (0, reactButtonGroup_2.useState)(false),
+    [internalOpen, setInternalOpen]: Dynamic = (0, reactForSplitButton.useState)(false),
     isOpen: Dynamic = open ?? internalOpen,
     handleOpenChange: Dynamic = (nextOpen?: Dynamic): Dynamic => {
       setInternalOpen(nextOpen);
@@ -241,7 +241,7 @@ function SplitButton({
             tooltipSide={tooltipSide}
             className={npm_clsx_Ea(
               hasStatus && "peer/slot",
-              isGhostWithStatus && ButtonGroupClassNames_3,
+              isGhostWithStatus && squareEndRadiusClassName,
               isGhostIconOnly && GroupDataPopupOpenSplitPointerEventsNoneValue,
             )}
           />) : (<Button
@@ -264,7 +264,7 @@ function SplitButton({
             className={npm_clsx_Ea(
               splitLabelShrinkClassName,
               hasStatus && "peer/slot",
-              isGhostWithStatus && ButtonGroupClassNames_3,
+              isGhostWithStatus && squareEndRadiusClassName,
             )}
             style={
               isGhostWithLabel
@@ -279,7 +279,7 @@ function SplitButton({
         {hasStatus && (<span
             className={cn(
               "flex shrink-0 items-center self-stretch pe-md",
-              isGhostWithStatus && ButtonGroupClassNames_4,
+              isGhostWithStatus && roundedEndClassName,
               ButtonGroupSecondaryPrimaryDangerConfig[variant]?.seam,
               ButtonGroupPrimarySecondaryGhostConfig[variant],
               splitStatusTransitionClassName,
@@ -329,7 +329,7 @@ function SplitButton({
         className={
           variant === "ghost"
             ? cn(
-                ButtonGroupClassNames_2,
+                splitSeparatorHitAreaClassName,
                 isGhostIconOnly && splitCaretGhostHitAreaClassName,
               )
             : undefined
@@ -466,15 +466,15 @@ function ButtonGroup(groupProps?: Dynamic): Dynamic {
       buttonVariant: buttonVariant = "secondary",
     }: Dynamic = groupProps,
     isSpacedHorizontal: Dynamic = variant === "spaced" && orientation === "horizontal",
-    parsedChildren: Dynamic = (0, reactButtonGroup_3.useMemo)(
+    parsedChildren: Dynamic = (0, reactForButtonGroup.useMemo)(
       (): Dynamic => (isSpacedHorizontal ? parseButtonGroupChildren(children) : null),
       [isSpacedHorizontal, children],
     ),
     isCollapsible: Dynamic = parsedChildren !== null && parsedChildren !== "unrecognised";
   parsedChildren === "unrecognised" && undefined;
-  let containerRef: Dynamic = (0, reactButtonGroup_3.useRef)(null),
-    [isCollapsed, setIsCollapsed]: Dynamic = (0, reactButtonGroup_3.useState)(false),
-    expandedWidthRef: Dynamic = (0, reactButtonGroup_3.useRef)(0);
+  let containerRef: Dynamic = (0, reactForButtonGroup.useRef)(null),
+    [isCollapsed, setIsCollapsed]: Dynamic = (0, reactForButtonGroup.useState)(false),
+    expandedWidthRef: Dynamic = (0, reactForButtonGroup.useRef)(0);
   useIsomorphicLayoutEffect((): Dynamic => {
     if (!isCollapsible) return;
     let current: Dynamic = containerRef.current,
@@ -551,11 +551,11 @@ function sameComponentType(element?: Dynamic, componentType?: Dynamic): Dynamic 
   return element.type === componentType || (!!displayName && displayName === componentType.displayName);
 }
 function flattenReactFragments(children?: Dynamic): Dynamic {
-  return reactButtonGroup_3.Children.toArray(children).flatMap(
+  return reactForButtonGroup.Children.toArray(children).flatMap(
     (child?: Dynamic): Dynamic =>
-      (0, reactButtonGroup_3.isValidElement)(child) &&
-      child.type === reactButtonGroup_3.Fragment
-        ? reactButtonGroup_3.Children.toArray(child.props.children)
+      (0, reactForButtonGroup.isValidElement)(child) &&
+      child.type === reactForButtonGroup.Fragment
+        ? reactForButtonGroup.Children.toArray(child.props.children)
         : [child],
   );
 }
@@ -565,7 +565,7 @@ function parseButtonGroupChildren(children?: Dynamic): Dynamic {
   let items: Dynamic = [],
     primaryButton: Dynamic = null;
   for (let child of flatChildren as Dynamic) {
-    if (!(0, reactButtonGroup_3.isValidElement)(child))
+    if (!(0, reactForButtonGroup.isValidElement)(child))
       return "unrecognised";
     if (sameComponentType(child, Button_r)) {
       let props: Dynamic = child.props;
@@ -640,21 +640,16 @@ export {
   ButtonGroup,
   ButtonGroupAspectRatioPaddingInlineMinWidthConfig,
   ButtonGroupClassNames,
-  ButtonGroupClassNames_2,
-  ButtonGroupClassNames_3,
-  ButtonGroupClassNames_4,
+  splitSeparatorHitAreaClassName,
+  squareEndRadiusClassName,
+  roundedEndClassName,
   ButtonGroupDivider,
   buttonGroupJoinClasses,
   ButtonGroupJoinValue,
   ButtonGroupLabel,
-  splitLabelShrinkClassName as ButtonGroupLabel_2,
-  splitStatusTransitionClassName as ButtonGroupLabel_3,
-  splitCaretGhostHitAreaClassName as ButtonGroupLabel_4,
-  splitJoinedSegmentPaddingClassName as ButtonGroupLabel_5,
   ButtonGroupLayout,
   ButtonGroupObservedElements,
   ButtonGroupPaddingInlineEndConfig,
-  splitStatusPaddingStyle as ButtonGroupPaddingInlineEndConfig_2,
   ButtonGroupPaddingInlineStartConfig,
   ButtonGroupPrimarySecondaryGhostConfig,
   ButtonGroupSecondaryPrimaryDangerConfig,
@@ -667,19 +662,19 @@ export {
   flexSiblingWidth,
   GroupDataPopupOpenSplitPointerEventsNoneValue,
   initializeButtonGroup,
-  initializeButtonGroup_2,
-  initializeButtonGroup_3,
-  initializeButtonGroup_4,
+  initializeSplitButton,
+  initializeButtonGroupObserver,
+  initializeButtonGroupComponent,
   isSingleRowFlex,
   jsxButtonGroup,
-  jsxButtonGroup_2,
-  jsxButtonGroup_3,
+  jsxForSplitButton,
+  jsxForButtonGroup,
   parseButtonGroupChildren,
   parsePixelLength,
   PeerDisabledNotAriaBusySlotOpacityDisabledValue,
   reactButtonGroup,
-  reactButtonGroup_2,
-  reactButtonGroup_3,
+  reactForSplitButton,
+  reactForButtonGroup,
   restoreFlexInlineStyle,
   sameComponentType,
   SplitButton,
@@ -724,21 +719,21 @@ export function installCdsButtonGroup(): () => void {
       ButtonGroupLabel =
         "[[data-cds-segment]:has(:disabled:not([aria-busy]))+&:has(+[data-cds-segment]_:disabled:not([aria-busy]))]:opacity-disabled";
     });
-    initializeButtonGroup_2 = initializeOnce((): Dynamic => {
+    initializeSplitButton = initializeOnce((): Dynamic => {
       "use client";
 
       initializeClassNames();
-      initializeSheetsStyles_2();
+      initializeLabelsProviderContext();
       initializeCdsRoot();
-      initializeComponentsIcon_2();
+      initializeIconSizeMetrics();
       initializeButtonButton();
-      initializeMenuMenu_5();
+      initializeMenuComponents();
       initializeButtonGroup();
-      reactButtonGroup_2 = toModuleNamespace(
+      reactForSplitButton = toModuleNamespace(
         load_react(),
       );
       initializeNpm_clsx_xh();
-      jsxButtonGroup_2 = toModuleNamespace(
+      jsxForSplitButton = toModuleNamespace(
         load_react_jsx_runtime(),
       );
       ButtonGroupAspectRatioPaddingInlineMinWidthConfig = {
@@ -771,14 +766,14 @@ export function installCdsButtonGroup(): () => void {
         ...ButtonGroupWidthConfig,
         paddingInlineStart: 0,
       };
-      ButtonGroupClassNames_2 =
+      splitSeparatorHitAreaClassName =
         "after:absolute after:inset-y-0 after:start-0 after:-end-2 after:content-['']";
       splitCaretGhostHitAreaClassName =
         "pointer-events-none after:pointer-events-auto after:start-[calc(var(--cds-split-caret-tuck)-1px)] after:-end-[calc(3px+var(--cds-split-caret-tuck))]";
       GroupDataPopupOpenSplitPointerEventsNoneValue =
         "group-data-[popup-open]/split:pointer-events-none";
-      ButtonGroupClassNames_3 = "rounded-e-none";
-      ButtonGroupClassNames_4 = "rounded-e";
+      squareEndRadiusClassName = "rounded-e-none";
+      roundedEndClassName = "rounded-e";
       ButtonGroupJoinValue = [
         "shadow-[inset_0_0_0_1px_var(--cds-split-ring,transparent)] transition-[box-shadow] duration-fast ease-out",
         "[&:not([data-disabled])]:hover:[--cds-split-ring:var(--cds-border)]",
@@ -789,24 +784,24 @@ export function installCdsButtonGroup(): () => void {
       splitJoinedSegmentPaddingClassName =
         "[&>[data-cds-segment]:first-child_[data-cds-part=paint]]:pe-0 [&>[data-cds-segment]:last-child_[data-cds-part=paint]]:ps-0";
     });
-    initializeButtonGroup_3 = initializeOnce((): Dynamic => {
-      initializeDomRefComposition_2();
+    initializeButtonGroupObserver = initializeOnce((): Dynamic => {
+      initializeXmlNamespaceUris();
       ButtonGroupObservedElements = new WeakSet();
     });
-    initializeButtonGroup_4 = initializeOnce((): Dynamic => {
+    initializeButtonGroupComponent = initializeOnce((): Dynamic => {
       "use client";
 
       initializeHooksLayoutEffect();
-      initializeDomRefComposition_2();
-      initializeTooltipTrigger_2();
+      initializeXmlNamespaceUris();
+      initializeTooltipTriggerPlaceholder();
       initializeButtonButton();
-      initializeButtonGroup_3();
+      initializeButtonGroupObserver();
       initializeButtonGroup();
-      initializeButtonGroup_2();
-      reactButtonGroup_3 = toModuleNamespace(
+      initializeSplitButton();
+      reactForButtonGroup = toModuleNamespace(
         load_react(),
       );
-      jsxButtonGroup_3 = toModuleNamespace(
+      jsxForButtonGroup = toModuleNamespace(
         load_react_jsx_runtime(),
       );
       (ButtonGroup as Dynamic).displayName = "ButtonGroup";

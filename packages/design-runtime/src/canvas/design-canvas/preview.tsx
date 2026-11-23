@@ -1,167 +1,134 @@
-import { designPageId } from "../../platform/file-content";
-import { emptyCanvasSelection } from "../../editor/selection/canvas-selection";
-import { hasBlockingEditorOverlay } from "../../editor/text/typing-target";
-import { isEditingInputTarget } from "../../editor/keyboard/find";
+import { parallelCanvasCaptureSemaphore, singleCanvasCaptureSemaphore } from "./shared";
 import { isInteractivePreviewTarget } from "../preview-navigation";
-import { isPreviewMessage } from "../../platform/file-content";
 import { recallCanvasView } from "../viewport-memory";
+import { isEditingInputTarget } from "../../editor/keyboard/find";
+import { hasBlockingEditorOverlay } from "../../editor/text/typing-target";
+import { designPageId, isPreviewMessage } from "../../platform/file-content";
 import { stripPreviewProjectRoot } from "../../preview/project-root";
-import { type Dynamic } from "../../runtime-types";
-import { artboardIsNotExpandedFill, defaultCanvasCamera, parallelCanvasCaptureSemaphore, singleCanvasCaptureSemaphore } from "../design-canvas";
+import type { Dynamic } from "../../runtime-types";
+import { artboardIsNotExpandedFill, defaultCanvasCamera } from "./playback";
 
-/** 全屏播放画板时注册：Escape 退出播放，方向键/翻页键或预览发来的 __om_step 切换上一个/下一个画板。 */
-export function subscribePlayModeKeys(deps: { readonly flag: Dynamic; readonly value177: Dynamic; readonly value220: Dynamic; readonly value347: Dynamic; readonly value389: Dynamic; readonly value391: Dynamic; readonly value393: Dynamic; readonly value87: Dynamic }): Dynamic {
-    if (deps.value347 == null || deps.flag) return;
-    let handleKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
-        if (event.defaultPrevented) return;
-        if (event.key === "Escape") {
-          if (hasBlockingEditorOverlay() || deps.value220) return;
-          event.preventDefault();
-          deps.value389();
-          return;
-        }
-        let stepDirection: Dynamic =
-          event.key === "ArrowRight" || event.key === "PageDown"
-            ? 1
-            : event.key === "ArrowLeft" || event.key === "PageUp"
-              ? -1
-              : 0;
-        stepDirection === 0 ||
-          event.repeat ||
-          event.metaKey ||
-          event.ctrlKey ||
-          event.altKey ||
-          event.shiftKey ||
-          hasBlockingEditorOverlay() ||
-          isEditingInputTarget(event.target) ||
-          isInteractivePreviewTarget(event.target) ||
-          (event.preventDefault(), deps.value391(stepDirection));
-      },
-      handleMessage: Dynamic = (messageEvent?: Dynamic): Dynamic => {
-        let messageData: Dynamic = messageEvent.data;
-        if (!(!messageData || typeof messageData != "object")) {
-          if (messageData.__om_escape === 1) {
-            [...deps.value177.current.values()].some(
-              (frame?: Dynamic): Dynamic =>
-                messageEvent.source !== null &&
-                frame.webviewRef.current?.contentWindow === messageEvent.source,
-            ) && deps.value389();
-            return;
-          }
-          if (messageData.__om_step === 1 || messageData.__om_step === -1) {
-            if (
-              navigator.userActivation?.isActive !== true ||
-              hasBlockingEditorOverlay()
-            )
-              return;
-            let activeElement: Dynamic = (document as Dynamic).activeElement,
-              focusedEntry: Dynamic = [...deps.value177.current.entries()].find(
-                ([, frame]: Dynamic): Dynamic =>
-                  frame.webviewRef.current === activeElement &&
-                  isPreviewMessage(
-                    messageEvent,
-                    frame.webviewRef.current,
-                  ),
-              );
-            if (
-              !focusedEntry ||
-              deps.value87.current.artboards.find(
-                (artboard?: Dynamic): Dynamic => artboard.file === focusedEntry[0],
-              )?.is_interactive === true
-            )
-              return;
-            parallelCanvasCaptureSemaphore.take() &&
-              deps.value391(messageData.__om_step) &&
-              (deps.value393.current = messageData.__om_step);
-          }
-        }
-      };
-    (window as Dynamic).addEventListener("keydown", handleKeyDown);
-    (window as Dynamic).addEventListener("message", handleMessage);
-    return (): Dynamic => {
-      (window as Dynamic).removeEventListener("keydown", handleKeyDown);
-      (window as Dynamic).removeEventListener("message", handleMessage);
-    };
+export function subscribePlayModeKeys({
+  artboardEntriesRef,
+  commenting,
+  fullscreenView,
+  restoreCamera,
+  navigateAdjacentArtboard,
+  pendingFrameFocus,
+  visiblePageRef,
+}: Dynamic) {
+  if (fullscreenView == null) return;
+
+  function onKeyDown(event: KeyboardEvent) {
+    if (event.defaultPrevented) return;
+    if (event.key === "Escape") {
+      if (hasBlockingEditorOverlay() || commenting) return;
+      event.preventDefault();
+      restoreCamera();
+      return;
+    }
+    const direction = event.key === "ArrowRight" || event.key === "PageDown"
+      ? 1
+      : event.key === "ArrowLeft" || event.key === "PageUp" ? -1 : 0;
+    if (!direction || event.repeat || event.metaKey || event.ctrlKey || event.altKey ||
+        event.shiftKey || hasBlockingEditorOverlay() || isEditingInputTarget(event.target) ||
+        isInteractivePreviewTarget(event.target)) return;
+    event.preventDefault();
+    navigateAdjacentArtboard(direction);
   }
 
-/** 监听预览 iframe 发出的 __om_open 消息：在用户手势下把链接指向的画板打开为全屏播放，必要时切换页面。 */
-export function subscribePreviewOpenMessages(deps: { readonly setSelection: Dynamic; readonly value105: Dynamic; readonly value177: Dynamic; readonly value224: Dynamic; readonly value225: Dynamic; readonly value271: Dynamic; readonly value274: Dynamic; readonly value285: Dynamic; readonly value291: Dynamic; readonly value298: Dynamic; readonly value345: Dynamic; readonly value346: Dynamic; readonly value348: Dynamic; readonly value382: Dynamic; readonly value384: Dynamic; readonly value393: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic }): Dynamic {
-    let handleOpenMessage: Dynamic = (messageEvent?: Dynamic): Dynamic => {
-      let messageData: Dynamic = messageEvent.data;
-      if (
-        !messageData ||
-        typeof messageData != "object" ||
-        typeof messageData.__om_open != "string" ||
-        messageData.__om_open.length > 1024
-      )
-        return;
-      let linkedFile: Dynamic = stripPreviewProjectRoot(
-        messageData.__om_open,
-        messageEvent.source,
+  function onMessage(event: MessageEvent) {
+    const data = event.data;
+    if (!data || typeof data !== "object") return;
+    if (data.__om_escape === 1) {
+      const fromArtboard = [...artboardEntriesRef.current.values()].some(
+        (entry: Dynamic) => event.source !== null && entry.previewFrameRef.current?.contentWindow === event.source,
       );
-      if (navigator.userActivation?.isActive !== true || deps.value285.current)
-        return;
-      let sourceEntry: Dynamic = [...deps.value177.current.entries()].find(
-        ([, frame]: Dynamic): Dynamic =>
-          isPreviewMessage(messageEvent, frame.webviewRef.current),
-      );
-      if (!sourceEntry || sourceEntry[0] === linkedFile) return;
-      let isPlayingFromSource: Dynamic =
-        !deps.value345.current && sourceEntry[0] === deps.value271.current;
-      if (
-        (deps.value224.current || deps.value225.current) &&
-        !deps.value345.current &&
-        !isPlayingFromSource
-      )
-        return;
-      let manifest: Dynamic = deps.value73.current,
-        targetFile: Dynamic = linkedFile,
-        targetArtboard: Dynamic = manifest.artboards.find(
-          (artboard?: Dynamic): Dynamic => artboard.file === targetFile,
-        );
-      if (
-        !targetArtboard ||
-        targetArtboard.file === deps.value346.current ||
-        !singleCanvasCaptureSemaphore.take()
-      )
-        return;
-      let targetPageId: Dynamic = designPageId(
-          targetArtboard,
-          manifest.pages,
-        ),
-        isPageChange: Dynamic = targetPageId !== deps.value80.current;
-      if (isPlayingFromSource) {
-        if (targetArtboard.frameless) return;
-        deps.value384(targetArtboard.file, isPageChange ? targetPageId : undefined);
-        isPageChange || deps.value382.current(targetArtboard.file);
-        return;
-      }
-      let shouldSelectTarget: Dynamic = false;
-      isPageChange
-        ? (deps.value298(targetPageId, shouldSelectTarget ? targetArtboard.file : undefined),
-          (deps.value291.current = false))
-        : shouldSelectTarget &&
-          (deps.value62(),
-          deps.setSelection(emptyCanvasSelection),
-          deps.value274.current(targetArtboard.file));
-      !shouldSelectTarget &&
-        sourceEntry[1].webviewRef.current ===
-          (document as Dynamic).activeElement &&
-        (deps.value393.current = 1);
-      deps.value348(
-        (previousView?: Dynamic): Dynamic => ({
-          file: targetArtboard.file,
-          prev:
-            previousView?.prev ??
-            (isPageChange
-              ? (recallCanvasView(targetPageId) ??
-                defaultCanvasCamera)
-              : deps.value105.get()),
-          fit: artboardIsNotExpandedFill(targetArtboard),
-        }),
-      );
-    };
-    (window as Dynamic).addEventListener("message", handleOpenMessage);
-    return (): Dynamic =>
-      (window as Dynamic).removeEventListener("message", handleOpenMessage);
+      if (fromArtboard) restoreCamera();
+      return;
+    }
+
+    const direction = data.__om_step;
+    if ((direction !== 1 && direction !== -1) ||
+        navigator.userActivation?.isActive !== true || hasBlockingEditorOverlay()) return;
+    const focusedEntry = [...artboardEntriesRef.current.entries()].find(
+      ([, entry]: Dynamic) => entry.previewFrameRef.current === document.activeElement &&
+        isPreviewMessage(event, entry.previewFrameRef.current),
+    );
+    if (!focusedEntry) return;
+    const board = visiblePageRef.current.artboards.find((item: Dynamic) => item.file === focusedEntry[0]);
+    if (board?.is_interactive === true) return;
+    if (parallelCanvasCaptureSemaphore.take() && navigateAdjacentArtboard(direction)) {
+      pendingFrameFocus.current = direction;
+    }
   }
+
+  window.addEventListener("keydown", onKeyDown);
+  window.addEventListener("message", onMessage);
+  return () => {
+    window.removeEventListener("keydown", onKeyDown);
+    window.removeEventListener("message", onMessage);
+  };
+}
+
+export function subscribePreviewOpenMessages({
+  cameraController,
+  artboardEntriesRef,
+  editingRef,
+  readOnlyRef,
+  playingFileRef,
+  pageNavigationGuardRef,
+  restoredPageRef,
+  resolvePageArtboard,
+  fullscreenActiveRef,
+  fullscreenFileRef,
+  setFullscreenView,
+  openArtboardRef,
+  openInlinePlayback,
+  pendingFrameFocus,
+  documentStateRef,
+  activePageIdRef,
+}: Dynamic) {
+  function onMessage(event: MessageEvent) {
+    const data = event.data;
+    if (!data || typeof data !== "object" ||
+        typeof data.__om_open !== "string" || data.__om_open.length > 1024) return;
+
+    const linkedFile = stripPreviewProjectRoot(data.__om_open, event.source);
+    if (navigator.userActivation?.isActive !== true || pageNavigationGuardRef.current) return;
+    const sourceEntry = [...artboardEntriesRef.current.entries()].find(
+      ([, entry]: Dynamic) => isPreviewMessage(event, entry.previewFrameRef.current),
+    );
+    if (!sourceEntry || sourceEntry[0] === linkedFile) return;
+    const playingInline = !fullscreenActiveRef.current && sourceEntry[0] === playingFileRef.current;
+    if ((editingRef.current || readOnlyRef.current) && !fullscreenActiveRef.current && !playingInline) return;
+
+    const { artboards, pages } = documentStateRef.current;
+    const target = artboards.find((item: Dynamic) => item.file === linkedFile);
+    if (!target || target.file === fullscreenFileRef.current || !singleCanvasCaptureSemaphore.take()) return;
+    const targetPageId = designPageId(target, pages);
+    const changesPage = targetPageId !== activePageIdRef.current;
+    if (playingInline) {
+      if (target.frameless) return;
+      openInlinePlayback(target.file, changesPage ? targetPageId : undefined);
+      if (!changesPage) openArtboardRef.current(target.file);
+      return;
+    }
+
+    if (changesPage) {
+      resolvePageArtboard(targetPageId);
+      restoredPageRef.current = false;
+    }
+    if (sourceEntry[1].previewFrameRef.current === document.activeElement) pendingFrameFocus.current = 1;
+    setFullscreenView((previous: Dynamic) => ({
+      file: target.file,
+      prev: previous?.prev ?? (changesPage
+        ? recallCanvasView(targetPageId) ?? defaultCanvasCamera
+        : cameraController.get()),
+      fit: artboardIsNotExpandedFill(target),
+    }));
+  }
+
+  window.addEventListener("message", onMessage);
+  return () => window.removeEventListener("message", onMessage);
+}

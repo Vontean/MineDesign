@@ -60,12 +60,12 @@ function openValidatedLink(url?: Dynamic, validationOptions?: Dynamic): Dynamic 
 export {
   getElementLinkHref,
   linkUrlPattern as LinksNavigationHttpsPattern,
-  storedLinkUrlPattern as LinksNavigationHttpsPattern_2,
+  storedLinkUrlPattern,
   createOpenLinkKeyHandler as LinksNavigationKey,
   openLinkWithModifierKeyHandler as LinksNavigationKeyValue,
-  openLinkKeyHandler as LinksNavigationKeyValue_2,
+  openLinkKeyHandler,
   modifierKeyLabel as LinksNavigationResolvedValue,
-  openLinkHint as LinksNavigationResolvedValue_2,
+  openLinkHint,
   openValidatedLink,
   validateNavigableUrl,
 };

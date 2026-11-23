@@ -3,11 +3,11 @@ import { useUiLocale } from '../../ui-locale.ts';
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { reactHooksLatestCallback_3 } from "../hooks/latest-callback";
+import { reactForVectorPathEditor } from "../hooks/latest-callback";
 import { simplifyVectorPath } from "./annotation-pen-editor";
 import { VectorPathEditor } from "./path-editor";
 import { mapVectorPath, serializeVectorPath, serializeVectorPathBounds } from "./path-parsing";
-import { PlatformFileContentLimit_6 as MAX_CANVAS_ITEM_DIMENSION } from "../../platform/file-content";
+import { maxCanvasItemDimension as MAX_CANVAS_ITEM_DIMENSION } from "../../platform/file-content";
 
 var VectorElementPenEditorLimit: Dynamic;
 var VectorElementPenEditorXYConfig: Dynamic;
@@ -22,7 +22,7 @@ function ElementPenEditor({
   let pathSignature: Dynamic =
       pen.d + "|" + [pen.x, pen.y, pen.w, pen.h, pen.vbW, pen.vbH].join(","),
     [pathState, setPathState]: Dynamic = (0,
-    reactHooksLatestCallback_3.useState)(
+    reactForVectorPathEditor.useState)(
       (): Dynamic => ({
         source: pathSignature,
         path: elementVectorPath(pen),
@@ -33,13 +33,13 @@ function ElementPenEditor({
       source: pathSignature,
       path: elementVectorPath(pen),
     });
-  let animationFrameRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(0),
+  let animationFrameRef: Dynamic = (0, reactForVectorPathEditor.useRef)(0),
     tid: Dynamic = pen.tid,
-    previewRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(
+    previewRef: Dynamic = (0, reactForVectorPathEditor.useRef)(
       onPreview,
     );
   previewRef.current = onPreview;
-  (0, reactHooksLatestCallback_3.useEffect)(
+  (0, reactForVectorPathEditor.useEffect)(
     (): Dynamic => (): Dynamic => {
       cancelAnimationFrame(animationFrameRef.current);
       previewRef.current(tid, null);

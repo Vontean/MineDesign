@@ -95,12 +95,12 @@ function ungroupModelElement(
 }
 export {
   componentInstanceMessage as LayoutUngroupingLabel,
-  slideMessage as LayoutUngroupingLabel_2,
-  repeatedLayerMessage as LayoutUngroupingLabel_3,
-  drawingPartMessage as LayoutUngroupingLabel_4,
+  slideMessage,
+  repeatedLayerMessage,
+  drawingPartMessage,
   NothingToUngroupSelectAGroupMessage,
   selectionUngroupRefusal,
-  selfManagedComponentMessage as ThisComponentManagesItselfSoItMessage_2,
+  selfManagedComponentMessage,
   ungroupElementRefusal,
   ungroupModelElement,
 };

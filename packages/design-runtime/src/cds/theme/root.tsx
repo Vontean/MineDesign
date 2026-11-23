@@ -11,12 +11,12 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { initializeDomInputObservation, observeDocumentInput } from "../dom/input-observation";
-import { accentColorNames, getOwnerWindow, initializeDomOwnerWindow, initializeDomOwnerWindow_2 } from "../dom/owner-window";
+import { accentColorNames, getOwnerWindow, initializeDomOwnerWindow, initializeAccentColorNames } from "../dom/owner-window";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
 import { initializeLinkRouter, LinkRouterContext, useLinkRouter } from "../links";
 import { detectRuntimePlatform, initializePlatformRuntime } from "../platform/runtime";
-import { initializeSheetsLazyLoader_2, useMobileSheetPreload } from "../sheets/lazy-loader";
-import { initializeSheetsStyles_2, LabelsProviderContext } from "../sheets/styles";
+import { initializeMobileSheetPreload, useMobileSheetPreload } from "../sheets/lazy-loader";
+import { initializeLabelsProviderContext, LabelsProviderContext } from "../sheets/styles";
 import { cn, initializeClassNames } from "./class-names";
 import { ExperimentalThemeContext, initializeExperimentalTheme, useExperimentalTheme } from "./experimental-theme";
 import { initializeNpm__base_ui_react_SY, load_react, load_react_jsx_runtime, npm_useRender_LL } from "../../dependencies";
@@ -34,13 +34,13 @@ var DensityContextAlias: Dynamic;
 var ColorModeContext: Dynamic;
 var defaultColorModeStore: Dynamic;
 var ThemeRootMediaQuery: Dynamic;
-var ThemeRootHandler_2: Dynamic;
+var normalizeThemeModeSetting: Dynamic;
 var PlatformContext: Dynamic;
 var LocaleContext: Dynamic;
 var FontContext: Dynamic;
 var LabelsContext: Dynamic;
 var ThemeRootContext: Dynamic;
-var ThemeRootContext_2: Dynamic;
+var themeDensityOverrideContext: Dynamic;
 var PageBackgroundContext: Dynamic;
 var ExperimentalSettingsContext: Dynamic;
 var RootElementContext: Dynamic;
@@ -120,7 +120,7 @@ function createColorModeStore(modeSetting?: Dynamic): Dynamic {
       modeSetting === undefined && typeof document !== "undefined"
         ? (document as Dynamic).documentElement.getAttribute("data-mode")
         : null,
-    callback: Dynamic = (): Dynamic => modeSetting ?? ThemeRootHandler_2(inheritedMode),
+    callback: Dynamic = (): Dynamic => modeSetting ?? normalizeThemeModeSetting(inheritedMode),
     toMode: Dynamic = (isDark?: Dynamic): Dynamic =>
       isDark ? "dark" : "light",
     mediaQuery: Dynamic,
@@ -328,7 +328,7 @@ function CdsRoot({
     inheritedLabelResolver: Dynamic = (0, reactThemeRoot.useContext)(
       LabelsProviderContext,
     ),
-    inheritedDensityOverride: Dynamic = (0, reactThemeRoot.useContext)(ThemeRootContext_2),
+    inheritedDensityOverride: Dynamic = (0, reactThemeRoot.useContext)(themeDensityOverrideContext),
     densityOverride: Dynamic = experimental?.densityOverride ?? inheritedDensityOverride,
     resolvedDensity: Dynamic = densityOverride ?? density ?? value,
     resolvedRouter: Dynamic = router ?? inheritedRouter,
@@ -453,13 +453,13 @@ function CdsRoot({
                     <LinkRouterContext.Provider value={resolvedRouter}>
                       <LabelsProviderContext.Provider value={mergedLabels}>
                         <ThemeRootContext.Provider value={naturalImageTiles}>
-                          <ThemeRootContext_2.Provider value={densityOverride}>
+                          <themeDensityOverrideContext.Provider value={densityOverride}>
                             <ExperimentalThemeContext.Provider
                               value={experimentalTheme}
                             >
                               {renderedRoot}
                             </ExperimentalThemeContext.Provider>
-                          </ThemeRootContext_2.Provider>
+                          </themeDensityOverrideContext.Provider>
                         </ThemeRootContext.Provider>
                       </LabelsProviderContext.Provider>
                     </LinkRouterContext.Provider>
@@ -504,11 +504,11 @@ export {
   stylesheetsInspected,
   ThemeRootCompactComfortableConfig,
   ThemeRootContext,
-  ThemeRootContext_2,
+  themeDensityOverrideContext,
   ThemeRootDefaultText,
   ThemeRootFromEntriesValue,
   ThemeRootHandler,
-  ThemeRootHandler_2,
+  normalizeThemeModeSetting,
   ThemeRootMediaQuery,
   ThemeRootSurface0Surface1Surface2Set,
   ThemeRootXsSmBaseConfig,
@@ -530,13 +530,13 @@ export function installCdsThemeRoot(): () => void {
     initializeCdsRoot = initializeOnce((): Dynamic => {
       "use client";
 
-      initializeDomOwnerWindow_2();
+      initializeAccentColorNames();
       initializeDomInputObservation();
-      initializeSheetsLazyLoader_2();
+      initializeMobileSheetPreload();
       initializeHooksLayoutEffect();
       initializeExperimentalTheme();
       initializeClassNames();
-      initializeSheetsStyles_2();
+      initializeLabelsProviderContext();
       initializePlatformRuntime();
       initializeLinkRouter();
       initializeDomOwnerWindow();
@@ -574,7 +574,7 @@ export function installCdsThemeRoot(): () => void {
         getServerSettingSnapshot: (): Dynamic => {},
       };
       ThemeRootMediaQuery = "(prefers-color-scheme: dark)";
-      ThemeRootHandler_2 = (setting?: Dynamic): Dynamic =>
+      normalizeThemeModeSetting = (setting?: Dynamic): Dynamic =>
         setting === "dark" || setting === "light"
           ? setting
           : setting === "auto" || setting === "system"
@@ -585,7 +585,7 @@ export function installCdsThemeRoot(): () => void {
       FontContext = (0, reactThemeRoot.createContext)(undefined);
       LabelsContext = (0, reactThemeRoot.createContext)(undefined);
       ThemeRootContext = (0, reactThemeRoot.createContext)(undefined);
-      ThemeRootContext_2 = (0, reactThemeRoot.createContext)(undefined);
+      themeDensityOverrideContext = (0, reactThemeRoot.createContext)(undefined);
       PageBackgroundContext = (0, reactThemeRoot.createContext)(undefined);
       ExperimentalSettingsContext = (0, reactThemeRoot.createContext)(
         undefined,

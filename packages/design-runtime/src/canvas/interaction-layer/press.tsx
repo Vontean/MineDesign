@@ -1,4 +1,4 @@
-import { InspectorColorPickResolvedValue_2 as isMetaPrimaryKey } from "../../editor/inspector/color-pick";
+import { isDesktopMac as isMetaPrimaryKey } from "../../editor/inspector/color-pick";
 import { boardSelectionItems } from "../../editor/selection/canvas-selection";
 import { canvasDragThresholdPixels } from "../interaction-geometry";
 import { emptyBoardSelection } from "../../editor/selection/canvas-selection";
@@ -9,7 +9,7 @@ import { type Dynamic } from "../../runtime-types";
 import { watchPointerRelease } from "../image-decode-scheduler";
 
 /** 按下画板封面准备选元素时运行：监听本次指针直到松开、取消、失焦或元素被移除，返回指针是否移动超过拖动阈值（按 Esc 也视为移动）。 */
-export function waitPointerReleaseTravel(deps: { readonly value9: Dynamic }, pointerId?: Dynamic,
+export function waitPointerReleaseTravel(deps: { readonly canvasRootRef: Dynamic }, pointerId?: Dynamic,
       pointerType?: Dynamic,
       targetElement?: Dynamic,
       startX?: Dynamic,
@@ -87,7 +87,7 @@ export function waitPointerReleaseTravel(deps: { readonly value9: Dynamic }, poi
                   : new MutationObserver((): Dynamic => {
                       !targetElement.isConnected && finish(false);
                     });
-            removalObserver?.observe(deps.value9.current ?? (document as Dynamic).body, {
+            removalObserver?.observe(deps.canvasRootRef.current ?? (document as Dynamic).body, {
               childList: true,
               subtree: true,
             });
@@ -117,7 +117,7 @@ export function waitPointerReleaseTravel(deps: { readonly value9: Dynamic }, poi
 }
 
 /** 在画板封面上按下指针时运行：通知宿主后在画板里拾取指针下的元素，按按下意图决定直接选中元素、切换画板选择、转入框选或交给移动手势；画板未就绪时只聚焦或选中画板。 */
-export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonly callback19: Dynamic; readonly callback46: Dynamic; readonly callback53: Dynamic; readonly onArmArtboard: Dynamic; readonly onCoverPick: Dynamic; readonly onCoverPress: Dynamic; readonly onElementPress: Dynamic; readonly onFocus: Dynamic; readonly onPressIntent: Dynamic; readonly onSelectObjects: Dynamic; readonly onSetMoveCommit: Dynamic; readonly pressIntentIs: Dynamic; readonly value2: Dynamic; readonly value222: Dynamic; readonly value26: Dynamic; readonly value29: Dynamic; readonly value57: Dynamic; readonly value60: Dynamic; readonly value92: Dynamic }, pointerEvent?: Dynamic,
+export function pressArtboardCover(deps: { readonly waitPointerRelease: Dynamic; readonly beginMarquee: Dynamic; readonly beginBoardDragBound: Dynamic; readonly beginElementMove: Dynamic; readonly onArmArtboard: Dynamic; readonly onCoverPick: Dynamic; readonly onCoverPress: Dynamic; readonly onElementPress: Dynamic; readonly onFocus: Dynamic; readonly onPressIntent: Dynamic; readonly onSelectObjects: Dynamic; readonly onSetMoveCommit: Dynamic; readonly pressIntentIs: Dynamic; readonly artboardHandlesRef: Dynamic; readonly setHeldCover: Dynamic; readonly selectedTidsByFileRef: Dynamic; readonly coverPressRef: Dynamic; readonly selectionRef: Dynamic; readonly selectArtboard: Dynamic; readonly onMarqueeBeginRef: Dynamic }, pointerEvent?: Dynamic,
       artboard?: Dynamic,
       source?: Dynamic): Dynamic {
       let x: Dynamic = source.at.x,
@@ -126,13 +126,13 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
         x: x,
         y: y,
       });
-      let artboardEntry: Dynamic = deps.value2.current.get(artboard.file),
+      let artboardEntry: Dynamic = deps.artboardHandlesRef.current.get(artboard.file),
         selectCover: Dynamic = (): Dynamic => {
           if (source.face) {
-            deps.value60(artboard.file, true);
+            deps.selectArtboard(artboard.file, true);
             return;
           }
-          deps.value60(artboard.file, source.toggle);
+          deps.selectArtboard(artboard.file, source.toggle);
           source.toggle || deps.onFocus(artboard.file);
         },
         selectCoverUnlessSet: Dynamic = (): Dynamic => {
@@ -202,7 +202,7 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
       let runOnRelease: Dynamic = (action?: Dynamic): Dynamic => {
           hasReleased ? hasTravelled || action() : (pendingRelease = action);
         },
-        selectedTids: Dynamic = deps.value26.current?.[artboard.file] ?? [],
+        selectedTids: Dynamic = deps.selectedTidsByFileRef.current?.[artboard.file] ?? [],
         pickMode: Dynamic = source.deepKey ? "deep" : "plain",
         pickPromise: Dynamic = artboardEntry.pickAt(x, y, pickMode, selectedTids).then(
           (pickedElement?: Dynamic): Dynamic => {
@@ -219,7 +219,7 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
                   return;
                 }
                 stopTracking();
-                deps.callback19(pointerEvent, {
+                deps.beginMarquee(pointerEvent, {
                   origin: {
                     kind: "artboard",
                     file: artboard.file,
@@ -234,7 +234,7 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
               },
               selectArtboardFallback: Dynamic = (): Dynamic => {
                 source.toggle
-                  ? deps.value60(artboard.file, true)
+                  ? deps.selectArtboard(artboard.file, true)
                   : source.face || selectCover();
               };
             if (pickedElement == null) {
@@ -244,13 +244,13 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
             if ("empty" in pickedElement) {
               stopTracking();
               let pressDecision: Dynamic = selectionPointerDownDecision(
-                deps.value57.current,
+                deps.selectionRef.current,
                 {
                   file: artboard.file,
                 },
                 source.toggle,
               );
-              pressDecision.selectNow && deps.value60(artboard.file, source.toggle);
+              pressDecision.selectNow && deps.selectArtboard(artboard.file, source.toggle);
               let eventWithTarget: Dynamic = Object.assign(Object.create(pointerEvent), {
                 currentTarget: currentTarget,
               });
@@ -263,7 +263,7 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
                     }),
                     pressDecision.click === "toggle" ? "toggle" : "replace",
                   )
-                : deps.callback46(
+                : deps.beginBoardDragBound(
                     eventWithTarget,
                     {
                       file: artboard.file,
@@ -276,8 +276,8 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
               hasReleased && !source.toggle && deps.onFocus(artboard.file);
               return;
             }
-            if (source.toggle && deps.value57.current.files.has(artboard.file)) {
-              runOnRelease((): Dynamic => deps.value60(artboard.file, true));
+            if (source.toggle && deps.selectionRef.current.files.has(artboard.file)) {
+              runOnRelease((): Dynamic => deps.selectArtboard(artboard.file, true));
               return;
             }
             let isAlreadySelected: Dynamic = selectedTids.includes(pickedElement.tid);
@@ -298,7 +298,7 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
             }
             if (source.deepKey && isMetaPrimaryKey) {
               let treeSweeper: Dynamic =
-                deps.value92.current?.(source.toggle) ?? null;
+                deps.onMarqueeBeginRef.current?.(source.toggle) ?? null;
               if (source.toggle && isAlreadySelected) {
                 handOffToMarquee(
                   (): Dynamic =>
@@ -365,7 +365,7 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
                   hasTravelled || narrowSelection();
                   return;
                 }
-                deps.callback53({
+                deps.beginElementMove({
                   pointerId: pointerId,
                   captureEl: currentTarget,
                   clientX: startClientX,
@@ -403,7 +403,7 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
                 : null;
             stopTracking();
             if (deps.onSetMoveCommit && !hasReleased && !source.deepKey) {
-              deps.value222(artboard.file);
+              deps.setHeldCover(artboard.file);
               let armWait: Dynamic = deps.onElementPress(
                 artboard.file,
                 pickedElement.tid,
@@ -411,7 +411,7 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
                 "replace",
                 true,
               );
-              deps.callback53({
+              deps.beginElementMove({
                 pointerId: pointerId,
                 captureEl: currentTarget,
                 clientX: startClientX,
@@ -434,7 +434,7 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
                       clientY: lastPointer.y,
                     }
                   : null,
-              }) || deps.value222(null);
+              }) || deps.setHeldCover(null);
               return;
             }
             hasReleased && !hasTravelled && textPressAction
@@ -454,7 +454,7 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
       deps.onCoverPick?.(artboard.file, pickPromise, {
         gen: pressIntent,
         kind: source.kind ?? "focus",
-        ended: deps.callback17(
+        ended: deps.waitPointerRelease(
           pointerId,
           pointerType,
           currentTarget,
@@ -463,11 +463,11 @@ export function pressArtboardCover(deps: { readonly callback17: Dynamic; readonl
           hasReleased,
         ),
       });
-      deps.value29.current = pickPromise;
+      deps.coverPressRef.current = pickPromise;
     }
 
 /** 渲染画布上的形状或便签时运行：为该对象生成按下、移动、松开、取消的指针处理函数，按按键与触控决定选中方式，并接入画板拖动手势。 */
-export function buildObjectPressHandlers(deps: { readonly callback46: Dynamic; readonly callback49: Dynamic; readonly callback50: Dynamic; readonly callback53: Dynamic; readonly callback54: Dynamic; readonly onSelectObjects: Dynamic; readonly onSetMoveCommit: Dynamic; readonly value57: Dynamic }, note?: Dynamic): Dynamic {
+export function buildObjectPressHandlers(deps: { readonly beginBoardDragBound: Dynamic; readonly endBoardDragForEvent: Dynamic; readonly updateBoardDragBound: Dynamic; readonly beginElementMove: Dynamic; readonly hasSelectedElements: Dynamic; readonly onSelectObjects: Dynamic; readonly onSetMoveCommit: Dynamic; readonly selectionRef: Dynamic }, note?: Dynamic): Dynamic {
   return {
       onPointerDown: (event?: Dynamic): Dynamic => {
         if (event.button !== 0) return;
@@ -475,7 +475,7 @@ export function buildObjectPressHandlers(deps: { readonly callback46: Dynamic; r
         if (
           isTouchSelectionStart(
             event.pointerType,
-            deps.value57.current.notes.has(note.id),
+            deps.selectionRef.current.notes.has(note.id),
           )
         ) {
           watchPointerRelease(
@@ -496,12 +496,12 @@ export function buildObjectPressHandlers(deps: { readonly callback46: Dynamic; r
           event.pointerType !== "touch" &&
           !shiftKey &&
           !event.altKey &&
-          hasBoardSelection(deps.value57.current, {
+          hasBoardSelection(deps.selectionRef.current, {
             note: note.id,
           }) &&
-          deps.callback54()
+          deps.hasSelectedElements()
         ) {
-          deps.callback53({
+          deps.beginElementMove({
             pointerId: event.pointerId,
             captureEl: event.currentTarget,
             clientX: event.clientX,
@@ -524,7 +524,7 @@ export function buildObjectPressHandlers(deps: { readonly callback46: Dynamic; r
           return;
         }
         let pressDecision: Dynamic = selectionPointerDownDecision(
-          deps.value57.current,
+          deps.selectionRef.current,
           {
             note: note.id,
           },
@@ -537,7 +537,7 @@ export function buildObjectPressHandlers(deps: { readonly callback46: Dynamic; r
             }),
             shiftKey ? "toggle" : "replace",
           );
-        deps.callback46(
+        deps.beginBoardDragBound(
           event,
           {
             note: note.id,
@@ -547,8 +547,8 @@ export function buildObjectPressHandlers(deps: { readonly callback46: Dynamic; r
           pressDecision.click,
         );
       },
-      onPointerMove: (moveEvent?: Dynamic): Dynamic => deps.callback50(moveEvent, false),
-      onPointerUp: (upEvent?: Dynamic): Dynamic => deps.callback50(upEvent, true),
-      onPointerCancel: deps.callback49,
+      onPointerMove: (moveEvent?: Dynamic): Dynamic => deps.updateBoardDragBound(moveEvent, false),
+      onPointerUp: (upEvent?: Dynamic): Dynamic => deps.updateBoardDragBound(upEvent, true),
+      onPointerCancel: deps.endBoardDragForEvent,
     };
 }

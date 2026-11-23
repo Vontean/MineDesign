@@ -6,19 +6,19 @@ import {
 } from "../runtime-types";
 import { recordDesignEditActivity } from "./compilation-cache";
 import { joinClassNames } from "../editor/chrome/overlay-state";
-import { reactVectorToolState_2 } from "../editor/vector/tool-state";
+import { vectorToolStateReact as React } from "../editor/vector/tool-state";
 
 function PlacementGhostFrame({
   ghost: ghost,
   style: style,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let iframeRef: Dynamic = (0, reactVectorToolState_2.useRef)(null),
-    hasBootedRef: Dynamic = (0, reactVectorToolState_2.useRef)(false),
-    [isBooted, setIsBooted]: Dynamic = (0, reactVectorToolState_2.useState)(
+  let iframeRef: Dynamic = (0, React.useRef)(null),
+    hasBootedRef: Dynamic = (0, React.useRef)(false),
+    [isBooted, setIsBooted]: Dynamic = (0, React.useState)(
       false,
     );
-  (0, reactVectorToolState_2.useEffect)((): Dynamic => {
+  (0, React.useEffect)((): Dynamic => {
     let handleMessage: Dynamic = (messageEvent?: Dynamic): Dynamic => {
       let messageData: Dynamic = messageEvent.data;
       messageEvent.source !== null &&
@@ -32,7 +32,7 @@ function PlacementGhostFrame({
     return (): Dynamic =>
       (window as Dynamic).removeEventListener("message", handleMessage);
   }, []);
-  (0, reactVectorToolState_2.useLayoutEffect)(
+  (0, React.useLayoutEffect)(
     (): Dynamic => recordDesignEditActivity,
     [],
   );

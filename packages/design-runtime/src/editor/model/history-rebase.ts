@@ -6,9 +6,9 @@ import { mergeDcTemplates } from "./three-way-merge";
 import { resetUndoHistory } from "../undo/history";
 
 var ModelHistoryRebaseAlias: Dynamic;
-var ModelHistoryRebaseAlias_2: Dynamic;
+var onHistoryRebase: Dynamic;
 var ModelHistoryRebaseHandler: Dynamic;
-var ModelHistoryRebaseHandler_2: Dynamic;
+var isHistoryRebaseEnabled: Dynamic;
 var ModelHistoryRebaseUndo: Dynamic;
 var ModelHistoryRebaseCache: Dynamic;
 var ModelHistoryRebaseLimit: Dynamic;
@@ -16,8 +16,8 @@ var ModelHistoryRebaseNow: Dynamic;
 var ModelHistoryRebaseSet: Dynamic;
 var ModelHistoryRebaseDelete: Dynamic;
 var ModelHistoryRebaseNowValue: Dynamic;
-var ModelHistoryRebaseHandler_3: Dynamic;
-var ModelHistoryRebaseHandler_4: Dynamic;
+var captureHistoryRebaseNow: Dynamic;
+var getCapturedHistoryRebaseNow: Dynamic;
 function isRecentlyEditedFile(
   filePath?: Dynamic,
   now: Dynamic = ModelHistoryRebaseNow(),
@@ -106,13 +106,13 @@ function rebaseModelHistory(
 export {
   isRecentlyEditedFile,
   ModelHistoryRebaseAlias,
-  ModelHistoryRebaseAlias_2,
+  onHistoryRebase,
   ModelHistoryRebaseCache,
   ModelHistoryRebaseDelete,
   ModelHistoryRebaseHandler,
-  ModelHistoryRebaseHandler_2,
-  ModelHistoryRebaseHandler_3,
-  ModelHistoryRebaseHandler_4,
+  isHistoryRebaseEnabled,
+  captureHistoryRebaseNow,
+  getCapturedHistoryRebaseNow,
   ModelHistoryRebaseLimit,
   ModelHistoryRebaseNow,
   ModelHistoryRebaseNowValue,
@@ -129,13 +129,13 @@ export function installEditorModelHistoryRebase(): () => void {
       onRebase?: Dynamic,
     ): Dynamic => {
       ModelHistoryRebaseAlias = isEnabled;
-      ModelHistoryRebaseAlias_2 = onRebase;
+      onHistoryRebase = onRebase;
     };
-    ModelHistoryRebaseHandler_2 = (): Dynamic => ModelHistoryRebaseAlias;
+    isHistoryRebaseEnabled = (): Dynamic => ModelHistoryRebaseAlias;
     ModelHistoryRebaseUndo = (docKey?: Dynamic, summary?: Dynamic): Dynamic => {
       if (summary.undo + summary.redo + summary.dropped !== 0)
         try {
-          ModelHistoryRebaseAlias_2?.(docKey, summary);
+          onHistoryRebase?.(docKey, summary);
         } catch {}
     };
     ModelHistoryRebaseCache = new Map();
@@ -155,9 +155,9 @@ export function installEditorModelHistoryRebase(): () => void {
       isRecentlyEditedFile(filePath, now) &&
       ModelHistoryRebaseCache.delete(filePath);
     ModelHistoryRebaseNowValue = -1 / 0;
-    ModelHistoryRebaseHandler_3 = (): Dynamic => {
+    captureHistoryRebaseNow = (): Dynamic => {
       ModelHistoryRebaseNowValue = ModelHistoryRebaseNow();
     };
-    ModelHistoryRebaseHandler_4 = (): Dynamic => ModelHistoryRebaseNowValue;
+    getCapturedHistoryRebaseNow = (): Dynamic => ModelHistoryRebaseNowValue;
   };
 }

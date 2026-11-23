@@ -5,7 +5,7 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { Button } from "../../cds/button/button";
-import { DialogDialogRootTriggerPopupConfig_2 as Dialog } from "../../cds/dialog/dialog";
+import { alertDialogParts as Dialog } from "../../cds/dialog/dialog";
 import { initializeCdsIndex } from "../../cds/index";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { toModuleNamespace } from "../../module-helpers";

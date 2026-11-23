@@ -4,7 +4,7 @@ import {
 } from "../runtime-types";
 import { createDesignDatabaseCodec, DESIGN_SYSTEM_DOCUMENT_PATH } from "./database-codec";
 import { INDEX_LEFT_OUT_KEY } from "./design-index";
-import { BoardsValue, encodeStorePathSegment, FilesValue, isArtboardFile, NotesValue, PlatformFileContentResolvedValue_4 as designMetadataPath, PlatformFileContentResolvedValue_5 as designSourceDocumentPath, splitPublishBatches } from "./file-content";
+import { BoardsValue, encodeStorePathSegment, FilesValue, isArtboardFile, NotesValue, designMetadataPath as designMetadataPath, designSourceDocumentPath as designSourceDocumentPath, splitPublishBatches } from "./file-content";
 import { projectMetadataPaths, projectPathPrefix } from "./project-paths";
 import { MAX_SNAPSHOT_COLLECTION_DOCS } from "./snapshot-database";
 import { CreatedOnFilesValue } from "./storage-migration";

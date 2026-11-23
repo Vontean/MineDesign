@@ -10,14 +10,14 @@ var parseUtilityClassesValue: Dynamic;
 var HtmlAuthoringSubscribers: Dynamic;
 var DcTplAttribute: Dynamic;
 var HtmlAuthoringCss: Dynamic;
-var HtmlAuthoringSubscribers_2: Dynamic;
+var nonContainerTags: Dynamic;
 var HtmlAuthoringTextTspanTextpathSet: Dynamic;
 var HtmlAuthoringFFFFDFFFDPattern: Dynamic;
-var HtmlAuthoringSubscribers_3: Dynamic;
+var blockTags: Dynamic;
 var HtmlAuthoringH1H2H3Set: Dynamic;
 var HtmlAuthoringTrTdThConfig: Dynamic;
 var HtmlAuthoringTableTheadTbodyConfig: Dynamic;
-var HtmlAuthoringSubscribers_4: Dynamic;
+var phrasingParentTags: Dynamic;
 var HtmlAuthoringLiDtDdSet: Dynamic;
 function stripLeadingCssAtRules(css?: Dynamic): Dynamic {
   let strippedCss: Dynamic = css.replace(/\/\*[\s\S]*?\*\//g, "").trim(),
@@ -90,15 +90,15 @@ function isIconOnlyElement(element?: Dynamic): Dynamic {
   );
 }
 function canContainHtmlChildren(tagName?: Dynamic): Dynamic {
-  return !HtmlAuthoringSubscribers_2.has(tagName.toLowerCase());
+  return !nonContainerTags.has(tagName.toLowerCase());
 }
 function canContainHtmlTag(parentTag?: Dynamic, childTag?: Dynamic): Dynamic {
   let lowerParentTag: Dynamic = parentTag.toLowerCase(),
     lowerChildTag: Dynamic = childTag.toLowerCase();
   return !(
     !canContainHtmlChildren(lowerParentTag) ||
-    (lowerParentTag === "p" && HtmlAuthoringSubscribers_3.has(lowerChildTag)) ||
-    (HtmlAuthoringSubscribers_4.has(lowerParentTag) &&
+    (lowerParentTag === "p" && blockTags.has(lowerChildTag)) ||
+    (phrasingParentTags.has(lowerParentTag) &&
       HtmlAuthoringLiDtDdSet.has(lowerChildTag)) ||
     (HtmlAuthoringH1H2H3Set.has(lowerParentTag) &&
       HtmlAuthoringH1H2H3Set.has(lowerChildTag)) ||
@@ -123,9 +123,9 @@ export {
   HtmlAuthoringH1H2H3Set,
   HtmlAuthoringLiDtDdSet,
   HtmlAuthoringSubscribers,
-  HtmlAuthoringSubscribers_2,
-  HtmlAuthoringSubscribers_3,
-  HtmlAuthoringSubscribers_4,
+  nonContainerTags,
+  blockTags,
+  phrasingParentTags,
   HtmlAuthoringTableTheadTbodyConfig,
   HtmlAuthoringTextTspanTextpathSet,
   HtmlAuthoringTrTdThConfig,
@@ -149,7 +149,7 @@ export function installEditorHtmlAuthoring(): () => void {
     HtmlAuthoringCss = `
 /*sheet*/
 `;
-    HtmlAuthoringSubscribers_2 = new Set([
+    nonContainerTags = new Set([
       "area",
       "base",
       "br",
@@ -186,7 +186,7 @@ export function installEditorHtmlAuthoring(): () => void {
     HtmlAuthoringTextTspanTextpathSet = new Set(["text", "tspan", "textpath"]);
     HtmlAuthoringFFFFDFFFDPattern =
       /[\uE000-\uF8FF\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}]/gu;
-    HtmlAuthoringSubscribers_3 = new Set(
+    blockTags = new Set(
       "address article aside blockquote details div dl fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 header hgroup hr main menu nav ol p pre section table ul".split(
         " ",
       ),
@@ -211,13 +211,13 @@ export function installEditorHtmlAuthoring(): () => void {
       tr: new Set(["td", "th"]),
       colgroup: new Set(["col"]),
     };
-    HtmlAuthoringSubscribers_4 = new Set(
+    phrasingParentTags = new Set(
       "span a b i em strong u s small sub sup code label button abbr cite q mark time kbd samp var h1 h2 h3 h4 h5 h6".split(
         " ",
       ),
     );
     HtmlAuthoringLiDtDdSet = new Set([
-      ...HtmlAuthoringSubscribers_3,
+      ...blockTags,
       "li",
       "dt",
       "dd",

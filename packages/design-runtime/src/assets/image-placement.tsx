@@ -4,7 +4,7 @@ import {
 } from "../runtime-types";
 import { CanvasWorkingStateFloorValue, isSvgFile } from "../canvas/working-state";
 import { load_react_jsx_runtime } from "../dependencies";
-import { ClipboardImageValidationResolvedValue_2 as maxClipboardImageBytes, isPlayableImage } from "../editor/clipboard/image-validation";
+import { maxDecodableImageBytes as maxClipboardImageBytes, isPlayableImage } from "../editor/clipboard/image-validation";
 import { toModuleNamespace } from "../module-helpers";
 
 var jsx_Gn: Dynamic;

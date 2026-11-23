@@ -1,3 +1,6 @@
+import { reactChromeTheme as React } from "../../editor/chrome/theme";
+import { OutlineGlyphsLabel } from "../../editor/outline/glyphs";
+import { reconcileAnnotationOutline } from "../../editor/outline/annotations";
 import { DownloadsArenTAvailableToYouForMessage } from "../../export/downloads";
 import { KeyboardEditActionsCutCopyPasteConfig } from "../../editor/keyboard/edit-actions";
 import { ViewOnlyYouCanInspectThisMessage } from "../../editor/outline/annotations";
@@ -9,28 +12,70 @@ import { stackingAnnouncement } from "../../editor/accessibility/announcements";
 import { supportsClipboardImages } from "../../editor/clipboard/png-copy";
 import { type Dynamic } from "../../runtime-types";
 import { uiMessage } from "@minedesign/contracts/ui-messages";
-import { emptyCanvasSelectionFiles, existingThumbnailMessage, loosePiecePlaybackMessage, loosePieceRenameHint, oversizedThumbnailMessage, singleArtboardPngCopyMessage, singleArtboardSvgCopyMessage, staticArtboardPlaybackMessage } from "../design-canvas";
+import { existingThumbnailMessage, loosePiecePlaybackMessage, loosePieceRenameHint, oversizedThumbnailMessage, singleArtboardPngCopyMessage, singleArtboardSvgCopyMessage, staticArtboardPlaybackMessage } from "./messages";
+import { emptyCanvasSelectionFiles } from "./shared";
+
+interface ArtboardMenuOptions {
+  readonly doc: Dynamic;
+  readonly selection: Dynamic;
+  readonly camera: Dynamic;
+  readonly editing: Dynamic;
+  readonly readOnly: Dynamic;
+  readonly playingFile: Dynamic;
+  readonly focusArtboard: Dynamic;
+  readonly renameInCanvas: Dynamic;
+  readonly duplicateObjects: Dynamic;
+  readonly expandArtboard: Dynamic;
+  readonly revealArtboard: Dynamic;
+  readonly openInlinePlayback: Dynamic;
+  readonly reorderArtboards: Dynamic;
+  readonly deleteArtboards: Dynamic;
+  readonly downloadsWithheld: Dynamic;
+  readonly copyPng: Dynamic;
+  readonly copySvg: Dynamic;
+  readonly selectArtboard: Dynamic;
+  readonly promptRename: Dynamic;
+  readonly copyBoardsAndNotes: Dynamic;
+  readonly setCover: Dynamic;
+  readonly pasteMenuItem: Dynamic;
+  readonly manifest: Dynamic;
+  readonly imageClipboardEnabled: Dynamic;
+}
+
+interface AnnotationMenuOptions {
+  readonly selection: Dynamic;
+  readonly flipRefusal: Dynamic;
+  readonly flipSelection: Dynamic;
+  readonly editing: Dynamic;
+  readonly selectBoardsAndNotes: Dynamic;
+  readonly duplicateObjects: Dynamic;
+  readonly deleteBoardsAndNotes: Dynamic;
+  readonly flipNotes: Dynamic;
+  readonly copyBoardsAndNotes: Dynamic;
+  readonly pasteMenuItem: Dynamic;
+  readonly manifest: Dynamic;
+}
 
 /** 打开画板右键菜单时运行：生成复制（含 PNG/SVG）、重命名、设为缩略图、编辑、画布或全屏播放、新窗口打开、层级与删除等菜单项。 */
-export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly selectionRef: Dynamic; readonly value105: Dynamic; readonly value224: Dynamic; readonly value225: Dynamic; readonly value271: Dynamic; readonly value274: Dynamic; readonly value293: Dynamic; readonly value323: Dynamic; readonly value379: Dynamic; readonly value383: Dynamic; readonly value384: Dynamic; readonly value403: Dynamic; readonly value449: Dynamic; readonly value480: Dynamic; readonly value505: Dynamic; readonly value506: Dynamic; readonly value578: Dynamic; readonly value588: Dynamic; readonly value589: Dynamic; readonly value590: Dynamic; readonly value591: Dynamic; readonly value73: Dynamic; readonly value92: Dynamic }, artboardFile?: Dynamic, renameOnCanvas: Dynamic = false): Dynamic {
-        let selection: Dynamic = deps.selectionRef.current,
+function buildArtboardContextMenu(deps: ArtboardMenuOptions, artboardFile?: Dynamic, renameOnCanvas: Dynamic = false): Dynamic {
+        let selection: Dynamic = deps.selection.current,
           isInSelection: Dynamic = selection.artboards.has(artboardFile),
           targetFiles: Dynamic = isInSelection
             ? selection.artboards
             : new Set([artboardFile]);
-        isInSelection || deps.value578(artboardFile, false);
+        isInSelection || deps.selectArtboard(artboardFile, false);
         let targetCount: Dynamic = targetFiles.size,
           countSuffix: Dynamic =
             targetCount > 1 ? " " + String(targetCount) + " artboards" : "",
-          readOnlyReason: Dynamic = deps.value224.current
+          readOnlyReason: Dynamic = deps.editing.current
             ? undefined
             : ViewOnlyYouCanInspectThisMessage,
-          canEdit: Dynamic = (): Dynamic => deps.value224.current && true,
-          manifest: Dynamic = deps.value73.current,
+          canEdit: Dynamic = (): Dynamic => deps.editing.current && true,
+          manifest: Dynamic = deps.manifest.current,
           artboard: Dynamic = manifest.artboards.find(
             (item?: Dynamic): Dynamic => item.file === artboardFile,
           ),
-          isPlaying: Dynamic = deps.value271.current === artboardFile,
+          isPlaying: Dynamic = deps.playingFile.current === artboardFile,
           playDisabledReason: Dynamic = isPlaying
             ? undefined
             : artboard?.frameless
@@ -40,39 +85,39 @@ export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly
                 : undefined;
         return [
           {
-            get label() { return uiMessage("canvas.designCanvas.copy", { value1: String(countSuffix) }); },
+            get label() { return uiMessage("canvas.designCanvas.copy", { countSuffix: String(countSuffix) }); },
             hotkey: "cmd+c",
             disabledReason: undefined,
             onClick: (): Dynamic => {
-              deps.value589(
+              deps.copyBoardsAndNotes(
                 targetFiles,
                 isInSelection ? selection.notes : emptyCanvasSelectionFiles,
               );
             },
           },
-          ...(deps.value92 && supportsClipboardImages()
+          ...(deps.imageClipboardEnabled && supportsClipboardImages()
             ? [
                 {
                   get label() { return uiMessage("canvas.designCanvas.copyAsPNG"); },
-                  disabledReason: deps.value480
+                  disabledReason: deps.downloadsWithheld
                     ? DownloadsArenTAvailableToYouForMessage
                     : targetCount > 1
                       ? singleArtboardPngCopyMessage
                       : undefined,
-                  onClick: (): Dynamic => deps.value505(artboardFile),
+                  onClick: (): Dynamic => deps.copyPng(artboardFile),
                 },
                 {
                   get label() { return uiMessage("canvas.designCanvas.copyAsSVG"); },
-                  disabledReason: deps.value480
+                  disabledReason: deps.downloadsWithheld
                     ? DownloadsArenTAvailableToYouForMessage
                     : targetCount > 1
                       ? singleArtboardSvgCopyMessage
                       : undefined,
-                  onClick: (): Dynamic => deps.value506(artboardFile),
+                  onClick: (): Dynamic => deps.copySvg(artboardFile),
                 },
               ]
             : []),
-          deps.value591(),
+          deps.pasteMenuItem(),
           {
             label:
               KeyboardEditActionsCutCopyPasteConfig.duplicate.label +
@@ -83,7 +128,7 @@ export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly
             disabledReason: readOnlyReason,
             onClick: (): Dynamic => {
               canEdit() &&
-                deps.value323.current({
+                deps.duplicateObjects.current({
                   files: targetFiles,
                   notes: isInSelection
                     ? selection.notes
@@ -110,7 +155,7 @@ export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly
                   ? stackingAnnouncement(order, false)
                   : undefined),
               onClick: (): Dynamic => {
-                canEdit() && deps.value403(targetFiles, order);
+                canEdit() && deps.reorderArtboards(targetFiles, order);
               },
             }),
           ),
@@ -124,21 +169,21 @@ export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly
                 : undefined),
             onClick: (): Dynamic => {
               if (!canEdit()) return;
-              if (!renameOnCanvas) return void deps.value588(artboardFile);
-              let scale: Dynamic = deps.value105.get().scale;
+              if (!renameOnCanvas) return void deps.promptRename(artboardFile);
+              let scale: Dynamic = deps.camera.get().scale;
               artboard &&
-                deps.value383.current({
+                deps.revealArtboard.current({
                   x: artboard.x,
                   y: artboard.y - 32 / scale,
                   w: Math.min(artboard.w, 240 / scale),
                   h: 40 / scale,
                 });
-              deps.value293.current?.(artboardFile);
+              deps.renameInCanvas.current?.(artboardFile);
             },
           },
           {
             get label() { return uiMessage("canvas.designCanvas.setAsThumbnail"); },
-            disabledReason: deps.value224.current
+            disabledReason: deps.editing.current
               ? manifest.cover === artboardFile
                 ? existingThumbnailMessage
                 : artboard !== undefined &&
@@ -150,29 +195,29 @@ export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly
                   : undefined
               : ViewOnlyYouCanInspectThisMessage,
             onClick: (): Dynamic => {
-              canEdit() && deps.value590(artboardFile);
+              canEdit() && deps.setCover(artboardFile);
             },
           },
           {
-            get label() { return isPlaying ? (deps.value224.current ? (uiMessage("canvas.designCanvas.edit")) : ("Stop")) : (uiMessage("canvas.designCanvas.playOnCanvas")); },
+            get label() { return isPlaying ? (deps.editing.current ? (uiMessage("canvas.designCanvas.edit")) : ("Stop")) : (uiMessage("canvas.designCanvas.playOnCanvas")); },
             disabledReason: playDisabledReason,
             onClick: (): Dynamic => {
               isPlaying
-                ? deps.value224.current || deps.value225.current
-                  ? deps.value274.current(artboardFile)
-                  : deps.value384(null)
-                : deps.value384(artboardFile);
+                ? deps.editing.current || deps.readOnly.current
+                  ? deps.focusArtboard.current(artboardFile)
+                  : deps.openInlinePlayback(null)
+                : deps.openInlinePlayback(artboardFile);
             },
           },
           {
             get label() { return artboard?.is_interactive === true && !artboard.frameless ? (uiMessage("canvas.designCanvas.playFullScreen")) : (uiMessage("canvas.designCanvas.openFullWindow")); },
             disabledReason: undefined,
             onClick: (): Dynamic => {
-              deps.value379.current(artboardFile);
+              deps.expandArtboard.current(artboardFile);
             },
           },
           {
-            get label() { return uiMessage("canvas.designCanvas.delete2", { value1: String(countSuffix) }); },
+            get label() { return uiMessage("canvas.designCanvas.deleteSelection", { countSuffix: String(countSuffix) }); },
             separatorBefore: true,
             danger: true,
             ...(isInSelection &&
@@ -183,27 +228,27 @@ export function buildArtboardContextMenu(deps: { readonly doc: Dynamic; readonly
                 }),
             disabledReason: readOnlyReason,
             onClick: (): Dynamic => {
-              canEdit() && deps.value449(targetFiles);
+              canEdit() && deps.deleteArtboards(targetFiles);
             },
           },
         ];
       }
 
 /** 打开画布说明或图形右键菜单时运行：生成复制、水平/垂直翻转与删除等菜单项，只读时禁用。 */
-export function buildAnnotationContextMenu(deps: { readonly selectionRef: Dynamic; readonly value150: Dynamic; readonly value152: Dynamic; readonly value224: Dynamic; readonly value314: Dynamic; readonly value323: Dynamic; readonly value459: Dynamic; readonly value46: Dynamic; readonly value589: Dynamic; readonly value591: Dynamic; readonly value73: Dynamic }, annotationId?: Dynamic): Dynamic {
-        let selection: Dynamic = deps.selectionRef.current,
+function buildAnnotationContextMenu(deps: AnnotationMenuOptions, annotationId?: Dynamic): Dynamic {
+        let selection: Dynamic = deps.selection.current,
           isInSelection: Dynamic = selection.notes.has(annotationId),
           targetSelection: Dynamic = {
             files: emptyBoardSelection.files,
             notes: isInSelection ? selection.notes : new Set([annotationId]),
           };
-        !isInSelection && deps.value224.current && deps.value314(targetSelection, "replace");
+        !isInSelection && deps.editing.current && deps.selectBoardsAndNotes(targetSelection, "replace");
         let noteCount: Dynamic = targetSelection.notes.size,
           targetFiles: Dynamic = isInSelection
             ? selection.artboards
             : emptyCanvasSelectionFiles,
           objectCount: Dynamic = noteCount + targetFiles.size,
-          targetAnnotations: Dynamic = (deps.value73.current.annotations ?? []).filter(
+          targetAnnotations: Dynamic = (deps.manifest.current.annotations ?? []).filter(
             (annotation?: Dynamic): Dynamic => targetSelection.notes.has(annotation.id),
           ),
           flipRefusal: Dynamic = (axis?: Dynamic): Dynamic => {
@@ -216,27 +261,27 @@ export function buildAnnotationContextMenu(deps: { readonly selectionRef: Dynami
           };
         return [
           {
-            get label() { return uiMessage("canvas.designCanvas.copy", { value1: String(objectCount > 1 ? " " + String(objectCount) + " objects" : "") }); },
+            get label() { return uiMessage("canvas.designCanvas.copy", { countSuffix: String(objectCount > 1 ? " " + String(objectCount) + " objects" : "") }); },
             hotkey: "cmd+c",
-            disabledReason: deps.value224.current
+            disabledReason: deps.editing.current
               ? undefined
               : ViewOnlyYouCanInspectThisMessage,
             onClick: (): Dynamic => {
-              deps.value224.current && deps.value589(targetFiles, targetSelection.notes);
+              deps.editing.current && deps.copyBoardsAndNotes(targetFiles, targetSelection.notes);
             },
           },
-          deps.value591(),
+          deps.pasteMenuItem(),
           {
             get label() { return KeyboardEditActionsCutCopyPasteConfig.duplicate.label + objectCount > 1 ? " " + String(objectCount) + " objects" : ""; },
             hotkey:
               KeyboardEditActionsCutCopyPasteConfig.duplicate
                 .shortcut,
-            disabledReason: deps.value224.current
+            disabledReason: deps.editing.current
               ? undefined
               : ViewOnlyYouCanInspectThisMessage,
             onClick: (): Dynamic => {
-              deps.value224.current &&
-                deps.value323.current({
+              deps.editing.current &&
+                deps.duplicateObjects.current({
                   files: targetFiles,
                   notes: targetSelection.notes,
                 });
@@ -250,21 +295,21 @@ export function buildAnnotationContextMenu(deps: { readonly selectionRef: Dynami
             : ["horizontal", "vertical"]
           ).map(
             (axis?: Dynamic, index?: Dynamic): Dynamic => ({
-              get label() { return uiMessage("canvas.designCanvas.flip2", { value1: String(axis) }); },
+              get label() { return uiMessage("canvas.designCanvas.flipSelection", { axis: String(axis) }); },
               separatorBefore: index === 0,
               hotkey: axis === "horizontal" ? "shift+h" : "shift+v",
-              disabledReason: deps.value224.current
-                ? ((isInSelection ? deps.value150() : undefined) ?? flipRefusal(axis))
+              disabledReason: deps.editing.current
+                ? ((isInSelection ? deps.flipRefusal() : undefined) ?? flipRefusal(axis))
                 : ViewOnlyYouCanInspectThisMessage,
               onClick: (): Dynamic => {
                 isInSelection
-                  ? deps.value152.current(axis)
-                  : deps.value46.current(targetSelection.notes, axis);
+                  ? deps.flipSelection.current(axis)
+                  : deps.flipNotes.current(targetSelection.notes, axis);
               },
             }),
           ),
           {
-            get label() { return uiMessage("canvas.designCanvas.delete2", { value1: String(noteCount > 1 ? " " + String(noteCount) + " objects" : "") }); },
+            get label() { return uiMessage("canvas.designCanvas.deleteSelection", { countSuffix: String(noteCount > 1 ? " " + String(noteCount) + " objects" : "") }); },
             separatorBefore: true,
             danger: true,
             ...(isInSelection &&
@@ -273,12 +318,72 @@ export function buildAnnotationContextMenu(deps: { readonly selectionRef: Dynami
               : {
                   hotkey: "backspace",
                 }),
-            disabledReason: deps.value224.current
+            disabledReason: deps.editing.current
               ? undefined
               : ViewOnlyYouCanInspectThisMessage,
             onClick: (): Dynamic => {
-              deps.value224.current && deps.value459.current(targetSelection);
+              deps.editing.current && deps.deleteBoardsAndNotes.current(targetSelection);
             },
           },
         ];
       }
+
+type MenuSource = { kind: "artboard"; file: string } | { kind: "object"; id: string } | { kind: "canvas" };
+type MenuPosition = { x: number; y: number; keyboard?: boolean };
+interface CanvasMenuOptions extends ArtboardMenuOptions, AnnotationMenuOptions {
+  annotations: Dynamic[];
+  exportPicking: { current: boolean };
+  isTextEditing: { current: (() => boolean) | null };
+  focusCanvas(): void;
+  fitArtboards(): void;
+  fitArtboardsLabel: string;
+}
+
+export function useCanvasContextMenus(options: CanvasMenuOptions) {
+  const { useCallback, useMemo, useRef, useState } = React;
+  const artboardMenu = useCallback((file: string, renameOnCanvas?: boolean) =>
+    buildArtboardContextMenu(options, file, renameOnCanvas), [
+    options.selectArtboard, options.copyBoardsAndNotes, options.copyPng, options.copySvg, options.downloadsWithheld,
+    options.imageClipboardEnabled, options.pasteMenuItem, options.setCover, options.reorderArtboards,
+    options.deleteArtboards, options.doc, options.openInlinePlayback, options.camera,
+  ]);
+  const annotationMenu = useCallback((id: string) => buildAnnotationContextMenu(options, id), [
+    options.selectBoardsAndNotes, options.copyBoardsAndNotes, options.pasteMenuItem, options.flipRefusal,
+  ]);
+  const emptyMenu = useCallback(() => [
+    options.pasteMenuItem(),
+    { label: options.fitArtboardsLabel, hotkey: "cmd+0", separatorBefore: true, onClick: options.fitArtboards },
+  ], [options.pasteMenuItem]);
+  const annotationCache = useRef(new Map());
+  const annotationRows = useMemo(() =>
+    reconcileAnnotationOutline(options.annotations ?? [], annotationCache.current), [options.annotations]);
+  const [menu, setMenu] = useState(null);
+  const open = useCallback((source: MenuSource, position: MenuPosition) => {
+    if (options.exportPicking.current || options.isTextEditing.current?.() === true ||
+        (source.kind !== "object" && options.selection.current.elements.size > 1)) return;
+
+    let items: Dynamic[];
+    let subject: string;
+    if (source.kind === "artboard") {
+      items = artboardMenu(source.file, true);
+      subject = options.manifest.current.artboards.find((artboard: Dynamic) => artboard.file === source.file)?.title
+        ?? source.file.replace(/\.dc\.html$/, "");
+    } else if (source.kind === "object") {
+      items = annotationMenu(source.id);
+      subject = annotationRows.find((annotation: Dynamic) => annotation.id === source.id)?.label ?? "Object";
+    } else {
+      options.focusCanvas();
+      items = emptyMenu();
+      subject = "Canvas";
+    }
+    setMenu({
+      x: position.x,
+      y: position.y,
+      keyboard: position.keyboard === true,
+      items: items.map(OutlineGlyphsLabel),
+      get label() { return uiMessage("canvas.designCanvas.actions", { subject: String(subject) }); },
+    });
+  }, [options.focusCanvas, artboardMenu, annotationMenu, emptyMenu, annotationRows]);
+
+  return { artboardMenu, annotationMenu, annotationRows, menu, open, close: () => setMenu(null) };
+}

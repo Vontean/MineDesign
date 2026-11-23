@@ -12,10 +12,10 @@ var SessionElementStateCroppingTargetSelectedConfig: Dynamic;
 var SessionElementStateCache: Dynamic;
 var SessionElementStateSubscribers: Dynamic;
 var SessionElementStateGet: Dynamic;
-var SessionElementStateCache_2: Dynamic;
+var gestureEntriesByFile: Dynamic;
 var SessionElementStateItems: Dynamic;
 var SessionElementStateKey: Dynamic;
-var SessionElementStateCache_3: Dynamic;
+var lateGestureByKey: Dynamic;
 var CropIsNotAvailableHereForMessage: Dynamic;
 var SessionElementStateUnloadedTurnedAutoConfig: Dynamic;
 function updateElementSessionState(
@@ -49,8 +49,8 @@ function useElementSessionState(file?: Dynamic): Dynamic {
   );
 }
 function registerElementSession(file?: Dynamic, element?: Dynamic): Dynamic {
-  SessionElementStateCache_2.set(file, [
-    ...(SessionElementStateCache_2.get(file) ?? []),
+  gestureEntriesByFile.set(file, [
+    ...(gestureEntriesByFile.get(file) ?? []),
     {
       el: element,
     },
@@ -61,7 +61,7 @@ function unregisterElementSession(
   element?: Dynamic,
   isDeferred?: Dynamic,
 ): Dynamic {
-  let entry: Dynamic = [...(SessionElementStateCache_2.get(file) ?? [])]
+  let entry: Dynamic = [...(gestureEntriesByFile.get(file) ?? [])]
     .reverse()
     .find((item?: Dynamic): Dynamic => item.el === element);
   entry &&
@@ -75,7 +75,7 @@ function dispatchElementSessionGesture(
   model?: Dynamic,
   shouldRelease: Dynamic = false,
 ): Dynamic {
-  let entries: Dynamic = SessionElementStateCache_2.get(file) ?? [],
+  let entries: Dynamic = gestureEntriesByFile.get(file) ?? [],
     entry: Dynamic =
       gesture.gestureKey === undefined
         ? undefined
@@ -110,10 +110,10 @@ function registerLateGesture(
   pendingGesture?: Dynamic,
 ): Dynamic {
   let lateKey: Dynamic = file + "|" + String(gestureKey);
-  SessionElementStateCache_3.set(lateKey, pendingGesture);
+  lateGestureByKey.set(lateKey, pendingGesture);
   setTimeout((): Dynamic => {
-    SessionElementStateCache_3.get(lateKey) === pendingGesture &&
-      (SessionElementStateCache_3.delete(lateKey), pendingGesture.lapsed("late"));
+    lateGestureByKey.get(lateKey) === pendingGesture &&
+      (lateGestureByKey.delete(lateKey), pendingGesture.lapsed("late"));
   }, 3e3);
 }
 function claimLateGesture(
@@ -123,14 +123,14 @@ function claimLateGesture(
   isFinalClaim?: Dynamic,
 ): Dynamic {
   let lateKey: Dynamic = file + "|" + String(gestureKey),
-    entry: Dynamic = SessionElementStateCache_3.get(lateKey);
+    entry: Dynamic = lateGestureByKey.get(lateKey);
   return entry === undefined
     ? isFinalClaim
       ? undefined
       : null
     : !isFinalClaim && entry.el !== element
       ? null
-      : (SessionElementStateCache_3.delete(lateKey),
+      : (lateGestureByKey.delete(lateKey),
         isFinalClaim && entry.el === element
           ? entry.edits
           : (entry.lapsed("stale"), isFinalClaim ? undefined : null));
@@ -158,8 +158,8 @@ export {
   registerElementSession,
   registerLateGesture,
   SessionElementStateCache,
-  SessionElementStateCache_2,
-  SessionElementStateCache_3,
+  gestureEntriesByFile,
+  lateGestureByKey,
   SessionElementStateCroppingTargetSelectedConfig,
   SessionElementStateGet,
   SessionElementStateItems,
@@ -187,20 +187,20 @@ export function installEditorSessionElementState(): () => void {
     SessionElementStateGet = (file?: Dynamic): Dynamic =>
       SessionElementStateCache.get(file) ??
       SessionElementStateCroppingTargetSelectedConfig;
-    SessionElementStateCache_2 = new Map();
+    gestureEntriesByFile = new Map();
     SessionElementStateItems = [];
     SessionElementStateKey = (file?: Dynamic, entry?: Dynamic): Dynamic => {
       entry.key !== undefined &&
         SessionElementStateItems.push(file + "|" + entry.key) > 32 &&
         SessionElementStateItems.shift();
-      let remaining: Dynamic = (SessionElementStateCache_2.get(file) ?? []).filter(
+      let remaining: Dynamic = (gestureEntriesByFile.get(file) ?? []).filter(
         (item?: Dynamic): Dynamic => item !== entry,
       );
       remaining.length
-        ? SessionElementStateCache_2.set(file, remaining)
-        : SessionElementStateCache_2.delete(file);
+        ? gestureEntriesByFile.set(file, remaining)
+        : gestureEntriesByFile.delete(file);
     };
-    SessionElementStateCache_3 = new Map();
+    lateGestureByKey = new Map();
     CropIsNotAvailableHereForMessage =
       uiMessage("inspector.elementState.cropIsNotAvailableHere");
     SessionElementStateUnloadedTurnedAutoConfig = {

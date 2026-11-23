@@ -1,190 +1,261 @@
-import { emptyCanvasSelection } from "../../editor/selection/canvas-selection";
-import { initializeDesignKeyboardBindings } from "../../application/document-root";
 import { panViewport } from "../pan-zoom";
-import { recallCanvasView } from "../viewport-memory";
-import { resolveCanvasPlaceAction } from "../navigation";
-import { runFindRevealAfterSettle } from "../../find/canvas-adapter";
-import { selectionFromArtboards } from "../../editor/selection/canvas-selection";
-import { type Dynamic } from "../../runtime-types";
 import { viewportScaleLimits } from "../viewport-memory";
 import { zoomViewportAtPoint } from "../pan-zoom";
-import { canvasPanUsageWindowMs, canvasZoomUsageWindow, minimumCanvasZoomUsage } from "../design-canvas";
+import { reactChromeTheme as React } from "../../editor/chrome/theme";
+import { NotesLinkEditingKind, NotesLinkEditingLh } from "../../editor/notes/link-editing";
+import { useToolbarOverlaySize } from "../../editor/toolbar/layout";
+import { annotationBounds, isShapeAnnotation, rotatedAnnotationBounds } from "../../platform/file-content";
+import { creationFocusedCamera, fitArtboardHeaderHeight, fitBoundsCamera } from "../creation-progress";
+import type { FramePanZoom } from "../frame-gesture-events";
+import type { Box, CanvasAnnotation, CanvasManifest } from "../manifest-history";
+import { recallCanvasView } from "../viewport-memory";
+import { createViewportStore } from "../viewport-store";
+import { artboardFullscreenCamera, artboardIsNotExpandedFill, defaultCanvasCamera } from "./playback";
 
-/** 画布平移或缩放手势时运行（onPanZoom）：按缩放上下限计算以指针为中心的缩放或平移后的视口，并写入视口存储。 */
-export function applyPanZoomGesture(deps: { readonly focusedFileRef: Dynamic; readonly value105: Dynamic; readonly value106: Dynamic; readonly value224: Dynamic; readonly value226: Dynamic; readonly value271: Dynamic; readonly value345: Dynamic; readonly value67: Dynamic }, artboardFile?: Dynamic, gesture?: Dynamic): Dynamic {
-        if (deps.value345.current) return false;
-        let canGesture: Dynamic =
-            !deps.value224.current ||
-            artboardFile === deps.focusedFileRef.current ||
-            artboardFile === deps.value271.current,
-          artboard: Dynamic = deps.value67.artboards.find(
-            (item?: Dynamic): Dynamic => item.file === artboardFile,
-          );
-        if (!canGesture || !artboard) return false;
-        let gestureState: Dynamic = deps.value226.current;
-        gestureState.dx += gesture.dx;
-        gestureState.dy += gesture.dy;
-        gesture.pinch &&
-          ((gestureState.pinch = true),
-          (gestureState.dz += gesture.dz),
-          gesture.dz !== 0 && (gestureState.zoomMsgs += 1),
-          (gestureState.px =
-            artboard.x + Math.max(0, Math.min(artboard.w, gesture.x))),
-          (gestureState.py =
-            artboard.y + Math.max(0, Math.min(artboard.h, gesture.y))));
-        gestureState.raf ||
-          (gestureState.raf = requestAnimationFrame((): Dynamic => {
-            gestureState.raf = 0;
-            let now: Dynamic = performance.now();
-            now - gestureState.winStart > 1e3 &&
-              ((gestureState.winStart = now),
-              (gestureState.winPan = 0),
-              (gestureState.winZoom = 0));
-            let panMagnitude: Dynamic =
-                Math.abs(gestureState.dx) + Math.abs(gestureState.dy),
-              panFactor: Dynamic =
-                panMagnitude > 0
-                  ? Math.min(
-                      1,
-                      Math.max(0, canvasPanUsageWindowMs - gestureState.winPan) /
-                        panMagnitude,
-                    )
-                  : 0,
-              panDx: Dynamic = gestureState.dx * panFactor,
-              panDy: Dynamic = gestureState.dy * panFactor;
-            gestureState.winPan += Math.abs(panDx) + Math.abs(panDy);
-            let scale: Dynamic = deps.value105.get().scale,
-              desiredZoomLog: Dynamic = gestureState.pinch
-                ? Math.log(
-                    Math.max(
-                      viewportScaleLimits.minScale,
-                      Math.min(
-                        viewportScaleLimits.maxScale,
-                        scale * Math.exp(gestureState.dz),
-                      ),
-                    ) / scale,
-                  )
-                : 0,
-              zoomBudget: Dynamic = Math.max(
-                0,
-                canvasZoomUsageWindow - gestureState.winZoom,
-              ),
-              appliedZoomLog: Dynamic = Math.max(
-                -zoomBudget,
-                Math.min(zoomBudget, desiredZoomLog),
-              );
-            gestureState.winZoom += Math.max(
-              Math.abs(appliedZoomLog),
-              gestureState.zoomMsgs * minimumCanvasZoomUsage,
-            );
-            let isPinch: Dynamic = gestureState.pinch,
-              pinchX: Dynamic = gestureState.px,
-              pinchY: Dynamic = gestureState.py,
-              viewWidth: Dynamic = deps.value106.current?.clientWidth ?? 0,
-              viewHeight: Dynamic = deps.value106.current?.clientHeight ?? 0;
-            gestureState.dx = 0;
-            gestureState.dy = 0;
-            gestureState.dz = 0;
-            gestureState.zoomMsgs = 0;
-            gestureState.pinch = false;
-            deps.value105.set((currentView?: Dynamic): Dynamic => {
-              let nextView: Dynamic = currentView;
-              if (isPinch && appliedZoomLog !== 0) {
-                let anchorX: Dynamic = Math.max(
-                    0,
-                    Math.min(viewWidth, (pinchX - nextView.x) * nextView.scale),
-                  ),
-                  anchorY: Dynamic = Math.max(
-                    0,
-                    Math.min(viewHeight, (pinchY - nextView.y) * nextView.scale),
-                  );
-                nextView = zoomViewportAtPoint(
-                  nextView,
-                  anchorX,
-                  anchorY,
-                  Math.exp(appliedZoomLog),
-                  viewportScaleLimits,
-                );
-              }
-              (panDx !== 0 || panDy !== 0) &&
-                (nextView = panViewport(
-                  nextView,
-                  -panDx,
-                  -panDy,
-                ));
-              return nextView;
-            });
-          }));
-        return true;
+type Camera = typeof defaultCanvasCamera;
+type CanvasScreen = { w: number; h: number; top: number };
+type Ref<T> = { current: T };
+
+/** 画布镜头的初始位置、输入中断和工具栏可用区域。 */
+export function useCanvasViewport(manifest: CanvasManifest, pageId: string, focusedFile: string | null) {
+  const { useState, useRef, useEffect, useCallback, startTransition } = React;
+  const viewRestoredRef: Ref<boolean> = useRef(false);
+  const [camera, setCamera]: [Camera, (next: Camera) => void] = useState(() => {
+    const focused = focusedFile == null ? undefined : manifest.artboards.find(({ file }) => file === focusedFile);
+    if (focused) return artboardFullscreenCamera(focused, artboardIsNotExpandedFill(focused), 1200, 800);
+    const remembered = recallCanvasView(pageId);
+    if (!remembered) return defaultCanvasCamera;
+    viewRestoredRef.current = true;
+    return remembered;
+  });
+  const [controller] = useState(() => createViewportStore(camera, (next: Camera, commitNow: boolean) => {
+    if (commitNow) setCamera(next);
+    else startTransition(() => setCamera(next));
+  }));
+  const container: Ref<HTMLElement | null> = useRef(null);
+  useEffect(() => {
+    function interruptPointer(event: PointerEvent) {
+      if (container.current?.contains(event.target as Node | null)) controller.halt();
+      else controller.settle();
+    }
+    const settleCamera = () => controller.settle();
+    window.addEventListener("pointerdown", interruptPointer, true);
+    window.addEventListener("keydown", settleCamera, true);
+    return () => {
+      window.removeEventListener("pointerdown", interruptPointer, true);
+      window.removeEventListener("keydown", settleCamera, true);
+    };
+  }, [controller]);
+
+  const [toolbarInset, observeToolbarInset]: [number, (root: HTMLElement | null) => void] = useToolbarOverlaySize();
+  const toolbarInsetRef: Ref<number> = useRef(toolbarInset);
+  const toolbarInsetReadyRef: Ref<boolean> = useRef(false);
+  const lastPositiveInset: Ref<number> = useRef(0);
+  toolbarInsetRef.current = toolbarInset;
+  if (toolbarInset > 0) lastPositiveInset.current = toolbarInset;
+
+  const setContainer = useCallback((root: HTMLElement | null) => {
+    container.current = root;
+    observeToolbarInset(root);
+  }, [observeToolbarInset]);
+  const measure = useCallback((): CanvasScreen => ({
+    w: container.current?.clientWidth ?? 1200,
+    h: container.current?.clientHeight ?? 800,
+    top: toolbarInsetReadyRef.current ? 0 : toolbarInsetRef.current || lastPositiveInset.current,
+  }), []);
+
+  return { camera, controller, container, setContainer, measure, viewRestoredRef, toolbarInset, toolbarInsetReadyRef };
+}
+
+interface ViewportControlsOptions {
+  manifest: CanvasManifest;
+  page: { artboards: Box[]; annotations?: CanvasAnnotation[] };
+  creationBoxes: Box[];
+  creating: boolean;
+  animateWhenContentArrives: boolean;
+  measure(): CanvasScreen;
+  controller: {
+    set(camera: Camera | ((previous: Camera) => Camera), exact?: boolean): void;
+    glide(camera: Camera): void;
+  };
+  viewRestored: Ref<boolean>;
+  placeActive: Ref<boolean>;
+  fullscreenActive: Ref<boolean>;
+  exportInset: Ref<number>;
+  fitPage: Ref<() => boolean>;
+  settleView(): void;
+}
+
+/** 计算适应页面和居中缩放，协调首屏内容到达时的镜头。 */
+export function useCanvasViewportControls({
+  manifest, page, creationBoxes, creating, animateWhenContentArrives, measure, controller,
+  viewRestored, placeActive, fullscreenActive, exportInset, fitPage, settleView,
+}: ViewportControlsOptions) {
+  const { useCallback, useEffect, useLayoutEffect, useRef, useState } = React;
+  const zoomTo = useCallback((scale: number) => {
+    controller.set((previous) => {
+      const screen = measure();
+      return zoomViewportAtPoint(previous, screen.w / 2, screen.top + (screen.h - screen.top) / 2,
+        scale / previous.scale, viewportScaleLimits);
+    }, true);
+  }, [controller, measure]);
+
+  const fittedCamera = useCallback((): Camera | undefined => {
+    const boards = creationBoxes.length === 0 ? page.artboards : [...page.artboards, ...creationBoxes];
+    const annotations = page.annotations ?? [];
+    if (!boards.length && !annotations.length) return;
+    const notes: Box[] = annotations.map((annotation) => rotatedAnnotationBounds(
+      annotation,
+      isShapeAnnotation(annotation) ? annotationBounds(annotation) : {
+        x: annotation.x, y: annotation.y, w: NotesLinkEditingKind(annotation), h: NotesLinkEditingLh(annotation),
+      },
+    ));
+    const screen = measure();
+    return fitBoundsCamera({
+      minX: Math.min(...boards.map(({ x }) => x), ...notes.map(({ x }) => x)),
+      minY: Math.min(...boards.map(({ y }) => y - fitArtboardHeaderHeight), ...notes.map(({ y }) => y)),
+      maxX: Math.max(...boards.map(({ x, w }) => x + w), ...notes.map(({ x, w }) => x + w)),
+      maxY: Math.max(...boards.map(({ y, h }) => y + h), ...notes.map(({ y, h }) => y + h)),
+    }, { ...screen, top: Math.max(screen.top, exportInset.current) });
+  }, [page, creationBoxes, measure]);
+  const fit = useCallback(() => {
+    const camera = fittedCamera();
+    if (camera !== undefined) controller.set(camera, true);
+    return camera !== undefined;
+  }, [controller, fittedCamera]);
+  fitPage.current = fit;
+
+  const hasCreationContent = creationBoxes.length > 0 || (creating && page.artboards.length > 0);
+  const [beganWithCreationContent] = useState(hasCreationContent);
+  const animateOnArrival: Ref<boolean> = useRef(false);
+  useLayoutEffect(() => {
+    if (beganWithCreationContent || placeActive.current || !hasCreationContent ||
+      fullscreenActive.current || viewRestored.current) return;
+    placeActive.current = true;
+    const destination = fittedCamera();
+    const start = animateOnArrival.current && destination !== undefined && document.visibilityState === "visible"
+      ? creationFocusedCamera([...page.artboards, ...creationBoxes], destination, measure())
+      : undefined;
+    if (destination !== undefined && start !== undefined) {
+      controller.set(start);
+      controller.glide(destination);
+    } else {
+      fitPage.current();
+    }
+    settleView();
+  }, [hasCreationContent]);
+
+  useEffect(() => {
+    if (placeActive.current) settleView();
+    if (placeActive.current || (page.artboards.length === 0 && creationBoxes.length === 0)) return;
+    if (fullscreenActive.current || viewRestored.current) {
+      placeActive.current = true;
+      settleView();
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      if (!placeActive.current) {
+        placeActive.current = true;
+        if (!fullscreenActive.current) fit();
       }
+      settleView();
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [manifest, fit]);
 
-/** 打开画布位置链接（页面、画板、播放或窗口）时运行：解析目标动作，切换页面、聚焦或播放画板，并恢复对应视口。 */
-export function navigateToCanvasPlace(deps: { readonly abandonSelectionGesture: Dynamic; readonly setSelection: Dynamic; readonly value105: Dynamic; readonly value2: Dynamic; readonly value224: Dynamic; readonly value225: Dynamic; readonly value273: Dynamic; readonly value275: Dynamic; readonly value284: Dynamic; readonly value291: Dynamic; readonly value298: Dynamic; readonly value310: Dynamic; readonly value346: Dynamic; readonly value380: Dynamic; readonly value559: Dynamic; readonly value563: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic }, placeLink?: Dynamic, isRestoring: Dynamic = false): Dynamic {
-    let placeAction: Dynamic = resolveCanvasPlaceAction(
-      placeLink,
-      deps.value73.current,
-      {
-        filling: deps.value346.current,
-        plays: true,
-        pageId: deps.value80.current,
-        mayFocus: deps.value224.current || deps.value225.current || false,
-        restoring: isRestoring,
-      },
-    );
-    if (placeAction === null) return null;
-    deps.value563.current?.abort();
-    if (placeAction.do === "nothing") return placeAction.lands;
-    let applyPlaceAction: Dynamic = (): Dynamic => {
-        deps.value284(false);
-        deps.abandonSelectionGesture();
-        deps.value62();
-        let restoreView: Dynamic = (pageId?: Dynamic): Dynamic => {
-          let savedView: Dynamic = recallCanvasView(pageId);
-          savedView !== undefined &&
-            ((deps.value291.current = false),
-            (deps.value310.current = true),
-            deps.value105.set(savedView, true));
-        };
-        placeAction.do === "play"
-          ? deps.value380(placeAction.file)
-          : placeAction.do === "page"
-            ? placeAction.id === deps.value80.current
-              ? deps.setSelection(emptyCanvasSelection)
-              : (deps.value298(placeAction.id),
-                placeAction.camera || restoreView(placeAction.id))
-            : placeAction.do === "window"
-              ? placeAction.page !== deps.value80.current
-                ? deps.value298(placeAction.page, placeAction.file)
-                : (deps.setSelection(emptyCanvasSelection),
-                  deps.value559(placeAction.file),
-                  deps.value273(placeAction.file))
-              : (placeAction.page !== deps.value80.current
-                  ? (deps.value298(
-                      placeAction.page,
-                      placeAction.focus ? placeAction.file : undefined,
-                    ),
-                    placeAction.camera || restoreView(placeAction.page))
-                  : (placeAction.focus && deps.value273(placeAction.file),
-                    placeAction.camera && deps.value559(placeAction.file)),
-                deps.setSelection(
-                  selectionFromArtboards(
-                    new Set([placeAction.file]),
-                  ),
-                ));
-      },
-      needsPageChange: Dynamic =
-        placeAction.do === "window" ||
-        placeAction.do === "play" ||
-        (placeAction.do === "page" ? placeAction.id : placeAction.page) !==
-          deps.value80.current;
-    needsPageChange && initializeDesignKeyboardBindings();
-    let controller: Dynamic = new AbortController();
-    deps.value563.current = controller;
-    runFindRevealAfterSettle(
-      needsPageChange && deps.value2.current?.() === true,
-      controller.signal,
-      deps.value275,
-      applyPlaceAction,
-    );
-    return placeAction.lands;
-  }
+  useEffect(() => {
+    animateOnArrival.current = animateWhenContentArrives;
+  });
+
+  return { zoomTo, fit };
+}
+
+const panDistanceBudget = 60_000;
+const zoomLogBudget = 12;
+const minimumZoomCharge = 0.02;
+
+interface FrameViewportGestureOptions {
+  manifest: { artboards: (Box & { file: string })[] };
+  controller: ViewportControlsOptions["controller"] & { get(): Camera };
+  container: Ref<HTMLElement | null>;
+  editing: Ref<boolean>;
+  focusedFile: Ref<string | null>;
+  readonly playingFile: Ref<string | null>;
+  readonly fullscreen: Ref<boolean>;
+}
+
+/** 将画板发来的平移、捏合消息合并到下一帧，并限制连续输入的幅度。 */
+export function useFrameViewportGestures(options: FrameViewportGestureOptions) {
+  const { useRef, useCallback, useEffect } = React;
+  const pending = useRef({
+    dx: 0, dy: 0, dz: 0, anchorX: 0, anchorY: 0, pinch: false, zoomMessages: 0,
+    frameId: 0, windowStart: 0, panSpent: 0, zoomSpent: 0,
+  }) as Ref<{
+    dx: number; dy: number; dz: number;
+    anchorX: number; anchorY: number; pinch: boolean; zoomMessages: number;
+    frameId: number; windowStart: number; panSpent: number; zoomSpent: number;
+  }>;
+  useEffect(() => () => {
+    if (pending.current.frameId) cancelAnimationFrame(pending.current.frameId);
+  }, []);
+
+  const { manifest, controller, container, editing, focusedFile } = options;
+  return useCallback((file: string, gesture: FramePanZoom) => {
+    if (options.fullscreen.current) return false;
+    const allowed = !editing.current || file === focusedFile.current || file === options.playingFile.current;
+    const artboard = manifest.artboards.find((candidate) => candidate.file === file);
+    if (!allowed || !artboard) return false;
+
+    const input = pending.current;
+    input.dx += gesture.dx;
+    input.dy += gesture.dy;
+    if (gesture.pinch) {
+      input.pinch = true;
+      input.dz += gesture.dz;
+      if (gesture.dz !== 0) input.zoomMessages++;
+      input.anchorX = artboard.x + Math.max(0, Math.min(artboard.w, gesture.x));
+      input.anchorY = artboard.y + Math.max(0, Math.min(artboard.h, gesture.y));
+    }
+    if (input.frameId) return true;
+
+    input.frameId = requestAnimationFrame(() => {
+      input.frameId = 0;
+      const now = performance.now();
+      if (now - input.windowStart > 1000) {
+        input.windowStart = now;
+        input.panSpent = 0;
+        input.zoomSpent = 0;
+      }
+      const panDistance = Math.abs(input.dx) + Math.abs(input.dy);
+      const remainingPan = Math.max(0, panDistanceBudget - input.panSpent);
+      const panFactor = panDistance > 0 ? Math.min(1, remainingPan / panDistance) : 0;
+      const dx = input.dx * panFactor;
+      const dy = input.dy * panFactor;
+      input.panSpent += Math.abs(dx) + Math.abs(dy);
+
+      const scale = controller.get().scale;
+      const { minScale, maxScale } = viewportScaleLimits;
+      const targetScale = Math.max(minScale, Math.min(maxScale, scale * Math.exp(input.dz)));
+      const desiredZoom = input.pinch ? Math.log(targetScale / scale) : 0;
+      const remainingZoom = Math.max(0, zoomLogBudget - input.zoomSpent);
+      const appliedZoom = Math.max(-remainingZoom, Math.min(remainingZoom, desiredZoom));
+      input.zoomSpent += Math.max(Math.abs(appliedZoom), input.zoomMessages * minimumZoomCharge);
+
+      const { pinch, anchorX, anchorY } = input;
+      const width = container.current?.clientWidth ?? 0;
+      const height = container.current?.clientHeight ?? 0;
+      input.dx = input.dy = input.dz = input.zoomMessages = 0;
+      input.pinch = false;
+      controller.set((previous) => {
+        let next = previous;
+        if (pinch && appliedZoom !== 0) {
+          const x = Math.max(0, Math.min(width, (anchorX - next.x) * next.scale));
+          const y = Math.max(0, Math.min(height, (anchorY - next.y) * next.scale));
+          next = zoomViewportAtPoint(next, x, y, Math.exp(appliedZoom), viewportScaleLimits);
+        }
+        return dx !== 0 || dy !== 0 ? panViewport(next, -dx, -dy) : next;
+      });
+    });
+    return true;
+  }, [manifest, controller]);
+}

@@ -63,7 +63,6 @@ export {
   getEditCountStorageKey,
   normalizeArtifactPath,
   PlatformEditCountAlias,
-  lastEditTime as PlatformEditCountAlias_2,
   PlatformEditCountNow,
   PlatformEditCountPattern,
   PlatformEditCountSubscribers,

@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../runtime-types";
-import { CanvasMeasurementsAZaZPattern as EXPORT_REQUEST_ID_PATTERN, CanvasMeasurementsConstant as MAX_EXPORT_FORMATS, CanvasMeasurementsConstant_2 as MAX_EXPORT_VARIANTS, CanvasMeasurementsConstant_3 as MAX_DESTINATIONS, CanvasMeasurementsConstant_4 as MAX_FOOT_INSET, CanvasMeasurementsIsSafeInteger as normalizeExportWindowMs, CanvasMeasurementsPattern as EXPORT_FORMAT_PATTERN, CanvasMeasurementsPattern_2 as EXPORT_VARIANT_ID_PATTERN, CanvasMeasurementsPattern_3 as DESTINATION_ID_PATTERN, CanvasMeasurementsPattern_4 as FOOT_GROUND_PATTERN, OpenFindValue, reactCanvasMeasurements_2 as React, SaveNowValue } from "../canvas/measurements";
+import { exportRequestIdPattern as EXPORT_REQUEST_ID_PATTERN, maxExportFormats as MAX_EXPORT_FORMATS, maxExportVariants as MAX_EXPORT_VARIANTS, maxExportDestinations as MAX_DESTINATIONS, maxFooterInset as MAX_FOOT_INSET, normalizeExportWindowMs, exportFormatPattern as EXPORT_FORMAT_PATTERN, exportVariantIdPattern as EXPORT_VARIANT_ID_PATTERN, exportDestinationIdPattern as DESTINATION_ID_PATTERN, footerGroundColorPattern as FOOT_GROUND_PATTERN, hostFindActionId, hostReact as React, hostSaveActionId } from "./frame-host-validation";
 import { initializeCdsIndex } from "../cds/index";
 import { load_react } from "../dependencies";
 import { toModuleNamespace } from "../module-helpers";
@@ -174,7 +174,7 @@ function createFrameHostBridge(bridgeOptions?: Dynamic): Dynamic {
       showsSave() &&
       saveNowHandler !== null &&
       snapshot?.actions?.some(
-        (action?: Dynamic): Dynamic => action.id === SaveNowValue,
+        (action?: Dynamic): Dynamic => action.id === hostSaveActionId,
       ) === true,
     chromeStateKey: Dynamic = (): Dynamic =>
       String(showsSave()) +
@@ -209,7 +209,7 @@ function createFrameHostBridge(bridgeOptions?: Dynamic): Dynamic {
         (state.actions = saveState.saveNow
           ? [
               {
-                id: SaveNowValue,
+                id: hostSaveActionId,
               },
             ]
           : []));
@@ -242,7 +242,7 @@ function createFrameHostBridge(bridgeOptions?: Dynamic): Dynamic {
               actions: [
                 ...(snapshotWithDefaults.actions ?? []),
                 {
-                  id: OpenFindValue,
+                  id: hostFindActionId,
                 },
               ],
             }
@@ -301,10 +301,10 @@ function createFrameHostBridge(bridgeOptions?: Dynamic): Dynamic {
         if (
           isCommand &&
           data?.cmd === "action" &&
-          data.id === OpenFindValue &&
+          data.id === hostFindActionId &&
           snapshot?.actions?.some(
             (action?: Dynamic): Dynamic =>
-              action.id === OpenFindValue,
+              action.id === hostFindActionId,
           )
         )
           try {
@@ -317,9 +317,9 @@ function createFrameHostBridge(bridgeOptions?: Dynamic): Dynamic {
         if (
           isCommand &&
           data?.cmd === "action" &&
-          data.id === SaveNowValue &&
+          data.id === hostSaveActionId &&
           snapshot?.actions?.some(
-            (action?: Dynamic): Dynamic => action.id === SaveNowValue,
+            (action?: Dynamic): Dynamic => action.id === hostSaveActionId,
           )
         )
           try {

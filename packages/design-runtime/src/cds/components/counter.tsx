@@ -6,12 +6,12 @@ import {
 } from "../../runtime-types";
 import { Button, initializeButtonButton } from "../button/button";
 import { ComponentsCollapsibleRootTriggerPanelConfig, initializeComponentsCollapsible } from "./collapsible";
-import { Icon, initializeComponentsIcon_2, isIconName } from "./icon";
+import { Icon, initializeIconSizeMetrics, isIconName } from "./icon";
 import { initializeLinkRouter, pickRouterOptions, routerOptionKeys, useLinkProps } from "../links";
-import { initializeSheetsStyles_2, useLabel } from "../sheets/styles";
+import { initializeLabelsProviderContext, useLabel } from "../sheets/styles";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { getControlSizeRank, getSizeAttribute, initializeCdsRoot, useDensity } from "../theme/root";
-import { getResizeObserver, initializeTooltipTrigger_2 } from "../tooltip/trigger";
+import { getResizeObserver, initializeTooltipTriggerPlaceholder } from "../tooltip/trigger";
 import { initializeNpm__base_ui_react_R9e, initializeNpm__base_ui_react_SY, load_react, load_react_jsx_runtime, npm_Button_Dye as R_npm_Button_Dye, npm_useRender_LL } from "../../dependencies";
 import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 
@@ -20,13 +20,13 @@ var ComponentsCounterForValue: Dynamic;
 var ComponentsCounterForwardRefSymbol: Dynamic;
 var initializeComponentsCounter: Dynamic;
 var ComponentsCounterClassNames: Dynamic;
-var initializeComponentsCounter_2: Dynamic;
-var reactComponentsCounter_2: Dynamic;
+var initializeCounterRadiusClassName: Dynamic;
+var reactForCounter: Dynamic;
 var jsxComponentsCounter: Dynamic;
 var ComponentsCounterNeutralAccentSuccessConfig: Dynamic;
 var ComponentsCounterDotVariantClassNames: Dynamic;
 var Counter: Dynamic;
-var initializeComponentsCounter_3: Dynamic;
+var initializeCounter: Dynamic;
 var ComponentsCounterGlyphTextConfig: Dynamic;
 var ComponentsCounterActionStartMarginClassNames: Dynamic;
 var ComponentsCounterGlyphValue: Dynamic;
@@ -34,19 +34,19 @@ var ComponentsCounterDismissMarginClassNames: Dynamic;
 var ComponentsCounterDismissGlyphMarginClassName: Dynamic;
 var ComponentsCounterActionEndMarginClassNames: Dynamic;
 var ComponentsCounterActionEndGlyphMarginClassName: Dynamic;
-var initializeComponentsCounter_4: Dynamic;
-var reactComponentsCounter_3: Dynamic;
-var jsxComponentsCounter_2: Dynamic;
+var initializeCounterMarginClassNames: Dynamic;
+var reactForAlert: Dynamic;
+var jsxForCounter: Dynamic;
 var ComponentsCounterComfortableCompactConfig: Dynamic;
 var ComponentsCounterConstant: Dynamic;
 var ComponentsCounterNeutralWarningDangerConfig: Dynamic;
 var ComponentsCounterIconClassNames: Dynamic;
 var ComponentsCounterIconNames: Dynamic;
-var initializeComponentsCounter_5: Dynamic;
-var reactComponentsCounter_4: Dynamic;
-var jsxComponentsCounter_3: Dynamic;
+var initializeAlert: Dynamic;
+var reactForLinkElement: Dynamic;
+var jsxForLinkElement: Dynamic;
 var ComponentsCounterHrefRouterOptionsTargetValues: Dynamic;
-var initializeComponentsCounter_6: Dynamic;
+var initializeLinkElement: Dynamic;
 function isPictogramElement(element?: Dynamic): Dynamic {
   return !(0, reactComponentsCounter.isValidElement)(element) ||
     typeof element.type == "string"
@@ -108,23 +108,23 @@ function Alert({
     isPictogramIcon: Dynamic = isPictogramElement(icon),
     hasDetails: Dynamic = details != null && typeof details != "boolean",
     resolvedRole: Dynamic = role ?? (hasDetails ? "none" : "status"),
-    [uncontrolledDetailsOpen, setUncontrolledDetailsOpen]: Dynamic = (0, reactComponentsCounter_3.useState)(
+    [uncontrolledDetailsOpen, setUncontrolledDetailsOpen]: Dynamic = (0, reactForAlert.useState)(
       defaultDetailsOpen,
     ),
-    [isActionWrapped, setIsActionWrapped]: Dynamic = (0, reactComponentsCounter_3.useState)(
+    [isActionWrapped, setIsActionWrapped]: Dynamic = (0, reactForAlert.useState)(
       false,
     ),
-    bannerRef: Dynamic = (0, reactComponentsCounter_3.useRef)(null),
-    contentRef: Dynamic = (0, reactComponentsCounter_3.useRef)(null),
-    actionRef: Dynamic = (0, reactComponentsCounter_3.useRef)(null),
-    stackedWidthRef: Dynamic = (0, reactComponentsCounter_3.useRef)(0),
+    bannerRef: Dynamic = (0, reactForAlert.useRef)(null),
+    contentRef: Dynamic = (0, reactForAlert.useRef)(null),
+    actionRef: Dynamic = (0, reactForAlert.useRef)(null),
+    stackedWidthRef: Dynamic = (0, reactForAlert.useRef)(0),
     hasAction: Dynamic = action != null && typeof action != "boolean",
     isActionCentered: Dynamic =
       !hasDetails && (isPictogramIcon || (actionAlign === "center" && !hasComposerKeyline)),
     canWrapAction: Dynamic = !hasDetails && !isActionCentered && hasAction,
     isWrappedLayout: Dynamic = canWrapAction && isActionWrapped,
     isStackedLayout: Dynamic = hasComposerKeyline && isWrappedLayout;
-  (0, reactComponentsCounter_3.useLayoutEffect)((): Dynamic => {
+  (0, reactForAlert.useLayoutEffect)((): Dynamic => {
     (!hasComposerKeyline || !canWrapAction) && (stackedWidthRef.current = 0);
     if (!canWrapAction) return;
     let bannerNode: Dynamic = bannerRef.current,
@@ -310,7 +310,7 @@ function LinkElement({
   rest: rest,
 }: Dynamic): Dynamic {
   useUiLocale();
-  let isRenderElement: Dynamic = (0, reactComponentsCounter_4.isValidElement)(render),
+  let isRenderElement: Dynamic = (0, reactForLinkElement.isValidElement)(render),
     routerLinkProps: Dynamic = useLinkProps({
       ...linkInput,
       ...pickRouterOptions(rest),
@@ -388,38 +388,29 @@ export {
   ComponentsCounterComfortableCompactConfig,
   ComponentsCounterConstant,
   ComponentsCounterForValue,
-  ComponentsCounterForwardRefSymbol as ComponentsCounterForValue_2,
   ComponentsCounterGlyphTextConfig,
-  ComponentsCounterActionStartMarginClassNames as ComponentsCounterGlyphTextConfig_2,
-  ComponentsCounterDismissMarginClassNames as ComponentsCounterGlyphTextConfig_3,
-  ComponentsCounterActionEndMarginClassNames as ComponentsCounterGlyphTextConfig_4,
   ComponentsCounterGlyphValue,
-  ComponentsCounterDismissGlyphMarginClassName as ComponentsCounterGlyphValue_2,
-  ComponentsCounterActionEndGlyphMarginClassName as ComponentsCounterGlyphValue_3,
   ComponentsCounterHrefRouterOptionsTargetValues,
   ComponentsCounterNeutralAccentSuccessConfig,
-  ComponentsCounterDotVariantClassNames as ComponentsCounterNeutralAccentSuccessConfig_2,
   ComponentsCounterNeutralWarningDangerConfig,
-  ComponentsCounterIconClassNames as ComponentsCounterNeutralWarningDangerConfig_2,
-  ComponentsCounterIconNames as ComponentsCounterNeutralWarningDangerConfig_3,
   Counter,
   initializeComponentsCounter,
-  initializeComponentsCounter_2,
-  initializeComponentsCounter_3,
-  initializeComponentsCounter_4,
-  initializeComponentsCounter_5,
-  initializeComponentsCounter_6,
+  initializeCounterRadiusClassName,
+  initializeCounter,
+  initializeCounterMarginClassNames,
+  initializeAlert,
+  initializeLinkElement,
   isCdsPictogram,
   isPictogramElement,
   jsxComponentsCounter,
-  jsxComponentsCounter_2,
-  jsxComponentsCounter_3,
+  jsxForCounter,
+  jsxForLinkElement,
   LinkElement,
   omitProperties,
   reactComponentsCounter,
-  reactComponentsCounter_2,
-  reactComponentsCounter_3,
-  reactComponentsCounter_4,
+  reactForCounter,
+  reactForAlert,
+  reactForLinkElement,
   TextLinkIcon,
 };
 export function installCdsComponentsCounter(): () => void {
@@ -431,15 +422,15 @@ export function installCdsComponentsCounter(): () => void {
       ComponentsCounterForValue = Symbol.for("react.memo");
       ComponentsCounterForwardRefSymbol = Symbol.for("react.forward_ref");
     });
-    initializeComponentsCounter_2 = initializeOnce((): Dynamic => {
+    initializeCounterRadiusClassName = initializeOnce((): Dynamic => {
       ComponentsCounterClassNames = "rounded-composer";
     });
-    initializeComponentsCounter_3 = initializeOnce((): Dynamic => {
+    initializeCounter = initializeOnce((): Dynamic => {
       "use client";
 
       initializeClassNames();
       initializeCdsRoot();
-      reactComponentsCounter_2 = toModuleNamespace(
+      reactForCounter = toModuleNamespace(
         load_react(),
       );
       jsxComponentsCounter = toModuleNamespace(
@@ -459,7 +450,7 @@ export function installCdsComponentsCounter(): () => void {
         warning: "bg-fill-warning",
         danger: "bg-fill-danger",
       };
-      Counter = (0, reactComponentsCounter_2.forwardRef)(
+      Counter = (0, reactForCounter.forwardRef)(
         (
           {
             value: count,
@@ -515,7 +506,7 @@ export function installCdsComponentsCounter(): () => void {
       );
       Counter.displayName = "Counter";
     });
-    initializeComponentsCounter_4 = initializeOnce((): Dynamic => {
+    initializeCounterMarginClassNames = initializeOnce((): Dynamic => {
       ComponentsCounterGlyphTextConfig = {
         glyph: "ml-[6px] compact:ml-[6px] comfortable:ml-[4px]",
         text: "ml-[4px] compact:ml-[4px] comfortable:ml-[2px]",
@@ -537,23 +528,23 @@ export function installCdsComponentsCounter(): () => void {
       };
       ComponentsCounterActionEndGlyphMarginClassName = ComponentsCounterActionEndMarginClassNames.glyph;
     });
-    initializeComponentsCounter_5 = initializeOnce((): Dynamic => {
+    initializeAlert = initializeOnce((): Dynamic => {
       "use client";
 
       initializeClassNames();
-      initializeSheetsStyles_2();
+      initializeLabelsProviderContext();
       initializeCdsRoot();
-      initializeComponentsIcon_2();
-      initializeTooltipTrigger_2();
+      initializeIconSizeMetrics();
+      initializeTooltipTriggerPlaceholder();
       initializeComponentsCollapsible();
       initializeButtonButton();
       initializeComponentsCounter();
-      initializeComponentsCounter_2();
-      initializeComponentsCounter_4();
-      reactComponentsCounter_3 = toModuleNamespace(
+      initializeCounterRadiusClassName();
+      initializeCounterMarginClassNames();
+      reactForAlert = toModuleNamespace(
         load_react(),
       );
-      jsxComponentsCounter_2 = toModuleNamespace(
+      jsxForCounter = toModuleNamespace(
         load_react_jsx_runtime(),
       );
       ComponentsCounterComfortableCompactConfig = {
@@ -580,15 +571,15 @@ export function installCdsComponentsCounter(): () => void {
         get danger() { return uiMessage("canvas.counter.warning"); },
       };
     });
-    initializeComponentsCounter_6 = initializeOnce((): Dynamic => {
+    initializeLinkElement = initializeOnce((): Dynamic => {
       "use client";
 
       initializeLinkRouter();
       initializeNpm__base_ui_react_SY();
-      reactComponentsCounter_4 = toModuleNamespace(
+      reactForLinkElement = toModuleNamespace(
         load_react(),
       );
-      jsxComponentsCounter_3 = toModuleNamespace(
+      jsxForLinkElement = toModuleNamespace(
         load_react_jsx_runtime(),
       );
       initializeNpm__base_ui_react_R9e();

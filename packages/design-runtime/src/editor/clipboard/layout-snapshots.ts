@@ -420,7 +420,7 @@ export {
   ClipboardLayoutSnapshotsLeftTopRightSet,
   ClipboardLayoutSnapshotsMarginGridAreaConfig,
   ClipboardLayoutSnapshotsPattern,
-  ClipboardLayoutSnapshotsPositivePxPattern as ClipboardLayoutSnapshotsPattern_2,
+  ClipboardLayoutSnapshotsPositivePxPattern,
   ClipboardLayoutSnapshotsScriptStyleXmpSet,
   ClipboardLayoutSnapshotsStrokeStrokeWidthStrokeLinecapSet,
   normalizeComputedStyleCarry,

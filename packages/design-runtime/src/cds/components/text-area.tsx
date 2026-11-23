@@ -1,7 +1,7 @@
 import type { ForwardComponent, TextAreaProps } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { ButtonButtonCss_2, initializeButtonButton_2 } from "../button/button";
+import { fieldBoxClassName, initializeFieldBoxClassNames } from "../button/button";
 import { initializeFieldContext, useFieldInvalid } from "../field/context";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { getSizeAttribute, initializeCdsRoot } from "../theme/root";
@@ -25,7 +25,7 @@ export function installCdsComponentsTextArea(): () => void {
 
       initializeClassNames();
       initializeCdsRoot();
-      initializeButtonButton_2();
+      initializeFieldBoxClassNames();
       initializeFieldContext();
       reactComponentsTextArea = toModuleNamespace(
         load_react(),
@@ -93,7 +93,7 @@ export function installCdsComponentsTextArea(): () => void {
                     widthClass,
                     bare
                       ? "block resize-none border-0 bg-transparent p-0 shadow-none"
-                      : `cds-input font-normal ${ButtonButtonCss_2} enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus ${resizeClass}`,
+                      : `cds-input font-normal ${fieldBoxClassName} enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus ${resizeClass}`,
                     "font-sans text-body text-primary placeholder:text-muted outline-none focus-visible:outline-hidden disabled:opacity-disabled",
                     autosizeClass,
                     minHeightClass,

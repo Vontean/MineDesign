@@ -3,7 +3,7 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { Value_5 } from "../../canvas/working-state";
+import { internalKeyPrefix } from "../../canvas/working-state";
 import { load_react } from "../../dependencies";
 import { AccessibilityAnnouncementsHandler } from "../accessibility/announcements";
 import { toModuleNamespace } from "../../module-helpers";
@@ -22,7 +22,7 @@ function createWorkingFileMap(files?: Dynamic): Dynamic {
     ),
     entries: Dynamic = new Map();
   for (let [fileName, fileContent] of Object.entries(files) as Dynamic)
-    entries.set(artboardFiles.has(fileName) ? fileName : Value_5 + fileName, fileContent);
+    entries.set(artboardFiles.has(fileName) ? fileName : internalKeyPrefix + fileName, fileContent);
   return entries;
 }
 function createCurrentWorkingGeneration(): Dynamic {

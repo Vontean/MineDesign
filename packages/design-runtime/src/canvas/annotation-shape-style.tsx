@@ -6,7 +6,7 @@ import {
 import { load_react_jsx_runtime } from "../dependencies";
 import { joinClassNames } from "../editor/chrome/overlay-state";
 import { B6b0a7Value, defaultAnnotationStrokeColor } from "../editor/media/video-playback";
-import { NotesLinkEditingGrayRedOrangeConfig, NotesLinkEditingGrayRedOrangeConfig_2 as shapeFillColors } from "../editor/notes/link-editing";
+import { NotesLinkEditingGrayRedOrangeConfig, noteFillColors as shapeFillColors } from "../editor/notes/link-editing";
 import { toModuleNamespace } from "../module-helpers";
 
 var jsxCanvasAnnotationShapeStyle: Dynamic;
@@ -152,8 +152,8 @@ export {
   CanvasAnnotationShapeStyleBorderTopLeftRadiusBorderTopRightRadiusBorderBottomRightRadiusValues,
   CanvasAnnotationShapeStyleBorderTopWidthBorderRightWidthBorderBottomWidthValues,
   CanvasAnnotationShapeStyleConstant,
-  defaultArrowStrokeWidth as CanvasAnnotationShapeStyleConstant_2,
-  svgOverflowPadding as CanvasAnnotationShapeStyleConstant_3,
+  defaultArrowStrokeWidth,
+  svgOverflowPadding,
   CanvasAnnotationShapeStyleLineArrowPenConfig,
   CanvasAnnotationShapeStyleMatches,
   CanvasAnnotationShapeStyleReplace,

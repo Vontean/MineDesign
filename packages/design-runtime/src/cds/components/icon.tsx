@@ -8,7 +8,7 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
-import { iconFontMetadata, initializePlatformRootFontSize_3, initializePlatformRootFontSize_4, scaleCssPixels } from "../platform/root-font-size";
+import { iconFontMetadata, initializeRootFontScaleProbe, initializeIconFontMetadata, scaleCssPixels } from "../platform/root-font-size";
 import { initializeCdsRoot, useCdsRootElement, useDensity } from "../theme/root";
 import { surfaceBackgroundTokens, ThemeSurfacesPanelPopoverConfig, ThemeSurfacesSurface2Surface3Config } from "../theme/surfaces";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
@@ -31,15 +31,15 @@ var minIconFontWeight: Dynamic;
 var maxIconFontWeight: Dynamic;
 var ComponentsIconFlexShrinkConfig: Dynamic;
 var ComponentsIconFreezeValue: Dynamic;
-var initializeComponentsIcon_2: Dynamic;
+var initializeIconSizeMetrics: Dynamic;
 var reactComponentsIcon: Dynamic;
-var jsxComponentsIcon_2: Dynamic;
+var jsxForIconContext: Dynamic;
 var ComponentsIconConstant: Dynamic;
 var ComponentsIconElementCache: Dynamic;
 var ComponentsIconHandler: Dynamic;
-var ComponentsIconHandler_2: Dynamic;
+var subscribeNoopIconInset: Dynamic;
 var ComponentsIconContext: Dynamic;
-var initializeComponentsIcon_3: Dynamic;
+var initializeIconContext: Dynamic;
 function resolveIconSize(size?: Dynamic, defaultSize?: Dynamic): Dynamic {
   return size === "auto"
     ? defaultSize
@@ -382,7 +382,7 @@ function useDesktopTitlebarInset(portalContainer?: Dynamic): Dynamic {
     [ownerDocument],
   );
   return (0, reactComponentsIcon.useSyncExternalStore)(
-    insetStore === null ? ComponentsIconHandler_2 : insetStore.subscribe,
+    insetStore === null ? subscribeNoopIconInset : insetStore.subscribe,
     insetStore === null ? ComponentsIconHandler : insetStore.getSnapshot,
     ComponentsIconHandler,
   );
@@ -435,14 +435,10 @@ export {
   ComponentsIconFlexShrinkConfig,
   ComponentsIconFreezeValue,
   ComponentsIconHandler,
-  ComponentsIconHandler_2,
+  subscribeNoopIconInset,
   ComponentsIconIconsValue,
   ComponentsIconResolvedValue,
-  ComponentsIconAnimationDurations as ComponentsIconResolvedValue_2,
-  ComponentsIconAnimationDurationsOut as ComponentsIconResolvedValue_3,
-  ComponentsIconAnimationEasings as ComponentsIconResolvedValue_4,
   ComponentsIconSubscribers,
-  ComponentsIconLoopSubscribers as ComponentsIconSubscribers_2,
   ComponentsIconWghtValue,
   createIconSizeStyles,
   desktopInsetStore,
@@ -452,11 +448,11 @@ export {
   iconSizeMetrics,
   iconSizes,
   initializeComponentsIcon,
-  initializeComponentsIcon_2,
-  initializeComponentsIcon_3,
+  initializeIconSizeMetrics,
+  initializeIconContext,
   isIconName,
   jsxComponentsIcon,
-  jsxComponentsIcon_2,
+  jsxForIconContext,
   maxIconFontWeight,
   MdValue,
   minIconFontWeight,
@@ -474,15 +470,15 @@ export {
 export function installCdsComponentsIcon(): () => void {
   return () => {
     initializeComponentsIcon = initializeOnce((): Dynamic => {});
-    initializeComponentsIcon_2 = initializeOnce((): Dynamic => {
+    initializeIconSizeMetrics = initializeOnce((): Dynamic => {
       "use client";
 
       initializeCdsRoot();
-      initializePlatformRootFontSize_3();
+      initializeRootFontScaleProbe();
       jsxComponentsIcon = toModuleNamespace(
         load_react_jsx_runtime(),
       );
-      initializePlatformRootFontSize_4();
+      initializeIconFontMetadata();
       initializeComponentsIcon();
       iconSizeMetrics = {
         xs: {
@@ -555,7 +551,7 @@ export function installCdsComponentsIcon(): () => void {
         xxl: createIconSizeStyles("xxl"),
       });
     });
-    initializeComponentsIcon_3 = initializeOnce((): Dynamic => {
+    initializeIconContext = initializeOnce((): Dynamic => {
       "use client";
 
       initializeHooksLayoutEffect();
@@ -563,13 +559,13 @@ export function installCdsComponentsIcon(): () => void {
       reactComponentsIcon = toModuleNamespace(
         load_react(),
       );
-      jsxComponentsIcon_2 = toModuleNamespace(
+      jsxForIconContext = toModuleNamespace(
         load_react_jsx_runtime(),
       );
       ComponentsIconConstant = 5;
       ComponentsIconElementCache = new WeakMap();
       ComponentsIconHandler = (): Dynamic => 0;
-      ComponentsIconHandler_2 = (): Dynamic => (): Dynamic => {};
+      subscribeNoopIconInset = (): Dynamic => (): Dynamic => {};
       ComponentsIconContext = (0, reactComponentsIcon.createContext)(null);
     });
   };

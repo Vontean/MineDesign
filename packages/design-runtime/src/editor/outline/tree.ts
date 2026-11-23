@@ -4,8 +4,8 @@ import {
 } from "../../runtime-types";
 
 var OutlineTreeHandler: Dynamic;
-var OutlineTreeHandler_2: Dynamic;
-var OutlineTreeHandler_3: Dynamic;
+var outlineObjectRowKey: Dynamic;
+var outlineElementRowKey: Dynamic;
 var OutlineTreeMatches: Dynamic;
 function flattenOutlineRows(
   focusedTree?: Dynamic,
@@ -21,7 +21,7 @@ function flattenOutlineRows(
     ): Dynamic => {
       let openTids: Dynamic = getOpenTids(fileKey);
       for (let node of nodes as Dynamic) {
-        let rowKey: Dynamic = OutlineTreeHandler_3(fileKey, node.tid),
+        let rowKey: Dynamic = outlineElementRowKey(fileKey, node.tid),
           isExpandable: Dynamic = node.children.length > 0,
           isOpen: Dynamic = isExpandable && openTids.has(node.tid);
         items.push({
@@ -42,7 +42,7 @@ function flattenOutlineRows(
   }
   for (let value of outlineState.objects as Dynamic)
     items.push({
-      key: OutlineTreeHandler_2(value.id),
+      key: outlineObjectRowKey(value.id),
       level: 1,
       parentKey: null,
       file: null,
@@ -115,16 +115,16 @@ export {
   isOutlineRowTarget,
   outlineAncestorMap,
   OutlineTreeHandler,
-  OutlineTreeHandler_2,
-  OutlineTreeHandler_3,
+  outlineObjectRowKey,
+  outlineElementRowKey,
   OutlineTreeMatches,
   scrollOutlineRowIntoView,
 };
 export function installEditorOutlineTree(): () => void {
   return () => {
     OutlineTreeHandler = (fileKey?: Dynamic): Dynamic => `ab:${fileKey}`;
-    OutlineTreeHandler_2 = (objectId?: Dynamic): Dynamic => `ob:${objectId}`;
-    OutlineTreeHandler_3 = (fileKey?: Dynamic, tid?: Dynamic): Dynamic =>
+    outlineObjectRowKey = (objectId?: Dynamic): Dynamic => `ob:${objectId}`;
+    outlineElementRowKey = (fileKey?: Dynamic, tid?: Dynamic): Dynamic =>
       `el:${fileKey ?? ""}:${tid}`;
     OutlineTreeMatches = (): Dynamic =>
       typeof matchMedia == "function" &&

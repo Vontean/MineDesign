@@ -208,7 +208,7 @@ function EditableText({
         }
         placeholder={placeholder}
         maxLength={maxLength}
-        aria-label={ariaLabel ?? (uiMessage("design-system.commitTextInput.rename", { value1: String(committedText) }))}
+        aria-label={ariaLabel ?? (uiMessage("design-system.commitTextInput.rename", { subject: String(committedText) }))}
         data-testid={
           inputTestId ??
           (testId !== undefined ? testId + "-input" : undefined)

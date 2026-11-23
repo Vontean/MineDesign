@@ -7,26 +7,26 @@ import { recordVisiblePreviewTimes } from "../preview-mounting";
 import { type Dynamic } from "../../runtime-types";
 
 /** 视口或缩放变化时运行：按画板与视口的距离、可见时长、像素预算和手机端限制，挑选需要保持挂载实时预览的画板集合。 */
-export function pickMountedArtboardPreviews(deps: { readonly callback37: Dynamic; readonly options: Dynamic; readonly phone: Dynamic; readonly value130: Dynamic; readonly value146: Dynamic; readonly value182: Dynamic; readonly value184: Dynamic; readonly value185: Dynamic; readonly value186: Dynamic; readonly value187: Dynamic; readonly value188: Dynamic; readonly value19: Dynamic; readonly value194: Dynamic; readonly value195: Dynamic; readonly value196: Dynamic; readonly value197: Dynamic; readonly value199: Dynamic; readonly value200: Dynamic; readonly value34: Dynamic; readonly value35: Dynamic; readonly value55: Dynamic; readonly value56: Dynamic; readonly value57: Dynamic; readonly value58: Dynamic; readonly value62: Dynamic; readonly value9: Dynamic }, nowMs: Dynamic = performance.now()): Dynamic {
-      let viewport: Dynamic = deps.callback37(),
-        artboards: Dynamic = deps.value146.current.artboards,
-        isRelaxedMount: Dynamic = deps.value55.current != null && deps.value188 > deps.value187;
+export function pickMountedArtboardPreviews(deps: { readonly getViewRect: Dynamic; readonly options: Dynamic; readonly phone: Dynamic; readonly activeGesturesRef: Dynamic; readonly manifestRef: Dynamic; readonly focusedFileRef: Dynamic; readonly livePinsRef: Dynamic; readonly inUseFilesRef: Dynamic; readonly recentPreviewsRef: Dynamic; readonly maxInteractivePreviewCount: Dynamic; readonly maxMountedPreviewCount: Dynamic; readonly canEditCanvasRef: Dynamic; readonly mountedFilesRef: Dynamic; readonly previewVisibleTimesRef: Dynamic; readonly cachedViewRectRef: Dynamic; readonly previewScaleRef: Dynamic; readonly previewPickStateRef: Dynamic; readonly hasFullscreenedRef: Dynamic; readonly cameraRef: Dynamic; readonly usesCameraPortal: Dynamic; readonly fullscreenFileRef: Dynamic; readonly playingFileRef: Dynamic; readonly selectionRef: Dynamic; readonly mountedPreviewsRef: Dynamic; readonly isWheelingRef: Dynamic; readonly canvasRootRef: Dynamic }, nowMs: Dynamic = performance.now()): Dynamic {
+      let viewport: Dynamic = deps.getViewRect(),
+        artboards: Dynamic = deps.manifestRef.current.artboards,
+        isRelaxedMount: Dynamic = deps.fullscreenFileRef.current != null && deps.maxMountedPreviewCount > deps.maxInteractivePreviewCount;
       isRelaxedMount
-        ? (deps.value199.current ??= Math.min(
-            deps.value188,
-            Math.max(deps.value187, deps.value194.current.size + 1),
+        ? (deps.previewPickStateRef.current ??= Math.min(
+            deps.maxMountedPreviewCount,
+            Math.max(deps.maxInteractivePreviewCount, deps.mountedFilesRef.current.size + 1),
           ))
-        : (deps.value199.current = null);
-      if (deps.value55.current == null && deps.value200.current) {
-        deps.value200.current = false;
-        for (let mountedFile of deps.value194.current as Dynamic)
-          deps.value195.current.set(mountedFile, nowMs);
+        : (deps.previewPickStateRef.current = null);
+      if (deps.fullscreenFileRef.current == null && deps.hasFullscreenedRef.current) {
+        deps.hasFullscreenedRef.current = false;
+        for (let mountedFile of deps.mountedFilesRef.current as Dynamic)
+          deps.previewVisibleTimesRef.current.set(mountedFile, nowMs);
       }
       let mountedFilesByPriority: Dynamic = isRelaxedMount
           ? artboards
               .filter(
                 (board?: Dynamic): Dynamic =>
-                  deps.value194.current.has(board.file),
+                  deps.mountedFilesRef.current.has(board.file),
               )
               .sort(
                 (boardA?: Dynamic, boardB?: Dynamic): Dynamic =>
@@ -35,24 +35,24 @@ export function pickMountedArtboardPreviews(deps: { readonly callback37: Dynamic
               )
               .map((board?: Dynamic): Dynamic => board.file)
           : [],
-        scale: Dynamic = deps.value34.current.get().scale,
-        isCameraIdle: Dynamic = !deps.value62.current && deps.value130.current.size === 0,
+        scale: Dynamic = deps.cameraRef.current.get().scale,
+        isCameraIdle: Dynamic = !deps.isWheelingRef.current && deps.activeGesturesRef.current.size === 0,
         hasZoomChanged: Dynamic =
           !isRelaxedMount &&
           isCameraIdle &&
-          previewScaleChanged(deps.value197.current, scale);
-      deps.value9.current?.clientWidth &&
+          previewScaleChanged(deps.previewScaleRef.current, scale);
+      deps.canvasRootRef.current?.clientWidth &&
         !isRelaxedMount &&
         (recordVisiblePreviewTimes(
-          deps.value195.current,
+          deps.previewVisibleTimesRef.current,
           artboards,
           viewport,
-          deps.value196.current,
+          deps.cachedViewRectRef.current,
           nowMs,
         ),
-        (deps.value196.current = viewport),
-        isCameraIdle && (deps.value197.current = scale));
-      let primaryFile: Dynamic = deps.value186.current[0],
+        (deps.cachedViewRectRef.current = viewport),
+        isCameraIdle && (deps.previewScaleRef.current = scale));
+      let primaryFile: Dynamic = deps.recentPreviewsRef.current[0],
         primaryBoard: Dynamic =
           primaryFile != null
             ? artboards.find(
@@ -65,50 +65,50 @@ export function pickMountedArtboardPreviews(deps: { readonly callback37: Dynamic
       return chooseMountedPreviews({
         artboards: artboards,
         viewport: viewport,
-        cap: deps.value187,
-        ceiling: isRelaxedMount ? deps.value199.current : deps.value188,
-        lastOnScreen: isRelaxedMount ? undefined : deps.value195.current,
+        cap: deps.maxInteractivePreviewCount,
+        ceiling: isRelaxedMount ? deps.previewPickStateRef.current : deps.maxMountedPreviewCount,
+        lastOnScreen: isRelaxedMount ? undefined : deps.previewVisibleTimesRef.current,
         now: nowMs,
         zoomed: hasZoomChanged,
-        areaBudget: deps.value35
+        areaBudget: deps.usesCameraPortal
           ? deps.options.phoneCanvasRunsNothing === true
             ? 0
             : 15e5
           : undefined,
         required:
-          deps.value35 && deps.value55.current == null
+          deps.usesCameraPortal && deps.fullscreenFileRef.current == null
             ? limitMountedPreviewPixels(
-                [...(deps.value184.current ?? [])],
+                [...(deps.livePinsRef.current ?? [])],
                 [
-                  deps.value19.current ? deps.value182.current : null,
-                  deps.value56.current,
-                  ...(deps.value185.current ?? []),
+                  deps.canEditCanvasRef.current ? deps.focusedFileRef.current : null,
+                  deps.playingFileRef.current,
+                  ...(deps.inUseFilesRef.current ?? []),
                 ],
                 artboards,
                 deps.options.phoneCanvasRunsNothing === true ? 0 : 15e5,
               )
             : [
-                ...(deps.value184.current ?? []),
-                deps.value182.current,
-                deps.value55.current,
-                deps.value56.current,
-                isPrimaryInViewport && !(deps.phone && deps.value55.current == null)
+                ...(deps.livePinsRef.current ?? []),
+                deps.focusedFileRef.current,
+                deps.fullscreenFileRef.current,
+                deps.playingFileRef.current,
+                isPrimaryInViewport && !(deps.phone && deps.fullscreenFileRef.current == null)
                   ? primaryFile
                   : null,
-                ...(deps.value185.current ?? []),
+                ...(deps.inUseFilesRef.current ?? []),
                 ...mountedFilesByPriority,
               ],
         recent:
-          deps.value35 && deps.value55.current == null
-            ? deps.value186.current.slice(0, 1)
+          deps.usesCameraPortal && deps.fullscreenFileRef.current == null
+            ? deps.recentPreviewsRef.current.slice(0, 1)
             : [
-                ...deps.value186.current,
+                ...deps.recentPreviewsRef.current,
                 ...[
-                  ...(deps.value130.current.has("marquee")
-                    ? deps.value58.current
-                    : deps.value57.current.files),
+                  ...(deps.activeGesturesRef.current.has("marquee")
+                    ? deps.mountedPreviewsRef.current
+                    : deps.selectionRef.current.files),
                 ].reverse(),
               ],
-        current: deps.value194.current,
+        current: deps.mountedFilesRef.current,
       });
     }

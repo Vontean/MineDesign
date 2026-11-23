@@ -4,7 +4,7 @@ import {
 } from "../runtime-types";
 import { selectionResizeLimits, transformPointBetweenRects, transformRectBetweenRects } from "../editor/geometry/resize";
 import { rotatePoint } from "../editor/geometry/rotation";
-import { annotationBounds, annotationGeometry, annotationRotation, isShapeAnnotation, normalizeRotationDegrees, PlatformFileContentConstant_16 as defaultScale, PlatformFileContentConstant_19 as annotationScale, PlatformFileContentConstant_20 as imageScale, PlatformFileContentLimit_6 as maximumScale } from "../platform/file-content";
+import { annotationBounds, annotationGeometry, annotationRotation, isShapeAnnotation, normalizeRotationDegrees, minEmbeddedArtboardDimension as defaultScale, minShapeDimension as annotationScale, minImageDimension as imageScale, maxCanvasItemDimension as maximumScale } from "../platform/file-content";
 
 var annotationTransformSnapshot: Dynamic;
 var artboardTransformSnapshot: Dynamic;

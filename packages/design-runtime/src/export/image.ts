@@ -5,7 +5,7 @@ import {
 import { reportExportBuilt, reportExportEvent } from "./analytics";
 import { buildCaptureScript } from "./capture-script";
 import { withCaptureViewport } from "./capture-viewport";
-import { countMatchingExportWarnings, dataUrlToBytes, describeCaptureFailure, ExportCaptureWarningsItems, ExportCaptureWarningsItems_2 as ExportCaptureWarningsItemsForImage } from "./capture-warnings";
+import { countMatchingExportWarnings, dataUrlToBytes, describeCaptureFailure, ExportCaptureWarningsItems, FONT_FALLBACK_WARNING_PHRASES as ExportCaptureWarningsItemsForImage } from "./capture-warnings";
 import { exportDeliveryEventName, triggerBrowserDownload } from "./delivery";
 import { downloadsWithheld, saveThroughHost } from "./downloads";
 import { exportFileName } from "./file-names";

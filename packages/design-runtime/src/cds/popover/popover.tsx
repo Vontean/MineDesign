@@ -17,20 +17,20 @@ import type {
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
 import { popupSurfaceClassName } from "../components/icon";
-import { ActivityBoundary, initializeDomRefComposition, initializeDomRefComposition_3, useMergedRefs } from "../dom/ref-composition";
+import { ActivityBoundary, initializeDomRefComposition, initializeActivityVisibilityContext, useMergedRefs } from "../dom/ref-composition";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
 import { asElement, initializeHooksStableCallback } from "../hooks/stable-callback";
-import { initializeMenuPopup_3, isInteractivePressTarget } from "../menu/popup";
+import { initializeMenuPopupInputSelectors, isInteractivePressTarget } from "../menu/popup";
 import { initializeOverlaysBackdrop, OverlayBackdrop, OverlaysBackdropVisibilityOpacityConfig, useRestoreFocusOnClose } from "../overlays/backdrop";
 import { initializeOverlaysImperativeHandle, useOverlayImperativeHandle } from "../overlays/imperative-handle";
 import { initializeOverlaysLayers, LayerBaseContext, useLayer } from "../overlays/layers";
-import { initializePlatformReducedMotion_2, PlatformReducedMotionClassNames_3, PlatformReducedMotionCss_2 } from "../platform/reduced-motion";
-import { initializePlatformRootFontSize_2, PopupSurface } from "../platform/root-font-size";
+import { initializeSheetMotionClassNames, sheetOverscrollFillClassName, bottomSheetPanelClassName } from "../platform/reduced-motion";
+import { initializeRootFontSizeHooks, PopupSurface } from "../platform/root-font-size";
 import { initializeSheetsKeyboardViewport, isTextInputElement } from "../sheets/keyboard-viewport";
 import { ComfortableValue, initializeSheetsLayout, SheetsLayoutDisableAnchorTrackingCollisionAvoidanceConfig } from "../sheets/layout";
 import { initializeSheetsPopupStack, isInsideSheetPopup, SheetPopupContext, SheetPopupProvider, SheetsPopupStackConcealedConfig, SheetsPopupStackSheetConcealedChromeConfig, useAvailableSheetParts, useOverlayOpenState, useSheetInteractionMode, useSheetPopup, useSheetState } from "../sheets/popup-stack";
 import { initializeSheetsPresentation, sheetScrollAttribute, useOpenSnapshot } from "../sheets/presentation";
-import { closeInnerOverlayOnEscape, createInnerOverlayStack, initializeOverlayAttributes, initializeSheetsScrollArea_6, initializeSheetsScrollArea_7, InnerOverlaysContext, overlayAttribute, useOpenerReturn } from "../sheets/scroll-area";
+import { closeInnerOverlayOnEscape, createInnerOverlayStack, initializeOverlayAttributes, initializeFocusHooks, initializeInnerOverlaysContext, InnerOverlaysContext, overlayAttribute, useOpenerReturn } from "../sheets/scroll-area";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { initializeCdsRoot, useOverlayRoot } from "../theme/root";
 import { initializeThemeSurfaces, surfaceBackgroundTokens } from "../theme/surfaces";
@@ -40,7 +40,7 @@ import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 var jsxPopoverPopover: typeof import("react/jsx-runtime");
 var initializePopoverPopover: () => void;
 var reactPopoverPopover: typeof React;
-var jsxPopoverPopover_2: typeof import("react/jsx-runtime");
+var jsxForPopoverPopupView: typeof import("react/jsx-runtime");
 var PopoverPopoverCss: string;
 var popoverPopupClassNames: string;
 var PopoverPopoverNoneXsSmConfig: {
@@ -63,7 +63,7 @@ var PopoverSheetCapablePopup: ForwardComponent<
 >;
 var PopoverPopupView: ForwardComponent<HTMLDivElement, PopoverPopupViewProps>;
 var PopoverPopoverContext: React.Context<PopoverAnchorStore | null>;
-var PopoverPopoverContext_2: React.Context<InnerOverlayStack | null>;
+var popoverInnerOverlaysContext: React.Context<InnerOverlayStack | null>;
 var PopoverTrigger: ForwardComponent<
   HTMLButtonElement,
   import("@base-ui/react/popover").Popover.Trigger.Props<void>
@@ -79,7 +79,7 @@ var PopoverPopoverRootTriggerPopupConfig: {
   Arrow: typeof import("@base-ui/react/popover").Popover.Arrow;
   createHandle: typeof import("@base-ui/react/popover").Popover.createHandle;
 };
-var initializePopoverPopover_2: () => void;
+var initializePopoverPopupInner: () => void;
 function SheetCapablePopup({
   kind: kind,
   children: children,
@@ -182,7 +182,7 @@ function PopoverRoot<Payload = void>({
     overlayActionsRef = (0, reactPopoverPopover.useRef)<OverlayActions | null>(null);
   useOverlayImperativeHandle(overlayActionsRef, actionsRef);
   return (
-    <PopoverPopoverContext_2.Provider value={innerOverlayHandlers.innerOverlays}>
+    <popoverInnerOverlaysContext.Provider value={innerOverlayHandlers.innerOverlays}>
       <ActivityBoundary actionsRef={overlayActionsRef}>
         {isSheetMode ? ((() => {
             const _Component = usePopoverRoot;
@@ -200,7 +200,7 @@ function PopoverRoot<Payload = void>({
             onOpenChange={innerOverlayHandlers.onOpenChange}
           />)}
       </ActivityBoundary>
-    </PopoverPopoverContext_2.Provider>
+    </popoverInnerOverlaysContext.Provider>
   );
 }
 function usePopoverRoot<Payload = void>({
@@ -259,12 +259,12 @@ function usePopoverRoot<Payload = void>({
 export {
   hasPopoverInputAnchor,
   initializePopoverPopover,
-  initializePopoverPopover_2,
+  initializePopoverPopupInner,
   isPopoverArrow,
   jsxPopoverPopover,
-  jsxPopoverPopover_2,
+  jsxForPopoverPopupView,
   PopoverPopoverContext,
-  PopoverPopoverContext_2,
+  popoverInnerOverlaysContext,
   PopoverPopoverCss,
   PopoverPopoverNoneXsSmConfig,
   PopoverPopoverPaddingOverflowPattern,
@@ -296,7 +296,7 @@ export function installCdsPopoverPopover(): () => void {
         load_react_jsx_runtime(),
       );
     });
-    initializePopoverPopover_2 = initializeOnce(() => {
+    initializePopoverPopupInner = initializeOnce(() => {
       "use client";
 
       initializeHooksLayoutEffect();
@@ -305,25 +305,25 @@ export function installCdsPopoverPopover(): () => void {
       initializeHooksStableCallback();
       initializeOverlaysLayers();
       initializeOverlayAttributes();
-      initializeDomRefComposition_3();
+      initializeActivityVisibilityContext();
       initializeDomRefComposition();
-      initializePlatformRootFontSize_2();
+      initializeRootFontSizeHooks();
       initializeThemeSurfaces();
       initializeOverlaysImperativeHandle();
       initializeSheetsKeyboardViewport();
       initializeSheetsLayout();
       initializeSheetsPresentation();
       initializeSheetsPopupStack();
-      initializePlatformReducedMotion_2();
+      initializeSheetMotionClassNames();
       initializeOverlaysBackdrop();
       initializePopoverPopover();
-      initializeSheetsScrollArea_6();
-      initializeSheetsScrollArea_7();
-      initializeMenuPopup_3();
+      initializeFocusHooks();
+      initializeInnerOverlaysContext();
+      initializeMenuPopupInputSelectors();
       reactPopoverPopover = toModuleNamespace(
         load_react(),
       );
-      jsxPopoverPopover_2 = toModuleNamespace(
+      jsxForPopoverPopupView = toModuleNamespace(
         load_react_jsx_runtime(),
       );
       initializeNpm__base_ui_react_pge();
@@ -503,7 +503,7 @@ export function installCdsPopoverPopover(): () => void {
               event.preventDefault();
           },
           innerOverlays = (0, reactPopoverPopover.useContext)(
-            PopoverPopoverContext_2,
+            popoverInnerOverlaysContext,
           );
         useIsomorphicLayoutEffect(() => {
           if (anchorStore !== null) {
@@ -591,7 +591,7 @@ export function installCdsPopoverPopover(): () => void {
                         depth: number;
                       }
                     ).depth === 0
-                      ? PlatformReducedMotionClassNames_3
+                      ? sheetOverscrollFillClassName
                       : undefined
                   }
                 >
@@ -676,7 +676,7 @@ export function installCdsPopoverPopover(): () => void {
                     }}
                     className={cn(
                       PopoverPopoverCss,
-                      sheet && PlatformReducedMotionCss_2,
+                      sheet && bottomSheetPanelClassName,
                       sheet &&
                         "data-[starting-style]:translate-y-[calc(100%+1.5rem)] data-[ending-style]:translate-y-[calc(100%+1.5rem)]",
                       sheet &&
@@ -697,7 +697,7 @@ export function installCdsPopoverPopover(): () => void {
                         closeLabel={closeLabel}
                       >
                         {bodyContent}
-                      </ActiveSheetParts.PopoverSheetContent>) : (<jsxPopoverPopover_2.Fragment>
+                      </ActiveSheetParts.PopoverSheetContent>) : (<jsxForPopoverPopupView.Fragment>
                         <div
                           ref={bodyRef}
                           tabIndex={-1}
@@ -714,7 +714,7 @@ export function installCdsPopoverPopover(): () => void {
                           {bodyContent}
                         </div>
                         {arrowChildren}
-                      </jsxPopoverPopover_2.Fragment>)}
+                      </jsxForPopoverPopupView.Fragment>)}
                   </PopoverPopupInner>
                 </npm_Popover_$f.Positioner>
               </LayerBaseContext.Provider>
@@ -725,7 +725,7 @@ export function installCdsPopoverPopover(): () => void {
       PopoverPopupView.displayName = "PopoverPopupView";
       PopoverPopoverContext = (0,
       reactPopoverPopover.createContext)<PopoverAnchorStore | null>(null);
-      PopoverPopoverContext_2 = (0,
+      popoverInnerOverlaysContext = (0,
       reactPopoverPopover.createContext)<InnerOverlayStack | null>(null);
       (PopoverRoot as React.FC<PopoverRootProps>).displayName = "Popover.Root";
       PopoverTrigger = (0, reactPopoverPopover.forwardRef)<

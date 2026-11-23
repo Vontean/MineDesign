@@ -11,6 +11,13 @@ import { PlatformFileContentSlice } from "../platform/file-content";
 var pasteCascadePixels: Dynamic;
 var maxPlacedImageWidth: Dynamic;
 var hasMalformedUnicode: Dynamic;
+export function nextArtboardPlacementPoint(artboards: { x: number; y: number; w: number }[]) {
+  if (artboards.length === 0) return { x: 0, y: 0 };
+  return {
+    x: Math.max(...artboards.map((board) => board.x + board.w)) + 80,
+    y: Math.min(...artboards.map((board) => board.y)),
+  };
+}
 function pastedObjectsOrigin(objects?: Dynamic, point?: Dynamic): Dynamic {
   let groupWidth: Dynamic = Math.max(
       0,

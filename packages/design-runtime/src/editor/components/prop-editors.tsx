@@ -8,7 +8,7 @@ import { TextInput } from "../../cds/components/text-input";
 import { cn } from "../../cds/theme/class-names";
 import { designSystemColorOptions, useDesignSystems } from "../../design-system/store";
 import { hsvaToRgbaHex, parseHsvaColor } from "../color/picker-primitives";
-import { getSupportedTool, isToolNameList, reactInspectorContext_3 } from "../inspector/context-part-2";
+import { getSupportedTool, isToolNameList, reactForPropColorInput } from "../inspector/context-part-2";
 import { PropertiesRowsLimit, PropertyBooleanRow, PropertyEnumRow, PropertyHexRow, PropertyNumberRow, PropertyRangeRow, PropertySelectRow, PropertyTextRow } from "../properties/rows";
 import { sanitizeCssBackground, sanitizeCssColor } from "../../platform/css-sanitization";
 
@@ -260,7 +260,7 @@ function PropRangeInput({
 }: Dynamic): Dynamic {
   useUiLocale();
   let currentValue: Dynamic = numericPropValue(cur) ?? minValue,
-    lastValueRef: Dynamic = (0, reactInspectorContext_3.useRef)(currentValue);
+    lastValueRef: Dynamic = (0, reactForPropColorInput.useRef)(currentValue);
   lastValueRef.current = currentValue;
   return (
     <PropertyRangeRow
@@ -293,16 +293,16 @@ function PropColorInput({
       trimmed !== "" && sanitizeCssColor(trimmed) === trimmed
         ? trimmed
         : undefined,
-    stableSwatches: Dynamic = (0, reactInspectorContext_3.useMemo)(
+    stableSwatches: Dynamic = (0, reactForPropColorInput.useMemo)(
       (): Dynamic => swatches,
       [swatches.join("\0"), swatches.length],
     ),
-    swatchKeys: Dynamic = (0, reactInspectorContext_3.useMemo)(
+    swatchKeys: Dynamic = (0, reactForPropColorInput.useMemo)(
       (): Dynamic => propColorOptionKeys(stableSwatches),
       [stableSwatches],
     ),
     designSystems: Dynamic = useDesignSystems(),
-    allSwatches: Dynamic = (0, reactInspectorContext_3.useMemo)(
+    allSwatches: Dynamic = (0, reactForPropColorInput.useMemo)(
       (): Dynamic => designSystemPropColorOptions(stableSwatches, swatchKeys, designSystems),
       [stableSwatches, swatchKeys, designSystems],
     );

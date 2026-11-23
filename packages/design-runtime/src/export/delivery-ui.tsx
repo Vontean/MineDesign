@@ -115,7 +115,7 @@ function useExportDeliveries(): Dynamic {
           data-testid={"export-delivery-dialog"}
         >
           <DialogDialogRootTriggerPopupConfig.Header>
-            {value.length === 1 ? (uiMessage("canvas.deliveryUi.exportReady")) : (uiMessage("canvas.deliveryUi.exportsReady", { value1: String(String(value.length)) }))}
+            {value.length === 1 ? (uiMessage("canvas.deliveryUi.exportReady")) : (uiMessage("canvas.deliveryUi.exportsReady", { count: String(String(value.length)) }))}
           </DialogDialogRootTriggerPopupConfig.Header>
           <div className={"flex max-h-[60vh] flex-col gap-2 overflow-auto"}>
             {value.map(
@@ -307,7 +307,6 @@ export {
   ExportDeliveryNotice,
   ExportDeliveryUiRejectedExtensionExtensionNotEnabledTooLargeSet,
   ExportDeliveryUiResolvedValue,
-  DRAG_DOWNLOAD_PROMPT as ExportDeliveryUiResolvedValue_2,
   jsxExportDeliveryUi,
   reactExportDeliveryUi,
   useExportDeliveries,

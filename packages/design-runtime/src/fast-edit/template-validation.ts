@@ -23,7 +23,7 @@ var SAFE_TEMPLATE_STATE_ATTRIBUTES: Dynamic;
 var MULTICOLUMN_PROPERTY_PATTERN: Dynamic;
 var hasColumnLayout: Dynamic;
 var checkTemplateClosingTags: Dynamic;
-function splitCssDeclarations_2(style?: Dynamic): Dynamic {
+function splitStyleDeclarations(style?: Dynamic): Dynamic {
   let declarations: Dynamic = [],
     declaration: Dynamic = "",
     parenthesisDepth: Dynamic = 0,
@@ -338,7 +338,7 @@ export {
   parseFastEditTemplate,
   SAFE_TEMPLATE_STATE_ATTRIBUTES,
   serializeFastEditTemplate,
-  splitCssDeclarations_2,
+  splitStyleDeclarations,
   TEMPLATE_ELEMENT_ID_PATTERN,
   TEMPLATE_XML_NAME_PATTERN,
   validateArtboardTemplateReplacement,

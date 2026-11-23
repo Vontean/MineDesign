@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../runtime-types";
-import { DesignSystemPathsConstant, DesignSystemPathsConstant_2 as maxDisplayTextLength, DesignSystemPathsConstant_3 as maxArtifactTextLength, DesignSystemPathsPattern_2 as strictControlCharPattern, DesignSystemPathsPattern_3 as titleControlCharPattern, DesignSystemPathsResolvedValue_2 as maxTokensFileBytes, designSystemProjectPrefix, isDesignSystemNamespace } from "./paths";
+import { DesignSystemPathsConstant, maxDisplayTextLength, maxArtifactTextLength, strictControlCharPattern, titleControlCharPattern, maxTokensFileBytes, designSystemProjectPrefix, isDesignSystemNamespace } from "./paths";
 
 var normalizeDisplayText: Dynamic;
 function parseInstalledDesignSystems(projectConfig?: Dynamic): Dynamic {

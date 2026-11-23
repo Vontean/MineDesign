@@ -17,12 +17,13 @@ import { normalizeThemeId } from "./colors";
 import { commentTargetProps, UNCOMMENTABLE_PROPS } from "./comment-anchors";
 import { cssLengthInputStep, MAX_EDITABLE_CSS_LENGTH, parseEditableCssLength } from "./css-length-input";
 import { validateTokenRename } from "./editable-name";
+import { appendDefaultLengthUnit, normalizeNewColorValue, normalizeNewTokenName, validateNewColorValue, validateNewTokenValue, validateNewTypeField } from "./new-token-validation";
 import { isComposingEvent } from "./markdown-toolbar";
 import { BLOCK_FILE_DROP_HANDLERS, ShadowValueEditor } from "./shadows";
 import { cssLengthPreviewPixels } from "./token-scales";
 import { TypeStyleFields, typeStylePreviewStyle } from "./typography";
-import { normalizeTokenName, validateNewFontFamily } from "../model/token-commands";
-import { colorAliasTarget, isColorLiteral, isColorOrAlias, isSafeBoxShadow, MAX_TOKEN_LABEL_LENGTH, normalizeBoxShadow, normalizeColorEditorInput, normalizeCssLength, normalizeLineHeight, normalizeScalarTokenValue } from "../model/tokens";
+import { validateNewFontFamily } from "../model/token-commands";
+import { isColorLiteral, isSafeBoxShadow, MAX_TOKEN_LABEL_LENGTH, normalizeBoxShadow, normalizeColorEditorInput } from "../model/tokens";
 import { toModuleNamespace } from "../module-helpers";
 import { Button } from "../ui/buttons";
 import { Dialog } from "../ui/dialog";
@@ -54,97 +55,6 @@ function addTokenDialogTitle(request: AddTokenRequest): string {
       return uiMessage("design-system.addTokenDialog.newShadow");
     default:
       return uiMessage("design-system.addTokenDialog.new2") + request.label;
-  }
-}
-function normalizeNewTokenName(rawName: string): string {
-  return normalizeTokenName(rawName).replace(/\s+/g, "-");
-}
-function validateNewColorValue(
-  rawColor: string,
-  allowEmpty: boolean,
-  names: string,
-  tokenName: ReadonlySet<string>,
-) {
-  let normalizedColor = normalizeNewColorValue(rawColor);
-  if (normalizedColor === "") {
-    if (allowEmpty) {
-      return null;
-    } else {
-      return uiMessage("design-system.addTokenDialog.colorRequired");
-    }
-  }
-  if (!isColorOrAlias(normalizedColor)) {
-    return uiMessage("design-system.addTokenDialog.notAColorTryRrggbb", { token: "{token}" });
-  }
-  let aliasTarget = colorAliasTarget(normalizedColor);
-  if (aliasTarget === undefined) {
-    return null;
-  }
-  if (aliasTarget === names) {
-    return uiMessage("design-system.addTokenDialog.selfAlias");
-  }
-  if (!tokenName.has(aliasTarget)) {
-    return uiMessage("design-system.addTokenDialog.namesNoColorToken");
-  }
-  return null;
-}
-function normalizeNewColorValue(rawColorValue: string): string {
-  return normalizeColorEditorInput(rawColorValue);
-}
-function appendDefaultLengthUnit(rawLength: string): string {
-  let trimmedLength = rawLength.trim();
-  if (/^-?\d{1,4}(?:\.\d{1,6})?$/.test(trimmedLength) && trimmedLength !== "0") {
-    return trimmedLength + "px";
-  } else {
-    return trimmedLength;
-  }
-}
-function validateNewTokenValue(
-  kind: ScalarTokenKind,
-  rawValue: string,
-): string | undefined {
-  return normalizeScalarTokenValue(
-    kind,
-    kind === "spacing" || kind === "radius"
-      ? appendDefaultLengthUnit(rawValue)
-      : rawValue.trim(),
-  );
-}
-function validateNewTypeField(
-  field: "fontSize" | "lineHeight" | "letterSpacing",
-  rawTypeValue: string,
-): string | null {
-  let trimmedTypeValue = rawTypeValue.trim();
-  switch (field) {
-    case "fontSize":
-      if (
-        normalizeCssLength(
-          appendDefaultLengthUnit(trimmedTypeValue),
-          false,
-        ) === undefined
-      ) {
-        return uiMessage("design-system.addTokenDialog.notASizeTry16");
-      } else {
-        return null;
-      }
-    case "lineHeight":
-      if (normalizeLineHeight(trimmedTypeValue) === undefined) {
-        return uiMessage("design-system.addTokenDialog.notALineHeightTry");
-      } else {
-        return null;
-      }
-    case "letterSpacing":
-      if (
-        trimmedTypeValue === "" ||
-        normalizeCssLength(
-          appendDefaultLengthUnit(trimmedTypeValue),
-          false,
-        ) !== undefined
-      ) {
-        return null;
-      } else {
-        return uiMessage("design-system.addTokenDialog.notALengthTry0");
-      }
   }
 }
 function ignorePasswordManagerForInput(
@@ -226,9 +136,9 @@ function AddTokenDialog({
     nameInputRef = reactDesignSystemEditors.useRef<HTMLInputElement | null>(
       null,
     ),
-    [value, stepCounter] = reactDesignSystemEditors.useState(0);
+    [nameActionCount, incrementNameActionCount] = reactDesignSystemEditors.useState(0);
   reactDesignSystemEditors.useEffect(() => {
-    if (value === 0) {
+    if (nameActionCount === 0) {
       return;
     }
     let focusTimeout = setTimeout(() => {
@@ -237,7 +147,7 @@ function AddTokenDialog({
       current?.setSelectionRange(current.value.length, current.value.length);
     }, 50);
     return () => clearTimeout(focusTimeout);
-  }, [value]);
+  }, [nameActionCount]);
   let tokenSets =
       req.kind === "color"
         ? req.groups
@@ -269,7 +179,7 @@ function AddTokenDialog({
       string | null
     >(null),
     fontFamilyRef = reactDesignSystemEditors.useRef<string | null>(null),
-    callback = (fontFamilyValue: string | null) => {
+    updateFontFamily = (fontFamilyValue: string | null) => {
       fontFamilyRef.current = fontFamilyValue;
       setFontFamily(fontFamilyValue);
     },
@@ -442,7 +352,7 @@ function AddTokenDialog({
   if (nameAction !== null) {
     let runNameAction = () => {
       nameAction.run();
-      stepCounter((count) => count + 1);
+      incrementNameActionCount((count) => count + 1);
     };
     nameError =
       nameAction.verb === "" ? (
@@ -867,7 +777,7 @@ function AddTokenDialog({
                       ...items,
                       {
                         value: NEW_TOKEN_GROUP_SENTINEL,
-                        get label() { return uiMessage("design-system.addTokenDialog.new", { value1: String(fieldName.toLowerCase()) }); },
+                        get label() { return uiMessage("design-system.addTokenDialog.new", { subject: String(fieldName.toLowerCase()) }); },
                         separatorBefore: items.length > 0,
                       },
                     ]
@@ -879,7 +789,7 @@ function AddTokenDialog({
               onChange={handleGroupChange}
             />
           </AddDialogFieldGroup>, isNewGroup ? (
-            <AddDialogField label={uiMessage("design-system.addTokenDialog.name2", { value1: String(fieldName) })} hint={groupNameValidation}>
+            <AddDialogField label={uiMessage("design-system.addTokenDialog.fieldName", { subject: String(fieldName) })} hint={groupNameValidation}>
               <TextInput
                 {...PASSWORD_MANAGER_IGNORE_PROPS}
                 data-field={"fresh"}
@@ -887,7 +797,7 @@ function AddTokenDialog({
                 placeholder={fieldContext}
                 maxLength={MAX_TOKEN_LABEL_LENGTH}
                 spellCheck={false}
-                aria-label={uiMessage("design-system.addTokenDialog.name2", { value1: String(fieldName) })}
+                aria-label={uiMessage("design-system.addTokenDialog.fieldName", { subject: String(fieldName) })}
                 data-testid={
                   dataTestid +
                   "-" +
@@ -915,7 +825,7 @@ function AddTokenDialog({
           value={description}
           placeholder={
             // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-            uiMessage("design-system.addTokenDialog.optionalWhenShouldTheAgent", { value1: String(invalidTokenName ? (uiMessage("design-system.addTokenDialog.it")) : (normalizedTokenName)) })
+            uiMessage("design-system.addTokenDialog.optionalWhenShouldTheAgent", { subject: String(invalidTokenName ? (uiMessage("design-system.addTokenDialog.it")) : (normalizedTokenName)) })
           }
           aria-label={uiMessage("design-system.addTokenDialog.usageNote")}
           data-testid={dataTestid + "-usage"}
@@ -1037,7 +947,7 @@ function AddTokenDialog({
                   testid: dataTestid + "-value-" + field.id,
                   children: (
                     <ShadowValueEditor
-                      label={uiMessage("design-system.addTokenDialog.value2", { value1: String(field.name) })}
+                      label={uiMessage("design-system.addTokenDialog.fieldValue", { subject: String(field.name) })}
                       anchorKey={"add-dialog:" + field.id}
                       value={colorValues[field.id] ?? ""}
                       onChange={(colorValue: string | undefined) =>
@@ -1138,7 +1048,7 @@ function AddTokenDialog({
       );
       let handleTypeFieldChange = (field: keyof NewTypeStyle, fieldValue: string) => {
         if (field === "family") {
-          callback(null);
+          updateFontFamily(null);
         }
         updateTypeStyle((style) =>
           field === "family"
@@ -1192,7 +1102,7 @@ function AddTokenDialog({
               fontNames={req.fontNames}
               onField={handleTypeFieldChange}
               onFont={(selectedFontFamily: string) => {
-                callback(selectedFontFamily);
+                updateFontFamily(selectedFontFamily);
                 updateTypeStyle((style) => ({
                   ...style,
                   family: "",

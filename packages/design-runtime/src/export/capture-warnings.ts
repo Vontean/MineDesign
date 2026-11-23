@@ -75,7 +75,7 @@ export {
   dataUrlToBytes,
   describeCaptureFailure,
   ExportCaptureWarningsItems,
-  FONT_FALLBACK_WARNING_PHRASES as ExportCaptureWarningsItems_2,
+  FONT_FALLBACK_WARNING_PHRASES,
   matchingExportWarnings,
   mergeExportWarnings,
 };

@@ -13,7 +13,7 @@ import { contrastingGradientSeed, CssGradientsItems, parseCssGradient, parseCssG
 import { classifyStyleValue, describeColorValue, splitColorAlpha } from "../css/values";
 import { useInspectorContext } from "../inspector/context-part-2";
 import { InspectorPropertySchemaItems } from "../inspector/property-schema";
-import { AssetColorWell, escapeCssUrl, ImageAssetPicker, jsxPropertiesAssetPicker_3, PropertiesAssetPickerPattern, PropertyAssetPopup, reactPropertiesAssetPicker_3 } from "./asset-picker";
+import { AssetColorWell, escapeCssUrl, ImageAssetPicker, jsxForUseBackgroundEditor, PropertiesAssetPickerPattern, PropertyAssetPopup, reactForUseBackgroundEditor } from "./asset-picker";
 import { GradientEditor, normalizedGradientStops } from "./gradient-editor";
 import { useLiveStyleScrub, useStyleCommitScrub } from "./live-scrub";
 import { NumericInput } from "./numeric-input";
@@ -59,7 +59,7 @@ function AuthoredColorPicker({
       artboardColors: artboardColors,
       iframeDefinedVars: iframeDefinedVars,
     }: Dynamic = useInspectorContext(),
-    [swatchGroup]: Dynamic = (0, reactPropertiesAssetPicker_3.useState)(
+    [swatchGroup]: Dynamic = (0, reactForUseBackgroundEditor.useState)(
       (): Dynamic =>
         plain ? undefined : artboardColorSwatchGroup(artboardColors),
     );
@@ -92,7 +92,7 @@ function CssNumericPopupInput({
 }: Dynamic): Dynamic {
   useUiLocale();
   let [draftValue, setDraftValue]: Dynamic = (0,
-    reactPropertiesAssetPicker_3.useState)(null),
+    reactForUseBackgroundEditor.useState)(null),
     scrub: Dynamic = useStyleCommitScrub(
       (nextValue?: Dynamic): Dynamic => {
         setDraftValue(nextValue);
@@ -190,9 +190,9 @@ function useBackgroundEditor({
 }: Dynamic): Dynamic {
   let commit: Dynamic = writer.commit,
     [selectedStopIndex, setSelectedStopIndex]: Dynamic = (0,
-    reactPropertiesAssetPicker_3.useState)(0),
+    reactForUseBackgroundEditor.useState)(0),
     [pendingMode, setPendingMode]: Dynamic = (0,
-    reactPropertiesAssetPicker_3.useState)(null),
+    reactForUseBackgroundEditor.useState)(null),
     isTextFill: Dynamic = textFill !== undefined,
     layerCss: Dynamic = isTextFill
       ? textFill.clipped
@@ -233,16 +233,16 @@ function useBackgroundEditor({
           ? "color"
           : "none",
     [previousDetectedMode, setPreviousDetectedMode]: Dynamic = (0,
-    reactPropertiesAssetPicker_3.useState)(detectedMode);
+    reactForUseBackgroundEditor.useState)(detectedMode);
   previousDetectedMode !== detectedMode &&
     (setPreviousDetectedMode(detectedMode), pendingMode !== null && pendingMode !== "image" && setPendingMode(null));
   let mode: Dynamic = pendingMode ?? detectedMode,
     solid: Dynamic = isTextFill
       ? solidColorValue
       : solidColorValue || (gradient ? "" : layerCss) || "",
-    lastGradientRef: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)(null);
+    lastGradientRef: Dynamic = (0, reactForUseBackgroundEditor.useRef)(null);
   open && gradient && (lastGradientRef.current = gradient);
-  let radialMemoryRef: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)({}),
+  let radialMemoryRef: Dynamic = (0, reactForUseBackgroundEditor.useRef)({}),
     angleScrub: Dynamic = useStyleCommitScrub(
       (angle?: Dynamic): Dynamic => {
         gradient &&
@@ -301,7 +301,7 @@ function useBackgroundEditor({
         : mode === "none"
           ? ((varPartial === true ? undefined : varSource) ?? fallbackColor)
           : undefined,
-    matchedToken: Dynamic = (0, reactPropertiesAssetPicker_3.useMemo)(
+    matchedToken: Dynamic = (0, reactForUseBackgroundEditor.useMemo)(
       (): Dynamic =>
         matchArtboardColorToken(tokenSourceValue, tokens, definedVars),
       [tokenSourceValue, tokens, definedVars],
@@ -503,7 +503,7 @@ function useBackgroundEditor({
     },
     face: Dynamic =
       activeTab === "image" ? (
-        <jsxPropertiesAssetPicker_3.Fragment>
+        <jsxForUseBackgroundEditor.Fragment>
           <ImageAssetPicker
             value={imageUrl}
             disabled={disabled}
@@ -541,7 +541,7 @@ function useBackgroundEditor({
               }}
             />
           </PropertyRow>
-        </jsxPropertiesAssetPicker_3.Fragment>
+        </jsxForUseBackgroundEditor.Fragment>
       ) : activeTab === "gradient" && gradient ? (
         ((): Dynamic => {
           let resolveStopColor: Dynamic = (color?: Dynamic): Dynamic =>
@@ -746,7 +746,7 @@ function PropertyBackgroundRow({
 }: Dynamic): Dynamic {
   useUiLocale();
   let [isOpen, setIsOpen]: Dynamic = (0,
-    reactPropertiesAssetPicker_3.useState)(false),
+    reactForUseBackgroundEditor.useState)(false),
     {
       dsColorTokens: dsColorTokens,
       iframeDefinedVars: iframeDefinedVars,
@@ -764,7 +764,7 @@ function PropertyBackgroundRow({
     { disabled: disabled, mixed: mixed }: Dynamic = props,
     hasDsTokens: Dynamic = dsColorTokens.length > 0,
     [activeTab, setActiveTab]: Dynamic = (0,
-    reactPropertiesAssetPicker_3.useState)("system"),
+    reactForUseBackgroundEditor.useState)("system"),
     isSystemTab: Dynamic = hasDsTokens && activeTab === "system";
   return (
     <PropertyAssetPopup
@@ -794,7 +794,7 @@ function PropertyBackgroundRow({
       data-testid={"dc-fill-popover"}
       trigger={
         <PropertySelectTrigger
-          aria-label={uiMessage("inspector.backgroundEditor.undefined", { value1: String(label), value2: String(mixed ? (uiMessage("inspector.backgroundEditor.mixed")) : (editor.summary)) })}
+          aria-label={uiMessage("inspector.backgroundEditor.backgroundValue", { label: String(label), value: String(mixed ? (uiMessage("inspector.backgroundEditor.mixed")) : (editor.summary)) })}
           disabled={disabled}
           data-testid={testId}
           chip={

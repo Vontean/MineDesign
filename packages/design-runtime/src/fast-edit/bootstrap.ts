@@ -26,28 +26,28 @@ async function loadFastEditWorker(options?: Dynamic): Promise<Dynamic> {
         FAST_EDIT_WORKER_FETCH_TIMEOUT_MS,
         (): Dynamic => controller.abort(),
       ),
-      index2: Dynamic = 0,
-      value2: Dynamic;
+      httpStatus: Dynamic = 0,
+      workerBytes: Dynamic;
     try {
-      let value3: Dynamic = await options.fetch(workerUrl, {
+      let response: Dynamic = await options.fetch(workerUrl, {
         priority: "low",
         signal: controller.signal,
       });
-      index2 = value3.status;
-      value3.ok && (value2 = new Uint8Array(await value3.arrayBuffer()));
+      httpStatus = response.status;
+      response.ok && (workerBytes = new Uint8Array(await response.arrayBuffer()));
     } catch {
-      index2 = 0;
+      httpStatus = 0;
     } finally {
       value();
     }
-    if (value2 !== undefined)
+    if (workerBytes !== undefined)
       try {
-        return await options.accept(value2);
+        return await options.accept(workerBytes);
       } catch {
         return false;
       }
     if (
-      !(index2 === 0 || index2 === 401 || index2 === 403) ||
+      !(httpStatus === 0 || httpStatus === 401 || httpStatus === 403) ||
       index >= FAST_EDIT_WORKER_FETCH_RETRY_MS.length
     )
       return false;
@@ -69,30 +69,30 @@ function getFastEditWorkerUrl(): Dynamic {
 async function readFastEditSamplingConfiguration(): Promise<Dynamic> {
   let {
       modelTier: value,
-      model: value2,
-      effort: value3,
+      model: model,
+      effort: requestedEffort,
     }: Dynamic = await awaitFeatureFlag(
       FAST_EDIT_SAMPLING_FLAG,
       {
         modelTier: "quick",
       },
     ),
-    value4: Dynamic = FAST_EDIT_REASONING_EFFORTS.find(
-      (input?: Dynamic): Dynamic => input === value3,
+    effort: Dynamic = FAST_EDIT_REASONING_EFFORTS.find(
+      (input?: Dynamic): Dynamic => input === requestedEffort,
     );
   return {
     modelTier:
       FAST_EDIT_MODEL_TIERS.find(
         (input?: Dynamic): Dynamic => input === value,
       ) ?? "quick",
-    ...(typeof value2 == "string" && value2 !== ""
+    ...(typeof model == "string" && model !== ""
       ? {
-          model: value2,
+          model: model,
         }
       : {}),
-    ...(value4 !== undefined
+    ...(effort !== undefined
       ? {
-          effort: value4,
+          effort: effort,
         }
       : {}),
   };
@@ -117,15 +117,15 @@ function initializeFastEdit(
                 )
               : loadFastEditWorker({
                   address: getFastEditWorkerUrl,
-                  fetch: (input2?: Dynamic, options?: Dynamic): Dynamic =>
-                    fetch(input2, options),
-                  wait: (input2?: Dynamic): Dynamic =>
+                  fetch: (url?: Dynamic, options?: Dynamic): Dynamic =>
+                    fetch(url, options),
+                  wait: (delayMs?: Dynamic): Dynamic =>
                     new Promise(
-                      (input3?: Dynamic): Dynamic =>
-                        setTimeout(input3, input2),
+                      (resolve?: Dynamic): Dynamic =>
+                        setTimeout(resolve, delayMs),
                     ),
-                  timer: (input2?: Dynamic, options?: Dynamic): Dynamic => {
-                    let value: Dynamic = setTimeout(options, input2);
+                  timer: (delayMs?: Dynamic, options?: Dynamic): Dynamic => {
+                    let value: Dynamic = setTimeout(options, delayMs);
                     return (): Dynamic => clearTimeout(value);
                   },
                   accept: installFastEditWorker,
@@ -138,20 +138,20 @@ function initializeFastEdit(
       async (input?: Dynamic): Promise<Dynamic> =>
         input &&
         (await resolveSamplingCapability(
-          (input2?: Dynamic): Dynamic => typeof input2 == "function",
+          (candidate?: Dynamic): Dynamic => typeof candidate == "function",
         )) !== null &&
         (await workerAvailablePromise),
     ),
   );
   enabledPromise.then(async (input?: Dynamic): Promise<Dynamic> => {
     if (!input) return;
-    let { modelTier: value, ...value2 }: Dynamic =
+    let { modelTier: value, ...samplingOptions }: Dynamic =
       await readFastEditSamplingConfiguration();
     registerComposer({
       commentRules: fastEditCanvasSystemPrompt,
       newArtboardRules: fastEditFilesSystemPrompt,
-      createEngine: (input2?: Dynamic): Dynamic =>
-        createSamplingClient(input2, value2),
+      createEngine: (capability?: Dynamic): Dynamic =>
+        createSamplingClient(capability, samplingOptions),
       sandbox: {
         ...fastEditSandboxAdapter,
         available: workerAvailablePromise,

@@ -8,7 +8,7 @@ import { Button } from "../../cds/button/button";
 import { initializeCdsIndex } from "../../cds/index";
 import { MenuMenuAssignValue } from "../../cds/menu/menu";
 import { Tooltip } from "../../cds/tooltip/tooltip";
-import { reactCollaborationPeerBadge_3 } from "../../collaboration/peer-badge";
+import { reactForSessionStripPopover } from "../../collaboration/peer-badge";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { joinClassNames } from "../chrome/overlay-state";
 import { ToolbarCaret, toolbarItemTooltip, ToolbarPrimitivesContext, useDisabledToolbarItem, useToolbarItemAccessibility, useToolbarPress } from "../toolbar/primitives";
@@ -16,7 +16,6 @@ import { toModuleNamespace } from "../../module-helpers";
 
 var jsxSessionStripPopover: Dynamic;
 var reactSessionStripPopover: Dynamic;
-var jsxSessionStripPopover_2: Dynamic;
 function SessionStripPopover(props?: Dynamic): Dynamic {
   useUiLocale();
   let {
@@ -34,25 +33,25 @@ function SessionStripPopover(props?: Dynamic): Dynamic {
       className: className,
       "data-testid": testId,
     }: Dynamic = props,
-    isToolbarContext: Dynamic = (0, reactCollaborationPeerBadge_3.useContext)(
+    isToolbarContext: Dynamic = (0, reactForSessionStripPopover.useContext)(
       ToolbarPrimitivesContext,
     ),
-    wrapperRef: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
+    wrapperRef: Dynamic = (0, reactForSessionStripPopover.useRef)(
       null,
     ),
-    popupRef: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
+    popupRef: Dynamic = (0, reactForSessionStripPopover.useRef)(
       null,
     ),
     [uncontrolledOpen, setUncontrolledOpen]: Dynamic = (0,
-    reactCollaborationPeerBadge_3.useState)(false),
+    reactForSessionStripPopover.useState)(false),
     isOpenValue: Dynamic = controlledOpen ?? uncontrolledOpen,
     [isFocusWithin, setIsFocusWithin]: Dynamic = (0,
-    reactCollaborationPeerBadge_3.useState)(false),
+    reactForSessionStripPopover.useState)(false),
     popupFinalFocus: Dynamic = finalFocus === true ? undefined : finalFocus,
-    pendingFocusRef: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
+    pendingFocusRef: Dynamic = (0, reactForSessionStripPopover.useRef)(
       false,
     ),
-    latestPropsRef: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)({
+    latestPropsRef: Dynamic = (0, reactForSessionStripPopover.useRef)({
       disabled: disabled,
       popupFinalFocus: popupFinalFocus,
     });
@@ -60,10 +59,10 @@ function SessionStripPopover(props?: Dynamic): Dynamic {
     disabled: disabled,
     popupFinalFocus: popupFinalFocus,
   };
-  let hadFocusVisibleRef: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
+  let hadFocusVisibleRef: Dynamic = (0, reactForSessionStripPopover.useRef)(
       false,
     ),
-    popupRefCallback: Dynamic = (0, reactCollaborationPeerBadge_3.useCallback)(
+    popupRefCallback: Dynamic = (0, reactForSessionStripPopover.useCallback)(
       (element?: Dynamic): Dynamic => {
         popupRef.current = element;
         element === null &&
@@ -185,7 +184,7 @@ function SessionStripPopover(props?: Dynamic): Dynamic {
       "relative inline-flex shrink-0 rounded align-top outline-none focus-visible:outline-hidden focus-visible:shadow-focus",
       className,
     );
-  (0, reactCollaborationPeerBadge_3.useLayoutEffect)((): Dynamic => {
+  (0, reactForSessionStripPopover.useLayoutEffect)((): Dynamic => {
     disabled &&
       isOpenValue &&
       (controlledOpen === undefined && setUncontrolledOpen(false), onOpenChange?.(false));
@@ -196,10 +195,10 @@ function SessionStripPopover(props?: Dynamic): Dynamic {
     );
   }, [disabled]);
   let isEffectivelyOpen: Dynamic = isOpenValue && !disabled,
-    wasOpenRef: Dynamic = (0, reactCollaborationPeerBadge_3.useRef)(
+    wasOpenRef: Dynamic = (0, reactForSessionStripPopover.useRef)(
       false,
     );
-  (0, reactCollaborationPeerBadge_3.useLayoutEffect)((): Dynamic => {
+  (0, reactForSessionStripPopover.useLayoutEffect)((): Dynamic => {
     wasOpenRef.current &&
       !isEffectivelyOpen &&
       (hadFocusVisibleRef.current =
@@ -272,7 +271,6 @@ function SessionStripPopover(props?: Dynamic): Dynamic {
 }
 export {
   jsxSessionStripPopover,
-  jsxSessionStripPopover_2,
   reactSessionStripPopover,
   SessionStripPopover,
 };
@@ -287,9 +285,5 @@ export function installEditorSessionStripPopover(): () => void {
       1,
     );
     initializeCdsIndex();
-    jsxSessionStripPopover_2 = toModuleNamespace(
-      load_react_jsx_runtime(),
-      1,
-    );
   };
 }

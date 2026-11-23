@@ -105,7 +105,7 @@ function createDocumentStore(storeOptions?: Dynamic): Dynamic {
   }
   let isPublishingComments: Dynamic = false,
     commentErrorMessage: Dynamic,
-    flag7: Dynamic = false,
+    unusedFlag: Dynamic = false,
     documentListeners: Dynamic = new Set(),
     saveListeners: Dynamic = new Set();
   function readSaveState(): Dynamic {

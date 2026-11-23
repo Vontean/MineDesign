@@ -5,7 +5,7 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { PropertyCssTextRow } from "./css-value-row";
-import { inspectorFieldDisplay, Value_6 } from "./inherited-field";
+import { inspectorFieldDisplay, emDashPlaceholder } from "./inherited-field";
 import { PropertyRow } from "./row";
 import { PropertySelect } from "./select";
 import { fontVariantKey, fontVariantLabel, includeCurrentFontVariant, parseFontVariantKey, TypographyFontVariantsFlatMapValue } from "../typography/font-variants";
@@ -64,7 +64,7 @@ function PropertyFontWeightRow({
         placeholder={
           isMixed ? (uiMessage("inspector.fontWeightRow.mixed")) : (fontVariantLabel(variant.weight, variant.italic))
         }
-        hint={Value_6}
+        hint={emDashPlaceholder}
         title={
           !hasExplicitValue && !isMixed && !state.inheritedFrom ? (uiMessage("inspector.fontWeightRow.inheritedRightClickToKeep")) : (undefined)
         }

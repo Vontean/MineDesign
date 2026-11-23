@@ -10,7 +10,7 @@ import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { announce } from "../accessibility/announcer";
 import { joinClassNames } from "../chrome/overlay-state";
 import { DecreaseValue, IncreaseValue, invalidNumericValueMessage, MixedValue } from "../color/contrast-copy";
-import { captureNumericPointer, numericInputDecimalPlaces, numericInputFormatter, PropertiesNumericScrubberClassNames, PropertiesNumericScrubberClassNames_2, PropertiesNumericScrubberResolvedValue, PropertiesNumericScrubberUseGroupingConfig, useNumericScrub } from "./numeric-scrubber";
+import { captureNumericPointer, numericInputDecimalPlaces, numericInputFormatter, PropertiesNumericScrubberClassNames, scrubberStepButtonClassName, PropertiesNumericScrubberResolvedValue, PropertiesNumericScrubberUseGroupingConfig, useNumericScrub } from "./numeric-scrubber";
 import { EditorIcon } from "./primitives";
 import { reactPropertiesToolOptions } from "./tool-options";
 import { toModuleNamespace } from "../../module-helpers";
@@ -366,7 +366,7 @@ function NumericInput({
                   aria-label={
                     accessibleName ? (((IncreaseValue) + (" ")) + (accessibleName)) : (IncreaseValue)
                   }
-                  className={PropertiesNumericScrubberClassNames_2}
+                  className={scrubberStepButtonClassName}
                   disabled={isDisabled}
                   onMouseDown={(event?: Dynamic): Dynamic => {
                     event.preventDefault();
@@ -383,7 +383,7 @@ function NumericInput({
                   aria-label={
                     accessibleName ? (((DecreaseValue) + (" ")) + (accessibleName)) : (DecreaseValue)
                   }
-                  className={PropertiesNumericScrubberClassNames_2}
+                  className={scrubberStepButtonClassName}
                   disabled={isDisabled}
                   onMouseDown={(event?: Dynamic): Dynamic => {
                     event.preventDefault();

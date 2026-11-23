@@ -71,7 +71,7 @@ function PlainTokenValueEditor({
       {[<TextInput
           {...value.props}
           className={"font-mono"}
-          aria-label={uiMessage("design-system.tokenScales.value2", { value1: String(t.name) })}
+          aria-label={uiMessage("design-system.tokenScales.tokenValue", { subject: String(t.name) })}
           data-testid={testid}
           spellCheck={false}
           autoComplete={"off"}
@@ -114,7 +114,7 @@ function LengthTokenValueEditor({
       data-testid={testid}
     >
       <PropertyNumberInput
-        aria-label={uiMessage("design-system.tokenScales.value2", { value1: String(t.name) })}
+        aria-label={uiMessage("design-system.tokenScales.tokenValue", { subject: String(t.name) })}
         refuseLetters={true}
         fullWidth={true}
         unit={value.unit}
@@ -212,7 +212,7 @@ function TokenScaleRow({
               data-testid={"ds-" + value + "-usage-" + t.name}
             />, edit !== undefined ? (
               <RemoveRowButton
-                label={uiMessage("design-system.tokenScales.remove", { value1: String(t.name) })}
+                label={uiMessage("design-system.tokenScales.remove", { subject: String(t.name) })}
                 onRemove={() => edit.remove(t.name)}
                 data-testid={"ds-" + value + "-remove-" + t.name}
               />
@@ -228,7 +228,7 @@ function TokenScaleRow({
               ? {
                   rename: callback,
                   remove: () => edit.remove(t.name),
-                  get removeLabel() { return uiMessage("design-system.tokenScales.remove", { value1: String(t.name) }); },
+                  get removeLabel() { return uiMessage("design-system.tokenScales.remove", { subject: String(t.name) }); },
                 }
               : {}),
             copy: t.value,

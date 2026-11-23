@@ -8,18 +8,18 @@ var reactButtonContext: typeof React;
 var ButtonGroupContext: React.Context<ButtonGroupState>;
 var CdsCompactableAttribute: string;
 var initializeButtonContext: () => void;
-var reactButtonContext_2: typeof React;
-var initializeButtonContext_2: () => void;
+var reactForUseButtonAnimation: typeof React;
+var initializeButtonAnimationReact: () => void;
 var ButtonContextClassNames: string;
-var ButtonContextClassNames_2: string;
-var ButtonContextClassNames_3: string;
-var ButtonContextClassNames_4: string;
+var focusRingClassName: string;
+var dangerFocusRingClassName: string;
+var focusInsetOverlayClassName: string;
 var CdsBtnSquishValue: string;
-var ButtonContextClassNames_5: string;
-var ButtonContextClassNames_6: string;
-var ButtonContextClassNames_7: string;
-var ButtonContextClassNames_8: string;
-var initializeButtonContext_3: () => void;
+var pressedFieldShadowClassName: string;
+var pressedAccentBackgroundClassName: string;
+var secondaryFillClassName: string;
+var hairlineInsetClassName: string;
+var initializeButtonFocusClassNames: () => void;
 function useButtonGroup(): ButtonGroupState {
   return (0, reactButtonContext.useContext)(ButtonGroupContext);
 }
@@ -27,32 +27,32 @@ function useButtonAnimation(
   ref: React.RefObject<HTMLElement | null>,
   variant: "Button" | "SegmentedControl",
 ): void {
-  (0, reactButtonContext_2.useEffect)(() => {}, [ref, variant]);
+  (0, reactForUseButtonAnimation.useEffect)(() => {}, [ref, variant]);
 }
 function buttonBackgroundClassName(state: {
   joined?: boolean;
   solid?: boolean;
 }): string {
-  return `${ButtonContextClassNames} ${!state.joined && state.solid ? ButtonContextClassNames_8 : "inset-0"} ${state.joined ? "" : CdsBtnSquishValue}`;
+  return `${ButtonContextClassNames} ${!state.joined && state.solid ? hairlineInsetClassName : "inset-0"} ${state.joined ? "" : CdsBtnSquishValue}`;
 }
 export {
   buttonBackgroundClassName,
   ButtonContextClassNames,
-  ButtonContextClassNames_2,
-  ButtonContextClassNames_3,
-  ButtonContextClassNames_4,
-  ButtonContextClassNames_5,
-  ButtonContextClassNames_6,
-  ButtonContextClassNames_7,
-  ButtonContextClassNames_8,
+  focusRingClassName,
+  dangerFocusRingClassName,
+  focusInsetOverlayClassName,
+  pressedFieldShadowClassName,
+  pressedAccentBackgroundClassName,
+  secondaryFillClassName,
+  hairlineInsetClassName,
   ButtonGroupContext,
   CdsBtnSquishValue,
   CdsCompactableAttribute,
   initializeButtonContext,
-  initializeButtonContext_2,
-  initializeButtonContext_3,
+  initializeButtonAnimationReact,
+  initializeButtonFocusClassNames,
   reactButtonContext,
-  reactButtonContext_2,
+  reactForUseButtonAnimation,
   useButtonAnimation,
   useButtonGroup,
 };
@@ -70,27 +70,27 @@ export function installCdsButtonContext(): () => void {
       });
       CdsCompactableAttribute = "data-cds-compactable";
     });
-    initializeButtonContext_2 = initializeOnce(() => {
-      reactButtonContext_2 = toModuleNamespace(
+    initializeButtonAnimationReact = initializeOnce(() => {
+      reactForUseButtonAnimation = toModuleNamespace(
         load_react(),
       );
     });
-    initializeButtonContext_3 = initializeOnce(() => {
+    initializeButtonFocusClassNames = initializeOnce(() => {
       ButtonContextClassNames = "absolute -z-[1] rounded-[inherit]";
-      ButtonContextClassNames_2 =
+      focusRingClassName =
         "focus-visible:shadow-focus [&[data-initial-focus]:focus]:shadow-focus";
-      ButtonContextClassNames_3 =
+      dangerFocusRingClassName =
         "focus-visible:shadow-focus-danger [&[data-initial-focus]:focus]:shadow-focus-danger";
-      ButtonContextClassNames_4 =
+      focusInsetOverlayClassName =
         "absolute inset-0 rounded-[inherit] transition-[background-color,box-shadow,color] duration-fast ease-out group-focus-visible/btn:shadow-[inset_0_0_0_1px_var(--cds-page-bg)] group-[[data-initial-focus]:focus]/btn:shadow-[inset_0_0_0_1px_var(--cds-page-bg)]";
       CdsBtnSquishValue = "cds-btn-squish";
-      ButtonContextClassNames_5 =
+      pressedFieldShadowClassName =
         "shadow-field group-aria-pressed/btn:shadow-field-pressed group-focus-visible/btn:group-aria-pressed/btn:shadow-[inset_0_0_0_1px_var(--cds-page-bg)]";
-      ButtonContextClassNames_6 =
+      pressedAccentBackgroundClassName =
         "group-aria-pressed/btn:bg-accent group-hover/btn:group-aria-pressed/btn:bg-accent";
-      ButtonContextClassNames_7 =
+      secondaryFillClassName =
         "bg-fill-secondary group-hover/btn:bg-fill-secondary-hover group-[[aria-haspopup][aria-expanded=true]]/btn:bg-fill-secondary-hover";
-      ButtonContextClassNames_8 = "inset-[0.5px]";
+      hairlineInsetClassName = "inset-[0.5px]";
     });
   };
 }

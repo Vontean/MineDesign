@@ -10,20 +10,20 @@ import { MenuMenuAssignValue } from "../../cds/menu/menu";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { blockingOverlaySelector, joinClassNames } from "../chrome/overlay-state";
 import { ColorContrastCopyHandler } from "../color/contrast-copy";
-import { reactInspectorContext_4 } from "../inspector/context-part-2";
+import { reactForPropertyRow } from "../inspector/context-part-2";
 import { toModuleNamespace } from "../../module-helpers";
 
 var PropertiesPrimitivesLabel: Dynamic;
 var reactPropertiesPrimitives: Dynamic;
 var jsxPropertiesPrimitives: Dynamic;
-var jsxPropertiesPrimitives_2: Dynamic;
+var jsxForPropertySection: Dynamic;
 var PropertiesPrimitivesClassNames: Dynamic;
 var joinClassNamesValue: Dynamic;
-var joinClassNamesValue_2: Dynamic;
-var PropertiesPrimitivesClassNames_2: Dynamic;
+var propertyPickerButtonClassName: Dynamic;
+var colorSwatchClassName: Dynamic;
 var PropertyPickerButton: Dynamic;
-var PropertiesPrimitivesClassNames_3: Dynamic;
-var PropertiesPrimitivesClassNames_4: Dynamic;
+var propertyGutterClassName: Dynamic;
+var secondaryIconButtonClassName: Dynamic;
 function EditorIcon({
   name: name,
   size = 14,
@@ -134,7 +134,7 @@ function PropertyColorWell({
       aria-hidden={"true"}
       {...props}
       className={joinClassNames(
-        PropertiesPrimitivesClassNames_2,
+        colorSwatchClassName,
         className,
       )}
     >
@@ -152,13 +152,13 @@ export {
   EditorIcon,
   isNestedPropertyControl,
   joinClassNamesValue,
-  joinClassNamesValue_2,
+  propertyPickerButtonClassName,
   jsxPropertiesPrimitives,
-  jsxPropertiesPrimitives_2,
+  jsxForPropertySection,
   PropertiesPrimitivesClassNames,
-  PropertiesPrimitivesClassNames_2,
-  PropertiesPrimitivesClassNames_3,
-  PropertiesPrimitivesClassNames_4,
+  colorSwatchClassName,
+  propertyGutterClassName,
+  secondaryIconButtonClassName,
   PropertiesPrimitivesLabel,
   PropertyActions,
   PropertyColorWell,
@@ -179,7 +179,7 @@ export function installEditorPropertiesPrimitives(): () => void {
       load_react_jsx_runtime(),
       1,
     );
-    jsxPropertiesPrimitives_2 = toModuleNamespace(
+    jsxForPropertySection = toModuleNamespace(
       load_react_jsx_runtime(),
       1,
     );
@@ -189,13 +189,13 @@ export function installEditorPropertiesPrimitives(): () => void {
       "h-control min-w-0 px-md text-body pointer-coarse:h-10",
       PropertiesPrimitivesClassNames,
     );
-    joinClassNamesValue_2 = joinClassNames(
+    propertyPickerButtonClassName = joinClassNames(
       "flex h-control min-w-0 items-center gap-sm pr-md pl-1 text-left text-body pointer-coarse:h-10",
       PropertiesPrimitivesClassNames,
     );
-    PropertiesPrimitivesClassNames_2 =
+    colorSwatchClassName =
       "relative inline-block h-4 w-4 shrink-0 overflow-hidden rounded-[4px] shadow-card-ring bg-[repeating-conic-gradient(var(--cds-alpha-2)_0_25%,transparent_0_50%)] bg-[length:8px_8px]";
-    PropertyPickerButton = (0, reactInspectorContext_4.forwardRef)(
+    PropertyPickerButton = (0, reactForPropertyRow.forwardRef)(
       function (
         {
           chip: chip,
@@ -216,7 +216,7 @@ export function installEditorPropertiesPrimitives(): () => void {
             type={type}
             className={joinClassNames(
               chip != null
-                ? joinClassNamesValue_2
+                ? propertyPickerButtonClassName
                 : joinClassNames(
                     joinClassNamesValue,
                     "flex items-center gap-sm text-left",
@@ -240,9 +240,9 @@ export function installEditorPropertiesPrimitives(): () => void {
         );
       },
     );
-    PropertiesPrimitivesClassNames_3 =
+    propertyGutterClassName =
       "pl-[var(--pp-gutter-l,var(--cds-pad-lg))] pr-[var(--pp-gutter-r,var(--cds-pad-md))]";
-    PropertiesPrimitivesClassNames_4 =
+    secondaryIconButtonClassName =
       "[&_[data-cds=Button][aria-label]:not([aria-pressed=true])]:text-secondary";
   };
 }

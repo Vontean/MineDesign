@@ -199,7 +199,7 @@ function FastEditDebugCallRow({ c: call, onOpen: onOpen }: Dynamic): Dynamic {
           {call.error !== undefined ? (((call.error.code) + (" ")) + (compactDebugText(call.reply, 50))) : (compactDebugText(call.reply))}
         </span>
         <span className={"ml-auto shrink-0"}>
-          {uiMessage("canvas.debugPanel.turns", { value1: String(String(call.messages.length)), value2: String(formatDebugCharacterCount(value.chars)) })}
+          {uiMessage("canvas.debugPanel.turns", { count: String(String(call.messages.length)), size: String(formatDebugCharacterCount(value.chars)) })}
         </span>
       </div>
     </button>
@@ -233,18 +233,18 @@ function FastEditDebugPanel(): Dynamic {
       });
   }, [open]);
   let value: Dynamic = fastEditDebugStore.all(),
-    value2: Dynamic =
+    selectedCall: Dynamic =
       activeCall === null
         ? undefined
         : value.find((input?: Dynamic): Dynamic => input.n === activeCall),
-    value3: Dynamic = (0, ReactFastEditDebug.useRef)(null);
+    scrollRef: Dynamic = (0, ReactFastEditDebug.useRef)(null);
   (0, ReactFastEditDebug.useEffect)((): Dynamic => {
     open &&
-      value2 === undefined &&
-      value3.current !== null &&
-      (value3.current.scrollTop = value3.current.scrollHeight);
-  }, [open, value2 === undefined, value.length]);
-  let value4: Dynamic = (
+      selectedCall === undefined &&
+      scrollRef.current !== null &&
+      (scrollRef.current.scrollTop = scrollRef.current.scrollHeight);
+  }, [open, selectedCall === undefined, value.length]);
+  let summary: Dynamic = (
     <div
       className={
         "pointer-events-auto fixed z-[61] " + FAST_EDIT_DEBUG_POSITION.icon
@@ -290,7 +290,7 @@ function FastEditDebugPanel(): Dynamic {
   );
   return (
     <fastEditDebugJsxRuntime.Fragment>
-      {value4}
+      {summary}
       {open && ((0, fastEditDebugPortal.createPortal)(
           <div
             data-testid={"fast-edit-debug-panel"}
@@ -307,7 +307,7 @@ function FastEditDebugPanel(): Dynamic {
                   "flex shrink-0 items-center gap-2 border-0 border-b border-solid border-[var(--t-border)] px-3 py-2 text-[12px]"
                 }
               >
-                {value2 !== undefined && (<Button
+                {selectedCall !== undefined && (<Button
                     variant={"secondary"}
                     size={"xs"}
                     aria-label={uiMessage("canvas.debugPanel.backToTheList")}
@@ -317,15 +317,15 @@ function FastEditDebugPanel(): Dynamic {
                     <Icon name={"ArrowLeft"} size={"xs"} />
                   </Button>)}
                 <span className={"font-semibold"}>
-                  {value2 !== undefined ? (uiMessage("canvas.debugPanel.callMs", { value1: String(String(value2.n)), value2: String(formatFastEditDebugTime(value2.at)), value3: String(value2.tier), value4: String(formatDebugDuration(value2.msFirst)), value5: String(formatDebugDuration(value2.ms)) })) : (uiMessage("canvas.debugPanel.fastEditCalls"))}
+                  {selectedCall !== undefined ? (uiMessage("canvas.debugPanel.callMs", { number: String(String(selectedCall.n)), time: String(formatFastEditDebugTime(selectedCall.at)), tier: String(selectedCall.tier), firstDuration: String(formatDebugDuration(selectedCall.msFirst)), duration: String(formatDebugDuration(selectedCall.ms)) })) : (uiMessage("canvas.debugPanel.fastEditCalls"))}
                 </span>
                 <span className={"ml-auto flex gap-1"}>
-                  {value2 !== undefined ? (<Button
+                  {selectedCall !== undefined ? (<Button
                       variant={"secondary"}
                       size={"xs"}
                       data-testid={"fast-edit-debug-copy"}
                       onClick={(): Dynamic =>
-                        FAST_EDIT_DEBUG_OUTCOME_LABELS(value2)
+                        FAST_EDIT_DEBUG_OUTCOME_LABELS(selectedCall)
                       }
                     >
                       {uiMessage("canvas.debugPanel.copyCall")}
@@ -355,18 +355,18 @@ function FastEditDebugPanel(): Dynamic {
               </div>
             </CdsIsland>
             <div
-              ref={value3}
+              ref={scrollRef}
               className={
                 "min-h-0 flex-1 overflow-y-auto overflow-x-hidden " +
-                (value2 !== undefined ? "p-2" : "")
+                (selectedCall !== undefined ? "p-2" : "")
               }
             >
-              {value2 !== undefined ? ((() => {
+              {selectedCall !== undefined ? ((() => {
                   const _Component = FastEditDebugCallDetail;
                   const _props = {
-                    c: value2,
+                    c: selectedCall,
                   } as const;
-                  const _key = value2.n;
+                  const _key = selectedCall.n;
                   return <_Component key={_key} {..._props} />;
                 })()) : (value.length === 0 ? (<div
                   className={"px-3 py-4 text-[12px] text-[var(--t-fg-muted)]"}
@@ -375,13 +375,13 @@ function FastEditDebugPanel(): Dynamic {
                 </div>) : (value.map(
                   (input?: Dynamic): Dynamic =>
                     (() => {
-                      const _Component2 = FastEditDebugCallRow;
-                      const _props2 = {
+                      const CallRow = FastEditDebugCallRow;
+                      const rowProps = {
                         c: input,
                         onOpen: (): Dynamic => setActiveCall(input.n),
                       } as const;
-                      const _key2 = input.n;
-                      return <_Component2 key={_key2} {..._props2} />;
+                      const rowKey = input.n;
+                      return <CallRow key={rowKey} {...rowProps} />;
                     })(),
                 )))}
             </div>

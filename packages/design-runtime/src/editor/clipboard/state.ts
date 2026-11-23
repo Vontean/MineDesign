@@ -3,7 +3,7 @@ import {
   type Dynamic,
 } from "../../runtime-types";
 import { readClipboardObject } from "./native";
-import { PlatformFileContentLimit_5 as maxAnnotationCount } from "../../platform/file-content";
+import { maxAnnotations as maxAnnotationCount } from "../../platform/file-content";
 
 var DesignElementsKey: Dynamic;
 var DesignArtboardsKey: Dynamic;
@@ -350,26 +350,26 @@ export {
   clipboardGeneration,
   clipboardObjectStamp,
   ClipboardStateAlias,
-  ClipboardStateArtboardItems as ClipboardStateAlias_2,
-  ClipboardStateArtboardAnnotations as ClipboardStateAlias_3,
+  ClipboardStateArtboardItems,
+  ClipboardStateArtboardAnnotations,
   ClipboardStateConstant,
-  ClipboardStateSequenceCounter as ClipboardStateConstant_2,
-  ClipboardStateGeneration as ClipboardStateConstant_3,
+  ClipboardStateSequenceCounter,
+  ClipboardStateGeneration,
   ClipboardStateCurrentState,
   ClipboardStateDelayMs,
   ClipboardStateFilterValue,
-  ClipboardStateDeferredTasks as ClipboardStateFilterValue_2,
+  ClipboardStateDeferredTasks,
   ClipboardStateHandler,
   ClipboardStateIsArray,
   ClipboardStateLimit,
-  ClipboardStateMarkMaxAgeMs as ClipboardStateLimit_2,
+  ClipboardStateMarkMaxAgeMs,
   ClipboardStateNowValue,
   ClipboardStateObservedElements,
   ClipboardStateReplace,
   ClipboardStateResolvedValue,
-  ClipboardStateBufferRendition as ClipboardStateResolvedValue_2,
-  ClipboardStateArtboardStamp as ClipboardStateResolvedValue_3,
-  ClipboardStateArtboardRendition as ClipboardStateResolvedValue_4,
+  ClipboardStateBufferRendition,
+  ClipboardStateArtboardStamp,
+  ClipboardStateArtboardRendition,
   ClipboardStateSliceValue,
   DesignArtboardsKey,
   DesignElementsKey,

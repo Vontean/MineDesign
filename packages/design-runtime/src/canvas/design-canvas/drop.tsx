@@ -1,11 +1,11 @@
-import { CanvasWorkingStateConstant_5 as maxVideosPerDrop } from "../working-state";
+import { maxVideosPerDrop } from "../working-state";
 import { CanvasWorkingStateHandler } from "../working-state";
-import { PlatformFileContentConstant_20 as minDroppedImageWidth } from "../../platform/file-content";
-import { PlatformFileContentLimit_5 as annotationLimit } from "../../platform/file-content";
-import { PlatformFileContentLimit_6 as maxDroppedImageHeight } from "../../platform/file-content";
+import { minImageDimension as minDroppedImageWidth } from "../../platform/file-content";
+import { maxAnnotations as annotationLimit } from "../../platform/file-content";
+import { maxCanvasItemDimension as maxDroppedImageHeight } from "../../platform/file-content";
 import { PlatformFileContentSlice } from "../../platform/file-content";
-import { PlatformFileContentTest_2 as validatedImageSrc } from "../../platform/file-content";
-import { PlatformFileContentTest_3 as validatedVideoSrc } from "../../platform/file-content";
+import { parseAnnotationImageUrl as validatedImageSrc } from "../../platform/file-content";
+import { parseAnnotationVideoUrl as validatedVideoSrc } from "../../platform/file-content";
 import { afterNextPaint } from "../working-state";
 import { announce } from "../../editor/accessibility/announcer";
 import { canDecodeRasterImage } from "../../editor/clipboard/image-validation";
@@ -43,7 +43,7 @@ import { videoUploadFailureMessage } from "../../editor/media/video-upload";
 import { videoUploadRefusal } from "../../editor/media/video-upload";
 
 /** 图片文件拖入或粘贴到画布或画板时运行：校验尺寸与格式、上传文件、显示占位，再作为画布图片或画板内图片元素插入。 */
-export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value271: Dynamic; readonly value316: Dynamic; readonly value328: Dynamic; readonly value329: Dynamic; readonly value330: Dynamic; readonly value332: Dynamic; readonly value339: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic }, files?: Dynamic,
+export function placeDroppedImages(deps: { readonly focusedFile: Dynamic; readonly selection: Dynamic; readonly setSelection: Dynamic; readonly artboardEntries: Dynamic; readonly showDragToast: Dynamic; readonly playingFile: Dynamic; readonly addAnnotation: Dynamic; readonly setPendingPictures: Dynamic; readonly pendingPictures: Dynamic; readonly pictureSequence: Dynamic; readonly findDropArtboard: Dynamic; readonly canvasTool: Dynamic; readonly clearFramePick: Dynamic; readonly manifest: Dynamic; readonly activePage: Dynamic }, files?: Dynamic,
         dropX?: Dynamic,
         dropY?: Dynamic,
         sourceLabel?: Dynamic,
@@ -51,15 +51,15 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
         let cancelGhosts: Dynamic = (): Dynamic => {};
         trackEmbeddedWrite(
           (async (): Promise<Dynamic> => {
-            let targetArtboard: Dynamic = deps.value332(dropX, dropY, targetHint);
-            if (targetArtboard != null && targetArtboard.file === deps.value271.current) {
-              deps.value188(
+            let targetArtboard: Dynamic = deps.findDropArtboard(dropX, dropY, targetHint);
+            if (targetArtboard != null && targetArtboard.file === deps.playingFile.current) {
+              deps.showDragToast(
                 uiMessage("canvas.designCanvas.nothingAddedThatArtboardIs"),
               );
               return;
             }
             if (targetHint != null && !targetArtboard) {
-              deps.value188(uiMessage("canvas.designCanvas.couldNotPlaceTheValue1", { value1: uiOperation(sourceLabel) }));
+              deps.showDragToast(uiMessage("canvas.designCanvas.couldNotPlaceImage", { source: uiOperation(sourceLabel) }));
               return;
             }
             let placeInArtboard: Dynamic = (
@@ -104,7 +104,7 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                   density: null,
                 }),
               ),
-              pageId: Dynamic = deps.value80.current,
+              pageId: Dynamic = deps.activePage.current,
               computePlacements: Dynamic = (shouldSkip?: Dynamic): Dynamic => {
                 let slotCounter: Dynamic = 0,
                   nextX: Dynamic = 0,
@@ -256,9 +256,9 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
               (rejection?: Dynamic): Dynamic => rejection != null,
             ).length;
             length > 0 &&
-              deps.value188(
+              deps.showDragToast(
                 length === files.length
-                  ? uiMessage("canvas.designCanvas.couldnTUseTheValue1", { value1: uiOperation(sourceLabel) }) +
+                  ? uiMessage("canvas.designCanvas.couldNotUseImageFile", { source: uiOperation(sourceLabel) }) +
                       (files.length > 1 ? uiMessage("canvas.designCanvas.s") : " \u2014 ") +
                       [
                         ...new Set(
@@ -320,15 +320,15 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                       "data-dc-drop": null,
                     })) ||
                       (await clearDropMark(),
-                      deps.value188(
+                      deps.showDragToast(
                         uiMessage("canvas.designCanvas.imageKeptAsAnEmbedded"),
                       ));
                   })
                   .catch(
                     async (): Promise<Dynamic> => (
                       await clearDropMark(),
-                      deps.value188(
-                        uiMessage("canvas.designCanvas.imageUploadFailedTheValue1", { value1: uiOperation(sourceLabel) }),
+                      deps.showDragToast(
+                        uiMessage("canvas.designCanvas.imageUploadFailedPreviewKept", { source: uiOperation(sourceLabel) }),
                       ),
                       false
                     ),
@@ -342,22 +342,22 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
             if (!targetArtboard) {
               let availableSlots: Dynamic =
                 annotationLimit -
-                (deps.value73.current.annotations ?? []).length -
-                deps.value329.current.length;
+                (deps.manifest.current.annotations ?? []).length -
+                deps.pendingPictures.current.length;
               if (availableSlots <= 0) {
                 cancelGhosts();
-                deps.value188(
+                deps.showDragToast(
                   uiMessage("canvas.designCanvas.thisCanvasIsAtIts2") +
                     String(annotationLimit) +
                     ").",
                 );
                 return;
               }
-              let currentPageId: Dynamic = deps.value80.current,
+              let currentPageId: Dynamic = deps.activePage.current,
                 state: Dynamic = {
-                  sel: deps.selectionRef.current,
-                  tool: deps.value339.current,
-                  focus: deps.focusedFileRef.current,
+                  sel: deps.selection.current,
+                  tool: deps.canvasTool.current,
+                  focus: deps.focusedFile.current,
                 },
                 droppedSelection: Dynamic = null,
                 placedNotes: Dynamic = [],
@@ -370,10 +370,10 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                   let unplacedCount: Dynamic = placedCount - placedNotes.length,
                     placedSummary: Dynamic =
                       placedNotes.length === 1
-                        ? uiMessage("canvas.designCanvas.pictureFromTheValue1Image", { value1: uiOperation(sourceLabel) })
+                        ? uiMessage("canvas.designCanvas.pictureFromImage", { source: uiOperation(sourceLabel) })
                         : `${placedNotes.length} pictures from the ${sourceLabel} images`,
                     unplacedMessage: Dynamic = `${unplacedCount} of the ${sourceLabel} images ${unplacedCount === 1 ? "was" : "were"} not placed.`;
-                  unplacedCount > 0 && deps.value188(unplacedMessage);
+                  unplacedCount > 0 && deps.showDragToast(unplacedMessage);
                   announce(
                     placedSummary +
                       (unplacedCount > 0 ? "; " + unplacedMessage.slice(0, -1) : "") +
@@ -401,7 +401,7 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                   ((nextX = Math.round(dropX - placedWidth / 2)),
                   (nextY = Math.round(dropY - placedHeight / 2)));
                 let pendingPicture: Dynamic = {
-                  key: "pp-" + String(++deps.value330.current),
+                  key: "pp-" + String(++deps.pictureSequence.current),
                   x: nextX,
                   y: nextY,
                   w: placedWidth,
@@ -409,12 +409,12 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                   url: preview.url,
                   page: currentPageId,
                 };
-                deps.value328((pictures?: Dynamic): Dynamic => [...pictures, pendingPicture]);
+                deps.setPendingPictures((pictures?: Dynamic): Dynamic => [...pictures, pendingPicture]);
                 settleGhost(fileIndex, "replaced");
                 markDropPerformance("insert");
                 let removePendingPicture: Dynamic = (): Dynamic => {
                   markDropPerformance("upload");
-                  deps.value328(
+                  deps.setPendingPictures(
                     (pictures?: Dynamic): Dynamic =>
                       pictures.filter(
                         (picture?: Dynamic): Dynamic => picture !== pendingPicture,
@@ -432,12 +432,12 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                     removePendingPicture();
                     let uploadedSrc: Dynamic = validatedImageSrc(src);
                     if (uploadedSrc === null) {
-                      deps.value188(
-                        uiMessage("canvas.designCanvas.couldNotPlaceTheValue12", { value1: uiOperation(sourceLabel) }),
+                      deps.showDragToast(
+                        uiMessage("canvas.designCanvas.couldNotPlaceImageHere", { source: uiOperation(sourceLabel) }),
                       );
                       return finishUpload();
                     }
-                    let createdNote: Dynamic = deps.value316.current(
+                    let createdNote: Dynamic = deps.addAnnotation.current(
                       {
                         kind: "image",
                         x: pendingPicture.x,
@@ -452,7 +452,7 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                           ),
                         ),
                         ...(currentPageId === "" ||
-                        currentPageId === (deps.value73.current.pages?.[0]?.id ?? "")
+                        currentPageId === (deps.manifest.current.pages?.[0]?.id ?? "")
                           ? {}
                           : {
                               page: currentPageId,
@@ -467,24 +467,24 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                       return false;
                     }
                     placedNotes.push(createdNote);
-                    (deps.selectionRef.current === state.sel ||
-                      deps.selectionRef.current === droppedSelection) &&
-                      deps.value339.current === state.tool &&
-                      deps.focusedFileRef.current === state.focus &&
-                      deps.value80.current === currentPageId &&
+                    (deps.selection.current === state.sel ||
+                      deps.selection.current === droppedSelection) &&
+                      deps.canvasTool.current === state.tool &&
+                      deps.focusedFile.current === state.focus &&
+                      deps.activePage.current === currentPageId &&
                       ((droppedSelection = selectionFromBoards({
                         files: emptyBoardSelection.files,
                         notes: new Set(placedNotes),
                       })),
-                      (deps.selectionRef.current = droppedSelection),
-                      deps.value62(),
+                      (deps.selection.current = droppedSelection),
+                      deps.clearFramePick(),
                       deps.setSelection(droppedSelection));
                     finishUpload();
                   }),
                 ).catch((): Dynamic => {
                   removePendingPicture();
-                  deps.value188(
-                    uiMessage("canvas.designCanvas.couldnTUseTheValue12", { value1: uiOperation(sourceLabel) }),
+                  deps.showDragToast(
+                    uiMessage("canvas.designCanvas.imageNotPlaced", { source: uiOperation(sourceLabel) }),
                   );
                   finishUpload();
                 });
@@ -494,7 +494,7 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
               cancelGhosts();
               let previewCount: Dynamic = previews.filter(Boolean).length;
               placedCount < previewCount &&
-                deps.value188(
+                deps.showDragToast(
                   uiMessage("canvas.designCanvas.placingTheFirst") +
                     String(placedCount) +
                     " \u2014 this canvas is at its limit for notes and shapes (" +
@@ -503,10 +503,10 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                 );
               return;
             }
-            let entry: Dynamic = deps.value177.current.get(targetArtboard.file);
+            let entry: Dynamic = deps.artboardEntries.current.get(targetArtboard.file);
             if (!entry) {
               cancelGhosts();
-              deps.value188(uiMessage("canvas.designCanvas.couldNotPlaceTheValue1", { value1: uiOperation(sourceLabel) }));
+              deps.showDragToast(uiMessage("canvas.designCanvas.couldNotPlaceImage", { source: uiOperation(sourceLabel) }));
               return;
             }
             let index: Dynamic = 0;
@@ -559,13 +559,13 @@ export function placeDroppedImages(deps: { readonly focusedFileRef: Dynamic; rea
                       ? `; ${length} of the ${sourceLabel} files couldn't be used`
                       : ""),
                 )
-              : deps.value188(uiMessage("canvas.designCanvas.couldNotPlaceTheValue1", { value1: uiOperation(sourceLabel) }));
+              : deps.showDragToast(uiMessage("canvas.designCanvas.couldNotPlaceImage", { source: uiOperation(sourceLabel) }));
           })().finally((): Dynamic => cancelGhosts()),
         );
       }
 
 /** 视频文件拖入画布或画板时运行：探测视频、生成封面、上传后作为画布视频或画板内视频元素插入，处理数量上限与失败提示。 */
-export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; readonly selectionRef: Dynamic; readonly setSelection: Dynamic; readonly value177: Dynamic; readonly value188: Dynamic; readonly value271: Dynamic; readonly value316: Dynamic; readonly value329: Dynamic; readonly value332: Dynamic; readonly value339: Dynamic; readonly value62: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic }, files?: Dynamic,
+export function placeDroppedVideos(deps: { readonly focusedFile: Dynamic; readonly selection: Dynamic; readonly setSelection: Dynamic; readonly artboardEntries: Dynamic; readonly showDragToast: Dynamic; readonly playingFile: Dynamic; readonly addAnnotation: Dynamic; readonly pendingPictures: Dynamic; readonly findDropArtboard: Dynamic; readonly canvasTool: Dynamic; readonly clearFramePick: Dynamic; readonly manifest: Dynamic; readonly activePage: Dynamic }, files?: Dynamic,
       dropX?: Dynamic,
       dropY?: Dynamic,
       sourceLabel?: Dynamic,
@@ -575,36 +575,36 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
       let cancelGhosts: Dynamic = (): Dynamic => {};
       trackEmbeddedWrite(
         (async (): Promise<Dynamic> => {
-          let targetArtboard: Dynamic = deps.value332(dropX, dropY, targetHint);
-          if (targetArtboard != null && targetArtboard.file === deps.value271.current) {
-            deps.value188(
+          let targetArtboard: Dynamic = deps.findDropArtboard(dropX, dropY, targetHint);
+          if (targetArtboard != null && targetArtboard.file === deps.playingFile.current) {
+            deps.showDragToast(
               uiMessage("canvas.designCanvas.nothingAddedThatArtboardIs"),
             );
             return;
           }
           if (targetHint != null && !targetArtboard) {
-            deps.value188(
-              uiMessage("canvas.designCanvas.couldNotPlaceTheValue13", { value1: uiOperation(sourceLabel) }),
+            deps.showDragToast(
+              uiMessage("canvas.designCanvas.videoArtboardGone", { source: uiOperation(sourceLabel) }),
             );
             return;
           }
           if (
             targetArtboard &&
-            deps.value177.current.get(targetArtboard.file)?.isReady() !== true
+            deps.artboardEntries.current.get(targetArtboard.file)?.isReady() !== true
           ) {
-            deps.value188(
+            deps.showDragToast(
               uiMessage("canvas.designCanvas.nothingAddedThatArtboardIsn"),
             );
             return;
           }
-          if (targetArtboard && deps.value177.current.get(targetArtboard.file)?.holdsDeck()) {
-            deps.value188(CanvasWorkingStateHandler("artboard"));
+          if (targetArtboard && deps.artboardEntries.current.get(targetArtboard.file)?.holdsDeck()) {
+            deps.showDragToast(CanvasWorkingStateHandler("artboard"));
             return;
           }
           let values: Dynamic = new Set(),
             reportProblem: Dynamic = (message?: Dynamic): Dynamic => {
               values.add(message);
-              deps.value188([...values].join(" "));
+              deps.showDragToast([...values].join(" "));
             },
             acceptedFiles: Dynamic = files.filter((file?: Dynamic): Dynamic => {
               let refusal: Dynamic = videoUploadRefusal(file);
@@ -618,17 +618,17 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
             );
           acceptedFiles.length > uploadFiles.length &&
             reportProblem(
-              uiMessage("canvas.designCanvas.addingTheFirstValue1Videos", { value1: String(maxVideosPerDrop) }),
+              uiMessage("canvas.designCanvas.addingFirstVideos", { count: String(maxVideosPerDrop) }),
             );
           if (uploadFiles.length === 0) return;
           if (
             !targetArtboard &&
-            (deps.value73.current.annotations ?? []).length +
-              deps.value329.current.length +
+            (deps.manifest.current.annotations ?? []).length +
+              deps.pendingPictures.current.length +
               uploadFiles.length >
               annotationLimit
           ) {
-            deps.value188(
+            deps.showDragToast(
               uiMessage("canvas.designCanvas.thisCanvasIsAtIts2") +
                 String(annotationLimit) +
                 ").",
@@ -636,11 +636,11 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
             return;
           }
           markDropPerformance("received");
-          let pageId: Dynamic = deps.value80.current,
+          let pageId: Dynamic = deps.activePage.current,
             state: Dynamic = {
-              sel: deps.selectionRef.current,
-              tool: deps.value339.current,
-              focus: deps.focusedFileRef.current,
+              sel: deps.selection.current,
+              tool: deps.canvasTool.current,
+              focus: deps.focusedFile.current,
             },
             nextX: Dynamic = null,
             computePlacement: Dynamic = (
@@ -812,7 +812,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
               if (posterSrc === null) {
                 settleGhost(fileIndex, "cancel");
                 reportProblem(
-                  uiMessage("canvas.designCanvas.couldnTStoreAStill2", { value1: uiOperation(sourceLabel) }),
+                  uiMessage("canvas.designCanvas.couldNotStoreVideoStill", { source: uiOperation(sourceLabel) }),
                 );
                 continue;
               }
@@ -836,7 +836,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
                 createdNote: Dynamic =
                   posterSrc === null || videoSrc === null
                     ? null
-                    : deps.value316.current(
+                    : deps.addAnnotation.current(
                         {
                           kind: "image",
                           x: placement.x,
@@ -849,7 +849,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
                             videoFileTitle(uploadFiles[fileIndex]),
                           ),
                           ...(pageId === "" ||
-                          pageId === (deps.value73.current.pages?.[0]?.id ?? "")
+                          pageId === (deps.manifest.current.pages?.[0]?.id ?? "")
                             ? {}
                             : {
                                 page: pageId,
@@ -861,25 +861,25 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
                       );
               if (createdNote === null) {
                 settleGhost(fileIndex, "cancel");
-                (deps.value73.current.annotations ?? []).length <
+                (deps.manifest.current.annotations ?? []).length <
                   annotationLimit &&
                   reportProblem(
-                    uiMessage("canvas.designCanvas.couldnTAddTheValue1", { value1: uiOperation(sourceLabel) }),
+                    uiMessage("canvas.designCanvas.couldNotAddVideo", { source: uiOperation(sourceLabel) }),
                   );
                 continue;
               }
               items.push(createdNote);
-              (deps.selectionRef.current === state.sel ||
-                deps.selectionRef.current === droppedSelection) &&
-                deps.value339.current === state.tool &&
-                deps.focusedFileRef.current === state.focus &&
-                deps.value80.current === pageId &&
+              (deps.selection.current === state.sel ||
+                deps.selection.current === droppedSelection) &&
+                deps.canvasTool.current === state.tool &&
+                deps.focusedFile.current === state.focus &&
+                deps.activePage.current === pageId &&
                 ((droppedSelection = selectionFromBoards({
                   files: emptyBoardSelection.files,
                   notes: new Set(items),
                 })),
-                (deps.selectionRef.current = droppedSelection),
-                deps.value62(),
+                (deps.selection.current = droppedSelection),
+                deps.clearFramePick(),
                 deps.setSelection(droppedSelection));
               settleGhost(fileIndex, "landed");
               landedCount++;
@@ -891,9 +891,9 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
               attempt < 120 &&
               !isEmbedFrozen() &&
               ((artboardHandle =
-                targetArtboard.file === deps.value271.current
+                targetArtboard.file === deps.playingFile.current
                   ? undefined
-                  : deps.value177.current.get(targetArtboard.file)),
+                  : deps.artboardEntries.current.get(targetArtboard.file)),
               !artboardHandle);
               attempt++
             )
@@ -926,7 +926,7 @@ export function placeDroppedVideos(deps: { readonly focusedFileRef: Dynamic; rea
               settleGhost(fileIndex, "cancel");
               reportProblem(
                 artboardHandle
-                  ? uiMessage("canvas.designCanvas.couldNotPlaceTheValue14", { value1: uiOperation(sourceLabel) })
+                  ? uiMessage("canvas.designCanvas.couldNotPlaceVideo", { source: uiOperation(sourceLabel) })
                   : uiMessage("canvas.designCanvas.theVideoUploadedButIts"),
               );
               continue;

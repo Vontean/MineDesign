@@ -6,7 +6,7 @@ import {
 import { load_react } from "../../dependencies";
 import { ColorEffectButton, PropertyEditorPopover, RemovePropertyButton, ShadowEditor } from "./effect-popup";
 import { PropertyNumberRow, PropertyTextRow } from "./rows";
-import { asFiniteStyleNumber, asStyleString, clampStyleRangeField, PropertiesStyleBagItems, PropertiesStyleBagItems_2 as effectRangeFields, propertyDefaultEditorValue, propertyValidatorForNode, reactPropertiesStyleBag, shadowEffectLabel, styleRangeField, styleRangeFieldValue } from "./style-bag";
+import { asFiniteStyleNumber, asStyleString, clampStyleRangeField, PropertiesStyleBagItems, filterRangeFields as effectRangeFields, propertyDefaultEditorValue, propertyValidatorForNode, reactPropertiesStyleBag, shadowEffectLabel, styleRangeField, styleRangeFieldValue } from "./style-bag";
 import { validateStyleColor } from "../style-schema/color-and-font";
 import { shadowFieldBounds } from "../style-schema/shadow";
 import { toModuleNamespace } from "../../module-helpers";

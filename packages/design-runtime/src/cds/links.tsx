@@ -9,7 +9,7 @@ var CdsLinksPattern: Dynamic;
 var initializeCdsLinks: Dynamic;
 var CdsLinksSubscribers: Dynamic;
 var CdsLinksOpenerReferrerPattern: Dynamic;
-var initializeCdsLinks_2: Dynamic;
+var initializeLinkTargetPatterns: Dynamic;
 var reactCdsLinks: Dynamic;
 var LinkRouterContext: Dynamic;
 var controlCharPattern: Dynamic;
@@ -412,27 +412,15 @@ export {
   CdsLinksOnPointerEnterOnPointerLeaveOnPointerDownConfig,
   CdsLinksOpenerReferrerPattern,
   CdsLinksPattern,
-  absoluteUrlPattern as CdsLinksPattern_10,
-  controlCharPattern as CdsLinksPattern_2,
-  leadingWhitespacePattern as CdsLinksPattern_3,
-  protocolRelativePattern as CdsLinksPattern_4,
-  singleLeadingSlashPattern as CdsLinksPattern_5,
-  relativePathPattern as CdsLinksPattern_6,
-  dotSegmentPattern as CdsLinksPattern_7,
-  dotSegmentOnlyPattern as CdsLinksPattern_8,
-  backslashOrEncodedDotPattern as CdsLinksPattern_9,
   CdsLinksSubscribers,
-  intentExtraKeys as CdsLinksSubscribers_2,
-  trustedAndroidPackages as CdsLinksSubscribers_3,
   CdsLinksVscodeCursorPattern,
-  vscodeSettingsUrlPattern as CdsLinksVscodeCursorPattern_2,
   classifyLinkDestination,
   composeEventHandlers,
   getExternalLinkRel,
   getLinkRel,
   hasUnsafeNetworkPath,
   initializeCdsLinks,
-  initializeCdsLinks_2,
+  initializeLinkTargetPatterns,
   initializeLinkRouter,
   isBlockedHref,
   isModifiedClick,
@@ -463,7 +451,7 @@ export function installCdsLinks(): () => void {
     initializeCdsLinks = initializeOnce((): Dynamic => {
       CdsLinksPattern = /[\t\n\r]/g;
     });
-    initializeCdsLinks_2 = initializeOnce((): Dynamic => {
+    initializeLinkTargetPatterns = initializeOnce((): Dynamic => {
       CdsLinksSubscribers = new Set(["_self", "_parent", "_top"]);
       CdsLinksOpenerReferrerPattern = /^no(?:opener|referrer)$/i;
     });
@@ -471,7 +459,7 @@ export function installCdsLinks(): () => void {
       "use client";
 
       initializeCdsLinks();
-      initializeCdsLinks_2();
+      initializeLinkTargetPatterns();
       reactCdsLinks = toModuleNamespace(load_react());
       LinkRouterContext = (0, reactCdsLinks.createContext)(undefined);
       controlCharPattern = /[\x00-\x1f\x7f-\x9f]/;

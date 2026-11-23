@@ -7,8 +7,9 @@ import { emitEditorEvent } from "../events/runtime";
 import { artboardComponentName, parseDcHtmlDocument, replaceDcTemplate, sameDcTemplate } from "../html/dc-document";
 import { getDcPropsJson, setDcScript } from "../html/dc-props";
 import { DcEditorModel } from "./dc-editor-model";
+import { loadDcModelEntry } from "./load-entry";
 import { consumeLocalFileEcho, expectLocalFileEcho, markLocalFileChange, normalizeProjectFilePath } from "./file-echoes";
-import { isRecentlyEditedFile, ModelHistoryRebaseDelete, ModelHistoryRebaseHandler_2, ModelHistoryRebaseHandler_3, ModelHistoryRebaseUndo, rebaseModelHistory } from "./history-rebase";
+import { isRecentlyEditedFile, ModelHistoryRebaseDelete, isHistoryRebaseEnabled, captureHistoryRebaseNow, ModelHistoryRebaseUndo, rebaseModelHistory } from "./history-rebase";
 import { adoptModelVersion, DcModelKey, getPreDragBaseline, ModelModelStateConstant, ModelModelStateDataDcDraggingDataDcDragParentDataDcDragFollowerValues, rebuildModelTemplate, recordModelUndo, serializeAsyncFileTask, serializeStableModel, warnUnreadableDcDocument } from "./model-state";
 import { clearSavedPendingProps, getPendingPropKeys } from "./pending-props";
 import { publishModelChanges } from "./publishing";
@@ -85,99 +86,17 @@ function useDcModel(
       [],
     ),
     ensureModel: Dynamic = (0, reactOutlineAnnotations.useCallback)(
-      async (name?: Dynamic): Promise<Dynamic> => {
-        let entry: Dynamic = entriesRef.current.get(name);
-        if (entry) return entry;
-        if (nonDcFileRef.current) {
-          if (name !== rootName) return null;
-          let liveBody: Dynamic = await optionsRef.current.fetchLiveBody?.(rootName);
-          if (liveBody == null) return null;
-          let liveModel: Dynamic = new DcEditorModel(liveBody, {
-              raw: true,
-            }),
-            liveEntry: Dynamic = {
-              path: filePath,
-              src: "",
-              model: liveModel,
-              originalTemplate: liveModel.serialize(),
-              undo: [],
-              redo: [],
-              undoFloor: undoFloorsRef.current.get(name) ?? 0,
-              dirty: false,
-            },
-            racedLiveEntry: Dynamic = entriesRef.current.get(name);
-          return racedLiveEntry || (entriesRef.current.set(name, liveEntry), liveEntry);
-        }
-        let relativePath: Dynamic = resolveFilePath(name),
-          current: Dynamic = entriesRef.current,
-          historyKeeper: Dynamic =
-            name === rootName ? optionsRef.current.historyKeeper : undefined,
-          isStillCurrent: Dynamic = (): Dynamic =>
-            isMountedRef.current && entriesRef.current === current;
-        historyKeeper?.holds(relativePath) &&
-          !(await historyKeeper.whenSettled(relativePath)) &&
-          isStillCurrent() &&
-          historyKeeper.drop(relativePath, "unsaved");
-        let fileSource: Dynamic, fileVersion: Dynamic;
-        try {
-          if (projectFilesystem.readFileWithVersion) {
-            let readResult: Dynamic =
-              await projectFilesystem.readFileWithVersion(
-                `${projectPath}/${relativePath}`,
-              );
-            fileSource = readResult.content;
-            fileVersion = readResult.version;
-          } else
-            fileSource = await projectFilesystem.readFile(
-              `${projectPath}/${relativePath}`,
-            );
-        } catch (readError: Dynamic) {
-          console.error("[dc-model] failed to read", relativePath, readError);
-          historyKeeper && isStillCurrent() && historyKeeper.drop(relativePath, "load");
-          return null;
-        }
-        let parsedDocument: Dynamic = parseDcHtmlDocument(fileSource);
-        if (!parsedDocument) {
-          warnUnreadableDcDocument(
-            projectPath + "/" + relativePath,
-            fileSource,
-            "its elements cannot be listed, selected or edited",
-          );
-          historyKeeper && isStillCurrent() && historyKeeper.drop(relativePath, "load");
-          return null;
-        }
-        let fileModel: Dynamic = new DcEditorModel(parsedDocument.template, {
-            raw: false,
-          }),
-          newEntry: Dynamic = {
-            path: relativePath,
-            src: fileSource,
-            model: fileModel,
-            originalTemplate: fileModel.serialize(),
-            undo: [],
-            redo: [],
-            undoFloor: undoFloorsRef.current.get(name) ?? 0,
-            dirty: false,
-            ...(fileVersion !== undefined
-              ? {
-                  adoptedVersion: fileVersion,
-                  baseVersion: fileVersion,
-                }
-              : {}),
-          },
-          racedFileEntry: Dynamic = entriesRef.current.get(name);
-        if (racedFileEntry) return racedFileEntry;
-        let restoredHistory: Dynamic =
-          historyKeeper && isStillCurrent()
-            ? historyKeeper.take(relativePath, fileSource, optionsRef.current.historyEpoch)
-            : null;
-        restoredHistory &&
-          ((newEntry.undo = restoredHistory.undo),
-          (newEntry.redo = restoredHistory.redo),
-          (newEntry.undoFloor = restoredHistory.undoFloor));
-        entriesRef.current.set(name, newEntry);
-        return newEntry;
-      },
+      (name?: Dynamic): Promise<Dynamic> => loadDcModelEntry({
+          get entriesRef() { return entriesRef; },
+          get nonDcFileRef() { return nonDcFileRef; },
+          get rootName() { return rootName; },
+          get optionsRef() { return optionsRef; },
+          get filePath() { return filePath; },
+          get undoFloorsRef() { return undoFloorsRef; },
+          get resolveFilePath() { return resolveFilePath; },
+          get isMountedRef() { return isMountedRef; },
+          get projectPath() { return projectPath; },
+        }, name),
       [filePath, resolveFilePath, projectPath, rootName],
     ),
     pushLive: Dynamic = (0, reactOutlineAnnotations.useCallback)(
@@ -293,7 +212,7 @@ function useDcModel(
         if (!entry) return;
         entry.dirty = true;
         entry.previewBaseline = undefined;
-        ModelHistoryRebaseHandler_3();
+        captureHistoryRebaseNow();
         editCountsRef.current.set(name, (editCountsRef.current.get(name) ?? 0) + 1);
         optionsRef.current.onLocalEdit?.(name);
         let timers: Dynamic = editTimersRef.current,
@@ -372,7 +291,7 @@ function useDcModel(
             let rebaseHandled: Dynamic = ModelHistoryRebaseDelete(
               entry.path,
             );
-            ModelHistoryRebaseHandler_2() && !rebaseHandled
+            isHistoryRebaseEnabled() && !rebaseHandled
               ? ModelHistoryRebaseUndo(
                   name,
                   rebaseModelHistory(
@@ -988,7 +907,7 @@ function useDcModel(
             let rebaseHandled: Dynamic = ModelHistoryRebaseDelete(
               entry.path,
             );
-            ModelHistoryRebaseHandler_2() && !rebaseHandled
+            isHistoryRebaseEnabled() && !rebaseHandled
               ? ModelHistoryRebaseUndo(
                   name,
                   rebaseModelHistory(

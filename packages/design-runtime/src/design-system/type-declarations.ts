@@ -6,8 +6,8 @@ import {
 import { DesignSystemPublishedFilesAlias, DesignSystemPublishedFilesCache, DesignSystemPublishedFilesFromEntriesValue, DesignSystemPublishedFilesSubscribers } from "./published-files";
 import { parseCompleteDesignSystem } from "./token-parsing";
 import { getTypeDeclarationReferences, parseFileReferencesValue, parseFontFileReferences, PlatformExternalFilesItems } from "../platform/external-files";
-import { PlatformFileContentResolvedValue_10 as maxDeclarationFileLength, ProjectValue } from "../platform/file-content";
-import { loadReferencedFiles, parseFileReferences, PlatformFileReferencesLimit, PlatformFileReferencesLimit_2 as maxDeclarationFileCount } from "../platform/file-references";
+import { maxDeclarationFileBytes as maxDeclarationFileLength, ProjectValue } from "../platform/file-content";
+import { loadReferencedFiles, parseFileReferences, PlatformFileReferencesLimit, maxDeclarationFiles as maxDeclarationFileCount } from "../platform/file-references";
 import { getAssetsCapability, isBlobAssetUrl } from "../platform/image-upload";
 
 import { set_DesignSystemPublishedFilesAlias, set_DesignSystemPublishedFilesFromEntriesValue } from "./published-files";
@@ -29,11 +29,11 @@ var maxHtmlReferenceBytes: Dynamic;
 var ApplicationJsonValue: Dynamic;
 var DesignSystemTypeDeclarationsDelayMs: Dynamic;
 var DesignSystemTypeDeclarationsCache: Dynamic;
-var DesignSystemTypeDeclarationsCache_2: Dynamic;
+var blobUrlByHtmlHash: Dynamic;
 var pendingHtmlFetches: Dynamic;
-var DesignSystemTypeDeclarationsCache_3: Dynamic;
+var lastPublishAtByHtmlHash: Dynamic;
 var DesignSystemTypeDeclarationsLimit: Dynamic;
-var DesignSystemTypeDeclarationsCache_4: Dynamic;
+var htmlReferenceByArtboardPath: Dynamic;
 var htmlReferenceStore: Dynamic;
 var htmlReferenceListeners: Dynamic;
 var htmlReferenceUploadWaiters: Dynamic;
@@ -41,9 +41,9 @@ var oversizedHtmlHashes: Dynamic;
 var DesignSystemTypeDeclarationsReplace: Dynamic;
 var DesignSystemTypeDeclarationsGet: Dynamic;
 var isUploadUnavailable: Dynamic;
-var DesignSystemTypeDeclarationsDelayMs_2: Dynamic;
-var DesignSystemTypeDeclarationsCache_5: Dynamic;
-var DesignSystemTypeDeclarationsCache_6: Dynamic;
+var declarationDebounceMs: Dynamic;
+var pendingHtmlByArtboardPath: Dynamic;
+var publishTimerByArtboardPath: Dynamic;
 var uploadingArtboardPaths: Dynamic;
 var DesignSystemTypeDeclarationsGetLength: Dynamic;
 var DesignSystemsKey: Dynamic;
@@ -376,10 +376,10 @@ function getReferencedHtml(blobUrl?: Dynamic): Dynamic {
   );
 }
 function getArtboardHtmlReference(artboardPath?: Dynamic): Dynamic {
-  return DesignSystemTypeDeclarationsCache_4.get(artboardPath);
+  return htmlReferenceByArtboardPath.get(artboardPath);
 }
 function htmlReferenceForText(html?: Dynamic): Dynamic {
-  let entry: Dynamic = DesignSystemTypeDeclarationsCache_2.get(
+  let entry: Dynamic = blobUrlByHtmlHash.get(
     hashHtmlReference(html),
   );
   return entry !== undefined &&
@@ -395,7 +395,7 @@ function cacheReferencedHtml(blobUrl?: Dynamic, html?: Dynamic): Dynamic {
     DesignSystemTypeDeclarationsReplace(blobUrl),
     html,
   );
-  DesignSystemTypeDeclarationsCache_2.set(
+  blobUrlByHtmlHash.set(
     hashHtmlReference(html),
     DesignSystemTypeDeclarationsReplace(blobUrl),
   );
@@ -407,7 +407,7 @@ function setArtboardHtmlReferences(
   let blobUrlByKey: Dynamic = new Map();
   for (let [artboardPath, reference] of artboardReferences as Dynamic)
     isBlobAssetUrl(reference.ref) &&
-      (DesignSystemTypeDeclarationsCache_4.set(artboardPath, {
+      (htmlReferenceByArtboardPath.set(artboardPath, {
         ref: DesignSystemTypeDeclarationsReplace(reference.ref),
         bytes: reference.bytes,
       }),
@@ -419,7 +419,7 @@ function setArtboardHtmlReferences(
     for (let [
       cachedArtboardPath,
       { ref: referenceKey },
-    ] of DesignSystemTypeDeclarationsCache_4 as Dynamic)
+    ] of htmlReferenceByArtboardPath as Dynamic)
       DesignSystemTypeDeclarationsCache.has(referenceKey) ||
         pendingHtmlFetches.has(referenceKey) ||
         DesignSystemTypeDeclarationsGet(referenceKey) ||
@@ -428,21 +428,21 @@ function setArtboardHtmlReferences(
           (html?: Dynamic): Dynamic => {
             pendingHtmlFetches.delete(referenceKey);
             if (html === undefined) {
-              DesignSystemTypeDeclarationsCache_3.set(referenceKey, Date.now());
+              lastPublishAtByHtmlHash.set(referenceKey, Date.now());
               clearTimeout(htmlReferenceUploadWaiters);
               htmlReferenceUploadWaiters = setTimeout(
                 (): Dynamic =>
                   setArtboardHtmlReferences(
-                    new Map(DesignSystemTypeDeclarationsCache_4),
+                    new Map(htmlReferenceByArtboardPath),
                     fetcher,
                   ),
                 DesignSystemTypeDeclarationsLimit + 50,
               );
               return;
             }
-            DesignSystemTypeDeclarationsCache_3.delete(referenceKey);
+            lastPublishAtByHtmlHash.delete(referenceKey);
             cacheReferencedHtml(referenceKey, html);
-            let artboardPaths: Dynamic = [...DesignSystemTypeDeclarationsCache_4]
+            let artboardPaths: Dynamic = [...htmlReferenceByArtboardPath]
               .filter(([, reference]: Dynamic): Dynamic => reference.ref === referenceKey)
               .map(([artboardPath]: Dynamic): Dynamic => artboardPath);
             for (let artboardPath of artboardPaths as Dynamic)
@@ -498,18 +498,18 @@ async function fetchHtmlReference(
 }
 function scheduleHtmlUpload(artboardPath?: Dynamic, html?: Dynamic): Dynamic {
   htmlReferenceForText(html) === undefined &&
-    (DesignSystemTypeDeclarationsCache_5.set(artboardPath, html),
-    clearTimeout(DesignSystemTypeDeclarationsCache_6.get(artboardPath)),
-    DesignSystemTypeDeclarationsCache_6.set(
+    (pendingHtmlByArtboardPath.set(artboardPath, html),
+    clearTimeout(publishTimerByArtboardPath.get(artboardPath)),
+    publishTimerByArtboardPath.set(
       artboardPath,
       setTimeout((): Dynamic => {
         publishHtmlReference(artboardPath);
-      }, DesignSystemTypeDeclarationsDelayMs_2),
+      }, declarationDebounceMs),
     ));
 }
 async function publishHtmlReference(artboardPath?: Dynamic): Promise<Dynamic> {
-  DesignSystemTypeDeclarationsCache_6.delete(artboardPath);
-  let entry: Dynamic = DesignSystemTypeDeclarationsCache_5.get(artboardPath);
+  publishTimerByArtboardPath.delete(artboardPath);
+  let entry: Dynamic = pendingHtmlByArtboardPath.get(artboardPath);
   if (
     entry === undefined ||
     uploadingArtboardPaths.has(artboardPath)
@@ -522,7 +522,7 @@ async function publishHtmlReference(artboardPath?: Dynamic): Promise<Dynamic> {
   }
   if (oversizedHtmlHashes.has(htmlHash)) return;
   if (DesignSystemTypeDeclarationsGet(htmlHash)) {
-    DesignSystemTypeDeclarationsCache_6.set(
+    publishTimerByArtboardPath.set(
       artboardPath,
       setTimeout(
         (): Dynamic => {
@@ -530,7 +530,7 @@ async function publishHtmlReference(artboardPath?: Dynamic): Promise<Dynamic> {
         },
         DesignSystemTypeDeclarationsLimit -
           (Date.now() -
-            (DesignSystemTypeDeclarationsCache_3.get(htmlHash) ?? 0)) +
+            (lastPublishAtByHtmlHash.get(htmlHash) ?? 0)) +
           50,
       ),
     );
@@ -579,7 +579,7 @@ async function publishHtmlReference(artboardPath?: Dynamic): Promise<Dynamic> {
     cacheReferencedHtml(blobUrl, entry);
     htmlReferenceStore?.resync();
   } catch (error: Dynamic) {
-    DesignSystemTypeDeclarationsCache_3.set(htmlHash, Date.now());
+    lastPublishAtByHtmlHash.set(htmlHash, Date.now());
     console.warn(
       "design (board blob): upload of " +
         artboardPath +
@@ -587,8 +587,8 @@ async function publishHtmlReference(artboardPath?: Dynamic): Promise<Dynamic> {
         String(error).slice(0, 120),
     );
     !isUploadUnavailable &&
-      !DesignSystemTypeDeclarationsCache_6.has(artboardPath) &&
-      DesignSystemTypeDeclarationsCache_6.set(
+      !publishTimerByArtboardPath.has(artboardPath) &&
+      publishTimerByArtboardPath.set(
         artboardPath,
         setTimeout((): Dynamic => {
           publishHtmlReference(artboardPath);
@@ -596,13 +596,13 @@ async function publishHtmlReference(artboardPath?: Dynamic): Promise<Dynamic> {
       );
   } finally {
     uploadingArtboardPaths.delete(artboardPath);
-    DesignSystemTypeDeclarationsCache_5.get(artboardPath) !== entry &&
-      !DesignSystemTypeDeclarationsCache_6.has(artboardPath) &&
-      DesignSystemTypeDeclarationsCache_6.set(
+    pendingHtmlByArtboardPath.get(artboardPath) !== entry &&
+      !publishTimerByArtboardPath.has(artboardPath) &&
+      publishTimerByArtboardPath.set(
         artboardPath,
         setTimeout((): Dynamic => {
           publishHtmlReference(artboardPath);
-        }, DesignSystemTypeDeclarationsDelayMs_2),
+        }, declarationDebounceMs),
       );
   }
 }
@@ -1065,20 +1065,17 @@ export {
   designSystemName,
   DesignSystemsKey,
   DesignSystemTypeDeclarationsAlias,
-  declarationFetcher as DesignSystemTypeDeclarationsAlias_2,
-  htmlReferenceStore as DesignSystemTypeDeclarationsAlias_3,
   DesignSystemTypeDeclarationsAZaZAZaZPattern,
   DesignSystemTypeDeclarationsCache,
-  DesignSystemTypeDeclarationsCache_2,
-  DesignSystemTypeDeclarationsCache_3,
-  DesignSystemTypeDeclarationsCache_4,
-  DesignSystemTypeDeclarationsCache_5,
-  DesignSystemTypeDeclarationsCache_6,
+  blobUrlByHtmlHash,
+  lastPublishAtByHtmlHash,
+  htmlReferenceByArtboardPath,
+  pendingHtmlByArtboardPath,
+  publishTimerByArtboardPath,
   DesignSystemTypeDeclarationsDelayMs,
-  DesignSystemTypeDeclarationsDelayMs_2,
+  declarationDebounceMs,
   DesignSystemTypeDeclarationsElementCache,
   DesignSystemTypeDeclarationsFailedValue,
-  failedOverlayFiles as DesignSystemTypeDeclarationsFailedValue_2,
   DesignSystemTypeDeclarationsGet,
   DesignSystemTypeDeclarationsGetLength,
   DesignSystemTypeDeclarationsItems,
@@ -1091,16 +1088,8 @@ export {
   DesignSystemTypeDeclarationsRegistry,
   DesignSystemTypeDeclarationsReplace,
   DesignSystemTypeDeclarationsResolvedValue,
-  retryCooldownMs as DesignSystemTypeDeclarationsResolvedValue_2,
-  nextOverlayRetryAt as DesignSystemTypeDeclarationsResolvedValue_3,
-  maxHtmlReferenceBytes as DesignSystemTypeDeclarationsResolvedValue_4,
-  isUploadUnavailable as DesignSystemTypeDeclarationsResolvedValue_5,
   DesignSystemTypeDeclarationsRgbaHslaPattern,
   DesignSystemTypeDeclarationsSubscribers,
-  pendingHtmlFetches as DesignSystemTypeDeclarationsSubscribers_2,
-  htmlReferenceListeners as DesignSystemTypeDeclarationsSubscribers_3,
-  oversizedHtmlHashes as DesignSystemTypeDeclarationsSubscribers_4,
-  uploadingArtboardPaths as DesignSystemTypeDeclarationsSubscribers_5,
   DesignSystemTypeDeclarationsTextEncoder,
   fetchHtmlReference,
   getArtboardHtmlReference,
@@ -1167,26 +1156,26 @@ export function installDesignSystemTypeDeclarations(): () => void {
     ApplicationJsonValue = "application/json";
     DesignSystemTypeDeclarationsDelayMs = 15e3;
     DesignSystemTypeDeclarationsCache = new Map();
-    DesignSystemTypeDeclarationsCache_2 = new Map();
+    blobUrlByHtmlHash = new Map();
     pendingHtmlFetches = new Set();
-    DesignSystemTypeDeclarationsCache_3 = new Map();
+    lastPublishAtByHtmlHash = new Map();
     DesignSystemTypeDeclarationsLimit = 6e4;
-    DesignSystemTypeDeclarationsCache_4 = new Map();
+    htmlReferenceByArtboardPath = new Map();
     htmlReferenceListeners = new Set();
     oversizedHtmlHashes = new Set();
     DesignSystemTypeDeclarationsReplace = (path?: Dynamic): Dynamic =>
       path.replace(/^\//, "");
     DesignSystemTypeDeclarationsGet = (htmlHash?: Dynamic): Dynamic => {
-      let entry: Dynamic = DesignSystemTypeDeclarationsCache_3.get(htmlHash);
+      let entry: Dynamic = lastPublishAtByHtmlHash.get(htmlHash);
       return (
         entry !== undefined &&
         Date.now() - entry < DesignSystemTypeDeclarationsLimit
       );
     };
     isUploadUnavailable = false;
-    DesignSystemTypeDeclarationsDelayMs_2 = 800;
-    DesignSystemTypeDeclarationsCache_5 = new Map();
-    DesignSystemTypeDeclarationsCache_6 = new Map();
+    declarationDebounceMs = 800;
+    pendingHtmlByArtboardPath = new Map();
+    publishTimerByArtboardPath = new Map();
     uploadingArtboardPaths = new Set();
     DesignSystemTypeDeclarationsGetLength = (text?: Dynamic): Dynamic =>
       new TextEncoder().encode(text).length;

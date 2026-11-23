@@ -8,8 +8,8 @@ import { TextInput } from "../../cds/components/text-input";
 import { cn } from "../../cds/theme/class-names";
 import { classifyStyleValue, formatCssNumber, getFineUnitStep, parseCssNumber, roundCssNumber } from "../css/values";
 import { PropertyCssTextRow } from "./css-value-row";
-import { reactPropertiesDropShadowEditor_2 } from "./drop-shadow-editor";
-import { inspectorFieldDisplay, Value_6 } from "./inherited-field";
+import { reactForPropertyInspectorField } from "./drop-shadow-editor";
+import { inspectorFieldDisplay, emDashPlaceholder } from "./inherited-field";
 import { useLiveStyleScrub } from "./live-scrub";
 import { NumericInput } from "./numeric-input";
 import { PropertyRow } from "./row";
@@ -39,23 +39,23 @@ function PropertyTextInput({
 }: Dynamic): Dynamic {
   useUiLocale();
   let [text, setText]: Dynamic = (0,
-    reactPropertiesDropShadowEditor_2.useState)(display),
-    isFocusedRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+    reactForPropertyInspectorField.useState)(display),
+    isFocusedRef: Dynamic = (0, reactForPropertyInspectorField.useRef)(
       false,
     ),
-    isCancelledRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+    isCancelledRef: Dynamic = (0, reactForPropertyInspectorField.useRef)(
       false,
     ),
-    arrowCommittedTextRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+    arrowCommittedTextRef: Dynamic = (0, reactForPropertyInspectorField.useRef)(
       null,
     ),
-    isEditedRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+    isEditedRef: Dynamic = (0, reactForPropertyInspectorField.useRef)(
       false,
     );
-  (0, reactPropertiesDropShadowEditor_2.useEffect)((): Dynamic => {
+  (0, reactForPropertyInspectorField.useEffect)((): Dynamic => {
     (!isFocusedRef.current || !isEditedRef.current) && setText(display);
   }, [display]);
-  let hasEmptyPlaceholder: Dynamic = placeholder === Value_6 || placeholder === "";
+  let hasEmptyPlaceholder: Dynamic = placeholder === emDashPlaceholder || placeholder === "";
   return (
     <TextInput
       type={"text"}
@@ -134,17 +134,17 @@ function useFieldNumericArrowStep(props?: Dynamic): Dynamic {
       (isLiteral && parseCssNumber(text) != null) ||
       (classifyStyleValue(text).kind === "var" &&
         parseCssNumber(props.state.fallback) != null),
-    containerRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+    containerRef: Dynamic = (0, reactForPropertyInspectorField.useRef)(
       null,
     ),
-    hasFocusRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+    hasFocusRef: Dynamic = (0, reactForPropertyInspectorField.useRef)(
       false,
     ),
-    wasNumericRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+    wasNumericRef: Dynamic = (0, reactForPropertyInspectorField.useRef)(
       isNumeric,
     );
   (0,
-  reactPropertiesDropShadowEditor_2.useLayoutEffect)((): Dynamic => {
+  reactForPropertyInspectorField.useLayoutEffect)((): Dynamic => {
     if (
       wasNumericRef.current === isNumeric ||
       ((wasNumericRef.current = isNumeric), !hasFocusRef.current)
@@ -195,7 +195,7 @@ function PropertyCssNumberRow({
         unit: spec?.unit ?? "",
       });
   }
-  let isPointerDownRef: Dynamic = (0, reactPropertiesDropShadowEditor_2.useRef)(
+  let isPointerDownRef: Dynamic = (0, reactForPropertyInspectorField.useRef)(
       false,
     ),
     unit: Dynamic =
@@ -264,9 +264,9 @@ function PropertyCssNumberRow({
         value={liveValue ?? currentNumber}
         mixed={state.mixed && liveValue == null}
         placeholder={
-          displayNumber ? (String(roundCssNumber(displayNumber.value, displayNumber.unit)) + isFallbackUnit ? "" : displayNumber.unit) : (placeholderText === Value_6 ? (undefined) : (placeholderText))
+          displayNumber ? (String(roundCssNumber(displayNumber.value, displayNumber.unit)) + isFallbackUnit ? "" : displayNumber.unit) : (placeholderText === emDashPlaceholder ? (undefined) : (placeholderText))
         }
-        hint={Value_6}
+        hint={emDashPlaceholder}
         unit={
           unit && !state.mixed && (parsedValue != null || displayNumber != null)
             ? unit

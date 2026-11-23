@@ -4,11 +4,11 @@ import { useUiLocale } from '../../ui-locale.ts';
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { Icon, initializeComponentsIcon_2, popupSurfaceClassName } from "../components/icon";
+import { Icon, initializeIconSizeMetrics, popupSurfaceClassName } from "../components/icon";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
 import { CdsLayer, GLOBAL_LAYER_BASE, initializeOverlaysLayers } from "../overlays/layers";
-import { initializePlatformRootFontSize_2, PopupSurface } from "../platform/root-font-size";
-import { initializeSheetsStyles_2, useLabel } from "../sheets/styles";
+import { initializeRootFontSizeHooks, PopupSurface } from "../platform/root-font-size";
+import { initializeLabelsProviderContext, useLabel } from "../sheets/styles";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { initializeThemeSurfaces, surfaceBackgroundTokens } from "../theme/surfaces";
 import { initializeNpm__base_ui_react_oet, load_react, load_react_jsx_runtime, npm_Toast_Ty } from "../../dependencies";
@@ -25,8 +25,8 @@ var toastVariantIconNames: Dynamic;
 var toastVariantIconClasses: Dynamic;
 var toastViewportClasses: Dynamic;
 var ToastToastClassNames: Dynamic;
-var ToastToastClassNames_2: Dynamic;
-var ToastToastClassNames_3: Dynamic;
+var toastMessageClassName: Dynamic;
+var toastCloseButtonClassName: Dynamic;
 var ToastToastItems: Dynamic;
 var ToastContext: Dynamic;
 var ToastToastHandler: Dynamic;
@@ -138,7 +138,7 @@ function ToastCard({
                   size={"md"}
                 />)}
             </span>)}
-          <div className={ToastToastClassNames_2}>
+          <div className={toastMessageClassName}>
             <npm_Toast_Ty.Title
               className={"font-medium"}
               aria-atomic={"true"}
@@ -154,7 +154,7 @@ function ToastCard({
           </div>
           <npm_Toast_Ty.Close
             aria-label={dismissLabel}
-            className={ToastToastClassNames_3}
+            className={toastCloseButtonClassName}
             onClick={callback}
           >
             <Icon name={"X"} size={"sm"} />
@@ -185,7 +185,7 @@ function PinnedToastCard({
             size={"md"}
           />
         </span>
-        <div className={ToastToastClassNames_2}>
+        <div className={toastMessageClassName}>
           <div className={"font-medium"}>{pinned.title}</div>
           {pinned.description && (<div>{pinned.description}</div>)}
           {pinned.action && (<div className={"mt-pad-md"}>{pinned.action}</div>)}
@@ -194,7 +194,7 @@ function PinnedToastCard({
             type={"button"}
             aria-label={pinned.dismissLabel ?? (dismissLabel)}
             onClick={onDismiss}
-            className={ToastToastClassNames_3}
+            className={toastCloseButtonClassName}
           >
             <Icon name={"X"} size={"sm"} />
           </button>)}
@@ -616,16 +616,13 @@ export {
   ToastContext,
   ToastProvider,
   ToastToastClassNames,
-  ToastToastClassNames_2,
-  ToastToastClassNames_3,
+  toastMessageClassName,
+  toastCloseButtonClassName,
   ToastToastConstant,
   ToastToastHandler,
   ToastToastItems,
   ToastToastLimit,
   ToastToastNeutralWarningDangerConfig,
-  toastVariantTextClasses as ToastToastNeutralWarningDangerConfig_2,
-  toastVariantIconNames as ToastToastNeutralWarningDangerConfig_3,
-  toastVariantIconClasses as ToastToastNeutralWarningDangerConfig_4,
   ToastViewport,
   toastViewportClasses,
   useToastManager,
@@ -637,10 +634,10 @@ export function installCdsToastToast(): () => void {
 
       initializeHooksLayoutEffect();
       initializeClassNames();
-      initializeSheetsStyles_2();
+      initializeLabelsProviderContext();
       initializeOverlaysLayers();
-      initializePlatformRootFontSize_2();
-      initializeComponentsIcon_2();
+      initializeRootFontSizeHooks();
+      initializeIconSizeMetrics();
       initializeThemeSurfaces();
       reactToastToast = toModuleNamespace(
         load_react(),
@@ -680,8 +677,8 @@ export function installCdsToastToast(): () => void {
         "absolute w-full bottom-0 right-0 origin-bottom [--ty:calc(var(--toast-index)_*_-14px)] [--ts:calc(1_-_var(--toast-index)_*_0.04)] [transform:translateY(var(--ty))_scale(var(--ts))] transition-[transform,opacity] duration-base ease-out motion-reduce:transition-none data-[starting-style]:opacity-0 data-[starting-style]:[--ty:100%] data-[ending-style]:opacity-0 data-[ending-style]:[--ts:0.85] data-[limited]:opacity-0";
       ToastToastClassNames =
         "flex items-start gap-sm px-lg py-md overflow-hidden rounded-[inherit] text-body font-normal transition-[opacity,visibility] duration-base ease-out motion-reduce:transition-none data-[behind]:invisible data-[behind]:opacity-0";
-      ToastToastClassNames_2 = "min-w-0 flex-1 text-pretty break-words";
-      ToastToastClassNames_3 =
+      toastMessageClassName = "min-w-0 flex-1 text-pretty break-words";
+      toastCloseButtonClassName =
         "cds-reset -mx-1 -mb-1 -mt-0.5 shrink-0 rounded p-1 outline-none focus-visible:outline-hidden transition duration-fast hover:bg-fill-ghost-hover focus-visible:shadow-focus";
       ToastToastItems = [];
       ToastContext = (0, reactToastToast.createContext)(null);

@@ -12,7 +12,7 @@ import { createPreviewHandle } from "../../preview/evaluation";
 
 function useDcProps(hookOptions?: Dynamic): Dynamic {
   let {
-      webviewRef: webviewRef,
+      previewFrameRef: previewFrameRef,
       readyGen: readyGen,
       projectPath: projectPath,
       filePath: filePath,
@@ -58,7 +58,7 @@ function useDcProps(hookOptions?: Dynamic): Dynamic {
       setRootName(null);
       return;
     }
-    let previewHandle: Dynamic = createPreviewHandle(webviewRef.current);
+    let previewHandle: Dynamic = createPreviewHandle(previewFrameRef.current);
     if (!previewHandle) return;
     let isCancelled: Dynamic = false,
       bootCountAtStart: Dynamic = bootCountRef.current,
@@ -93,7 +93,7 @@ function useDcProps(hookOptions?: Dynamic): Dynamic {
       isCancelled = true;
       retryTimer !== null && clearTimeout(retryTimer);
     };
-  }, [enabled, readyGen, webviewRef, handleDcBooted]);
+  }, [enabled, readyGen, previewFrameRef, handleDcBooted]);
   (0, reactComponentsPropCache.useEffect)((): Dynamic => {
     setDraftValues({});
     propsMetaRef.current = {};
@@ -107,7 +107,7 @@ function useDcProps(hookOptions?: Dynamic): Dynamic {
   draftValuesRef.current = draftValues;
   (0, reactComponentsPropCache.useEffect)((): Dynamic => {
     if (!enabled || bootCount === 0 || !rootName) return;
-    let previewHandle: Dynamic = createPreviewHandle(webviewRef.current);
+    let previewHandle: Dynamic = createPreviewHandle(previewFrameRef.current);
     if (!previewHandle) return;
     let state: Dynamic = {};
     for (let [propName, meta] of Object.entries(propsMetaRef.current) as Dynamic)
@@ -122,7 +122,7 @@ function useDcProps(hookOptions?: Dynamic): Dynamic {
     previewHandle.executeJavaScriptUnchecked(
       `window.__dcSetProps&&window.__dcSetProps(${JSON.stringify(rootName)},${propsPayload})`,
     );
-  }, [enabled, bootCount, rootName, draftValues, webviewRef]);
+  }, [enabled, bootCount, rootName, draftValues, previewFrameRef]);
   let locationRef: Dynamic = (0, reactComponentsPropCache.useRef)({
     projectPath: projectPath,
     filePath: filePath,

@@ -22,38 +22,38 @@ async function fetchExportAsset(
       controller.abort();
     },
     value: Dynamic = setTimeout(callback, timeoutMs),
-    callback2: Dynamic = (): Dynamic => {
+    resetIdleTimeout: Dynamic = (): Dynamic => {
       clearTimeout(value);
       value = setTimeout(callback, timeoutMs);
     },
-    value2: Dynamic = setTimeout(callback, exportAssetAbsoluteTimeoutMs),
-    value3: Dynamic,
-    value4: Dynamic;
+    absoluteTimer: Dynamic = setTimeout(callback, exportAssetAbsoluteTimeoutMs),
+    response: Dynamic,
+    data: Dynamic;
   try {
-    value3 = await fetch(url, {
+    response = await fetch(url, {
       credentials: "same-origin",
       signal: controller.signal,
     });
-    callback2();
-    if (!value3.ok || value3.body === null)
-      value4 = value3.ok
-        ? new Uint8Array(await value3.arrayBuffer())
+    resetIdleTimeout();
+    if (!response.ok || response.body === null)
+      data = response.ok
+        ? new Uint8Array(await response.arrayBuffer())
         : new Uint8Array(0);
     else {
       let items: Dynamic = [],
         index: Dynamic = 0;
-      for (let value6: Dynamic = value3.body.getReader(); ; ) {
-        let { done: value7, value: value8 }: Dynamic = await value6.read();
-        if (value7) break;
-        callback2();
-        items.push(value8);
-        index += value8.length;
+      for (let reader: Dynamic = response.body.getReader(); ; ) {
+        let { done: done, value: chunk }: Dynamic = await reader.read();
+        if (done) break;
+        resetIdleTimeout();
+        items.push(chunk);
+        index += chunk.length;
       }
-      value4 = new Uint8Array(index);
-      let index2: Dynamic = 0;
-      for (let value6 of items as Dynamic) {
-        value4.set(value6, index2);
-        index2 += value6.length;
+      data = new Uint8Array(index);
+      let offset: Dynamic = 0;
+      for (let chunk of items as Dynamic) {
+        data.set(chunk, offset);
+        offset += chunk.length;
       }
     }
   } catch {
@@ -62,18 +62,18 @@ async function fetchExportAsset(
       : new Error("the download failed");
   } finally {
     clearTimeout(value);
-    clearTimeout(value2);
+    clearTimeout(absoluteTimer);
   }
-  if (!value3.ok)
-    throw new Error("the server answered " + String(value3.status));
-  let value5: Dynamic =
-    value3.headers.get("content-type")?.split(";")[0].trim().toLowerCase() ??
+  if (!response.ok)
+    throw new Error("the server answered " + String(response.status));
+  let mimeType: Dynamic =
+    response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() ??
     "";
-  if (value4.length === 0 || value5 === "text/html")
+  if (data.length === 0 || mimeType === "text/html")
     throw new Error("the server did not return the file");
   return {
-    data: value4,
-    type: value5,
+    data: data,
+    type: mimeType,
   };
 }
 async function mapWithConcurrency(
@@ -85,8 +85,8 @@ async function mapWithConcurrency(
     index: Dynamic = 0,
     callback: Dynamic = async (): Promise<Dynamic> => {
       for (; index < items.length; ) {
-        let value2: Dynamic = index++;
-        value[value2] = await mapper(items[value2]);
+        let itemIndex: Dynamic = index++;
+        value[itemIndex] = await mapper(items[itemIndex]);
       }
     };
   await Promise.all(
@@ -121,7 +121,7 @@ async function collectExportUploadedAssets(
   options: Dynamic = {},
 ): Promise<Dynamic> {
   let value: Dynamic = options.emulatorBlobUrls === true,
-    value2: Dynamic = options.maxBytes ?? 268435456,
+    maxBytes: Dynamic = options.maxBytes ?? 268435456,
     values: Dynamic = new Set(
       [...(options.taken ?? []), ...files.keys()].map(
         (input?: Dynamic): Dynamic => input.toLowerCase(),
@@ -129,141 +129,141 @@ async function collectExportUploadedAssets(
     ),
     entries: Dynamic = new Map(),
     items: Dynamic = [],
-    entries2: Dynamic = new Map(files),
-    entries3: Dynamic = new Map(),
-    items2: Dynamic = [],
-    values2: Dynamic = new Set(),
-    value3: Dynamic =
+    textFiles: Dynamic = new Map(files),
+    originalAssetBytes: Dynamic = new Map(),
+    missingAssets: Dynamic = [],
+    visitedReferences: Dynamic = new Set(),
+    sizeLimitReason: Dynamic =
       "it would take the export past " +
-      String(value2 >> 20) +
+      String(maxBytes >> 20) +
       " MB of uploaded files",
     text: Dynamic = "not downloaded, because an earlier download stalled",
     index: Dynamic = 0,
-    index2: Dynamic = 0,
+    downloadedBytes: Dynamic = 0,
     flag: Dynamic = false,
-    items3: Dynamic = [...files.values()];
-  for (; items3.length > 0; ) {
-    let entries6: Dynamic = new Map();
-    for (let value8 of items3 as Dynamic)
-      for (let [value9, value10] of findExportBlobReferences(
-        value8,
+    pendingSources: Dynamic = [...files.values()];
+  for (; pendingSources.length > 0; ) {
+    let references: Dynamic = new Map();
+    for (let source of pendingSources as Dynamic)
+      for (let [reference, blobId] of findExportBlobReferences(
+        source,
         value,
       ) as Dynamic)
-        values2.has(value9) || entries6.set(value9, value10);
-    items3 = [];
-    for (let value8 of entries6.keys() as Dynamic) values2.add(value8);
-    let value7: Dynamic = await mapWithConcurrency(
-      [...entries6.keys()],
+        visitedReferences.has(reference) || references.set(reference, blobId);
+    pendingSources = [];
+    for (let reference of references.keys() as Dynamic) visitedReferences.add(reference);
+    let results: Dynamic = await mapWithConcurrency(
+      [...references.keys()],
       exportAssetFetchConcurrency,
       async (input?: Dynamic): Promise<Dynamic> => {
         if (flag) return text;
-        if (index2 >= value2) return value3;
+        if (downloadedBytes >= maxBytes) return sizeLimitReason;
         try {
-          let value8: Dynamic = await transform(
+          let asset: Dynamic = await transform(
             input.startsWith("blob:") ? input : "/" + input,
           );
-          index2 += value8.data.length;
-          return value8;
-        } catch (value8: Dynamic) {
-          value8 instanceof ExportAssetFetchError && (flag = true);
-          return value8 instanceof Error ? value8.message : String(value8);
+          downloadedBytes += asset.data.length;
+          return asset;
+        } catch (error: Dynamic) {
+          error instanceof ExportAssetFetchError && (flag = true);
+          return error instanceof Error ? error.message : String(error);
         }
       },
     );
-    [...entries6].forEach(
-      ([input, input2]: Dynamic, options2?: Dynamic): Dynamic => {
-        let value8: Dynamic = value7[options2];
+    [...references].forEach(
+      ([input, blobId]: Dynamic, resultIndex?: Dynamic): Dynamic => {
+        let result: Dynamic = results[resultIndex];
         if (
-          typeof value8 == "string" ||
-          index + value8.data.length > value2
+          typeof result == "string" ||
+          index + result.data.length > maxBytes
         ) {
-          items2.push({
+          missingAssets.push({
             ref: input,
-            why: typeof value8 == "string" ? value8 : value3,
+            why: typeof result == "string" ? result : sizeLimitReason,
             usedIn: [],
           });
           return;
         }
-        index += value8.data.length;
-        let value9: Dynamic =
-            exportAssetExtensionsByMime[value8.type] ?? "bin",
-          value10: Dynamic = "assets/" + input2 + "." + value9;
+        index += result.data.length;
+        let extension: Dynamic =
+            exportAssetExtensionsByMime[result.type] ?? "bin",
+          assetPath: Dynamic = "assets/" + blobId + "." + extension;
         for (
           let count: Dynamic = 2;
-          values.has(value10.toLowerCase());
+          values.has(assetPath.toLowerCase());
           count++
         )
-          value10 = "assets/" + input2 + "-" + String(count) + "." + value9;
-        values.add(value10.toLowerCase());
-        entries.set(input, value10);
-        if (value8.type === "text/css" || value8.type === "text/javascript") {
-          let value11: Dynamic = new TextDecoder().decode(value8.data);
-          entries2.set(value10, value11);
-          entries3.set(value10, value8.data);
-          items3.push(value11);
+          assetPath = "assets/" + blobId + "-" + String(count) + "." + extension;
+        values.add(assetPath.toLowerCase());
+        entries.set(input, assetPath);
+        if (result.type === "text/css" || result.type === "text/javascript") {
+          let source: Dynamic = new TextDecoder().decode(result.data);
+          textFiles.set(assetPath, source);
+          originalAssetBytes.set(assetPath, result.data);
+          pendingSources.push(source);
         } else
           items.push({
-            name: value10,
-            data: value8.data,
+            name: assetPath,
+            data: result.data,
           });
       },
     );
   }
-  let value4: Dynamic = parentDirectoryOfExportPath(readBlob),
-    entries4: Dynamic = new Map();
-  for (let [value7, value8] of entries2 as Dynamic) {
-    let value9: Dynamic = /\.css$/i.test(value7)
-        ? parentDirectoryOfExportPath(value7)
-        : value4,
-      value10: Dynamic =
-        value9 === "" ? "./" : "../".repeat(value9.split("/").length),
-      value11: Dynamic = value8;
-    value11.includes("_blob/") &&
-      (value11 = value11.replace(
+  let defaultDirectory: Dynamic = parentDirectoryOfExportPath(readBlob),
+    rewrittenFiles: Dynamic = new Map();
+  for (let [filePath, source] of textFiles as Dynamic) {
+    let directory: Dynamic = /\.css$/i.test(filePath)
+        ? parentDirectoryOfExportPath(filePath)
+        : defaultDirectory,
+      relativePrefix: Dynamic =
+        directory === "" ? "./" : "../".repeat(directory.split("/").length),
+      rewrittenSource: Dynamic = source;
+    rewrittenSource.includes("_blob/") &&
+      (rewrittenSource = rewrittenSource.replace(
         projectBlobReferencePattern,
-        (input?: Dynamic, options2?: Dynamic, context?: Dynamic): Dynamic => {
+        (input?: Dynamic, prefix?: Dynamic, context?: Dynamic): Dynamic => {
           let entry: Dynamic = entries.get("_blob/" + context);
-          return entry === undefined ? input : options2 + value10 + entry;
+          return entry === undefined ? input : prefix + relativePrefix + entry;
         },
       ));
     value &&
-      value11.includes("blob:") &&
-      (value11 = value11.replace(
+      rewrittenSource.includes("blob:") &&
+      (rewrittenSource = rewrittenSource.replace(
         emulatorBlobReferencePattern,
         (input?: Dynamic): Dynamic => {
           let entry: Dynamic = entries.get(input);
-          return entry === undefined ? input : value10 + entry;
+          return entry === undefined ? input : relativePrefix + entry;
         },
       ));
-    entries4.set(value7, value11);
+    rewrittenFiles.set(filePath, rewrittenSource);
   }
-  let entries5: Dynamic = new Map(),
-    value5: Dynamic = items;
-  for (let [value7, value8] of entries4 as Dynamic)
-    files.has(value7)
-      ? entries5.set(value7, value8)
-      : value5.push({
-          name: value7,
+  let updatedSources: Dynamic = new Map(),
+    exportEntries: Dynamic = items;
+  for (let [filePath, rewrittenSource] of rewrittenFiles as Dynamic)
+    files.has(filePath)
+      ? updatedSources.set(filePath, rewrittenSource)
+      : exportEntries.push({
+          name: filePath,
           data:
-            value8 === entries2.get(value7) ? entries3.get(value7) : value8,
+            rewrittenSource === textFiles.get(filePath) ? originalAssetBytes.get(filePath) : rewrittenSource,
         });
-  for (let value7 of items2 as Dynamic)
-    value7.usedIn = [...entries2]
+  for (let missingAsset of missingAssets as Dynamic)
+    missingAsset.usedIn = [...textFiles]
       .filter(
         ([, input]: Dynamic): Dynamic =>
-          findExportBlobReferences(input, value).has(value7.ref),
+          findExportBlobReferences(input, value).has(missingAsset.ref),
       )
       .map(([input]: Dynamic): Dynamic => input);
-  let value6: Dynamic =
-    values2.size > 0 ||
+  let mentionsUploads: Dynamic =
+    visitedReferences.size > 0 ||
     [...files.values()].some(
       (input?: Dynamic): Dynamic => input.includes("_blob/"),
     );
   return {
-    sources: entries5,
-    entries: value5,
-    missing: items2,
-    mentionsUploads: value6,
+    sources: updatedSources,
+    entries: exportEntries,
+    missing: missingAssets,
+    mentionsUploads: mentionsUploads,
   };
 }
 export {

@@ -98,7 +98,7 @@ function ArtboardGuideRow({
           onOpenChange={onOpenChange}
           trigger={
             <ColorEffectButton
-              label={uiMessage("inspector.artboardGuides.guide", { value1: String(kindLabel) })}
+              label={uiMessage("inspector.artboardGuides.guide", { kind: String(kindLabel) })}
               color={resolvedGuide.color}
               text={artboardGuideDescription(resolvedGuide)}
               onClick={(clickEvent?: Dynamic): Dynamic =>
@@ -124,7 +124,7 @@ function ArtboardGuideRow({
         size={"sm"}
         iconOnly={true}
         icon={isHidden ? "EyeSlash" : "Eye"}
-        aria-label={uiMessage("inspector.artboardGuides.hideGuide", { value1: String(kindLabel.toLowerCase()) })}
+        aria-label={uiMessage("inspector.artboardGuides.hideGuide", { kind: String(kindLabel.toLowerCase()) })}
         aria-pressed={isHidden}
         tooltip={isHidden ? (uiMessage("inspector.artboardGuides.showOnTheCanvas")) : (uiMessage("inspector.artboardGuides.hideOnTheCanvas"))}
         className={joinClassNames(
@@ -145,7 +145,7 @@ function ArtboardGuideRow({
         }}
       />
       <RemovePropertyButton
-        label={uiMessage("inspector.artboardGuides.guide", { value1: String(kindLabel) })}
+        label={uiMessage("inspector.artboardGuides.guide", { kind: String(kindLabel) })}
         onClick={onRemove}
       />
     </PropertyRow>
@@ -362,7 +362,7 @@ export function installEditorInspectorArtboardGuides(): () => void {
             guides.length >= 6
               ? {
                   disabled: true,
-                  description: uiMessage("inspector.artboardGuides.atMostPerArtboard", { value1: String(6) }),
+                  description: uiMessage("inspector.artboardGuides.atMostPerArtboard", { limit: String(6) }),
                 }
               : {},
           addGuideItems: Dynamic = ["columns", "rows", "grid"].map(

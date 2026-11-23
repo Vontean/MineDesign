@@ -12,12 +12,11 @@ var reactTooltipTrigger: typeof React;
 var TooltipTriggerContext: React.Context<boolean>;
 var TooltipImplementationContext: React.Context<TooltipImplementation | null>;
 var initializeTooltipTrigger: () => void;
-var initializeTooltipTrigger_2: () => void;
-var reactTooltipTrigger_2: typeof React;
+var initializeTooltipTriggerPlaceholder: () => void;
 var TooltipTriggerElementCache: WeakMap<Document, Range>;
-var initializeTooltipTrigger_3: () => void;
-var reactTooltipTrigger_3: typeof React;
-var initializeTooltipTrigger_4: () => void;
+var initializeTooltipTriggerElementCache: () => void;
+var reactForUseTooltipDelay: typeof React;
+var initializeTooltipDelayReact: () => void;
 function useTooltipTrigger(): boolean {
   return (0, reactTooltipTrigger.useContext)(TooltipTriggerContext);
 }
@@ -44,20 +43,20 @@ function measureContentRect(element: Element): boolean {
 }
 function useTooltipDelay(): TooltipDelay {
   let value: React.RefObject<number | undefined> = (0,
-    reactTooltipTrigger_3.useRef)(undefined),
-    cancelDelay = (0, reactTooltipTrigger_3.useCallback)(() => {
+    reactForUseTooltipDelay.useRef)(undefined),
+    cancelDelay = (0, reactForUseTooltipDelay.useCallback)(() => {
       window.clearTimeout(value.current);
       value.current = undefined;
     }, []),
-    startDelay = (0, reactTooltipTrigger_3.useCallback)(
+    startDelay = (0, reactForUseTooltipDelay.useCallback)(
       (delayMs: number, onElapsed: () => void): void => {
         cancelDelay();
         value.current = window.setTimeout(onElapsed, delayMs);
       },
       [cancelDelay],
     );
-  (0, reactTooltipTrigger_3.useEffect)(() => cancelDelay, [cancelDelay]);
-  return (0, reactTooltipTrigger_3.useMemo)(
+  (0, reactForUseTooltipDelay.useEffect)(() => cancelDelay, [cancelDelay]);
+  return (0, reactForUseTooltipDelay.useMemo)(
     () => ({
       start: startDelay,
       cancel: cancelDelay,
@@ -68,13 +67,12 @@ function useTooltipDelay(): TooltipDelay {
 export {
   getResizeObserver,
   initializeTooltipTrigger,
-  initializeTooltipTrigger_2,
-  initializeTooltipTrigger_3,
-  initializeTooltipTrigger_4,
+  initializeTooltipTriggerPlaceholder,
+  initializeTooltipTriggerElementCache,
+  initializeTooltipDelayReact,
   measureContentRect,
   reactTooltipTrigger,
-  reactTooltipTrigger_2,
-  reactTooltipTrigger_3,
+  reactForUseTooltipDelay,
   TooltipImplementationContext,
   TooltipTriggerContext,
   TooltipTriggerElementCache,
@@ -93,17 +91,15 @@ export function installCdsTooltipTrigger(): () => void {
       TooltipImplementationContext = (0,
       reactTooltipTrigger.createContext)<TooltipImplementation | null>(null);
     });
-    initializeTooltipTrigger_2 = initializeOnce(() => {});
-    initializeTooltipTrigger_3 = initializeOnce(() => {
+    initializeTooltipTriggerPlaceholder = initializeOnce(() => {});
+    initializeTooltipTriggerElementCache = initializeOnce(() => {
       "use client";
 
-      reactTooltipTrigger_2 = toModuleNamespace(
-        load_react(),
-      );
+      load_react();
       TooltipTriggerElementCache = new WeakMap();
     });
-    initializeTooltipTrigger_4 = initializeOnce(() => {
-      reactTooltipTrigger_3 = toModuleNamespace(
+    initializeTooltipDelayReact = initializeOnce(() => {
+      reactForUseTooltipDelay = toModuleNamespace(
         load_react(),
       );
     });

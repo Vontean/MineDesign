@@ -160,7 +160,6 @@ export {
   mergeCompatibleRecords,
   serializedObjectCache as PlatformDocumentValuesElementCache,
   htmlEscapePattern as PlatformDocumentValuesPattern,
-  unicodeSeparatorPattern as PlatformDocumentValuesPattern_2,
   prototypeKey as ProtoValue,
   recordDepth,
   removeNullValues,

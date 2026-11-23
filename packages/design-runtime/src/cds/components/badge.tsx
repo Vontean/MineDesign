@@ -9,8 +9,8 @@ import type {
 } from "../../contracts/ui";
 import type * as React from "react";
 /** Restored application module; prepare first, initialize in original order. */
-import { Icon, initializeComponentsIcon_2, isIconName } from "./icon";
-import { initializeSheetsStyles_2, useLabel } from "../sheets/styles";
+import { Icon, initializeIconSizeMetrics, isIconName } from "./icon";
+import { initializeLabelsProviderContext, useLabel } from "../sheets/styles";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { getControlSizeRank, getSizeAttribute, initializeCdsRoot, useDensity } from "../theme/root";
 import { initializeNpm__base_ui_react_gx, initializeNpm_clsx_xh, load_react, load_react_jsx_runtime, npm_clsx_Ea, npm_mergeProps_Ac } from "../../dependencies";
@@ -40,9 +40,7 @@ export {
   ComponentsBadgeClassNames,
   ComponentsBadgeComfortableCompactConfig,
   ComponentsBadgeNeutralAccentSuccessConfig,
-  ComponentsBadgeSolidVariantClassNames as ComponentsBadgeNeutralAccentSuccessConfig_2,
   ComponentsBadgeRedOrangeYellowConfig,
-  ComponentsBadgeTintAccentClassNames as ComponentsBadgeRedOrangeYellowConfig_2,
   ComponentsBadgeXsSmMdConfig,
   initializeComponentsBadge,
   isBadgeVariant,
@@ -55,9 +53,9 @@ export function installCdsComponentsBadge(): () => void {
       "use client";
 
       initializeClassNames();
-      initializeSheetsStyles_2();
+      initializeLabelsProviderContext();
       initializeCdsRoot();
-      initializeComponentsIcon_2();
+      initializeIconSizeMetrics();
       reactComponentsBadge = toModuleNamespace(
         load_react(),
       );

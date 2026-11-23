@@ -13,7 +13,7 @@ var DesignSystemPublishedFilesPattern: Dynamic;
 var DesignSystemPublishedFilesItems: Dynamic;
 var DesignSystemPublishedFilesResolvedValue: Dynamic;
 var DesignSystemPublishedFilesConstant: Dynamic;
-var DesignSystemPublishedFilesCache_2: Dynamic;
+var publishedFileEntryByPath: Dynamic;
 var invalidatedNamespaces: Dynamic;
 var publishedFilePaths: Dynamic;
 var invalidatedRoots: Dynamic;
@@ -146,9 +146,9 @@ function resolvePublishedDesignSystemFile(
     return;
   let origin: Dynamic = (globalThis as Dynamic).origin;
   if (origin === undefined || origin === "null") return;
-  let entry: Dynamic = DesignSystemPublishedFilesCache_2.get(relativePath);
+  let entry: Dynamic = publishedFileEntryByPath.get(relativePath);
   entry?.text !== fileText &&
-    DesignSystemPublishedFilesCache_2.set(
+    publishedFileEntryByPath.set(
       relativePath,
       (entry = {
         text: fileText,
@@ -266,11 +266,11 @@ function isFilePublishedWithMimeType(
     !mimeRule[1].test(publishedEntry.contentType)
   )
     return false;
-  let entry: Dynamic = DesignSystemPublishedFilesCache_2.get(relativePath);
+  let entry: Dynamic = publishedFileEntryByPath.get(relativePath);
   if (entry?.text !== fileText) {
     let decodedContent: Dynamic = decodePublishedImage(relativePath, fileText);
     if (decodedContent === undefined) return false;
-    DesignSystemPublishedFilesCache_2.set(
+    publishedFileEntryByPath.set(
       relativePath,
       (entry = {
         text: fileText,
@@ -349,19 +349,14 @@ export {
   designSystemNamespaceFromUrl,
   DesignSystemPublishedFilesAlias,
   DesignSystemPublishedFilesCache,
-  DesignSystemPublishedFilesCache_2,
+  publishedFileEntryByPath,
   DesignSystemPublishedFilesConstant,
-  publishedProjectRevision as DesignSystemPublishedFilesConstant_2,
   DesignSystemPublishedFilesFromEntriesValue,
   DesignSystemPublishedFilesItems,
-  knownPublishedVersions as DesignSystemPublishedFilesItems_2,
   DesignSystemPublishedFilesLimit,
   DesignSystemPublishedFilesPattern,
   DesignSystemPublishedFilesResolvedValue,
-  publishedFilePaths as DesignSystemPublishedFilesResolvedValue_2,
   DesignSystemPublishedFilesSubscribers,
-  invalidatedNamespaces as DesignSystemPublishedFilesSubscribers_2,
-  invalidatedRoots as DesignSystemPublishedFilesSubscribers_3,
   getCurrentPublishedProjectRoot,
   getDesignSystemFiles,
   getDesignSystemFileUrl,
@@ -401,7 +396,7 @@ export function installDesignSystemPublishedFiles(): () => void {
       [/\.m?js$/i, /^(?:text|application)\/javascript\b/i],
     ];
     DesignSystemPublishedFilesConstant = 0;
-    DesignSystemPublishedFilesCache_2 = new Map();
+    publishedFileEntryByPath = new Map();
     invalidatedNamespaces = new Set();
     invalidatedRoots = new Set();
     knownPublishedVersions = [];

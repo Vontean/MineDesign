@@ -12,23 +12,23 @@ import { setSvgLineEndpoints } from "../svg/layout";
 
 var GeometryFlipElementsLabel: Dynamic;
 var ThisComponentManagesItselfSoItMessage: Dynamic;
-var GeometryFlipElementsLabel_2: Dynamic;
+var conditionalGroupFlipMessage: Dynamic;
 var ThisOnlyWrapsOtherLayersSoMessage: Dynamic;
 var ThisHasNoWidthOfItsMessage: Dynamic;
 var ThisHasNoHeightOfItsMessage: Dynamic;
 var ThisIsnTShownOnThePageMessage: Dynamic;
-var GeometryFlipElementsLabel_3: Dynamic;
-var GeometryFlipElementsLabel_4: Dynamic;
-var GeometryFlipElementsLabel_5: Dynamic;
+var codedTransformFlipMessage: Dynamic;
+var inlineTextFlipMessage: Dynamic;
+var codedPositionFlipMessage: Dynamic;
 var ThisRepeatedElementCanTBeFlippedMessage: Dynamic;
 var FlippingThisWayWouldnTChangeItMessage: Dynamic;
 var FinishEditingThisDrawingSPointsToMessage: Dynamic;
-var GeometryFlipElementsLabel_6: Dynamic;
+var finishCroppingToFlipMessage: Dynamic;
 var CouldnTFlipRightNowTryAgainMessage: Dynamic;
 var GeometryFlipElementsYtMytOytConfig: Dynamic;
 var GeometryFlipElementsTransformRotateScaleValues: Dynamic;
 var GeometryFlipElementsLimit: Dynamic;
-var GeometryFlipElementsLimit_2: Dynamic;
+var minimumFlipOffset: Dynamic;
 var GeometryFlipElementsTranslateTranslatexTranslateyConfig: Dynamic;
 var GeometryFlipElementsDegRadTurnConfig: Dynamic;
 var GeometryFlipElementsHandler: Dynamic;
@@ -221,7 +221,7 @@ function flipElementTransform(
       axis === "horizontal"
         ? 2 * (Math.cos(radians) * centreX - Math.sin(radians) * centreY)
         : 2 * (Math.sin(radians) * centreX + Math.cos(radians) * centreY),
-    needsOffset: Dynamic = Math.abs(offsetShift) >= GeometryFlipElementsLimit_2,
+    needsOffset: Dynamic = Math.abs(offsetShift) >= minimumFlipOffset,
     offsetAxis: Dynamic = axis === "horizontal" ? parsed.x : parsed.y;
   if (needsOffset && offsetAxis.value !== 0 && offsetAxis.unit.toLowerCase() !== "px")
     return "offset";
@@ -312,7 +312,7 @@ function elementFlipRefusal(
   if (tagName === "dc-import" || tagName === "x-import")
     return GeometryFlipElementsLabel;
   if (GeometryFlipElementsScIfScForPattern.test(tagName))
-    return GeometryFlipElementsLabel_2;
+    return conditionalGroupFlipMessage;
   if (model.isUneditable(tid))
     return ThisComponentManagesItselfSoItMessage;
   if (!inspection) return CouldnTFlipRightNowTryAgainMessage;
@@ -323,7 +323,7 @@ function elementFlipRefusal(
     inspection.axisProps ||
     (inspection.transformed && ["", "none"].includes(transformText.trim()))
   )
-    return GeometryFlipElementsLabel_3;
+    return codedTransformFlipMessage;
   let endpoints: Dynamic = getSvgFlipEndpoints(model, tid);
   if (endpoints)
     return (
@@ -335,16 +335,16 @@ function elementFlipRefusal(
     )
       ? FlippingThisWayWouldnTChangeItMessage
       : undefined;
-  if (inspection.inline) return GeometryFlipElementsLabel_4;
+  if (inspection.inline) return inlineTextFlipMessage;
   if (axis === "horizontal" ? inspection.flat?.x : inspection.flat?.y)
     return axis === "horizontal"
       ? ThisHasNoWidthOfItsMessage
       : ThisHasNoHeightOfItsMessage;
   let flippedTransform: Dynamic = flipElementTransform(transformText, axis, inspection.centre);
   return flippedTransform === null
-    ? GeometryFlipElementsLabel_3
+    ? codedTransformFlipMessage
     : flippedTransform === "offset"
-      ? GeometryFlipElementsLabel_5
+      ? codedPositionFlipMessage
       : model.isLoopDriven(tid) &&
           flippedTransform !== flipElementTransform(transformText, axis)
         ? ThisRepeatedElementCanTBeFlippedMessage
@@ -538,13 +538,13 @@ export {
   GeometryFlipElementsDegRadTurnConfig,
   GeometryFlipElementsHandler,
   GeometryFlipElementsLabel,
-  GeometryFlipElementsLabel_2,
-  GeometryFlipElementsLabel_3,
-  GeometryFlipElementsLabel_4,
-  GeometryFlipElementsLabel_5,
-  GeometryFlipElementsLabel_6,
+  conditionalGroupFlipMessage,
+  codedTransformFlipMessage,
+  inlineTextFlipMessage,
+  codedPositionFlipMessage,
+  finishCroppingToFlipMessage,
   GeometryFlipElementsLimit,
-  GeometryFlipElementsLimit_2,
+  minimumFlipOffset,
   GeometryFlipElementsScIfScForPattern,
   GeometryFlipElementsTransformRotateScaleValues,
   GeometryFlipElementsTranslateTranslatexTranslateyConfig,
@@ -569,7 +569,7 @@ export function installEditorGeometryFlipElements(): () => void {
     GeometryFlipElementsLabel = uiMessage("inspector.flipElements.aComponentInstanceCanT");
     ThisComponentManagesItselfSoItMessage =
       uiMessage("inspector.flipElements.thisComponentManagesItselfSo");
-    GeometryFlipElementsLabel_2 =
+    conditionalGroupFlipMessage =
       uiMessage("inspector.flipElements.aConditionalOrRepeatingGroup");
     ThisOnlyWrapsOtherLayersSoMessage =
       uiMessage("inspector.flipElements.thisOnlyWrapsOtherLayers");
@@ -579,12 +579,12 @@ export function installEditorGeometryFlipElements(): () => void {
       uiMessage("inspector.flipElements.thisHasNoHeightOf");
     ThisIsnTShownOnThePageMessage =
       uiMessage("inspector.flipElements.thisIsnTShownOn");
-    GeometryFlipElementsLabel_3 =
+    codedTransformFlipMessage =
       // MineDesign: user-facing copy calls the agent "the agent", not Claude.
       uiMessage("inspector.flipElements.itsRotationOrScaleIs");
-    GeometryFlipElementsLabel_4 =
+    inlineTextFlipMessage =
       uiMessage("inspector.flipElements.partOfALineOf");
-    GeometryFlipElementsLabel_5 =
+    codedPositionFlipMessage =
       uiMessage("inspector.flipElements.itsPositionIsSetIn");
     ThisRepeatedElementCanTBeFlippedMessage =
       uiMessage("inspector.flipElements.thisRepeatedElementCanT");
@@ -592,21 +592,21 @@ export function installEditorGeometryFlipElements(): () => void {
       uiMessage("inspector.flipElements.flippingThisWayWouldnT");
     FinishEditingThisDrawingSPointsToMessage =
       uiMessage("inspector.flipElements.finishEditingThisDrawingS");
-    GeometryFlipElementsLabel_6 = uiMessage("inspector.flipElements.finishCroppingToFlip");
+    finishCroppingToFlipMessage = uiMessage("inspector.flipElements.finishCroppingToFlip");
     CouldnTFlipRightNowTryAgainMessage =
       uiMessage("inspector.flipElements.couldnTFlipRightNow");
     GeometryFlipElementsYtMytOytConfig = {
       [GeometryFlipElementsLabel]: "a component instance",
       [ThisComponentManagesItselfSoItMessage]:
         "a component that manages itself",
-      [GeometryFlipElementsLabel_2]: "a conditional or repeating group",
+      [conditionalGroupFlipMessage]: "a conditional or repeating group",
       [ThisOnlyWrapsOtherLayersSoMessage]: "a layer that only wraps others",
       [ThisHasNoWidthOfItsMessage]: "a layer with no width of its own",
       [ThisHasNoHeightOfItsMessage]: "a layer with no height of its own",
       [ThisIsnTShownOnThePageMessage]: "a hidden layer",
-      [GeometryFlipElementsLabel_3]: "an element rotated or scaled in code",
-      [GeometryFlipElementsLabel_4]: "part of a line of text",
-      [GeometryFlipElementsLabel_5]: "an element positioned in code",
+      [codedTransformFlipMessage]: "an element rotated or scaled in code",
+      [inlineTextFlipMessage]: "part of a line of text",
+      [codedPositionFlipMessage]: "an element positioned in code",
       [ThisRepeatedElementCanTBeFlippedMessage]: "a repeated element",
     };
     GeometryFlipElementsTransformRotateScaleValues = [
@@ -616,7 +616,7 @@ export function installEditorGeometryFlipElements(): () => void {
       "translate",
     ];
     GeometryFlipElementsLimit = 1e5;
-    GeometryFlipElementsLimit_2 = 1;
+    minimumFlipOffset = 1;
     GeometryFlipElementsTranslateTranslatexTranslateyConfig = {
       translate: 0,
       translatex: 0,

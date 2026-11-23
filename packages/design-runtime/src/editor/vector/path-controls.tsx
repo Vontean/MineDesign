@@ -159,7 +159,7 @@ function VectorPathControls({
 export {
   VectorPathControls,
   VectorPathControlsLabel,
-  activeControlColor as VectorPathControlsLabel_2,
+  activeControlColor,
 };
 export function installEditorVectorPathControls(): () => void {
   return () => {

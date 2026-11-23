@@ -6,7 +6,7 @@ import {
 var PlatformSaveEventsSubscribers: Dynamic;
 var PlatformSaveEventsHandler: Dynamic;
 var saveReporterActive: Dynamic;
-var PlatformSaveEventsHandler_2: Dynamic;
+var isSaveReporterActive: Dynamic;
 function subscribeSaveEvents(listener?: Dynamic): Dynamic {
   PlatformSaveEventsSubscribers.add(listener);
   return (): Dynamic => {
@@ -67,7 +67,7 @@ function createSaveEventReporter(debugReporter?: Dynamic): Dynamic {
 export {
   createSaveEventReporter,
   PlatformSaveEventsHandler,
-  PlatformSaveEventsHandler_2,
+  isSaveReporterActive,
   PlatformSaveEventsSubscribers,
   saveReporterActive,
   subscribeSaveEvents,
@@ -82,6 +82,6 @@ export function installPlatformSaveEvents(): () => void {
         } catch {}
     };
     saveReporterActive = false;
-    PlatformSaveEventsHandler_2 = (): Dynamic => saveReporterActive;
+    isSaveReporterActive = (): Dynamic => saveReporterActive;
   };
 }

@@ -12,36 +12,33 @@ import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 
 var jsxSheetsScrollArea: Dynamic;
 var SheetsScrollAreaClassNames: Dynamic;
-var SheetsScrollAreaClassNames_2: Dynamic;
-var SheetsScrollAreaClassNames_3: Dynamic;
-var SheetsScrollAreaClassNames_4: Dynamic;
+var scrollAreaBodyClassName: Dynamic;
+var scrollAreaHeaderClassName: Dynamic;
+var scrollAreaFooterClassName: Dynamic;
 var SheetsScrollAreaLabel: Dynamic;
 var initializeSheetsScrollArea: Dynamic;
 var reactSheetsScrollArea: Dynamic;
 var SheetsScrollAreaElementCache: Dynamic;
-var initializeSheetsScrollArea_2: Dynamic;
+var initializeScrollAreaElementCache: Dynamic;
 var editableElementSelector: Dynamic;
-var initializeSheetsScrollArea_3: Dynamic;
-var initializeSheetsScrollArea_4: Dynamic;
-var SheetsScrollAreaElementCache_2: Dynamic;
+var initializeEditableElementSelector: Dynamic;
+var initializeScrollAreaStableCallback: Dynamic;
+var openerResolverByPopup: Dynamic;
 var SheetsScrollAreaLimit: Dynamic;
-var initializeSheetsScrollArea_5: Dynamic;
-var reactSheetsScrollArea_2: Dynamic;
-var initializeSheetsScrollArea_6: Dynamic;
+var initializeOpenerResolverCache: Dynamic;
+var reactForUseFinalFocus: Dynamic;
+var initializeFocusHooks: Dynamic;
 var overlayAttribute: Dynamic;
 var openOverlaySelector: Dynamic;
 var initializeOverlayAttributes: Dynamic;
-var reactSheetsScrollArea_3: Dynamic;
+var reactForUseInnerOverlayRegistration: Dynamic;
 var InnerOverlaysContext: Dynamic;
 var SheetsScrollAreaConstant: Dynamic;
-var initializeSheetsScrollArea_7: Dynamic;
-var reactSheetsScrollArea_4: Dynamic;
+var initializeInnerOverlaysContext: Dynamic;
+var reactForUseMenuInnerOverlay: Dynamic;
 var SheetsScrollAreaSAConfig: Dynamic;
-var initializeSheetsScrollArea_8: Dynamic;
+var initializeMenuInnerOverlay: Dynamic;
 var SheetsScrollAreaRegistry: Dynamic;
-var SheetsScrollAreaRegistry_2: Dynamic;
-var SheetsScrollAreaRegistry_3: Dynamic;
-var SheetsScrollAreaRegistry_4: Dynamic;
 function isKeyboardContextMenu(event?: Dynamic): Dynamic {
   if (event === undefined || event.type !== "contextmenu") return false;
   let { button: value, pointerType: pointerType }: Dynamic = event;
@@ -111,13 +108,13 @@ function normalizeFocusRelatedTarget(element?: Dynamic): Dynamic {
   }
 }
 function registerOpenerReturn(popupElement?: Dynamic, resolveOpener?: Dynamic): Dynamic {
-  SheetsScrollAreaElementCache_2.set(popupElement, resolveOpener);
+  openerResolverByPopup.set(popupElement, resolveOpener);
 }
 function openerReturnChain(startElement?: Dynamic): Dynamic {
   let items: Dynamic = [],
     value: Dynamic = startElement;
   for (; value !== null && items.length < SheetsScrollAreaLimit; ) {
-    let entry: Dynamic = SheetsScrollAreaElementCache_2.get(value);
+    let entry: Dynamic = openerResolverByPopup.get(value);
     if (entry === undefined) {
       value = value.parentElement;
       continue;
@@ -137,8 +134,8 @@ function useInitialFocusGuard(
   openerChainRef?: Dynamic,
 ): Dynamic {
   let rootElement: Dynamic = useCdsRootElement(),
-    hasCapturedRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(false);
-  (0, reactSheetsScrollArea_2.useInsertionEffect)((): Dynamic => {
+    hasCapturedRef: Dynamic = (0, reactForUseFinalFocus.useRef)(false);
+  (0, reactForUseFinalFocus.useInsertionEffect)((): Dynamic => {
     if (!isOpen) {
       hasCapturedRef.current = false;
       return;
@@ -160,15 +157,15 @@ function useOpenerReturn(props?: Dynamic): Dynamic {
   let value: Dynamic = props?.skipRestoreOnOutsideFocus ?? false,
     registerOpenerEnabled: Dynamic = props?.registerOpenerReturn ?? true,
     triggerRef: Dynamic = props?.triggerRef,
-    openerRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
-    popupRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
-    rootRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null);
+    openerRef: Dynamic = (0, reactForUseFinalFocus.useRef)(null),
+    popupRef: Dynamic = (0, reactForUseFinalFocus.useRef)(null),
+    rootRef: Dynamic = (0, reactForUseFinalFocus.useRef)(null);
   useInitialFocusGuard(props?.open ?? true, openerRef, rootRef);
-  let registerOpenerEnabledRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(registerOpenerEnabled);
-  (0, reactSheetsScrollArea_2.useLayoutEffect)((): Dynamic => {
+  let registerOpenerEnabledRef: Dynamic = (0, reactForUseFinalFocus.useRef)(registerOpenerEnabled);
+  (0, reactForUseFinalFocus.useLayoutEffect)((): Dynamic => {
     registerOpenerEnabledRef.current = registerOpenerEnabled;
   }, [registerOpenerEnabled]);
-  (0, reactSheetsScrollArea_2.useLayoutEffect)((): Dynamic => {
+  (0, reactForUseFinalFocus.useLayoutEffect)((): Dynamic => {
     popupRef.current &&
       registerOpenerReturn(
         popupRef.current,
@@ -179,7 +176,7 @@ function useOpenerReturn(props?: Dynamic): Dynamic {
       );
   }, [triggerRef]);
   let finalFocus: Dynamic = (0,
-  reactSheetsScrollArea_2.useCallback)((): Dynamic => {
+  reactForUseFinalFocus.useCallback)((): Dynamic => {
     if (value) {
       let current: Dynamic = popupRef.current,
         doc: Dynamic = rootRef.current?.ownerDocument ?? document,
@@ -195,7 +192,7 @@ function useOpenerReturn(props?: Dynamic): Dynamic {
       ? null
       : restoreElementFocus(openerRef.current, popupRef.current);
   }, [value, triggerRef]);
-  return (0, reactSheetsScrollArea_2.useMemo)(
+  return (0, reactForUseFinalFocus.useMemo)(
     (): Dynamic => ({
       finalFocus: finalFocus,
       popupRef: popupRef,
@@ -213,19 +210,19 @@ function useFinalFocus(
   fallbackFocusRef?: Dynamic,
 ): Dynamic {
   let value: Dynamic = useCdsRootElement(),
-    fallbackElementRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
-    pendingRestoreRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(false),
+    fallbackElementRef: Dynamic = (0, reactForUseFinalFocus.useRef)(null),
+    pendingRestoreRef: Dynamic = (0, reactForUseFinalFocus.useRef)(false),
     markRestorePending: Dynamic = (0,
-    reactSheetsScrollArea_2.useCallback)((): Dynamic => {
+    reactForUseFinalFocus.useCallback)((): Dynamic => {
       fallbackElementRef.current = null;
       pendingRestoreRef.current = true;
     }, []),
-    openerRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
-    openerChainRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)([]),
-    popupRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null),
-    rootRef: Dynamic = (0, reactSheetsScrollArea_2.useRef)(null);
+    openerRef: Dynamic = (0, reactForUseFinalFocus.useRef)(null),
+    openerChainRef: Dynamic = (0, reactForUseFinalFocus.useRef)([]),
+    popupRef: Dynamic = (0, reactForUseFinalFocus.useRef)(null),
+    rootRef: Dynamic = (0, reactForUseFinalFocus.useRef)(null);
   useInitialFocusGuard(isOpen, openerRef, rootRef, markRestorePending, openerChainRef);
-  (0, reactSheetsScrollArea_2.useLayoutEffect)((): Dynamic => {
+  (0, reactForUseFinalFocus.useLayoutEffect)((): Dynamic => {
     if (!pendingRestoreRef.current || ((pendingRestoreRef.current = false), !shouldRestoreFocus && !fallbackFocusRef))
       return;
     let doc: Dynamic = value?.ownerDocument ?? document;
@@ -247,7 +244,7 @@ function useFinalFocus(
   }, [isOpen, shouldRestoreFocus, fallbackFocusRef, value]);
   let skipIfFocusElsewhere: Dynamic = !shouldRestoreFocus,
     finalFocus: Dynamic = (0,
-    reactSheetsScrollArea_2.useCallback)((): Dynamic => {
+    reactForUseFinalFocus.useCallback)((): Dynamic => {
       if (skipIfFocusElsewhere) {
         let current: Dynamic = popupRef.current,
           doc: Dynamic = rootRef.current?.ownerDocument ?? document,
@@ -281,7 +278,7 @@ function useFinalFocus(
       }
       return false;
     }, [skipIfFocusElsewhere]);
-  return (0, reactSheetsScrollArea_2.useMemo)(
+  return (0, reactForUseFinalFocus.useMemo)(
     (): Dynamic => ({
       finalFocus: finalFocus,
       popupRef: popupRef,
@@ -328,14 +325,14 @@ function createInnerOverlayStack(): Dynamic {
   };
 }
 function useInnerOverlayRegistration(overlay?: Dynamic): Dynamic {
-  let value: Dynamic = (0, reactSheetsScrollArea_3.useContext)(
+  let value: Dynamic = (0, reactForUseInnerOverlayRegistration.useContext)(
       InnerOverlaysContext,
     ),
-    overlayRef: Dynamic = (0, reactSheetsScrollArea_3.useRef)(overlay);
-  (0, reactSheetsScrollArea_3.useEffect)((): Dynamic => {
+    overlayRef: Dynamic = (0, reactForUseInnerOverlayRegistration.useRef)(overlay);
+  (0, reactForUseInnerOverlayRegistration.useEffect)((): Dynamic => {
     overlayRef.current = overlay;
   }, [overlay]);
-  (0, reactSheetsScrollArea_3.useEffect)((): Dynamic => {
+  (0, reactForUseInnerOverlayRegistration.useEffect)((): Dynamic => {
     if (value !== null)
       return value.register({
         isOpen: (): Dynamic => overlayRef.current.isOpen(),
@@ -365,8 +362,8 @@ function closeInnerOverlayOnEscape(
   return true;
 }
 function useMenuInnerOverlay(): Dynamic {
-  let value: Dynamic = (0, reactSheetsScrollArea_4.useRef)(null),
-    menuTrigger: Dynamic = (0, reactSheetsScrollArea_4.useContext)(
+  let value: Dynamic = (0, reactForUseMenuInnerOverlay.useRef)(null),
+    menuTrigger: Dynamic = (0, reactForUseMenuInnerOverlay.useContext)(
       MenuTriggerContext,
     );
   useInnerOverlayRegistration({
@@ -385,13 +382,13 @@ export {
   createInnerOverlayStack,
   initializeOverlayAttributes,
   initializeSheetsScrollArea,
-  initializeSheetsScrollArea_2,
-  initializeSheetsScrollArea_3,
-  initializeSheetsScrollArea_4,
-  initializeSheetsScrollArea_5,
-  initializeSheetsScrollArea_6,
-  initializeSheetsScrollArea_7,
-  initializeSheetsScrollArea_8,
+  initializeScrollAreaElementCache,
+  initializeEditableElementSelector,
+  initializeScrollAreaStableCallback,
+  initializeOpenerResolverCache,
+  initializeFocusHooks,
+  initializeInnerOverlaysContext,
+  initializeMenuInnerOverlay,
   InnerOverlaysContext,
   isFocusableElement,
   isKeyboardContextMenu,
@@ -401,26 +398,23 @@ export {
   openOverlaySelector,
   overlayAttribute,
   reactSheetsScrollArea,
-  reactSheetsScrollArea_2,
-  reactSheetsScrollArea_3,
-  reactSheetsScrollArea_4,
+  reactForUseFinalFocus,
+  reactForUseInnerOverlayRegistration,
+  reactForUseMenuInnerOverlay,
   recordKeyboardContextMenu,
   registerOpenerReturn,
   restoreElementFocus,
   SheetsScrollAreaClassNames,
-  SheetsScrollAreaClassNames_2,
-  SheetsScrollAreaClassNames_3,
-  SheetsScrollAreaClassNames_4,
+  scrollAreaBodyClassName,
+  scrollAreaHeaderClassName,
+  scrollAreaFooterClassName,
   SheetsScrollAreaConstant,
   SheetsScrollAreaElementCache,
-  SheetsScrollAreaElementCache_2,
+  openerResolverByPopup,
   SheetsScrollAreaLabel,
-  editableElementSelector as SheetsScrollAreaLabel_2,
+  editableElementSelector,
   SheetsScrollAreaLimit,
   SheetsScrollAreaRegistry,
-  SheetsScrollAreaRegistry_2,
-  SheetsScrollAreaRegistry_3,
-  SheetsScrollAreaRegistry_4,
   SheetsScrollAreaSAConfig,
   useFinalFocus,
   useInitialFocusGuard,
@@ -440,14 +434,14 @@ export function installCdsSheetsScrollArea(): () => void {
       );
       SheetsScrollAreaClassNames =
         "min-h-0 overflow-y-auto scroll-fade-y rounded-[inherit] border-b-[length:var(--cds-ring-inner)] border-transparent p-1";
-      SheetsScrollAreaClassNames_2 =
+      scrollAreaBodyClassName =
         "min-h-0 flex-1 overflow-y-auto scroll-fade-y border-b-[length:var(--cds-ring-inner)] border-transparent p-1";
-      SheetsScrollAreaClassNames_3 = "shrink-0 px-1 pt-1";
-      SheetsScrollAreaClassNames_4 = "-mt-1 shrink-0 px-1 pb-1";
+      scrollAreaHeaderClassName = "shrink-0 px-1 pt-1";
+      scrollAreaFooterClassName = "-mt-1 shrink-0 px-1 pb-1";
       SheetsScrollAreaLabel =
         "max(var(--cds-h-control), var(--cds-leading-body))";
     });
-    initializeSheetsScrollArea_2 = initializeOnce((): Dynamic => {
+    initializeScrollAreaElementCache = initializeOnce((): Dynamic => {
       "use client";
 
       initializeMenuConfiguration();
@@ -456,24 +450,24 @@ export function installCdsSheetsScrollArea(): () => void {
       );
       SheetsScrollAreaElementCache = new WeakMap();
     });
-    initializeSheetsScrollArea_3 = initializeOnce((): Dynamic => {
+    initializeEditableElementSelector = initializeOnce((): Dynamic => {
       editableElementSelector =
         "input:not([type='hidden']):not([disabled]),[contenteditable]:not([contenteditable='false']),textarea:not([disabled])";
     });
-    initializeSheetsScrollArea_4 = initializeOnce((): Dynamic => {
+    initializeScrollAreaStableCallback = initializeOnce((): Dynamic => {
       initializeHooksStableCallback();
     });
-    initializeSheetsScrollArea_5 = initializeOnce((): Dynamic => {
-      SheetsScrollAreaElementCache_2 = new WeakMap();
+    initializeOpenerResolverCache = initializeOnce((): Dynamic => {
+      openerResolverByPopup = new WeakMap();
       SheetsScrollAreaLimit = 8;
     });
-    initializeSheetsScrollArea_6 = initializeOnce((): Dynamic => {
+    initializeFocusHooks = initializeOnce((): Dynamic => {
       initializeCdsRoot();
       initializeHooksStableCallback();
-      initializeSheetsScrollArea_3();
-      initializeSheetsScrollArea_4();
-      initializeSheetsScrollArea_5();
-      reactSheetsScrollArea_2 = toModuleNamespace(
+      initializeEditableElementSelector();
+      initializeScrollAreaStableCallback();
+      initializeOpenerResolverCache();
+      reactForUseFinalFocus = toModuleNamespace(
         load_react(),
       );
     });
@@ -481,22 +475,22 @@ export function installCdsSheetsScrollArea(): () => void {
       overlayAttribute = "data-cds-overlay";
       openOverlaySelector = `[${overlayAttribute}][data-open]`;
     });
-    initializeSheetsScrollArea_7 = initializeOnce((): Dynamic => {
+    initializeInnerOverlaysContext = initializeOnce((): Dynamic => {
       "use client";
 
-      reactSheetsScrollArea_3 = toModuleNamespace(
+      reactForUseInnerOverlayRegistration = toModuleNamespace(
         load_react(),
       );
-      InnerOverlaysContext = (0, reactSheetsScrollArea_3.createContext)(null);
+      InnerOverlaysContext = (0, reactForUseInnerOverlayRegistration.createContext)(null);
       SheetsScrollAreaConstant = 9;
     });
-    initializeSheetsScrollArea_8 = initializeOnce((): Dynamic => {
+    initializeMenuInnerOverlay = initializeOnce((): Dynamic => {
       "use client";
 
       initializeOverlayAttributes();
       initializeMenuConfiguration();
-      initializeSheetsScrollArea_7();
-      reactSheetsScrollArea_4 = toModuleNamespace(
+      initializeInnerOverlaysContext();
+      reactForUseMenuInnerOverlay = toModuleNamespace(
         load_react(),
       );
       SheetsScrollAreaSAConfig = {
@@ -504,8 +498,5 @@ export function installCdsSheetsScrollArea(): () => void {
       };
     });
     SheetsScrollAreaRegistry = {};
-    SheetsScrollAreaRegistry_2 = {};
-    SheetsScrollAreaRegistry_3 = {};
-    SheetsScrollAreaRegistry_4 = {};
   };
 }

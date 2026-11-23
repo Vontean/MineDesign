@@ -12,8 +12,8 @@ import { toModuleNamespace } from "../../module-helpers";
 
 var jsxPropertiesTooltip: Dynamic;
 var reactPropertiesTooltip: Dynamic;
-var reactPropertiesTooltip_2: Dynamic;
-var reactPropertiesTooltip_3: Dynamic;
+var reactForGradientEditor: Dynamic;
+var reactForToolSegmentOption: Dynamic;
 var PropertiesTooltipHandler: Dynamic;
 var TextAlignLeftValue: Dynamic;
 var TextAlignCenterValue: Dynamic;
@@ -78,21 +78,21 @@ export {
   PropertiesTooltipColorGradientConfig,
   PropertiesTooltipHandler,
   borderWeightIcon as PropertiesTooltipNameViewBoxPathsConfig,
-  tableColumnsIcon as PropertiesTooltipNameViewBoxPathsConfig_10,
-  fillSolidIcon as PropertiesTooltipNameViewBoxPathsConfig_11,
-  fillGradientIcon as PropertiesTooltipNameViewBoxPathsConfig_12,
-  angleIcon as PropertiesTooltipNameViewBoxPathsConfig_13,
-  borderSidesIcon as PropertiesTooltipNameViewBoxPathsConfig_2,
-  cornerRadiusIcon as PropertiesTooltipNameViewBoxPathsConfig_3,
-  cornerEachIcon as PropertiesTooltipNameViewBoxPathsConfig_4,
-  spacingIcon as PropertiesTooltipNameViewBoxPathsConfig_5,
-  strokeSolidIcon as PropertiesTooltipNameViewBoxPathsConfig_6,
-  strokeDashedIcon as PropertiesTooltipNameViewBoxPathsConfig_7,
-  strokeDottedIcon as PropertiesTooltipNameViewBoxPathsConfig_8,
-  tableRowsIcon as PropertiesTooltipNameViewBoxPathsConfig_9,
+  tableColumnsIcon,
+  fillSolidIcon,
+  fillGradientIcon,
+  angleIcon,
+  borderSidesIcon,
+  cornerRadiusIcon,
+  cornerEachIcon,
+  spacingIcon,
+  strokeSolidIcon,
+  strokeDashedIcon,
+  strokeDottedIcon,
+  tableRowsIcon,
   reactPropertiesTooltip,
-  reactPropertiesTooltip_2,
-  reactPropertiesTooltip_3,
+  reactForGradientEditor,
+  reactForToolSegmentOption,
   TextAlignCenterValue,
   TextAlignJustifyValue,
   TextAlignLeftValue,
@@ -109,12 +109,12 @@ export function installEditorPropertiesTooltip(): () => void {
       1,
     );
     initializeCdsIndex();
-    reactPropertiesTooltip_2 = toModuleNamespace(
+    reactForGradientEditor = toModuleNamespace(
       load_react(),
       1,
     );
     initializeCdsIndex();
-    reactPropertiesTooltip_3 = toModuleNamespace(
+    reactForToolSegmentOption = toModuleNamespace(
       load_react(),
       1,
     );

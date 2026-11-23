@@ -10,13 +10,13 @@ import { uiText } from "@minedesign/contracts/ui-text";
 import {
   type Dynamic,
 } from "../runtime-types";
-import { reactCanvasShape_2 } from "../canvas/shape";
+import { canvasShapeReact as React } from "../canvas/shape";
 import { Button } from "../cds/button/button";
 import { Icon } from "../cds/components/icon";
 import { CdsIsland } from "../platform/cds-island";
 
 function useUiText(): Dynamic {
-  const locale = reactCanvasShape_2.useSyncExternalStore(subscribeUiLocale, getUiLocale, getUiLocale);
+  const locale = React.useSyncExternalStore(subscribeUiLocale, getUiLocale, getUiLocale);
   return uiText(locale);
 }
 // 补充说明跨评论模式开关保留：离开「评论」标签时视图会卸载
@@ -43,7 +43,7 @@ const toggleCommentMode = (): void =>
   void window.dispatchEvent(new Event("canvas-comment-key"));
 function FeedbackPanel({ host }: Dynamic): Dynamic {
   useUiLocale();
-  const react: Dynamic = reactCanvasShape_2;
+  const react: Dynamic = React;
   const state: Dynamic = react.useSyncExternalStore(
     host.subscribe,
     host.read,

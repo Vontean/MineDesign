@@ -326,7 +326,7 @@ function NotesPopoverEditor({
                 size={"xs"}
                 iconOnly={true}
                 icon={"Trash"}
-                aria-label={uiMessage("design-system.usageNotes.delete2", { value1: String(title.toLowerCase()) })}
+                aria-label={uiMessage("design-system.usageNotes.delete2", { subject: String(title.toLowerCase()) })}
                 tooltip={uiMessage("design-system.usageNotes.delete")}
                 onMouseDown={(event: React.MouseEvent<HTMLButtonElement>) =>
                   event.preventDefault()

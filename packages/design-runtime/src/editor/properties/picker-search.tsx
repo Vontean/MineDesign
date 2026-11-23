@@ -10,7 +10,7 @@ import { EditorIcon, PropertiesPrimitivesClassNames } from "./primitives";
 import { toModuleNamespace } from "../../module-helpers";
 
 var jsxPropertiesPickerSearch: Dynamic;
-var joinClassNamesValue_3: Dynamic;
+var pickerSelectRowClassName: Dynamic;
 var PropertiesPickerSearchMdLgConfig: Dynamic;
 function pickerSearchMatches(
   query?: Dynamic,
@@ -160,7 +160,7 @@ function PickerSearchInput({
   );
 }
 export {
-  joinClassNamesValue_3,
+  pickerSelectRowClassName,
   jsxPropertiesPickerSearch,
   pickerSearchInitialIndex,
   PickerSearchInput,
@@ -174,7 +174,7 @@ export function installEditorPropertiesPickerSearch(): () => void {
       load_react_jsx_runtime(),
       1,
     );
-    joinClassNamesValue_3 = joinClassNames(
+    pickerSelectRowClassName = joinClassNames(
       "group/select flex h-control min-w-0 items-center gap-1.5 border-0 pl-md pr-sm text-left font-sans text-body enabled:cursor-default pointer-coarse:h-10",
       PropertiesPrimitivesClassNames,
     );

@@ -10,7 +10,7 @@ import { load_react_jsx_runtime } from "../../dependencies";
 import { joinClassNames } from "../chrome/overlay-state";
 import { PickerListHeader } from "../color/picker-primitives";
 import { reactPropertiesNumericInput } from "./numeric-input";
-import { joinClassNamesValue_3, jsxPropertiesPickerSearch, pickerSearchInitialIndex, PropertiesPickerSearchMdLgConfig } from "./picker-search";
+import { pickerSelectRowClassName, jsxPropertiesPickerSearch, pickerSearchInitialIndex, PropertiesPickerSearchMdLgConfig } from "./picker-search";
 import { EditorIcon } from "./primitives";
 import { useTouchToolbar } from "../toolbar/layout";
 import { toModuleNamespace } from "../../module-helpers";
@@ -159,7 +159,7 @@ function PropertySelect({
             aria-label={triggerText === "" ? (ariaLabel) : (((ariaLabel) + (": ")) + (triggerText))}
             title={title}
             className={joinClassNames(
-              joinClassNamesValue_3,
+              pickerSelectRowClassName,
               compact ? "w-[4.5rem] shrink-0" : "w-full flex-1",
               className,
             )}

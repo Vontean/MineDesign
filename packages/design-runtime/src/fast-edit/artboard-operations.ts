@@ -23,20 +23,20 @@ function createFastEditFileIds(files?: Dynamic): Dynamic {
         .replace(/^-+|-+$/g, "")
         .slice(0, 56) || "artboard";
   for (let value of files as Dynamic) {
-    let value2: Dynamic = fileStem(value),
-      value3: Dynamic = value2;
+    let baseId: Dynamic = fileStem(value),
+      candidateId: Dynamic = baseId;
     for (
       let count: Dynamic = 2;
-      filesById.has(value3) ||
-      value3 === "__proto__" ||
-      value3 === "constructor" ||
-      value3 === "prototype" ||
-      value3.toLowerCase() === "container";
+      filesById.has(candidateId) ||
+      candidateId === "__proto__" ||
+      candidateId === "constructor" ||
+      candidateId === "prototype" ||
+      candidateId.toLowerCase() === "container";
       count++
     )
-      value3 = value2 + "-" + String(count);
-    idsByFile.set(value, value3);
-    filesById.set(value3, value);
+      candidateId = baseId + "-" + String(count);
+    idsByFile.set(value, candidateId);
+    filesById.set(candidateId, value);
   }
   return {
     idOf: idsByFile,
@@ -97,10 +97,10 @@ function parseFastEditArtboardSection(
   let quote: Dynamic = "",
     openingTagEnd: Dynamic = -1;
   for (let index: Dynamic = 0; index < html.length; index++) {
-    let value8: Dynamic = html[index];
-    if (quote !== "") value8 === quote && (quote = "");
-    else if (value8 === '"' || value8 === "'") quote = value8;
-    else if (value8 === ">") {
+    let character: Dynamic = html[index];
+    if (quote !== "") character === quote && (quote = "");
+    else if (character === '"' || character === "'") quote = character;
+    else if (character === ">") {
       openingTagEnd = index;
       break;
     }
@@ -112,95 +112,95 @@ function parseFastEditArtboardSection(
   if (firstElementChild === null || firstElementChild.localName !== "section")
     return null;
   let state: Dynamic = {};
-  for (let value8 of (firstElementChild.getAttribute("style") ?? "").split(
+  for (let declaration of (firstElementChild.getAttribute("style") ?? "").split(
     ";",
   ) as Dynamic) {
-    let value9: Dynamic = value8.indexOf(":");
-    value9 > 0 &&
-      (state[value8.slice(0, value9).trim().toLowerCase()] = value8
-        .slice(value9 + 1)
+    let colonIndex: Dynamic = declaration.indexOf(":");
+    colonIndex > 0 &&
+      (state[declaration.slice(0, colonIndex).trim().toLowerCase()] = declaration
+        .slice(colonIndex + 1)
         .trim());
   }
-  let callback: Dynamic = (input?: Dynamic): Dynamic => {
-      let value8: Dynamic = state[input];
-      if (value8 === undefined) return null;
-      let value9: Dynamic = /^(-?\d{1,6}(?:\.\d{1,3})?)(?:px)?$/.exec(value8);
-      return value9 === null ? "bad" : value9[1];
+  let readStyleNumber: Dynamic = (input?: Dynamic): Dynamic => {
+      let styleValue: Dynamic = state[input];
+      if (styleValue === undefined) return null;
+      let numberMatch: Dynamic = /^(-?\d{1,6}(?:\.\d{1,3})?)(?:px)?$/.exec(styleValue);
+      return numberMatch === null ? "bad" : numberMatch[1];
     },
-    callback2: Dynamic = (
-      input?: Dynamic,
-      options?: Dynamic,
-      context?: Dynamic,
-      value8?: Dynamic,
+    readBoundedValue: Dynamic = (
+      attributeName?: Dynamic,
+      styleName?: Dynamic,
+      minimum?: Dynamic,
+      maximum?: Dynamic,
     ): Dynamic => {
-      let attribute2: Dynamic = firstElementChild.getAttribute(input);
+      let attributeValue: Dynamic = firstElementChild.getAttribute(attributeName);
       return parseArtboardCoordinate(
-        attribute2 !== null ? attribute2 : callback(options),
-        context,
-        value8,
+        attributeValue !== null ? attributeValue : readStyleNumber(styleName),
+        minimum,
+        maximum,
       );
     },
-    value2: Dynamic = callback2("data-x", "left", -2e5, 2e5),
-    value3: Dynamic = callback2("data-y", "top", -2e5, 2e5),
-    value4: Dynamic = callback2("data-w", "width", 120, 8e3),
-    value5: Dynamic = callback2("data-h", "height", 120, 8e3);
+    x: Dynamic = readBoundedValue("data-x", "left", -2e5, 2e5),
+    y: Dynamic = readBoundedValue("data-y", "top", -2e5, 2e5),
+    width: Dynamic = readBoundedValue("data-w", "width", 120, 8e3),
+    height: Dynamic = readBoundedValue("data-h", "height", 120, 8e3);
   if (
-    value2 === null ||
-    value3 === null ||
-    value4 === null ||
-    value5 === null
+    x === null ||
+    y === null ||
+    width === null ||
+    height === null
   )
     return null;
   let attribute: Dynamic = firstElementChild.getAttribute("data-title"),
-    value6: Dynamic =
+    title: Dynamic =
       attribute === null ? undefined : sanitizeArtboardTitle(attribute);
-  if (value6 === "") return null;
-  let value7: Dynamic = /^(?:yes|true|1)$/i.test(
+  if (title === "") return null;
+  let isDeleted: Dynamic = /^(?:yes|true|1)$/i.test(
       (firstElementChild.getAttribute("data-delete") ?? "").trim(),
     ),
-    state2: Dynamic = {};
-  for (let value8 of ["background", "color", "font"] as Dynamic) {
-    let attribute2: Dynamic = firstElementChild.getAttribute(
-      "data-page-" + value8,
+    pageStyles: Dynamic = {};
+  for (let styleName of ["background", "color", "font"] as Dynamic) {
+    let styleValue: Dynamic = firstElementChild.getAttribute(
+      "data-page-" + styleName,
     );
-    attribute2 !== null
-      ? (state2[value8] = attribute2)
-      : limits?.has(value8) === true && (state2[value8] = "");
+    styleValue !== null
+      ? (pageStyles[styleName] = styleValue)
+      : limits?.has(styleName) === true && (pageStyles[styleName] = "");
   }
   return {
-    ...(Object.keys(state2).length > 0
+    ...(Object.keys(pageStyles).length > 0
       ? {
-          page: state2,
+          page: pageStyles,
         }
       : {}),
-    ...(value7
+    ...(isDeleted
       ? {
-          del: value7,
+          del: isDeleted,
         }
       : {}),
-    ...(value6 !== undefined
+    ...(title !== undefined
       ? {
-          title: value6,
+          title: title,
         }
       : {}),
-    ...(value2 !== undefined
+    ...(x !== undefined
       ? {
-          x: value2,
+          x: x,
         }
       : {}),
-    ...(value3 !== undefined
+    ...(y !== undefined
       ? {
-          y: value3,
+          y: y,
         }
       : {}),
-    ...(value4 !== undefined
+    ...(width !== undefined
       ? {
-          w: value4,
+          w: width,
         }
       : {}),
-    ...(value5 !== undefined
+    ...(height !== undefined
       ? {
-          h: value5,
+          h: height,
         }
       : {}),
   };
@@ -327,13 +327,13 @@ function findAdjacentArtboardSpaces(
       ) + ARTBOARD_PLACEMENT_GAP,
     callback: Dynamic = (input?: Dynamic): Dynamic =>
       String(Math.round(input)),
-    value2: Dynamic =
+    direct: Dynamic =
       belowY === reference.y + reference.h + ARTBOARD_PLACEMENT_GAP;
   return {
     below: {
       x: reference.x,
       y: belowY,
-      direct: value2,
+      direct: direct,
     },
     right: {
       x: rightX,
@@ -348,7 +348,7 @@ function findAdjacentArtboardSpaces(
       callback(reference.x) +
       ", top " +
       callback(belowY) +
-      (value2
+      (direct
         ? " (directly under it)"
         : " (under what is already below it)") +
       "; right: left " +
@@ -374,8 +374,8 @@ function findAvailableArtboardPosition(
     }),
     isFree: Dynamic = (input?: Dynamic): Dynamic =>
       !occupied.some(
-        (input2?: Dynamic): Dynamic =>
-          artboardRectanglesOverlap(input, input2),
+        (occupiedRect?: Dynamic): Dynamic =>
+          artboardRectanglesOverlap(input, occupiedRect),
       );
   if (
     requested.x !== undefined &&
@@ -391,9 +391,9 @@ function findAvailableArtboardPosition(
       occupied.filter((input?: Dynamic): Dynamic => input !== reference),
       reference,
     ),
-    value2: Dynamic = requested.x ?? reference.x,
-    value3: Dynamic = requested.y ?? reference.y + reference.h,
-    value4: Dynamic = [
+    preferredX: Dynamic = requested.x ?? reference.x,
+    preferredY: Dynamic = requested.y ?? reference.y + reference.h,
+    candidates: Dynamic = [
       {
         ...value.below,
         moved: "below",
@@ -409,16 +409,16 @@ function findAvailableArtboardPosition(
     ].filter(
       (input?: Dynamic): Dynamic => isFree(rectangle(input.x, input.y)),
     );
-  value4.sort(
+  candidates.sort(
     (input?: Dynamic, options?: Dynamic): Dynamic =>
-      Math.hypot(input.x - value2, input.y - value3) -
-      Math.hypot(options.x - value2, options.y - value3),
+      Math.hypot(input.x - preferredX, input.y - preferredY) -
+      Math.hypot(options.x - preferredX, options.y - preferredY),
   );
-  if (value4.length > 0)
+  if (candidates.length > 0)
     return {
-      x: value4[0].x,
-      y: value4[0].y,
-      moved: value4[0].moved,
+      x: candidates[0].x,
+      y: candidates[0].y,
+      moved: candidates[0].moved,
     };
   let x: Dynamic = value.row.x;
   for (

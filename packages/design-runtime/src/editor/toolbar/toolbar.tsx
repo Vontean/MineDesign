@@ -8,8 +8,8 @@ import { reactCanvasMeasurements } from "../../canvas/measurements";
 import { CdsRoot } from "../../cds/theme/root";
 import { TooltipGroup } from "../../cds/tooltip/tooltip";
 import { joinClassNames } from "../chrome/overlay-state";
-import { jsxToolbarLayout, toolbarDensity, ToolbarLayoutConstant, ToolbarLayoutConstant_2 as touchPinWidthThreshold, ToolbarLayoutLimit, updateToolbarEmptySlots, updateToolbarPinnedWords, useTouchToolbar } from "./layout";
-import { ToolbarPrimitivesComponent, ToolbarPrimitivesContext, ToolbarPrimitivesContext_2 } from "./primitives";
+import { jsxToolbarLayout, toolbarDensity, ToolbarLayoutConstant, touchPinWidthThreshold, ToolbarLayoutLimit, updateToolbarEmptySlots, updateToolbarPinnedWords, useTouchToolbar } from "./layout";
+import { ToolbarPrimitivesComponent, ToolbarPrimitivesContext, toolbarReadOnlyContext } from "./primitives";
 import { ToolbarPublishControls, ToolbarSurface } from "./publish-controls";
 import { ToolbarSaveFailure, ToolbarSaveStatus } from "./save-status";
 import { ToolbarScroller } from "./scroller";
@@ -158,7 +158,7 @@ function EditorToolbar({
     >
       <TooltipGroup>
         <ToolbarPrimitivesContext.Provider value={isCollapsed}>
-          <ToolbarPrimitivesContext_2.Provider value={isReadOnly}>
+          <toolbarReadOnlyContext.Provider value={isReadOnly}>
             <ToolbarSurface
               floating={isFloating}
               className={"tb-card tb-card-start flex min-w-0 items-center"}
@@ -253,7 +253,7 @@ function EditorToolbar({
                   />
                 </span>) : (null)}
             </ToolbarSurface>
-          </ToolbarPrimitivesContext_2.Provider>
+          </toolbarReadOnlyContext.Provider>
         </ToolbarPrimitivesContext.Provider>
       </TooltipGroup>
     </CdsRoot>

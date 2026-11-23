@@ -7,16 +7,16 @@ import { validateStyleGradient } from "./gradient";
 import { StyleSchemaNodeTypesLinearEaseEaseInValues } from "./node-types";
 import { validateStyleShadows } from "./shadow";
 import { getPropertyValidationClass, isStyleObject, validateOptionalStyleNumber, validateStyleEnum, validateStyleNumber } from "./validation";
-import { StyleSchemaValuesHandler, StyleSchemaValuesHandler_2, StyleSchemaValuesHandler_3, StyleSchemaValuesItems, StyleSchemaValuesItems_2 as transformFieldSpecs, StyleSchemaValuesTransformOpacityColorValues } from "./values";
+import { StyleSchemaValuesHandler, numberRangeSpec, integerRangeSpec, StyleSchemaValuesItems, transformFieldSpecs, StyleSchemaValuesTransformOpacityColorValues } from "./values";
 
 var pixelLengthRange: Dynamic;
 var percentLengthRange: Dynamic;
 var transitionDurationRange: Dynamic;
 var transitionDelayRange: Dynamic;
-var StyleSchemaValuesHandlerValue_12: Dynamic;
-var StyleSchemaValuesHandlerValue_13: Dynamic;
-var StyleSchemaValuesHandlerValue_14: Dynamic;
-var StyleSchemaValuesHandlerValue_15: Dynamic;
+var range200To10000: Dynamic;
+var range0To5000: Dynamic;
+var integerRange1To1000: Dynamic;
+var range0To100: Dynamic;
 function validateStyleFields(fieldDefinitions?: Dynamic, styleObject?: Dynamic): Dynamic {
   if (!isStyleObject(styleObject)) return;
   let value: Dynamic = Object.create(null),
@@ -156,14 +156,14 @@ function validateStyleValue(
   }
 }
 export {
-  transitionDurationRange as StyleSchemaValuesHandlerValue_10,
-  transitionDelayRange as StyleSchemaValuesHandlerValue_11,
-  StyleSchemaValuesHandlerValue_12,
-  StyleSchemaValuesHandlerValue_13,
-  StyleSchemaValuesHandlerValue_14,
-  StyleSchemaValuesHandlerValue_15,
-  pixelLengthRange as StyleSchemaValuesHandlerValue_8,
-  percentLengthRange as StyleSchemaValuesHandlerValue_9,
+  transitionDurationRange,
+  transitionDelayRange,
+  range200To10000,
+  range0To5000,
+  integerRange1To1000,
+  range0To100,
+  pixelLengthRange,
+  percentLengthRange,
   validateStyleFields,
   validateStyleLength,
   validateStyleTransition,
@@ -175,32 +175,32 @@ export function installEditorStyleSchemaStructuredValues(): () => void {
       0,
       4096,
     );
-    percentLengthRange = StyleSchemaValuesHandler_2(
+    percentLengthRange = numberRangeSpec(
       1,
       100,
     );
-    transitionDurationRange = StyleSchemaValuesHandler_2(
+    transitionDurationRange = numberRangeSpec(
       0,
       5e3,
     );
-    transitionDelayRange = StyleSchemaValuesHandler_2(
+    transitionDelayRange = numberRangeSpec(
       0,
       5e3,
     );
-    StyleSchemaValuesHandlerValue_12 = StyleSchemaValuesHandler_2(
+    range200To10000 = numberRangeSpec(
       200,
       1e4,
     );
-    StyleSchemaValuesHandlerValue_13 = StyleSchemaValuesHandler_2(
+    range0To5000 = numberRangeSpec(
       0,
       5e3,
     );
-    StyleSchemaValuesHandlerValue_14 = StyleSchemaValuesHandler_3(
+    integerRange1To1000 = integerRangeSpec(
       1,
       1e3,
       1,
     );
-    StyleSchemaValuesHandlerValue_15 = StyleSchemaValuesHandler_2(
+    range0To100 = numberRangeSpec(
       0,
       100,
     );

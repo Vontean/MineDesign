@@ -10,7 +10,7 @@ import { validateLosslessPicture } from "./lossless";
 import { buildPdfOutline, maxOutlineTitleLength } from "./outline";
 import { buildPdfStructureTree, collectPdfStructureRoles } from "./structure";
 import { createPdfUnicodeEncoder, encodeWinAnsiOperand, spaceOperands } from "./text-encoding";
-import { buildPdfTextOperators, buildPdfTextRuns, PdfTextOperatorsFreezeValue, PdfTextOperatorsFreezeValue_3 as pdfFreezeValues, PdfTextOperatorsLimit_2 as pdfTextOperatorsLimit, PdfTextOperatorsSubscribers, PdfTextOperatorsSubscribers_2 as pdfTextOperatorSubscribers, textRunsNeedSpace } from "./text-operators";
+import { buildPdfTextOperators, buildPdfTextRuns, PdfTextOperatorsFreezeValue, allowedListStyles as pdfFreezeValues, maxListItemIndex as pdfTextOperatorsLimit, PdfTextOperatorsSubscribers, allowedListStyleSet as pdfTextOperatorSubscribers, textRunsNeedSpace } from "./text-operators";
 import { buildPdfFontObjects, pdfHexCodeUnit, PdfUnicodeFontConstant } from "./unicode-font";
 
 var PdfDocumentLimit: Dynamic;
@@ -706,7 +706,7 @@ export {
   formatPdfNumber,
   normalizePdfTitle,
   PdfDocumentLimit,
-  maxPdfDimensionPt as PdfDocumentLimit_2,
+  maxPdfDimensionPt,
   PdfDocumentResolvedValue,
   pdfStringOperand,
   pdfTextOperand,

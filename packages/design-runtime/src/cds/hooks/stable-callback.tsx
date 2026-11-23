@@ -5,7 +5,7 @@ import { initializeOnce, toModuleNamespace } from "../../module-helpers";
 
 var initializeHooksStableCallback: () => void;
 var reactHooksStableCallback: typeof React;
-var initializeHooksStableCallback_2: () => void;
+var initializeStableCallbackReact: () => void;
 function asElement(target: EventTarget | null | undefined): Element | null {
   return (
     (target as Node | null | undefined)?.nodeType === 1 ? target : null
@@ -56,7 +56,7 @@ export {
   createOptionalStableCallback,
   createStableCallback,
   initializeHooksStableCallback,
-  initializeHooksStableCallback_2,
+  initializeStableCallbackReact,
   reactHooksStableCallback,
   useOptionalStableCallback,
   useStableCallback,
@@ -64,7 +64,7 @@ export {
 export function installCdsHooksStableCallback(): () => void {
   return () => {
     initializeHooksStableCallback = initializeOnce(() => {});
-    initializeHooksStableCallback_2 = initializeOnce(() => {
+    initializeStableCallbackReact = initializeOnce(() => {
       reactHooksStableCallback = toModuleNamespace(
         load_react(),
       );

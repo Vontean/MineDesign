@@ -37,14 +37,14 @@ function parseLayoutProbe(value: unknown): LayoutProbe | null {
         ? "row"
         : null;
   if (parent === "grid" || parent === "inline-grid") {
-    let value2 =
+    let columnCount =
       boundedDomProbeString(probe.cols) === "none"
         ? 1
         : boundedDomProbeString(probe.cols)
             .trim()
             .split(/\s+/)
             .filter((input) => /^[\d.]+px$/.test(input)).length;
-    return value2 === 1 ? callback() : value2 > 1 ? "row" : null;
+    return columnCount === 1 ? callback() : columnCount > 1 ? "row" : null;
   }
   return [
     "block",
@@ -101,56 +101,56 @@ function parseComputedColor(value: unknown): string | null {
       boundedDomProbeString(value),
     );
   if (rgbaMatch === null) return null;
-  let [items, items2, items3] = [
+  let [items, green, blue] = [
       Number(rgbaMatch[1]),
       Number(rgbaMatch[2]),
       Number(rgbaMatch[3]),
     ],
-    value2 =
+    alpha =
       rgbaMatch[4] === undefined
         ? 1
         : Math.round(Number(rgbaMatch[4]) * 100) / 100;
-  return items > 255 || items2 > 255 || items3 > 255
+  return items > 255 || green > 255 || blue > 255
     ? null
-    : value2 === 0
+    : alpha === 0
       ? "none"
-      : value2 === 1
+      : alpha === 1
         ? "#" +
-          [items, items2, items3]
+          [items, green, blue]
             .map((input) => input.toString(16).padStart(2, "0"))
             .join("")
-        : "rgba(" + [items, items2, items3, value2].join(", ") + ")";
+        : "rgba(" + [items, green, blue, alpha].join(", ") + ")";
 }
 function parseComputedStyleProbe(value: unknown): ComputedStyleProbe {
   if (value === null || typeof value != "object") return {};
   let probe: DataRecord = value as DataRecord,
     inRange: (n: number, range: readonly [number, number]) => boolean = (
       input,
-      [options, options2],
-    ) => Number.isFinite(input) && input >= options && input <= options2,
-    value2 = /^(\d{1,4}(?:\.\d{1,6})?)px$/.exec(
+      [options, max],
+    ) => Number.isFinite(input) && input >= options && input <= max,
+    sizeMatch = /^(\d{1,4}(?:\.\d{1,6})?)px$/.exec(
       boundedDomProbeString(probe.size),
     ),
-    value3 = value2 === null ? NaN : Math.round(Number(value2[1]) * 10) / 10,
-    value4 = /^\d{3}$/.test(boundedDomProbeString(probe.weight))
+    fontSize = sizeMatch === null ? NaN : Math.round(Number(sizeMatch[1]) * 10) / 10,
+    fontWeight = /^\d{3}$/.test(boundedDomProbeString(probe.weight))
       ? Number(probe.weight)
       : NaN,
     callback: (n: unknown) => number = (input) =>
       typeof input == "number" ? Math.round(input) : NaN,
-    value5 = callback(probe.w),
-    value6 = callback(probe.h),
-    value7 = parseComputedColor(probe.color),
-    value8 = parseComputedColor(probe.ground),
-    value9 = parseComputedColor(probe.behind);
+    width = callback(probe.w),
+    height = callback(probe.h),
+    color = parseComputedColor(probe.color),
+    ground = parseComputedColor(probe.ground),
+    behind = parseComputedColor(probe.behind);
   return {
-    ...(inRange(value3, COMPUTED_STYLE_RANGES.size)
+    ...(inRange(fontSize, COMPUTED_STYLE_RANGES.size)
       ? {
-          size: value3,
+          size: fontSize,
         }
       : {}),
-    ...(inRange(value4, COMPUTED_STYLE_RANGES.weight)
+    ...(inRange(fontWeight, COMPUTED_STYLE_RANGES.weight)
       ? {
-          weight: value4,
+          weight: fontWeight,
         }
       : {}),
     ...(probe.style === "italic" || probe.style === "oblique"
@@ -158,19 +158,19 @@ function parseComputedStyleProbe(value: unknown): ComputedStyleProbe {
           style: probe.style,
         }
       : {}),
-    ...(value7 !== null && value7 !== "none"
+    ...(color !== null && color !== "none"
       ? {
-          color: value7,
+          color: color,
         }
       : {}),
-    ...(value8 !== null
+    ...(ground !== null
       ? {
-          ground: value8,
+          ground: ground,
         }
       : {}),
-    ...(value8 === "none" && value9 !== null && value9 !== "none"
+    ...(ground === "none" && behind !== null && behind !== "none"
       ? {
-          behind: value9,
+          behind: behind,
         }
       : {}),
     ...(probe.align === "center" ||
@@ -180,11 +180,11 @@ function parseComputedStyleProbe(value: unknown): ComputedStyleProbe {
           align: probe.align,
         }
       : {}),
-    ...(inRange(value5, COMPUTED_STYLE_RANGES.box) &&
-    inRange(value6, COMPUTED_STYLE_RANGES.box)
+    ...(inRange(width, COMPUTED_STYLE_RANGES.box) &&
+    inRange(height, COMPUTED_STYLE_RANGES.box)
       ? {
-          w: value5,
-          h: value6,
+          w: width,
+          h: height,
         }
       : {}),
   };
@@ -198,15 +198,15 @@ function parseDomProbeRectangles(value: unknown): ProbeRectangle[] {
     ? value
         .slice(0, MAX_STYLE_PROBE_PROPERTIES)
         .flatMap((items): ProbeRectangle[] => {
-          let value2 =
+          let coordinates =
             Array.isArray(items) && items.length === 4
               ? items.map(boundedCoordinate)
               : [];
-          return value2.length === 4 &&
-            value2.every((input) => input !== null) &&
-            value2[2]! > value2[0]! &&
-            value2[3]! > value2[1]!
-            ? [[value2[0]!, value2[1]!, value2[2]!, value2[3]!]]
+          return coordinates.length === 4 &&
+            coordinates.every((input) => input !== null) &&
+            coordinates[2]! > coordinates[0]! &&
+            coordinates[3]! > coordinates[1]!
+            ? [[coordinates[0]!, coordinates[1]!, coordinates[2]!, coordinates[3]!]]
             : [];
         })
     : [];
@@ -217,28 +217,28 @@ function findNearestProbeRectangle(
   y: number,
 ): NearestRectangle | null {
   let nearest: RankedRectangle | null = null;
-  for (let [value, value2, value3, value4] of rectangles) {
-    let value5 = Math.max(value - x, x - value3, 0),
-      value6 = Math.max(value2 - y, y - value4, 0),
-      value7 = Math.hypot(value5, value6);
-    if (value5 <= 8 && value6 <= 8) return null;
-    let value8 = value6 === 0;
+  for (let [value, top, right, bottom] of rectangles) {
+    let horizontalDistance = Math.max(value - x, x - right, 0),
+      verticalDistance = Math.max(top - y, y - bottom, 0),
+      distance = Math.hypot(horizontalDistance, verticalDistance);
+    if (horizontalDistance <= 8 && verticalDistance <= 8) return null;
+    let level = verticalDistance === 0;
     (nearest === null ||
-      (value8 && !nearest.level) ||
-      (value8 === nearest.level && value7 < nearest.d)) &&
+      (level && !nearest.level) ||
+      (level === nearest.level && distance < nearest.d)) &&
       (nearest =
-        value5 >= value6
+        horizontalDistance >= verticalDistance
           ? {
-              px: Math.round(value5),
-              side: x > value3 ? "right" : "left",
-              d: value7,
-              level: value8,
+              px: Math.round(horizontalDistance),
+              side: x > right ? "right" : "left",
+              d: distance,
+              level: level,
             }
           : {
-              px: Math.round(value6),
-              side: y > value4 ? "below" : "above",
-              d: value7,
-              level: value8,
+              px: Math.round(verticalDistance),
+              side: y > bottom ? "below" : "above",
+              d: distance,
+              level: level,
             });
   }
   return nearest === null
@@ -260,7 +260,7 @@ function parseElementHitProbe(value: unknown): ElementHitProbe | null {
     typeof probe.atPath != "boolean"
   )
     return null;
-  let value2 = normalizeDomProbeText(probe.own);
+  let ownText = normalizeDomProbeText(probe.own);
   return {
     tid:
       typeof probe.tpl == "number" &&
@@ -270,9 +270,9 @@ function parseElementHitProbe(value: unknown): ElementHitProbe | null {
         ? probe.tpl
         : null,
     tag: tag,
-    own: value2,
+    own: ownText,
     all: normalizeDomProbeText(probe.all),
-    hollow: value2 === "" && !probe.interp && probe.kids > 0,
+    hollow: ownText === "" && !probe.interp && probe.kids > 0,
     imported: probe.imported,
     atPath: probe.atPath,
     words: parseDomProbeRectangles(probe.words),

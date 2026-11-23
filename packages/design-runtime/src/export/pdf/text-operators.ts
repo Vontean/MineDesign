@@ -2,7 +2,7 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { formatPdfNumber, PdfDocumentLimit_2 as maxPdfDimensionPt, PdfDocumentResolvedValue as maxTextExtentPt } from "./document";
+import { formatPdfNumber, maxPdfDimensionPt, PdfDocumentResolvedValue as maxTextExtentPt } from "./document";
 import { needsInterwordSpace } from "./link-annotations";
 
 var PdfTextOperatorsLimit: Dynamic;
@@ -305,12 +305,11 @@ export {
   buildPdfTextRuns,
   getTableCellStructureRole,
   PdfTextOperatorsFreezeValue,
-  allowedStructureRoles as PdfTextOperatorsFreezeValue_2,
-  allowedListStyles as PdfTextOperatorsFreezeValue_3,
+  allowedListStyles,
   PdfTextOperatorsLimit,
-  maxListItemIndex as PdfTextOperatorsLimit_2,
+  maxListItemIndex,
   PdfTextOperatorsSubscribers,
-  allowedListStyleSet as PdfTextOperatorsSubscribers_2,
+  allowedListStyleSet,
   textRunsNeedSpace,
 };
 export function installExportPdfTextOperators(): () => void {

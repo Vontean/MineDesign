@@ -10,14 +10,14 @@ import { cn } from "../../cds/theme/class-names";
 import { load_react_jsx_runtime } from "../../dependencies";
 import { formatCssNumber, getFineUnitStep, parseCssNumber, roundCssNumber, stepCssNumber } from "../css/values";
 import { normalizePropertyNumber } from "../inspector/property-schema";
-import { reactPropertiesAssetPicker_3 } from "./asset-picker";
+import { reactForUseBackgroundEditor } from "./asset-picker";
 import { useLiveStyleScrub } from "./live-scrub";
 import { PropertyRow } from "./row";
 import { PropertySelect } from "./select";
 import { toModuleNamespace } from "../../module-helpers";
 
 var PropertiesSizingRowHandler: Dynamic;
-var PropertiesSizingRowHandler_2: Dynamic;
+var sizingIconSpec: Dynamic;
 var JustifyStartValue: Dynamic;
 var JustifyCenterValue: Dynamic;
 var JustifyEndValue: Dynamic;
@@ -46,10 +46,10 @@ function PropertySizingRow({
 }: Dynamic): Dynamic {
   useUiLocale();
   let [draftText, setDraftText]: Dynamic = (0,
-    reactPropertiesAssetPicker_3.useState)(sizeValue ?? ""),
-    isFocusedRef: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)(false),
-    hasEditedRef: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)(false),
-    isCancelingRef: Dynamic = (0, reactPropertiesAssetPicker_3.useRef)(false),
+    reactForUseBackgroundEditor.useState)(sizeValue ?? ""),
+    isFocusedRef: Dynamic = (0, reactForUseBackgroundEditor.useRef)(false),
+    hasEditedRef: Dynamic = (0, reactForUseBackgroundEditor.useRef)(false),
+    isCancelingRef: Dynamic = (0, reactForUseBackgroundEditor.useRef)(false),
     commitSize: Dynamic = (newSize?: Dynamic): Dynamic =>
       onCommitMany([
         {
@@ -116,7 +116,7 @@ function PropertySizingRow({
         placeholder={mixed ? (uiMessage("inspector.sizingRow.mixed")) : (fallbackText)}
         aria-label={label}
         title={
-          !mixed && fallback && fallbackText !== fallback ? (uiMessage("inspector.sizingRow.renderedSizeValue1", { value1: String(fallback) })) : (undefined)
+          !mixed && fallback && fallbackText !== fallback ? (uiMessage("inspector.sizingRow.renderedSize", { size: String(fallback) })) : (undefined)
         }
         disabled={isDisabled}
         className={cn(
@@ -205,7 +205,7 @@ function PropertySizingRow({
       />
       <PropertySelect
         compact={true}
-        aria-label={uiMessage("inspector.sizingRow.mode", { value1: String(label) })}
+        aria-label={uiMessage("inspector.sizingRow.mode", { label: String(label) })}
         data-testid={`dc-size-mode-${prop}`}
         items={
           fixedOnlyReason !== undefined
@@ -260,11 +260,11 @@ export {
   JustifySpaceBetweenValue,
   JustifyStartValue,
   PropertiesSizingRowFlexStartStartCenterConfig,
-  alignItemsIcons as PropertiesSizingRowFlexStartStartCenterConfig_2,
+  alignItemsIcons,
   PropertiesSizingRowHandler,
-  PropertiesSizingRowHandler_2,
+  sizingIconSpec,
   PropertiesSizingRowHandlerValue,
-  layeredLayoutIcon as PropertiesSizingRowHandlerValue_2,
+  layeredLayoutIcon,
   PropertiesSizingRowLeftHcenterRightConfig,
   PropertiesSizingRowTlTrBlConfig,
   PropertySizingRow,
@@ -279,7 +279,7 @@ export function installEditorPropertiesSizingRow(): () => void {
       d: pathData,
       strokeWidth: strokeWidth,
     });
-    PropertiesSizingRowHandler_2 = (
+    sizingIconSpec = (
       iconName?: Dynamic,
       pathData?: Dynamic,
     ): Dynamic => ({
@@ -301,15 +301,15 @@ export function installEditorPropertiesSizingRow(): () => void {
       "flex-end": JustifyEndValue,
       end: JustifyEndValue,
       "space-between": JustifySpaceBetweenValue,
-      "space-around": PropertiesSizingRowHandler_2(
+      "space-around": sizingIconSpec(
         "JustifyAround",
         "M2.5 2.5V13.5M13.5 2.5V13.5M6 5V11M10 5V11",
       ),
-      "space-evenly": PropertiesSizingRowHandler_2(
+      "space-evenly": sizingIconSpec(
         "JustifyEvenly",
         "M2.5 2.5V13.5M13.5 2.5V13.5M6.25 5V11M9.75 5V11M8 7V9",
       ),
-      stretch: PropertiesSizingRowHandler_2(
+      stretch: sizingIconSpec(
         "JustifyStretch",
         "M2.5 2.5V13.5M13.5 2.5V13.5M4.5 6H11.5M4.5 10H11.5",
       ),
@@ -321,63 +321,63 @@ export function installEditorPropertiesSizingRow(): () => void {
       "flex-end": AlignEndValue,
       end: AlignEndValue,
       stretch: "AlignStretch",
-      baseline: PropertiesSizingRowHandler_2(
+      baseline: sizingIconSpec(
         "AlignItemsBaseline",
         "M2.5 10.5H13.5M5 10.5V5L6.5 5M9.5 10.5V7H11.5V10.5",
       ),
-      auto: PropertiesSizingRowHandler_2(
+      auto: sizingIconSpec(
         "AlignAuto",
         "M4 4H6M10 4H12M4 12H6M10 12H12M4 4V6M12 4V6M4 10V12M12 10V12",
       ),
     };
     PropertiesSizingRowTlTrBlConfig = {
-      tl: PropertiesSizingRowHandler_2(
+      tl: sizingIconSpec(
         "ConnectorDownRight",
         "M4 4L12 12M12 6.5V12H6.5",
       ),
-      tr: PropertiesSizingRowHandler_2(
+      tr: sizingIconSpec(
         "ConnectorDownLeft",
         "M12 4L4 12M4 6.5V12H9.5",
       ),
-      bl: PropertiesSizingRowHandler_2(
+      bl: sizingIconSpec(
         "ConnectorUpRight",
         "M4 12L12 4M6.5 4H12V9.5",
       ),
-      br: PropertiesSizingRowHandler_2(
+      br: sizingIconSpec(
         "ConnectorUpLeft",
         "M12 12L4 4M9.5 4H4V9.5",
       ),
     };
-    PropertiesSizingRowHandlerValue = PropertiesSizingRowHandler_2(
+    PropertiesSizingRowHandlerValue = sizingIconSpec(
       "LayoutStack",
       "M2.5 3.5H13.5V12.5H2.5Z M5 6V10M8 6V10M11 6V10",
     );
-    layeredLayoutIcon = PropertiesSizingRowHandler_2(
+    layeredLayoutIcon = sizingIconSpec(
       "LayoutLayered",
       "M3 5H11V11H3Z M5 3H13V9",
     );
     PropertiesSizingRowLeftHcenterRightConfig = {
-      left: PropertiesSizingRowHandler_2(
+      left: sizingIconSpec(
         "ActionAlignLeft",
         "M3.93 3.4V12.58M6.59 10.99H12.17M6.59 7.99H9.48M6.59 4.99H12.17",
       ),
-      hcenter: PropertiesSizingRowHandler_2(
+      hcenter: sizingIconSpec(
         "ActionAlignHCenter",
         "M5.21 10.99H10.79M6.56 7.99H9.44M5.21 4.99H10.79",
       ),
-      right: PropertiesSizingRowHandler_2(
+      right: sizingIconSpec(
         "ActionAlignRight",
         "M12.07 3.4V12.58M3.83 10.99H9.41M6.52 7.99H9.41M3.83 4.99H9.41",
       ),
-      top: PropertiesSizingRowHandler_2(
+      top: sizingIconSpec(
         "ActionAlignTop",
         "M5 6.58V12.16M11 6.58V12.16M8 6.58V9.47M3.41 3.93H12.59",
       ),
-      vcenter: PropertiesSizingRowHandler_2(
+      vcenter: sizingIconSpec(
         "ActionAlignVCenter",
         "M10.99 5.21V10.79M7.99 6.56V9.44M4.99 5.21V10.79",
       ),
-      bottom: PropertiesSizingRowHandler_2(
+      bottom: sizingIconSpec(
         "ActionAlignBottom",
         "M3.42 12.07H12.6M5.01 3.83V9.41M8.01 6.52V9.41M11.01 3.83V9.41",
       ),

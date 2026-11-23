@@ -4,7 +4,7 @@ import { initializeOnce } from "../../module-helpers";
 
 var initializeDomOwnerWindow: () => void;
 var accentColorNames: string[];
-var initializeDomOwnerWindow_2: () => void;
+var initializeAccentColorNames: () => void;
 function getOwnerWindow(element?: Element | null): Window | undefined {
   return element?.ownerDocument.defaultView ?? globalThis.window;
 }
@@ -22,13 +22,13 @@ export {
   getConnectedOwnerWindow,
   getOwnerWindow,
   initializeDomOwnerWindow,
-  initializeDomOwnerWindow_2,
+  initializeAccentColorNames,
   isDetachedElement,
 };
 export function installCdsDomOwnerWindow(): () => void {
   return () => {
     initializeDomOwnerWindow = initializeOnce(() => {});
-    initializeDomOwnerWindow_2 = initializeOnce(() => {
+    initializeAccentColorNames = initializeOnce(() => {
       accentColorNames = [
         "red",
         "orange",

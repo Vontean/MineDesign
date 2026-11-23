@@ -403,7 +403,7 @@ export {
   linkedStylesheetHydrationScript,
   buildOpenTag as PreviewDependencyInjectionJoin,
   addressRefusedOnerror as PreviewDependencyInjectionResolvedValue,
-  addressRefusedListenerScript as PreviewDependencyInjectionResolvedValue_2,
+  addressRefusedListenerScript,
   withAddressRefusedOnerror as PreviewDependencyInjectionTrim,
   rewriteHtmlDependencies,
   rewritePreviewAssets,

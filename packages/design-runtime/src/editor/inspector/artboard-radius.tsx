@@ -9,13 +9,13 @@ import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { ViewOnlyYouCanInspectThisMessage } from "../outline/annotations";
 import { PropertyCornersRow } from "../properties/sides";
 import { toModuleNamespace } from "../../module-helpers";
-import { artboardRadiusCorners, PlatformFileContentResolvedValue_3 as maxCornerRadius } from "../../platform/file-content";
+import { artboardRadiusCorners, maxArtboardRadius as maxCornerRadius } from "../../platform/file-content";
 
 var jsxInspectorArtboardRadius: Dynamic;
 var InspectorArtboardRadiusItems: Dynamic;
-var InspectorArtboardRadiusItems_2: Dynamic;
+var radiusPlaceholders: Dynamic;
 var reactInspectorArtboardRadius: Dynamic;
-var reactInspectorArtboardRadius_2: Dynamic;
+var reactForSessionTypographyPopup: Dynamic;
 function ArtboardRadiusRow({
   radius: radius,
   readOnly = false,
@@ -35,7 +35,7 @@ function ArtboardRadiusRow({
       data-testid={"dc-artboard-radius"}
       title={readOnly ? (ViewOnlyYouCanInspectThisMessage) : (undefined)}
       values={radius === undefined ? InspectorArtboardRadiusItems : corners}
-      placeholders={InspectorArtboardRadiusItems_2}
+      placeholders={radiusPlaceholders}
       unit={"px"}
       min={0}
       max={maxCornerRadius}
@@ -60,10 +60,10 @@ function ArtboardRadiusRow({
 export {
   ArtboardRadiusRow,
   InspectorArtboardRadiusItems,
-  InspectorArtboardRadiusItems_2,
+  radiusPlaceholders,
   jsxInspectorArtboardRadius,
   reactInspectorArtboardRadius,
-  reactInspectorArtboardRadius_2,
+  reactForSessionTypographyPopup,
 };
 export function installEditorInspectorArtboardRadius(): () => void {
   return () => {
@@ -72,13 +72,13 @@ export function installEditorInspectorArtboardRadius(): () => void {
       1,
     );
     InspectorArtboardRadiusItems = [undefined, undefined, undefined, undefined];
-    InspectorArtboardRadiusItems_2 = ["0", "0", "0", "0"];
+    radiusPlaceholders = ["0", "0", "0", "0"];
     initializeCdsIndex();
     reactInspectorArtboardRadius = toModuleNamespace(
       load_react(),
       1,
     );
-    reactInspectorArtboardRadius_2 = toModuleNamespace(
+    reactForSessionTypographyPopup = toModuleNamespace(
       load_react(),
       1,
     );

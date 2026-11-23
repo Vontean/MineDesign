@@ -4,9 +4,9 @@ import {
 } from "../runtime-types";
 import { load_react_jsx_runtime } from "../dependencies";
 import { fitPenCurve, flattenCubicPath, penPathBounds } from "../editor/geometry/pen";
-import { InspectorColorPickResolvedValue_2 as isMetaPrimaryKey } from "../editor/inspector/color-pick";
+import { isDesktopMac as isMetaPrimaryKey } from "../editor/inspector/color-pick";
 import { toModuleNamespace } from "../module-helpers";
-import { PlatformFileContentConstant_16 as minArtboardEdge, PlatformFileContentConstant_19 as minPenPathExtent, PlatformFileContentLimit_6 as maxArtboardEdge, PlatformFileContentLimit_7 as maxPenPathCoordinates, PlatformFileContentTrim_2 } from "../platform/file-content";
+import { minEmbeddedArtboardDimension as minArtboardEdge, minShapeDimension as minPenPathExtent, maxCanvasItemDimension as maxArtboardEdge, maxPenPathChars as maxPenPathCoordinates, sanitizePenPath } from "../platform/file-content";
 
 var jsx_Nn: Dynamic;
 var freehandSimplifyTolerance: Dynamic;
@@ -82,7 +82,7 @@ function freehandDrawingAnnotation(
         flattenedPath.map((coordinate?: Dynamic): Dynamic => coordinate / overscale),
         1,
       ));
-    if (PlatformFileContentTrim_2(pathBounds.d) !== null)
+    if (sanitizePenPath(pathBounds.d) !== null)
       return toAnnotation(pathBounds);
   }
   let sampleStep: Dynamic = Math.max(1, Math.ceil(points.length / 1500)),

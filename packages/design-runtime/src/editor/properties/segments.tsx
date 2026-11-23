@@ -7,7 +7,7 @@ import { SegmentedControl } from "../../cds/components/selection-points";
 import { initializeCdsIndex } from "../../cds/index";
 import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { joinClassNames } from "../chrome/overlay-state";
-import { ChromePanelCloseClassNames, ChromePanelCloseClassNames_2 } from "../chrome/panel-close";
+import { ChromePanelCloseClassNames, compactSegmentedControlClassName } from "../chrome/panel-close";
 import { InheritedValue } from "../color/contrast-copy";
 import { PropertyRow } from "./row";
 import { PropertyOptionIcon } from "./tool-options";
@@ -46,7 +46,7 @@ function PropertySegments({
       className={joinClassNames(
         "block min-w-0 flex-1",
         compact
-          ? ChromePanelCloseClassNames_2
+          ? compactSegmentedControlClassName
           : allHaveVisuals && ChromePanelCloseClassNames,
       )}
       data-testid={dataTestid}

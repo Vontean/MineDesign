@@ -7,7 +7,7 @@ import {
 } from "../../runtime-types";
 import { normalizePropertyNumber } from "../inspector/property-schema";
 import { PropertyTextInput } from "./css-number-row";
-import { inspectorFieldDisplay, Value_6 } from "./inherited-field";
+import { inspectorFieldDisplay, emDashPlaceholder } from "./inherited-field";
 import { PropertyRow } from "./row";
 import { PropertySelect } from "./select";
 
@@ -80,7 +80,7 @@ function PropertyCssEnumRow({
         )}
         value={state.mixed ? null : currentValue || null}
         placeholder={state.mixed ? (uiMessage("inspector.cssValueRow.mixed")) : (fallbackValue ? (fallbackLabel) : (undefined))}
-        hint={Value_6}
+        hint={emDashPlaceholder}
         title={
           isInherited && !state.inheritedFrom ? (uiMessage("inspector.cssValueRow.inheritedRightClickToKeep")) : (undefined)
         }

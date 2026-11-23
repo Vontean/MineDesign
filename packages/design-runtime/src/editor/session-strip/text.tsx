@@ -18,7 +18,7 @@ var jsxSessionStripText: Dynamic;
 var SessionStripTextNoneBulletNumberConfig: Dynamic;
 var SessionStripTextItems: Dynamic;
 var SessionStripTextStartCenterEndConfig: Dynamic;
-var SessionStripTextStartCenterEndConfig_2: Dynamic;
+var textAlignmentIcons: Dynamic;
 var SessionStripTextClassNames: Dynamic;
 function SessionLinkInput({
   value: linkText,
@@ -172,7 +172,7 @@ function TextSessionStrip(props?: Dynamic): Dynamic {
       (alignment?: Dynamic): Dynamic => ({
         value: alignment,
         label: SessionStripTextStartCenterEndConfig[alignment],
-        icon: SessionStripTextStartCenterEndConfig_2[alignment],
+        icon: textAlignmentIcons[alignment],
         disabledReason: props.align?.disabledReasons?.[alignment],
       }),
     );
@@ -201,7 +201,7 @@ function TextSessionStrip(props?: Dynamic): Dynamic {
               icon={"Link"}
               aria-label={uiMessage("inspector.text.link")}
               title={
-                linkConfig.disabledReason ?? (linkConfig.editable ? (linkConfig.href !== undefined ? (uiMessage("inspector.text.editTheLink", { value1: String(linkConfig.href) })) : (uiMessage("inspector.text.setTheLink"))) : (linkConfig.href !== undefined ? (uiMessage("inspector.text.removeTheLink2", { value1: String(linkConfig.href) })) : (uiMessage("inspector.text.linkTheWholeText"))))
+                linkConfig.disabledReason ?? (linkConfig.editable ? (linkConfig.href !== undefined ? (uiMessage("inspector.text.editTheLink", { url: String(linkConfig.href) })) : (uiMessage("inspector.text.setTheLink"))) : (linkConfig.href !== undefined ? (uiMessage("inspector.text.removeLinkWithUrl", { url: String(linkConfig.href) })) : (uiMessage("inspector.text.linkTheWholeText"))))
               }
               aria-pressed={linkConfig.href !== undefined}
               disabled={linkConfig.disabledReason != null}
@@ -221,7 +221,7 @@ function TextSessionStrip(props?: Dynamic): Dynamic {
                 key={"li:" + selKey}
                 testid={testidPrefix + "-list"}
                 title={
-                  props.list.disabledReason ?? (uiMessage("inspector.text.list", { value1: String(props.list.value === null ? (uiMessage("inspector.text.mixed")) : (SessionStripTextNoneBulletNumberConfig[
+                  props.list.disabledReason ?? (uiMessage("inspector.text.list", { style: String(props.list.value === null ? (uiMessage("inspector.text.mixed")) : (SessionStripTextNoneBulletNumberConfig[
                           props.list.value
                         ])) }))
                 }
@@ -239,10 +239,10 @@ function TextSessionStrip(props?: Dynamic): Dynamic {
                 key={"al:" + selKey}
                 testid={testidPrefix + "-align"}
                 title={
-                  uiMessage("inspector.text.alignment", { value1: String(props.align.value === null ? (uiMessage("inspector.text.mixed")) : (SessionStripTextStartCenterEndConfig[props.align.value])) })
+                  uiMessage("inspector.text.alignment", { alignment: String(props.align.value === null ? (uiMessage("inspector.text.mixed")) : (SessionStripTextStartCenterEndConfig[props.align.value])) })
                 }
                 face={
-                  SessionStripTextStartCenterEndConfig_2[
+                  textAlignmentIcons[
                     props.align.value ?? "start"
                   ]
                 }
@@ -296,7 +296,7 @@ export {
   SessionStripTextItems,
   SessionStripTextNoneBulletNumberConfig,
   SessionStripTextStartCenterEndConfig,
-  SessionStripTextStartCenterEndConfig_2,
+  textAlignmentIcons,
   TextSessionStrip,
 };
 export function installEditorSessionStripText(): () => void {
@@ -333,7 +333,7 @@ export function installEditorSessionStripText(): () => void {
       end: "Right",
       get justify() { return uiMessage("inspector.text.justify"); },
     };
-    SessionStripTextStartCenterEndConfig_2 = {
+    textAlignmentIcons = {
       start: TextAlignLeftValue,
       center: TextAlignCenterValue,
       end: TextAlignRightValue,

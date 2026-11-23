@@ -26,46 +26,46 @@ function instrumentSamplingClient(client?: Dynamic): Dynamic {
       let value: Dynamic = performance.now(),
         callback: Dynamic = (): Dynamic =>
           Math.round(performance.now() - value),
-        value2: Dynamic = fastEditDebugStore.add({
+        record: Dynamic = fastEditDebugStore.add({
           at: Date.now(),
           tier: input.tier,
           messages: input.turns.map(
-            (input2?: Dynamic): Dynamic => ({
-              role: input2.role,
-              content: input2.content,
+            (message?: Dynamic): Dynamic => ({
+              role: message.role,
+              content: message.content,
             }),
           ),
           reply: "",
           msFirst: null,
           ms: null,
         }),
-        value3: Dynamic = client.call({
+        call: Dynamic = client.call({
           ...input,
-          onText: (input2?: Dynamic): Dynamic => {
-            value2.reply = input2;
-            value2.msFirst === null &&
-              ((value2.msFirst = callback()), notifyFastEditDebugListeners());
-            input.onText(input2);
+          onText: (text?: Dynamic): Dynamic => {
+            record.reply = text;
+            record.msFirst === null &&
+              ((record.msFirst = callback()), notifyFastEditDebugListeners());
+            input.onText(text);
           },
         });
-      value3.promise.then(
-        (input2?: Dynamic): Dynamic => {
-          value2.reply = input2.text;
-          value2.ms = callback();
+      call.promise.then(
+        (result?: Dynamic): Dynamic => {
+          record.reply = result.text;
+          record.ms = callback();
           notifyFastEditDebugListeners();
         },
-        (input2?: Dynamic): Dynamic => {
-          let value4: Dynamic =
-            typeof input2 == "object" && input2 !== null ? input2 : {};
-          value2.ms = callback();
-          value2.error = {
-            code: String(value4.code ?? "error"),
-            message: String(value4.message ?? ""),
+        (error?: Dynamic): Dynamic => {
+          let errorDetails: Dynamic =
+            typeof error == "object" && error !== null ? error : {};
+          record.ms = callback();
+          record.error = {
+            code: String(errorDetails.code ?? "error"),
+            message: String(errorDetails.message ?? ""),
           };
           notifyFastEditDebugListeners();
         },
       );
-      return value3;
+      return call;
     },
   };
 }
@@ -79,13 +79,13 @@ function splitFastEditMessageSections(content?: Dynamic): Dynamic {
       emptyLines += 1;
       continue;
     }
-    let value2: Dynamic =
+    let heading: Dynamic =
       lastHeading === ""
         ? FAST_EDIT_MESSAGE_SECTION_PATTERN.exec(value)?.[0]
         : undefined;
-    value2 !== undefined || sections.length === 0
+    heading !== undefined || sections.length === 0
       ? sections.push({
-          head: value2 ?? "",
+          head: heading ?? "",
           text: value,
         })
       : (sections[sections.length - 1].text +=
@@ -103,7 +103,7 @@ function classifyFastEditDebugCall(call?: Dynamic): Dynamic {
       call.messages[call.messages.length - 1]?.content ?? "",
     ),
     getSection: Dynamic = (input?: Dynamic): Dynamic =>
-      sections.find((input2?: Dynamic): Dynamic => input2.head === input)
+      sections.find((section?: Dynamic): Dynamic => section.head === input)
         ?.text ?? "",
     pointedAt: Dynamic = getSection("[pointed at]").split(`
 `)[0],

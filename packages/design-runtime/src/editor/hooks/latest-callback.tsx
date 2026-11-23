@@ -6,9 +6,9 @@ import { load_react, load_react_jsx_runtime } from "../../dependencies";
 import { toModuleNamespace } from "../../module-helpers";
 
 var reactHooksLatestCallback: Dynamic;
-var reactHooksLatestCallback_2: Dynamic;
-var reactHooksLatestCallback_3: Dynamic;
-var reactHooksLatestCallback_4: Dynamic;
+var reactForCanvasShape: Dynamic;
+var reactForVectorPathEditor: Dynamic;
+var reactForUseVectorEditor: Dynamic;
 var jsxHooksLatestCallback: Dynamic;
 function useLatestCallback(callback?: Dynamic): Dynamic {
   let callbackRef: Dynamic = (0, reactHooksLatestCallback.useRef)(callback);
@@ -23,9 +23,9 @@ function useLatestCallback(callback?: Dynamic): Dynamic {
 export {
   jsxHooksLatestCallback,
   reactHooksLatestCallback,
-  reactHooksLatestCallback_2,
-  reactHooksLatestCallback_3,
-  reactHooksLatestCallback_4,
+  reactForCanvasShape,
+  reactForVectorPathEditor,
+  reactForUseVectorEditor,
   useLatestCallback,
 };
 export function installEditorHooksLatestCallback(): () => void {
@@ -34,15 +34,15 @@ export function installEditorHooksLatestCallback(): () => void {
       load_react(),
       1,
     );
-    reactHooksLatestCallback_2 = toModuleNamespace(
+    reactForCanvasShape = toModuleNamespace(
       load_react(),
       1,
     );
-    reactHooksLatestCallback_3 = toModuleNamespace(
+    reactForVectorPathEditor = toModuleNamespace(
       load_react(),
       1,
     );
-    reactHooksLatestCallback_4 = toModuleNamespace(
+    reactForUseVectorEditor = toModuleNamespace(
       load_react(),
       1,
     );

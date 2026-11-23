@@ -12,7 +12,7 @@ import { useLatestCallback } from "./hooks/latest-callback";
 import { isPropertyEditorTarget } from "./keyboard/find";
 import { shouldKeepLocalKeyboardEvent } from "./keyboard/paste";
 import { B6b0a7Value, defaultAnnotationStrokeColor } from "./media/video-playback";
-import { SessionTouchAndHistoryJsxValue, SessionTouchAndHistoryJsxValue_2 as frameHashGlyph } from "./session/touch-and-history";
+import { SessionTouchAndHistoryJsxValue, frameToolGlyph as frameHashGlyph } from "./session/touch-and-history";
 import { lineDrawingHtml } from "./svg/drawing";
 import { TextPlaceholderLabel } from "./text/placeholder";
 import { hasBlockingEditorOverlay } from "./text/typing-target";

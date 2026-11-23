@@ -195,10 +195,8 @@ export {
   pdfFallbackGlyphData,
   pdfHexCodeUnit,
   PdfUnicodeFontConstant,
-  fallbackFontWidth as PdfUnicodeFontConstant_2,
   PdfUnicodeFontItems,
   PdfUnicodeFontLimit,
-  surrogateRangeSize as PdfUnicodeFontLimit_2,
   unicodeGlyphWidth,
 };
 export function installExportPdfUnicodeFont(): () => void {

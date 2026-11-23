@@ -1,8 +1,8 @@
-import { CanvasWorkingStateConstant_8 as holdWorkingValue } from "../working-state";
-import { PlatformFileContentConstant_16 as minArtboardEdge } from "../../platform/file-content";
+import { travelCommitTimeoutMs as holdWorkingValue } from "../working-state";
+import { minEmbeddedArtboardDimension as minArtboardEdge } from "../../platform/file-content";
 import { PlatformFileContentFilesValue } from "../../platform/file-content";
-import { PlatformFileContentHandler_4 } from "../../platform/file-content";
-import { PlatformFileContentLimit_6 as maxArtboardEdge } from "../../platform/file-content";
+import { projectFileKey } from "../../platform/file-content";
+import { maxCanvasItemDimension as maxArtboardEdge } from "../../platform/file-content";
 import { PlatformFileContentSlice } from "../../platform/file-content";
 import { artboardTextSnapshotLimit } from "../content-snapshots";
 import { blankDcDocument } from "../../platform/file-content";
@@ -20,20 +20,20 @@ import { serializeArtboardErrorContext } from "../artboard-errors";
 import { type Dynamic } from "../../runtime-types";
 import { uiMessage } from "@minedesign/contracts/ui-messages";
 import { uniqueArtboardFile } from "../../platform/file-content";
-import { nextArtboardPlacementPoint } from "../design-canvas";
+import { nextArtboardPlacementPoint } from "../paste-placement";
 
 /** 视口、页面、选择或错误变化时运行：汇总可见画板、选中元素的文字摘要与画板错误，通过上下文发布器上报给外壳。 */
-export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; readonly selection: Dynamic; readonly value103: Dynamic; readonly value120: Dynamic; readonly value168: Dynamic; readonly value172: Dynamic; readonly value177: Dynamic; readonly value266: Dynamic; readonly value347: Dynamic; readonly value356: Dynamic; readonly value365: Dynamic; readonly value375: Dynamic; readonly value79: Dynamic; readonly value81: Dynamic; readonly value86: Dynamic }): Dynamic {
-    let { w: viewportWidth, h: viewportHeight, top: topInset }: Dynamic = deps.value120(),
+export function reportDesignContextSnapshot(deps: { readonly selection: Dynamic; readonly camera: Dynamic; readonly measureViewport: Dynamic; readonly selectedFiles: Dynamic; readonly inUseFiles: Dynamic; readonly artboardEntries: Dynamic; readonly problems: Dynamic; readonly fullscreenView: Dynamic; readonly publisher: Dynamic; readonly dirty: Dynamic; readonly pageId: Dynamic; readonly pageTitle: Dynamic; readonly page: Dynamic }): Dynamic {
+    let { w: viewportWidth, h: viewportHeight, top: topInset }: Dynamic = deps.measureViewport(),
       state: Dynamic = {
-        x: deps.value103.x,
-        y: deps.value103.y + topInset / deps.value103.scale,
-        w: viewportWidth / deps.value103.scale,
-        h: (viewportHeight - topInset) / deps.value103.scale,
+        x: deps.camera.x,
+        y: deps.camera.y + topInset / deps.camera.scale,
+        w: viewportWidth / deps.camera.scale,
+        h: (viewportHeight - topInset) / deps.camera.scale,
       },
-      visibleFiles: Dynamic = deps.value347
-        ? [deps.value347.file]
-        : deps.value86.artboards
+      visibleFiles: Dynamic = deps.fullscreenView
+        ? [deps.fullscreenView.file]
+        : deps.page.artboards
             .filter(
               (artboard?: Dynamic): Dynamic =>
                 distanceBetweenRects(artboard, state) === 0,
@@ -41,7 +41,7 @@ export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; read
             .map((artboard?: Dynamic): Dynamic => artboard.file),
       selectedPaths: Dynamic = [],
       selectedElements: Dynamic = [],
-      showSelection: Dynamic = !deps.value347 || (deps.flag && deps.value356);
+      showSelection: Dynamic = !deps.fullscreenView;
     if (deps.selection.primary != null && showSelection) {
       let orderedKeys: Dynamic = [...deps.selection.elements.keys()].filter(
         (key?: Dynamic): Dynamic => key !== deps.selection.primary,
@@ -53,7 +53,7 @@ export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; read
             selectedFile,
           );
         if (encodedFile !== null)
-          for (let viewEntry of (deps.value177.current
+          for (let viewEntry of (deps.artboardEntries.current
             .get(selectedFile)
             ?.viewEntries(tids) ?? []) as Dynamic) {
             let elementPath: Dynamic = encodedFile + "#" + viewEntry.path;
@@ -67,14 +67,14 @@ export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; read
           }
       }
     }
-    let selectedBoardFiles: Dynamic = showSelection ? [...deps.value168, ...deps.value172] : [],
-      publisher: Dynamic = deps.value365.current;
+    let selectedBoardFiles: Dynamic = showSelection ? [...deps.selectedFiles, ...deps.inUseFiles] : [],
+      publisher: Dynamic = deps.publisher.current;
     if (publisher === null) return;
     let snapshot: Dynamic = {
-        mode: deps.value347 ? "focused" : "canvas",
-        page: deps.value79 === "" ? null : deps.value79,
+        mode: deps.fullscreenView ? "focused" : "canvas",
+        page: deps.pageId === "" ? null : deps.pageId,
         pageName: {
-          text: deps.value79 === "" ? "" : deps.value81,
+          text: deps.pageId === "" ? "" : deps.pageTitle,
         },
         visibleArtboards: normalizeSelectedArtboardPaths(
           visibleFiles,
@@ -83,7 +83,7 @@ export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; read
           selectedBoardFiles,
         ),
         ...getEmbeddedPresence(),
-        dirty: deps.value375,
+        dirty: deps.dirty,
         selected: selectedPaths.slice(-20),
         selection: selectedElements.slice(-5).map(
           (source?: Dynamic): Dynamic => ({
@@ -93,7 +93,7 @@ export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; read
           }),
         ),
       },
-      errorEntries: Dynamic = deps.value266.flatMap((problem?: Dynamic): Dynamic => {
+      errorEntries: Dynamic = deps.problems.flatMap((problem?: Dynamic): Dynamic => {
         let encodedName: Dynamic = encodeArtboardSelectionPath(
           problem.file,
         );
@@ -126,7 +126,36 @@ export function reportDesignContextSnapshot(deps: { readonly flag: Dynamic; read
   }
 
 /** 文档或页面变化时计算（useMemo）：为 HostedEditor 提供画布接口，包括画板列表、分组、撤销重做、显示/聚焦、放置、重命名、新增、复制与删除。 */
-export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readonly supportsLoadState: Dynamic; readonly value155: Dynamic; readonly value156: Dynamic; readonly value202: Dynamic; readonly value274: Dynamic; readonly value383: Dynamic; readonly value396: Dynamic; readonly value405: Dynamic; readonly value406: Dynamic; readonly value409: Dynamic; readonly value410: Dynamic; readonly value432: Dynamic; readonly value440: Dynamic; readonly value447: Dynamic; readonly value450: Dynamic; readonly value451: Dynamic; readonly value452: Dynamic; readonly value453: Dynamic; readonly value73: Dynamic; readonly value80: Dynamic; readonly value98: Dynamic }): Dynamic {
+interface HostedCanvasContext {
+  readonly document: {
+    readonly doc: Dynamic;
+    readonly supportsLoadState: Dynamic;
+    readonly manifest: Dynamic;
+    readonly activePage: Dynamic;
+    readonly persistManifest: Dynamic;
+    readonly savePageSelection: Dynamic;
+  };
+  readonly session: {
+    readonly pendingCommands: Dynamic;
+    readonly holdCommand: Dynamic;
+    readonly dropInProgress: Dynamic;
+  };
+  readonly artboards: {
+    readonly focus: Dynamic;
+    readonly revealBounds: Dynamic;
+    readonly deleteBoards: Dynamic;
+    readonly duplicateFiles: Dynamic;
+  };
+  readonly history: {
+    readonly recordManifest: Dynamic;
+    readonly inlineHistory: Dynamic;
+    readonly canvasUndo: Dynamic;
+    readonly mark: Dynamic;
+    readonly depth: Dynamic;
+  };
+}
+
+export function buildHostedEditorCanvasApi(deps: HostedCanvasContext): Dynamic {
       let waitUntil: Dynamic = async (
           condition?: Dynamic,
           timeoutMs: Dynamic = 5e3,
@@ -141,7 +170,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
           return true;
         },
         currentPageBoards: Dynamic = (): Dynamic =>
-          designPageContents(deps.value73.current, deps.value80.current)
+          designPageContents(deps.document.manifest.current, deps.document.activePage.current)
             .artboards,
         clampBoardSize: Dynamic = (size?: Dynamic): Dynamic =>
           Math.min(
@@ -166,12 +195,12 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
         pageIs: (pageId?: Dynamic): Dynamic =>
           isCanvasPageMatch(
             pageId,
-            deps.value80.current,
-            deps.value73.current.pages?.[0]?.id ?? "",
+            deps.document.activePage.current,
+            deps.document.manifest.current.pages?.[0]?.id ?? "",
           ),
         token: (): Dynamic => randomSessionToken(),
         group: (files?: Dynamic, bound?: Dynamic): Dynamic =>
-          deps.value432.current?.group(
+          deps.history.inlineHistory.current?.group(
             files,
             bound !== undefined
               ? {
@@ -182,48 +211,18 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
         hold: async (): Promise<Dynamic> => (
           await waitUntil(
             (): Dynamic =>
-              deps.value155.current <= 0 &&
-              !deps.value202.current &&
-              !(deps.value432.current?.busy() ?? false),
+              deps.session.pendingCommands.current <= 0 &&
+              !deps.session.dropInProgress.current &&
+              !(deps.history.inlineHistory.current?.busy() ?? false),
           ),
-          deps.value156(holdWorkingValue)
+          deps.session.holdCommand(holdWorkingValue)
         ),
-        undo: (): Dynamic => deps.value447.current?.undo(),
-        redo: (): Dynamic => deps.value447.current?.redo(),
-        mark: (): Dynamic => {
-          let undoStack: Dynamic = deps.value405.current,
-            lastEntry: Dynamic = undoStack[undoStack.length - 1];
-          lastEntry !== undefined &&
-            !deps.value453.has(lastEntry) &&
-            deps.value453.set(lastEntry, deps.value453.next++);
-          return (
-            String(undoStack.length) +
-            ":" +
-            (lastEntry === undefined ? "" : String(deps.value453.get(lastEntry))) +
-            "/" +
-            String(deps.value406.current.length) +
-            "|" +
-            [...deps.value440.current]
-              .filter(([, count]: Dynamic): Dynamic => count !== 0)
-              .map(
-                ([name, count]: Dynamic): Dynamic =>
-                  name + "=" + String(count),
-              )
-              .sort()
-              .join(",") +
-            "#" +
-            String(deps.value409.current)
-          );
-        },
-        depth: (): Dynamic =>
-          deps.value410.current +
-          deps.value405.current.length +
-          [...deps.value440.current.values()].reduce(
-            (sum?: Dynamic, count?: Dynamic): Dynamic => sum + count,
-            0,
-          ),
+        undo: (): Dynamic => deps.history.canvasUndo.current?.undo(),
+        redo: (): Dynamic => deps.history.canvasUndo.current?.redo(),
+        mark: deps.history.mark,
+        depth: deps.history.depth,
         revealRect: (rect?: Dynamic): Dynamic => {
-          deps.value383.current?.({
+          deps.artboards.revealBounds.current?.({
             x: rect.x,
             y: rect.y,
             w: rect.w,
@@ -231,11 +230,11 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
           });
         },
         reveal: (file?: Dynamic): Dynamic => {
-          let artboard: Dynamic = deps.value73.current.artboards.find(
+          let artboard: Dynamic = deps.document.manifest.current.artboards.find(
             (item?: Dynamic): Dynamic => item.file === file,
           );
           artboard !== undefined &&
-            deps.value383.current?.({
+            deps.artboards.revealBounds.current?.({
               x: artboard.x,
               y: artboard.y,
               w: artboard.w,
@@ -243,11 +242,11 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
             });
         },
         focus: (file?: Dynamic): Dynamic => {
-          deps.value274.current(file);
+          deps.artboards.focus.current(file);
         },
         place: (placements?: Dynamic, historyContext?: Dynamic): Dynamic => {
           let changes: Dynamic = [],
-            updatedBoards: Dynamic = deps.value73.current.artboards.map(
+            updatedBoards: Dynamic = deps.document.manifest.current.artboards.map(
               (board?: Dynamic): Dynamic => {
                 let placement: Dynamic = placements.find(
                   (candidate?: Dynamic): Dynamic => candidate.file === board.file,
@@ -291,7 +290,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
             );
           return changes.length === 0
             ? []
-            : (deps.value396.current(
+            : (deps.history.recordManifest.current(
                 {
                   kind: "transform",
                   get label() { return uiMessage("canvas.designCanvas.resize"); },
@@ -302,7 +301,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
                 undefined,
                 historyContext,
               ),
-              deps.value98({
+              deps.document.persistManifest({
                 artboards: updatedBoards,
               }),
               changes.map((change?: Dynamic): Dynamic => change.file));
@@ -315,7 +314,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
           let cleanTitle: Dynamic = PlatformFileContentSlice(
               newTitle,
             ),
-            board: Dynamic = deps.value73.current.artboards.find(
+            board: Dynamic = deps.document.manifest.current.artboards.find(
               (item?: Dynamic): Dynamic => item.file === file,
             );
           if (cleanTitle === undefined || board === undefined) return false;
@@ -325,7 +324,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
               : undefined;
           return (board.title ?? undefined) === storedTitle
             ? false
-            : (deps.value396.current(
+            : (deps.history.recordManifest.current(
                 {
                   kind: "rename",
                   file: file,
@@ -336,8 +335,8 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
                 undefined,
                 historyContext,
               ),
-              deps.value98({
-                artboards: deps.value73.current.artboards.map(
+              deps.document.persistManifest({
+                artboards: deps.document.manifest.current.artboards.map(
                   (item?: Dynamic): Dynamic => {
                     if (item.file !== file) return item;
                     let { title: oldTitle, ...boardWithoutTitle }: Dynamic = item;
@@ -356,7 +355,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
           let pageRulePattern: Dynamic =
               /^\/\*ask:page\*\/body\{(?:(?:background|color):(?:#[0-9a-fA-F]{3,8}|[a-z]{3,24}|(?:rgb|rgba|hsl|hsla)\([0-9.,%\s-]{1,60}(?:deg)?[0-9.,%\s-]{0,60}\))|font-family:(?:"[A-Za-z0-9 \-]{1,40}"|[a-z-]{1,12})(?:,(?:"[A-Za-z0-9 \-]{1,40}"|[a-z-]{1,12})){0,2})(?:;(?:(?:background|color):(?:#[0-9a-fA-F]{3,8}|[a-z]{3,24}|(?:rgb|rgba|hsl|hsla)\([0-9.,%\s-]{1,60}(?:deg)?[0-9.,%\s-]{0,60}\))|font-family:(?:"[A-Za-z0-9 \-]{1,40}"|[a-z-]{1,12})(?:,(?:"[A-Za-z0-9 \-]{1,40}"|[a-z-]{1,12})){0,2})){0,2}\}\/\*ask:page-end\*\/$/i,
             state: Dynamic = {
-              ...deps.doc.content().files,
+              ...deps.document.doc.content().files,
             },
             allBoards: Dynamic = [...currentPageBoards()],
             createdEntries: Dynamic = [];
@@ -364,7 +363,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
             let newFile: Dynamic = uniqueArtboardFile(
                 state,
                 "Artboard",
-                deps.supportsLoadState,
+                deps.document.supportsLoadState,
               ),
               baseDocument: Dynamic = pageRulePattern.test(newBoard.pageRule ?? "")
                 ? blankDcDocument().replace(
@@ -403,7 +402,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
                 title:
                   PlatformFileContentSlice(newBoard.title) ??
                   nextArtboardTitle(allBoards),
-                ...deps.value452.current(),
+                ...deps.document.savePageSelection.current(),
               };
             allBoards.push(boardSpec);
             createdEntries.push({
@@ -414,7 +413,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
           }
           if (
             createdEntries.length === 0 ||
-            Object.keys(deps.doc.content().files).length + createdEntries.length >
+            Object.keys(deps.document.doc.content().files).length + createdEntries.length >
               PlatformFileContentFilesValue
           )
             return [];
@@ -422,7 +421,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
           try {
             for (let entry of createdEntries as Dynamic) {
               await getKvClient().set(
-                PlatformFileContentHandler_4(entry.file),
+                projectFileKey(entry.file),
                 entry.src,
               );
               savedFiles.add(entry.file);
@@ -430,19 +429,19 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
           } catch {
             for (let savedFile of savedFiles as Dynamic)
               await getKvClient()
-                .delete(PlatformFileContentHandler_4(savedFile))
+                .delete(projectFileKey(savedFile))
                 .catch((): Dynamic => false);
             return [];
           }
-          deps.value98({
+          deps.document.persistManifest({
             artboards: [
-              ...deps.value73.current.artboards.filter(
+              ...deps.document.manifest.current.artboards.filter(
                 (item?: Dynamic): Dynamic => !savedFiles.has(item.file),
               ),
               ...createdEntries.map((item?: Dynamic): Dynamic => item.spec),
             ],
           });
-          deps.value396.current(
+          deps.history.recordManifest.current(
             {
               kind: "add",
               entries: createdEntries,
@@ -459,7 +458,7 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
           positions?: Dynamic,
         ): Promise<Dynamic> => {
           let existingFiles: Dynamic = new Set(
-              deps.value73.current.artboards.map(
+              deps.document.manifest.current.artboards.map(
                 (item?: Dynamic): Dynamic => item.file,
               ),
             ),
@@ -501,13 +500,13 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
             );
           return copies.length === 0
             ? []
-            : (deps.value451.current(copies, [], historyContext),
+            : (deps.artboards.duplicateFiles.current(copies, [], historyContext),
               await waitUntil(
                 (): Dynamic =>
-                  deps.value73.current.artboards.length >=
+                  deps.document.manifest.current.artboards.length >=
                   existingFiles.size + copies.length,
               ),
-              deps.value73.current.artboards
+              deps.document.manifest.current.artboards
                 .map((item?: Dynamic): Dynamic => item.file)
                 .filter((file?: Dynamic): Dynamic => !existingFiles.has(file)));
         },
@@ -518,23 +517,23 @@ export function buildHostedEditorCanvasApi(deps: { readonly doc: Dynamic; readon
           let targets: Dynamic = new Set(
             files.filter(
               (file?: Dynamic): Dynamic =>
-                deps.value73.current.artboards.some(
+                deps.document.manifest.current.artboards.some(
                   (board?: Dynamic): Dynamic => board.file === file,
                 ),
             ),
           );
           return targets.size === 0 ||
-            !deps.value450.current(targets, undefined, historyContext)
+            !deps.artboards.deleteBoards.current(targets, undefined, historyContext)
             ? 0
             : (await waitUntil(
                 (): Dynamic =>
-                  !deps.value73.current.artboards.some(
+                  !deps.document.manifest.current.artboards.some(
                     (board?: Dynamic): Dynamic => targets.has(board.file),
                   ),
               ),
               [...targets].filter(
                 (file?: Dynamic): Dynamic =>
-                  !deps.value73.current.artboards.some(
+                  !deps.document.manifest.current.artboards.some(
                     (board?: Dynamic): Dynamic => board.file === file,
                   ),
               ).length);

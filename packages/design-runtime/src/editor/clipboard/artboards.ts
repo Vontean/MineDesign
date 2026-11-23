@@ -2,9 +2,9 @@
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { ClipboardFileTransferHandler_7, ClipboardFileTransferSubscribers, ClipboardFileTransferTest, isCarryableProjectFile } from "./file-transfer";
+import { isPastableProjectPath, ClipboardFileTransferSubscribers, ClipboardFileTransferTest, isCarryableProjectFile } from "./file-transfer";
 import { isLoadingArtboardHtml } from "../../platform/design-document-adapter";
-import { artboardAppearanceProperties, artboardSpecFromProps, canvasMetadataFile, isArtboardFile, isProjectTextFilePath, isTypeDeclarationPath, PlatformFileContentFilesValue, PlatformFileContentLimit_8 as maxProjectPathLength, PlatformFileContentResolvedValue_11 as maxFileContentBytes, PlatformFileContentWebpAvifPattern } from "../../platform/file-content";
+import { artboardAppearanceProperties, artboardSpecFromProps, canvasMetadataFile, isArtboardFile, isProjectTextFilePath, isTypeDeclarationPath, PlatformFileContentFilesValue, maxProjectPathChars as maxProjectPathLength, defaultDocumentFileBytes as maxFileContentBytes, PlatformFileContentWebpAvifPattern } from "../../platform/file-content";
 import { isEmulatorBlobUrl } from "../../platform/image-upload";
 import { getImportedArtboardNames, isProjectSourcePath } from "../../preview/component-imports";
 import { collectProjectDependencyFiles } from "../../preview/dependency-graph";
@@ -343,7 +343,7 @@ function parseArtboardClipboard(clipboard?: Dynamic): Dynamic {
     if (!fitsBudget(artboardEntry.src)) return null;
     let stem: Dynamic =
       typeof artboardEntry.stem == "string" &&
-      ClipboardFileTransferHandler_7(artboardEntry.stem + ".dc.html") &&
+      isPastableProjectPath(artboardEntry.stem + ".dc.html") &&
       !ClipboardFileTransferTest(artboardEntry.stem)
         ? artboardEntry.stem
         : "Artboard";
@@ -477,25 +477,25 @@ export {
   ClipboardArtboardsBlobHttpsPattern,
   ClipboardArtboardsBlobPattern,
   ClipboardArtboardsConstant,
-  maxReferencedAssetFiles as ClipboardArtboardsConstant_2,
-  artboardGap as ClipboardArtboardsConstant_3,
-  maxOffset as ClipboardArtboardsConstant_4,
+  maxReferencedAssetFiles,
+  artboardGap,
+  maxOffset,
   ClipboardArtboardsDataFontPattern,
-  anyDataFontPattern as ClipboardArtboardsDataFontPattern_2,
+  anyDataFontPattern,
   ClipboardArtboardsDataImagePattern,
   ClipboardArtboardsDataTextPattern,
   ClipboardArtboardsEncode,
   ClipboardArtboardsLimit,
-  maxFontAssets as ClipboardArtboardsLimit_2,
+  maxFontAssets,
   ClipboardArtboardsMax,
   ClipboardArtboardsReplace,
-  stripArtboardExtension as ClipboardArtboardsReplace_2,
+  stripArtboardExtension,
   ClipboardArtboardsResolvedValue,
-  maxAssetBytes as ClipboardArtboardsResolvedValue_2,
+  maxAssetBytes,
   ClipboardArtboardsTest,
-  isFontDataUrl as ClipboardArtboardsTest_2,
-  isSupportedAssetDataUrl as ClipboardArtboardsTest_3,
-  isCarryableAssetPath as ClipboardArtboardsTest_4,
+  isFontDataUrl,
+  isSupportedAssetDataUrl,
+  isCarryableAssetPath,
   ClipboardArtboardsTextEncoder,
   clipboardBlobAssets,
   clipboardSourceStrings,

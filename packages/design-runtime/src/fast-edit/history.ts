@@ -51,13 +51,13 @@ function describeHistoryPressure(turns?: Dynamic, limit?: Dynamic): Dynamic {
     (input?: Dynamic): Dynamic => input.done,
   );
   if (value.length === 0) return "";
-  let value2: Dynamic = Math.round(ratio * 100),
-    value3: Dynamic = Math.round((chars * (ratio - 0.5)) / ratio),
+  let usedPercent: Dynamic = Math.round(ratio * 100),
+    targetReductionChars: Dynamic = Math.round((chars * (ratio - 0.5)) / ratio),
     index: Dynamic = 0,
-    index2: Dynamic = 0;
-  for (; index2 < value.length && index < value3; )
-    index += value[index2++].chars;
-  let value4: Dynamic = value
+    suggestedTurnCount: Dynamic = 0;
+  for (; suggestedTurnCount < value.length && index < targetReductionChars; )
+    index += value[suggestedTurnCount++].chars;
+  let turnDescriptions: Dynamic = value
       .map(
         (input?: Dynamic): Dynamic =>
           input.id +
@@ -66,11 +66,11 @@ function describeHistoryPressure(turns?: Dynamic, limit?: Dynamic): Dynamic {
           (input.notes ? " (holds your earlier notes)" : ""),
       )
       .join(" \xB7 "),
-    value5: Dynamic =
+    pressureDescription: Dynamic =
       "~" + String(chars) + " of " + String(limit) + " characters",
-    value6: Dynamic =
+    reductionDescription: Dynamic =
       "A turn is a message that starts with [tN], with your reply to it. The turns you name leave your context; this reply, with its notes, stays where you write it, and you go on with the task in the same reply. Remove about ~" +
-      formatHistoryCharacterCount(value3) +
+      formatHistoryCharacterCount(targetReductionChars) +
       " so it drops to about " +
       String(Math.round(0.5 * 100)) +
       "%: the oldest and the spent turns (finished exchanges, failed attempts); keep the turns you still work from, the latest among them. " +
@@ -78,13 +78,13 @@ function describeHistoryPressure(turns?: Dynamic, limit?: Dynamic): Dynamic {
       " turn" +
       (value.length === 1 ? "" : "s") +
       " you can name, oldest first: " +
-      value4 +
+      turnDescriptions +
       "." +
-      (index >= value3
+      (index >= targetReductionChars
         ? " The oldest " +
-          String(index2) +
+          String(suggestedTurnCount) +
           " (through " +
-          value[index2 - 1].id +
+          value[suggestedTurnCount - 1].id +
           ") add up to ~" +
           formatHistoryCharacterCount(index) +
           "."
@@ -92,18 +92,18 @@ function describeHistoryPressure(turns?: Dynamic, limit?: Dynamic): Dynamic {
       " You choose which. Notes are much shorter than the turns they stand for: the user's words, what is done and what is open, names you rely on. When you forget a turn that holds earlier notes, carry what you still need of them into the new notes.";
   return ratio >= 0.92
     ? "[context " +
-        String(value2) +
+        String(usedPercent) +
         "% (" +
-        value5 +
+        pressureDescription +
         ') \u2014 full. Call forget(["tN", ...], "notes") first, before anything else. ' +
-        value6 +
+        reductionDescription +
         "]"
     : "[context " +
-        String(value2) +
+        String(usedPercent) +
         "% (" +
-        value5 +
+        pressureDescription +
         '): clean up the older turns carefully: call forget(["tN", ...], "notes") in this reply. ' +
-        value6 +
+        reductionDescription +
         "]";
 }
 function queueForgottenTurns(
@@ -129,30 +129,30 @@ function queueForgottenTurns(
     items: Dynamic = [...new Set(ids)],
     callback: Dynamic = (input?: Dynamic): Dynamic =>
       entries.get(input)?.done === true,
-    value2: Dynamic = items.filter(
+    invalidIds: Dynamic = items.filter(
       (input?: Dynamic): Dynamic => !callback(input),
     ),
-    value3: Dynamic = items.filter(callback);
-  value3.length > 0 &&
+    eligibleIds: Dynamic = items.filter(callback);
+  eligibleIds.length > 0 &&
     history.pending.push({
-      ids: value3,
+      ids: eligibleIds,
       notes: value,
       line: statement,
     });
-  if (value2.length > 0)
+  if (invalidIds.length > 0)
     throw new Error(
       "forget: no such turn" +
-        (value2.length === 1 ? "" : "s") +
+        (invalidIds.length === 1 ? "" : "s") +
         ": " +
         summarizeTurnIds(
-          value2.map(
+          invalidIds.map(
             (input?: Dynamic): Dynamic =>
               HISTORY_TURN_ID_PATTERN.test(input) ? input : "(not an id)",
           ),
         ) +
         " (the first turn and the turn you are answering cannot be named; " +
-        (value3.length > 0
-          ? summarizeTurnIds(value3) + " will be forgotten"
+        (eligibleIds.length > 0
+          ? summarizeTurnIds(eligibleIds) + " will be forgotten"
           : "nothing was forgotten") +
         ")",
     );
@@ -226,49 +226,49 @@ function parseForgetStatement(statement?: Dynamic): Dynamic {
     skipWhitespace: Dynamic = (): Dynamic => {
       for (; text[offset] === " " || text[offset] === "	"; ) offset += 1;
     },
-    consume: Dynamic = (items2?: Dynamic): Dynamic => (
+    consume: Dynamic = (token?: Dynamic): Dynamic => (
       skipWhitespace(),
-      text.startsWith(items2, offset)
-        ? ((offset += items2.length), true)
+      text.startsWith(token, offset)
+        ? ((offset += token.length), true)
         : false
     ),
     parseQuotedString: Dynamic = (): Dynamic => {
       skipWhitespace();
-      let value2: Dynamic = text[offset];
-      if (value2 !== '"' && value2 !== "'") return null;
-      let text2: Dynamic = "";
+      let quote: Dynamic = text[offset];
+      if (quote !== '"' && quote !== "'") return null;
+      let decoded: Dynamic = "";
       for (
         offset += 1;
-        offset < text.length && text[offset] !== value2;
+        offset < text.length && text[offset] !== quote;
         offset++
       ) {
         if (text[offset] !== "\\") {
-          text2 += text[offset];
+          decoded += text[offset];
           continue;
         }
-        let value3: Dynamic = text[++offset];
+        let escapedCharacter: Dynamic = text[++offset];
         if (
-          value3 !== '"' &&
-          value3 !== "'" &&
-          value3 !== "\\" &&
-          value3 !== "n"
+          escapedCharacter !== '"' &&
+          escapedCharacter !== "'" &&
+          escapedCharacter !== "\\" &&
+          escapedCharacter !== "n"
         )
           return null;
-        text2 +=
-          value3 === "n"
+        decoded +=
+          escapedCharacter === "n"
             ? `
 `
-            : value3;
+            : escapedCharacter;
       }
-      return text[offset++] === value2 ? text2 : null;
+      return text[offset++] === quote ? decoded : null;
     };
   if (!consume("forget(") || !consume("[")) return null;
   let items: Dynamic = [];
   for (; !consume("]"); ) {
     if (items.length > 0 && !consume(",")) return null;
-    let value2: Dynamic = parseQuotedString();
-    if (value2 === null) return null;
-    items.push(value2);
+    let parsedId: Dynamic = parseQuotedString();
+    if (parsedId === null) return null;
+    items.push(parsedId);
   }
   if (!consume(",")) return null;
   let value: Dynamic = parseQuotedString();
@@ -316,16 +316,16 @@ function applyForgetStatements(
   alreadyApplied?: Dynamic,
 ): Dynamic {
   for (let value of statements.slice(alreadyApplied) as Dynamic) {
-    let value2: Dynamic = parseForgetStatement(value);
+    let forgetRequest: Dynamic = parseForgetStatement(value);
     try {
-      if (value2 === null)
+      if (forgetRequest === null)
         throw new Error(
           'forget: write it on one line, as forget(["t2", "t3"], "notes"), with plain quotes',
         );
-      queueForgottenTurns(history, value2.ids, value2.notes, value);
-    } catch (value3: Dynamic) {
+      queueForgottenTurns(history, forgetRequest.ids, forgetRequest.notes, value);
+    } catch (error: Dynamic) {
       history.told.length - history.shown < MAX_FORGET_ERRORS &&
-        history.told.push(value3.message);
+        history.told.push(error.message);
     }
   }
 }
@@ -437,8 +437,8 @@ export function installFastEditHistory(): () => void {
     });
     countHistoryCharacters = (input?: Dynamic): Dynamic =>
       input.reduce(
-        (input2?: Dynamic, options?: Dynamic): Dynamic =>
-          input2 + options.content.length,
+        (total?: Dynamic, options?: Dynamic): Dynamic =>
+          total + options.content.length,
         0,
       );
     formatHistoryCharacterCount = (input?: Dynamic): Dynamic =>

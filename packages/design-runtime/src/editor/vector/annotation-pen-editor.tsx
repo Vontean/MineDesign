@@ -4,10 +4,10 @@ import { useUiLocale } from '../../ui-locale.ts';
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { reactHooksLatestCallback_3 } from "../hooks/latest-callback";
+import { reactForVectorPathEditor } from "../hooks/latest-callback";
 import { VectorPathEditor } from "./path-editor";
 import { parseVectorPath, serializeVectorPathBounds } from "./path-parsing";
-import { PlatformFileContentConstant_19 as MIN_SHAPE_DIMENSION, PlatformFileContentLimit_6 as MAX_CANVAS_ITEM_DIMENSION, PlatformFileContentLimit_7 as MAX_PEN_PATH_CHARS, PlatformFileContentTrim_2 as normalizePenPath } from "../../platform/file-content";
+import { minShapeDimension as MIN_SHAPE_DIMENSION, maxCanvasItemDimension as MAX_CANVAS_ITEM_DIMENSION, maxPenPathChars as MAX_PEN_PATH_CHARS, sanitizePenPath as normalizePenPath } from "../../platform/file-content";
 
 var VectorAnnotationPenEditorOverflowTouchActionConfig: Dynamic;
 var VectorAnnotationPenEditorConstant: Dynamic;
@@ -46,7 +46,7 @@ function AnnotationPenEditor({
   useUiLocale();
   let sourceKey: Dynamic = annotationVectorKey(spec),
     [pathState, setPathState]: Dynamic = (0,
-    reactHooksLatestCallback_3.useState)(
+    reactForVectorPathEditor.useState)(
       (): Dynamic => ({
         source: sourceKey,
         path: annotationVectorPath(spec, extension),
@@ -57,7 +57,7 @@ function AnnotationPenEditor({
       source: sourceKey,
       path: annotationVectorPath(spec, extension),
     });
-  let gestureRef: Dynamic = (0, reactHooksLatestCallback_3.useRef)(null),
+  let gestureRef: Dynamic = (0, reactForVectorPathEditor.useRef)(null),
     callback: Dynamic = (bounds?: Dynamic): Dynamic => ({
       x: bounds.x,
       y: bounds.y,

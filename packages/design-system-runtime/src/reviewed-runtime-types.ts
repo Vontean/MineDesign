@@ -8863,7 +8863,7 @@ export interface ReviewedRuntimeBindings
   USER_SCROLL_INTERRUPTION_EVENTS: string[];
   useRefocusAfterPendingSheet: (
     input: boolean,
-  ) => (input2: HTMLElement | null) => void;
+  ) => (element: HTMLElement | null) => void;
   useRegisterInnerOverlay: (arg0: Layers_Dom.InnerOverlay) => void;
   useResolvedColorMode: () => Layers_Layers.ColorMode;
   useRootElement: () => HTMLElement | undefined;

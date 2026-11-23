@@ -379,7 +379,7 @@ function InspectorPanelShell({
 }
 export {
   ChromeInspectorSheetConstant,
-  panelInsetPx as ChromeInspectorSheetConstant_2,
+  panelInsetPx,
   ChromeInspectorSheetMediaQuery,
   clampInspectorSheetHeight,
   clampInspectorSheetTop,

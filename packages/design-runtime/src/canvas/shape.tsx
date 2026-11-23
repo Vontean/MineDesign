@@ -4,7 +4,7 @@ import { useUiLocale } from '../ui-locale.ts';
 import {
   type Dynamic,
 } from "../runtime-types";
-import { annotationColor, annotationCssStyle, annotationEffectsCss, annotationFillDefaults, annotationFillSignature, annotationPathViewBox, AnnotationShapeBody, annotationStrokeWidth, CanvasAnnotationShapeStyleConstant, CanvasAnnotationShapeStyleConstant_2 as lineDefaultStrokeWidth, CanvasAnnotationShapeStyleConstant_3 as lineSvgPadding, CanvasAnnotationShapeStyleMatches, jsxCanvasAnnotationShapeStyle } from "./annotation-shape-style";
+import { annotationColor, annotationCssStyle, annotationEffectsCss, annotationFillDefaults, annotationFillSignature, annotationPathViewBox, AnnotationShapeBody, annotationStrokeWidth, CanvasAnnotationShapeStyleConstant, defaultArrowStrokeWidth as lineDefaultStrokeWidth, svgOverflowPadding as lineSvgPadding, CanvasAnnotationShapeStyleMatches, jsxCanvasAnnotationShapeStyle } from "./annotation-shape-style";
 import { beginArtboardResize } from "./artboard-resize";
 import { scheduleImageDecode, watchPointerRelease } from "./image-decode-scheduler";
 import { useViewportStore, ViewportScale } from "./viewport-store";
@@ -14,24 +14,24 @@ import { joinClassNames } from "../editor/chrome/overlay-state";
 import { imageFlipCss } from "../editor/geometry/flip-annotations";
 import { angleBetweenPoints, resizeRotatedRect, snapRotation } from "../editor/geometry/rotation";
 import { activeResizeGuides, snapResize } from "../editor/geometry/snapping";
-import { reactHooksLatestCallback_2 } from "../editor/hooks/latest-callback";
+import { reactForCanvasShape } from "../editor/hooks/latest-callback";
 import { imageCropCss } from "../editor/media/crop-geometry";
 import { createVideoPlaybackStore } from "../editor/media/video-playback";
 import { MediaVideoUploadAutoPlayLoopMutedConfig } from "../editor/media/video-upload";
 import { PickerRuntimeScriptTAppAccentConfig } from "../editor/picker/runtime-script";
-import { shortenLineEnds, SvgArrowsConstant_2 as arrowMarkerRefY, SvgArrowsFilledOpenConfig, SvgArrowsRefX } from "../editor/svg/arrows";
+import { shortenLineEnds, arrowHeadCenterY as arrowMarkerRefY, SvgArrowsFilledOpenConfig, SvgArrowsRefX } from "../editor/svg/arrows";
 import { constrainLineAngle } from "../editor/svg/drawing";
 import { AnnotationPenEditor } from "../editor/vector/annotation-pen-editor";
 import { toModuleNamespace } from "../module-helpers";
 import { initializePlatformCdsIsland } from "../platform/cds-island";
-import { annotationArrowHeads, annotationBounds, annotationRotation, PlatformFileContentConstant_19 as minShapeSize, PlatformFileContentConstant_20 as minImageSize, PlatformFileContentLimit_6 as maxShapeSize } from "../platform/file-content";
+import { annotationArrowHeads, annotationBounds, annotationRotation, minShapeDimension as minShapeSize, minImageDimension as minImageSize, maxCanvasItemDimension as maxShapeSize } from "../platform/file-content";
 import { blobPlaceholderImage } from "../preview/blob-paths";
 
 var CanvasShapeX: Dynamic;
 var reactCanvasShape: Dynamic;
 var reactDomCanvasShape: Dynamic;
-var reactCanvasShape_2: Dynamic;
-var reactDomCanvasShape_2: Dynamic;
+var React: Dynamic;
+var reactDomForAnchoredDesignProperties: Dynamic;
 function CanvasShape({
   spec: spec,
   scale: scale,
@@ -87,7 +87,7 @@ function CanvasShape({
     penSpec: Dynamic = spec.kind === "pen" ? spec : null,
     imageSpec: Dynamic = spec.kind === "image" ? spec : null,
     [failedImageSrc, setFailedImageSrc]: Dynamic = (0,
-    reactHooksLatestCallback_2.useState)(null),
+    reactForCanvasShape.useState)(null),
     imageSrc: Dynamic = imageSpec
       ? (resolveImageSrc?.(imageSpec.src) ?? null)
       : null,
@@ -98,11 +98,11 @@ function CanvasShape({
         ? null
         : (resolveImageSrc?.(imageSpec.video) ?? null),
     [failedVideoSrc, setFailedVideoSrc]: Dynamic = (0,
-    reactHooksLatestCallback_2.useState)(null),
-    containerRef: Dynamic = (0, reactHooksLatestCallback_2.useRef)(null),
+    reactForCanvasShape.useState)(null),
+    containerRef: Dynamic = (0, reactForCanvasShape.useRef)(null),
     [isInViewport, setIsInViewport]: Dynamic = (0,
-    reactHooksLatestCallback_2.useState)(false);
-  (0, reactHooksLatestCallback_2.useEffect)((): Dynamic => {
+    reactForCanvasShape.useState)(false);
+  (0, reactForCanvasShape.useEffect)((): Dynamic => {
     let containerElement: Dynamic = videoSrc === null ? null : containerRef.current;
     if (!containerElement) return;
     if (typeof IntersectionObserver === "undefined") {
@@ -119,9 +119,9 @@ function CanvasShape({
     return (): Dynamic => intersectionObserver.disconnect();
   }, [videoSrc]);
   let [isDecodeReady, setIsDecodeReady]: Dynamic = (0,
-    reactHooksLatestCallback_2.useState)(false),
+    reactForCanvasShape.useState)(false),
     shouldDecodeVideo: Dynamic = videoSrc !== null && videoSrc !== failedVideoSrc && isInViewport;
-  (0, reactHooksLatestCallback_2.useEffect)((): Dynamic => {
+  (0, reactForCanvasShape.useEffect)((): Dynamic => {
     if (!shouldDecodeVideo) return;
     let cancelDecode: Dynamic = scheduleImageDecode(
       spec.id,
@@ -133,10 +133,10 @@ function CanvasShape({
     };
   }, [shouldDecodeVideo, spec.id]);
   let shouldRenderVideo: Dynamic = shouldDecodeVideo && isDecodeReady,
-    videoRef: Dynamic = (0, reactHooksLatestCallback_2.useRef)(null),
-    playbackStoreRef: Dynamic = (0, reactHooksLatestCallback_2.useRef)(null),
-    pressStartRef: Dynamic = (0, reactHooksLatestCallback_2.useRef)(null);
-  (0, reactHooksLatestCallback_2.useEffect)((): Dynamic => {
+    videoRef: Dynamic = (0, reactForCanvasShape.useRef)(null),
+    playbackStoreRef: Dynamic = (0, reactForCanvasShape.useRef)(null),
+    pressStartRef: Dynamic = (0, reactForCanvasShape.useRef)(null);
+  (0, reactForCanvasShape.useEffect)((): Dynamic => {
     let videoElement: Dynamic = shouldRenderVideo ? videoRef.current : null;
     if (!videoElement) return;
     let playbackStore: Dynamic = createVideoPlaybackStore(videoElement);
@@ -149,7 +149,7 @@ function CanvasShape({
     };
   }, [shouldRenderVideo, videoSrc]);
   let penPath: Dynamic = penSpec?.d,
-    penViewBox: Dynamic = (0, reactHooksLatestCallback_2.useMemo)(
+    penViewBox: Dynamic = (0, reactForCanvasShape.useMemo)(
       (): Dynamic =>
         penPath === undefined
           ? null
@@ -184,7 +184,7 @@ function CanvasShape({
     flipStyle: Dynamic = imageFlipCss(spec),
     isPenVectorEditing: Dynamic = vectorEdit && penSpec !== null && !grouped && !rotationDegrees,
     [rotationAngleLabel, setRotationAngleLabel]: Dynamic = (0,
-    reactHooksLatestCallback_2.useState)(null),
+    reactForCanvasShape.useState)(null),
     handleRotateStart: Dynamic = (rotateHandle?: Dynamic, pointerEvent?: Dynamic): Dynamic => {
       let ancestor: Dynamic = pointerEvent.currentTarget.closest(
         "[data-mega-annotation]",
@@ -234,7 +234,7 @@ function CanvasShape({
         (): Dynamic => setRotationAngleLabel(null),
       );
     },
-    isEditingRef: Dynamic = (0, reactHooksLatestCallback_2.useRef)(
+    isEditingRef: Dynamic = (0, reactForCanvasShape.useRef)(
       editing,
     );
   isEditingRef.current = editing;
@@ -802,9 +802,9 @@ export {
   CanvasShape,
   CanvasShapeX,
   reactCanvasShape,
-  reactCanvasShape_2,
+  React as canvasShapeReact,
   reactDomCanvasShape,
-  reactDomCanvasShape_2,
+  reactDomForAnchoredDesignProperties,
 };
 export function installCanvasShape(): () => void {
   return () => {
@@ -823,11 +823,11 @@ export function installCanvasShape(): () => void {
       1,
     );
     initializeNpm_usehooks_ts_p0();
-    reactCanvasShape_2 = toModuleNamespace(
+    React = toModuleNamespace(
       load_react(),
       1,
     );
-    reactDomCanvasShape_2 = toModuleNamespace(
+    reactDomForAnchoredDesignProperties = toModuleNamespace(
       load_react_dom(),
       1,
     );

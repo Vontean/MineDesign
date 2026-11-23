@@ -12,11 +12,11 @@ import { hasAuthoredAppearance } from "../typography/census";
 var supportsDirectoryPicker: Dynamic;
 var supportsSpeechRecognition: Dynamic;
 var InspectorColorPickResolvedValue: Dynamic;
-var InspectorColorPickResolvedValue_2: Dynamic;
-var InspectorColorPickResolvedValue_3: Dynamic;
-var InspectorColorPickResolvedValue_4: Dynamic;
-var InspectorColorPickResolvedValue_5: Dynamic;
-var InspectorColorPickResolvedValue_6: Dynamic;
+var isDesktopMac: Dynamic;
+var hasCoarsePointer: Dynamic;
+var isDesktopHost: Dynamic;
+var isClaudeNestHost: Dynamic;
+var isTopLevelDesktopHost: Dynamic;
 var supportsScreenDetails: Dynamic;
 var supportsIntlSegmentation: Dynamic;
 function inspectSelectedColor(element?: Dynamic): Dynamic {
@@ -98,11 +98,11 @@ async function pickInspectorEyeDropper(): Promise<Dynamic> {
 }
 export {
   InspectorColorPickResolvedValue,
-  InspectorColorPickResolvedValue_2,
-  InspectorColorPickResolvedValue_3,
-  InspectorColorPickResolvedValue_4,
-  InspectorColorPickResolvedValue_5,
-  InspectorColorPickResolvedValue_6,
+  isDesktopMac,
+  hasCoarsePointer,
+  isDesktopHost,
+  isClaudeNestHost,
+  isTopLevelDesktopHost,
   inspectSelectedColor,
   pickInspectorEyeDropper,
   supportsDirectoryPicker,
@@ -123,25 +123,25 @@ export function installEditorInspectorColorPick(): () => void {
       (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" &&
           (navigator.maxTouchPoints ?? 0) > 1));
-    InspectorColorPickResolvedValue_2 =
+    isDesktopMac =
       typeof navigator !== "undefined" &&
       /^Mac/.test(navigator.platform) &&
       !InspectorColorPickResolvedValue;
-    InspectorColorPickResolvedValue_3 =
+    hasCoarsePointer =
       typeof window !== "undefined" &&
       typeof (window as Dynamic).matchMedia == "function" &&
       (window as Dynamic).matchMedia("(pointer: coarse)").matches;
-    InspectorColorPickResolvedValue_4 =
+    isDesktopHost =
       typeof window !== "undefined" &&
       (!!(window as Dynamic).__OMELETTE_DESKTOP__ ||
         (typeof navigator !== "undefined" &&
           /claude(nest|gov)?\//i.test(navigator.userAgent)));
-    InspectorColorPickResolvedValue_5 =
-      InspectorColorPickResolvedValue_4 &&
+    isClaudeNestHost =
+      isDesktopHost &&
       typeof navigator !== "undefined" &&
       /claudenest\//i.test(navigator.userAgent);
-    InspectorColorPickResolvedValue_6 =
-      InspectorColorPickResolvedValue_4 &&
+    isTopLevelDesktopHost =
+      isDesktopHost &&
       typeof window !== "undefined" &&
       (window as Dynamic).self === (window as Dynamic).top;
     supportsScreenDetails =

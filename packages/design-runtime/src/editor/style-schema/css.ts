@@ -6,7 +6,7 @@ import { StyleSchemaColorAndFontCall } from "./color-and-font";
 import { radialGradientFunction } from "./gradient";
 import { validateStyleValue } from "./structured-values";
 import { propertyAppliesToNode } from "./validation";
-import { StyleSchemaValuesItems, StyleSchemaValuesItems_3 as StyleProperties, StyleSchemaValuesSansSerifMonoConfig } from "./values";
+import { StyleSchemaValuesItems, supportedStyleProperties as StyleProperties, StyleSchemaValuesSansSerifMonoConfig } from "./values";
 
 var pixelsCss: Dynamic;
 var StyleSchemaCssTransformOpacityColorConfig: Dynamic;

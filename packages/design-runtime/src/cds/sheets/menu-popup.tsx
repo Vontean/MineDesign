@@ -4,25 +4,25 @@ import { useUiLocale } from '../../ui-locale.ts';
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { CollisionPaddingProvider, ComponentsIconContext, Icon, IconRenderer, initializeComponentsIcon_2, initializeComponentsIcon_3 } from "../components/icon";
+import { CollisionPaddingProvider, ComponentsIconContext, Icon, IconRenderer, initializeIconSizeMetrics, initializeIconContext } from "../components/icon";
 import { sheetFrameHeight } from "../dom/inert";
 import { initializeDomRefComposition, useEventRef } from "../dom/ref-composition";
 import { initializeHooksLayoutEffect, useIsomorphicLayoutEffect } from "../hooks/layout-effect";
-import { initializeHooksStableCallback_2, useOptionalStableCallback } from "../hooks/stable-callback";
+import { initializeStableCallbackReact, useOptionalStableCallback } from "../hooks/stable-callback";
 import { initializeMenuConfiguration, MenuConfigurationContext, MenuItemContext, MenuRootContext, MenuSheetLabelsContext, PopupScrollArea, warnNestedMenuInitialFocus, warnNestedMenuLayerOffset } from "../menu/configuration";
-import { initializeMenuItemStyles, initializeMenuItemStyles_2, initializeMenuItemStyles_3, menuItemVariants, MenuPopupElement, useMenuPopupFocus, usePopupEntryAnimation } from "../menu/item-styles";
+import { initializeMenuItemStyles, initializeParentMenuContext, initializeMenuPopupElementComponent, menuItemVariants, MenuPopupElement, useMenuPopupFocus, usePopupEntryAnimation } from "../menu/item-styles";
 import { initializeMenuPassiveOpenGate } from "../menu/passive-open-gate";
 import { initializeMenuPopup, MenuPopupCss, PassiveOpenGate, usePassiveOpenCell } from "../menu/popup";
 import { initializeOverlaysAndroidCloseWatcher, useAndroidCloseWatcher } from "../overlays/android-close-watcher";
 import { initializeOverlaysLayers, LayerBaseContext, useLayer } from "../overlays/layers";
-import { ClipPathInset00200vh0Value, initializePlatformReducedMotion, initializePlatformReducedMotion_2, PlatformReducedMotionClassNames_2, PlatformReducedMotionClassNames_3, PlatformReducedMotionCss_2, PlatformReducedMotionCss_3, PlatformReducedMotionCss_4, PlatformReducedMotionLabel_2 as sheetHeaderClassName } from "../platform/reduced-motion";
-import { initializePlatformRootFontSize_2, PopupSurface } from "../platform/root-font-size";
-import { initializeSheetsChrome, initializeSheetsChrome_2, SheetHandle, SheetHeading, sheetMutationIsScrollOnly, sheetNaturalHeight, useCoveredSheetState, useSheetDismissal, useSheetTextFocus } from "./chrome";
-import { ComfortableValue, getSheetFixedPosition, getSheetFrameStyle, initializeSheetsLayout, SheetsLayoutConstant, SheetsLayoutConstant_2 as halfHeightFraction, SheetsLayoutCss_3, SheetsLayoutDisableAnchorTrackingCollisionAvoidanceConfig } from "./layout";
+import { ClipPathInset00200vh0Value, initializePlatformReducedMotion, initializeSheetMotionClassNames, transparentBackdropClassName, sheetOverscrollFillClassName, bottomSheetPanelClassName, sheetDrillContentClassName, sheetBackdropClassName, sheetHeaderClassName } from "../platform/reduced-motion";
+import { initializeRootFontSizeHooks, PopupSurface } from "../platform/root-font-size";
+import { initializeSheetsChrome, initializeSheetDismissalReact, SheetHandle, SheetHeading, sheetMutationIsScrollOnly, sheetNaturalHeight, useCoveredSheetState, useSheetDismissal, useSheetTextFocus } from "./chrome";
+import { ComfortableValue, getSheetFixedPosition, getSheetFrameStyle, initializeSheetsLayout, SheetsLayoutConstant, halfHeightFraction, halfHeightViewportCss, SheetsLayoutDisableAnchorTrackingCollisionAvoidanceConfig } from "./layout";
 import { getInertPropsValue, initializeSheetsPopupStack, prefersReducedMotion, SheetPopupBridgeContext, SheetPopupContext, SheetStackContext, useIsSheet, useSheetState } from "./popup-stack";
 import { CdsSheetPeelingAttribute, CdsSheetTreeClosingAttribute, coveredSheetAttribute, drilledSheetAttribute, initializeSheetsPresentation, sheetContainsTextInput, sheetNeedsScrolling, sheetScrollAttribute } from "./presentation";
 import { initializeSheetsScrollArea } from "./scroll-area";
-import { clearSheetTransition, initializeSheetsStyles, initializeSheetsStyles_2, useLabel } from "./styles";
+import { clearSheetTransition, initializeSheetsStyles, initializeLabelsProviderContext, useLabel } from "./styles";
 import { cn, initializeClassNames } from "../theme/class-names";
 import { getSizeAttribute, initializeCdsRoot, useCdsWindow, useOverlayRoot } from "../theme/root";
 import { initializeThemeSurfaces, surfaceBackgroundTokens, virtualTriggerAnchor } from "../theme/surfaces";
@@ -37,21 +37,21 @@ var SheetsMenuPopupLabel: Dynamic;
 var narrowViewportQuery: Dynamic;
 var SheetsMenuPopupMediaQuery: Dynamic;
 var electronUserAgentToken: Dynamic;
-var initializeSheetsMenuPopup_2: Dynamic;
-var reactSheetsMenuPopup_2: Dynamic;
+var initializeSheetMediaQueries: Dynamic;
+var reactForUseSheetSiblingsInert: Dynamic;
 var SheetsMenuPopupSCRIPTSTYLELINKSet: Dynamic;
 var liveRegionSelector: Dynamic;
 var SheetsMenuPopupElementCache: Dynamic;
-var initializeSheetsMenuPopup_3: Dynamic;
-var reactSheetsMenuPopup_3: Dynamic;
+var initializeSheetSiblingsInert: Dynamic;
+var reactForMenuSheetPopup: Dynamic;
 var jsxSheetsMenuPopup: Dynamic;
-var SheetsMenuPopupElementCache_2: Dynamic;
+var inertSiblingsBySheet: Dynamic;
 var MenuSheetPopup: Dynamic;
-var initializeSheetsMenuPopup_4: Dynamic;
-var jsxSheetsMenuPopup_2: Dynamic;
-var initializeSheetsMenuPopup_5: Dynamic;
-var jsxSheetsMenuPopup_3: Dynamic;
-var initializeSheetsMenuPopup_6: Dynamic;
+var initializeMenuSheetPopupComponent: Dynamic;
+var jsxForSheetPopupPresentation: Dynamic;
+var initializeSheetPopupPresentationJsx: Dynamic;
+var jsxForSheetPopupMotion: Dynamic;
+var initializeSheetPopupMotionJsx: Dynamic;
 function browserWindow(windowOverride?: Dynamic): Dynamic {
   return windowOverride ?? (typeof window === "undefined" ? undefined : window);
 }
@@ -144,8 +144,8 @@ function useSheetSiblingsInert({
 }: Dynamic): Dynamic {
   let cdsWindow: Dynamic = useCdsWindow(),
     getLiftDelay: Dynamic = useOptionalStableCallback(liftOnClose),
-    restoreInertRef: Dynamic = (0, reactSheetsMenuPopup_2.useRef)(null),
-    deferredRemovalRef: Dynamic = (0, reactSheetsMenuPopup_2.useRef)(null);
+    restoreInertRef: Dynamic = (0, reactForUseSheetSiblingsInert.useRef)(null),
+    deferredRemovalRef: Dynamic = (0, reactForUseSheetSiblingsInert.useRef)(null);
   useIsomorphicLayoutEffect((): Dynamic => {
     if (!open || node === null || cdsWindow === undefined) return;
     let animationFrameId: Dynamic = cdsWindow.requestAnimationFrame((): Dynamic => {
@@ -173,7 +173,7 @@ function useSheetSiblingsInert({
       deferredRemovalRef.current = deferredRemoval;
     };
   }, [node, open, cdsWindow, getLiftDelay]);
-  return (0, reactSheetsMenuPopup_2.useCallback)(
+  return (0, reactForUseSheetSiblingsInert.useCallback)(
     (): Dynamic => deferredRemovalRef.current?.(),
     [],
   );
@@ -234,15 +234,15 @@ function preventSheetTab(event?: Dynamic): Dynamic {
   event.key === "Tab" && (event.preventDefault(), event.stopPropagation());
 }
 function hideCoveredSheet(sheetElement?: Dynamic, owner?: Dynamic): Dynamic {
-  let entry: Dynamic = SheetsMenuPopupElementCache_2.get(sheetElement);
+  let entry: Dynamic = inertSiblingsBySheet.get(sheetElement);
   entry === undefined &&
-    ((entry = new Set()), SheetsMenuPopupElementCache_2.set(sheetElement, entry));
+    ((entry = new Set()), inertSiblingsBySheet.set(sheetElement, entry));
   entry.add(owner);
   sheetElement.setAttribute("aria-hidden", "true");
   sheetElement.setAttribute(drilledSheetAttribute, "");
 }
 function restoreCoveredSheet(sheetElement?: Dynamic, owner?: Dynamic): Dynamic {
-  let entry: Dynamic = SheetsMenuPopupElementCache_2.get(sheetElement);
+  let entry: Dynamic = inertSiblingsBySheet.get(sheetElement);
   entry?.delete(owner);
   (entry === undefined || entry.size === 0) &&
     (sheetElement.removeAttribute("aria-hidden"),
@@ -268,13 +268,13 @@ function sheetCloseInertDelay(closeRequest?: Dynamic): Dynamic {
 }
 function SheetBackButton({ nested: nested }: Dynamic): Dynamic {
   useUiLocale();
-  let menuRoot: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+  let menuRoot: Dynamic = (0, reactForMenuSheetPopup.useContext)(
       MenuRootContext,
     ),
-    { label: itemLabel }: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+    { label: itemLabel }: Dynamic = (0, reactForMenuSheetPopup.useContext)(
       MenuItemContext,
     ),
-    sheetLabels: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+    sheetLabels: Dynamic = (0, reactForMenuSheetPopup.useContext)(
       MenuSheetLabelsContext,
     ),
     defaultBackLabel: Dynamic = useLabel("back", "Back"),
@@ -309,12 +309,12 @@ function SheetBackButton({ nested: nested }: Dynamic): Dynamic {
 }
 function SheetCloseButton(): Dynamic {
   useUiLocale();
-  let sheetContext: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+  let sheetContext: Dynamic = (0, reactForMenuSheetPopup.useContext)(
       SheetPopupContext,
     ),
     defaultCloseLabel: Dynamic = useLabel("close", "Close"),
     closeLabel: Dynamic =
-      (0, reactSheetsMenuPopup_3.useContext)(MenuSheetLabelsContext)
+      (0, reactForMenuSheetPopup.useContext)(MenuSheetLabelsContext)
         .closeLabel ?? defaultCloseLabel;
   return (
     <npm_Menu_La.Item
@@ -351,8 +351,8 @@ function MobileSheetsPopoverSheetBackdrop({
       data-sheet-scrim={sheetPopup.frame?.treeId}
       className={
         sheetPopup.state.depth > 0
-          ? PlatformReducedMotionClassNames_2
-          : PlatformReducedMotionCss_4
+          ? transparentBackdropClassName
+          : sheetBackdropClassName
       }
     />
   );
@@ -405,8 +405,8 @@ function MobileSheetsComboboxSheetBackdrop({
       data-sheet-scrim={sheetPopup.frame?.treeId}
       className={
         sheetPopup.state.depth > 0
-          ? PlatformReducedMotionClassNames_2
-          : PlatformReducedMotionCss_4
+          ? transparentBackdropClassName
+          : sheetBackdropClassName
       }
     />
   );
@@ -417,14 +417,14 @@ export {
   deferSheetInertRemoval,
   hideCoveredSheet,
   initializeSheetsMenuPopup,
-  initializeSheetsMenuPopup_2,
-  initializeSheetsMenuPopup_3,
-  initializeSheetsMenuPopup_4,
-  initializeSheetsMenuPopup_5,
-  initializeSheetsMenuPopup_6,
+  initializeSheetMediaQueries,
+  initializeSheetSiblingsInert,
+  initializeMenuSheetPopupComponent,
+  initializeSheetPopupPresentationJsx,
+  initializeSheetPopupMotionJsx,
   jsxSheetsMenuPopup,
-  jsxSheetsMenuPopup_2,
-  jsxSheetsMenuPopup_3,
+  jsxForSheetPopupPresentation,
+  jsxForSheetPopupMotion,
   makeSheetSiblingsInert,
   MenuSheetPopup,
   MobileSheetsComboboxSheetBackdrop,
@@ -433,19 +433,16 @@ export {
   PointerEventsNoneValue,
   preventSheetTab,
   reactSheetsMenuPopup,
-  reactSheetsMenuPopup_2,
-  reactSheetsMenuPopup_3,
+  reactForUseSheetSiblingsInert,
+  reactForMenuSheetPopup,
   restoreCoveredSheet,
   SheetBackButton,
   SheetCloseButton,
   sheetCloseInertDelay,
   sheetPortalAncestor,
   SheetsMenuPopupElementCache,
-  SheetsMenuPopupElementCache_2,
+  inertSiblingsBySheet,
   SheetsMenuPopupLabel,
-  narrowViewportQuery as SheetsMenuPopupLabel_2,
-  electronUserAgentToken as SheetsMenuPopupLabel_3,
-  liveRegionSelector as SheetsMenuPopupLabel_4,
   SheetsMenuPopupLimit,
   SheetsMenuPopupMediaQuery,
   SheetsMenuPopupSCRIPTSTYLELINKSet,
@@ -466,21 +463,21 @@ export function installCdsSheetsMenuPopup(): () => void {
       PointerEventsNoneValue = "pointer-events-none";
       SheetsMenuPopupLimit = 2;
     });
-    initializeSheetsMenuPopup_2 = initializeOnce((): Dynamic => {
+    initializeSheetMediaQueries = initializeOnce((): Dynamic => {
       SheetsMenuPopupLabel = "(pointer: coarse), (hover: none)";
       narrowViewportQuery = "(width < 40rem)";
       SheetsMenuPopupMediaQuery = "(pointer: coarse)";
       electronUserAgentToken = " Electron/";
     });
-    initializeSheetsMenuPopup_3 = initializeOnce((): Dynamic => {
+    initializeSheetSiblingsInert = initializeOnce((): Dynamic => {
       "use client";
 
       initializeHooksLayoutEffect();
       initializeCdsRoot();
-      initializeSheetsMenuPopup_2();
-      initializeHooksStableCallback_2();
+      initializeSheetMediaQueries();
+      initializeStableCallbackReact();
       initializePlatformReducedMotion();
-      reactSheetsMenuPopup_2 = toModuleNamespace(
+      reactForUseSheetSiblingsInert = toModuleNamespace(
         load_react(),
       );
       SheetsMenuPopupSCRIPTSTYLELINKSet = new Set([
@@ -494,45 +491,45 @@ export function installCdsSheetsMenuPopup(): () => void {
         '[aria-live]:not([aria-live="off"]), [role="status"], [role="alert"], [role="log"], [data-cds="Toast"]';
       SheetsMenuPopupElementCache = new WeakMap();
     });
-    initializeSheetsMenuPopup_4 = initializeOnce((): Dynamic => {
+    initializeMenuSheetPopupComponent = initializeOnce((): Dynamic => {
       "use client";
 
       initializeHooksLayoutEffect();
       initializeClassNames();
-      initializeSheetsStyles_2();
+      initializeLabelsProviderContext();
       initializeCdsRoot();
       initializeOverlaysLayers();
       initializeOverlaysAndroidCloseWatcher();
       initializeDomRefComposition();
-      initializePlatformRootFontSize_2();
-      initializeComponentsIcon_2();
-      initializeComponentsIcon_3();
+      initializeRootFontSizeHooks();
+      initializeIconSizeMetrics();
+      initializeIconContext();
       initializeThemeSurfaces();
       initializeSheetsLayout();
       initializeSheetsPresentation();
       initializeSheetsPopupStack();
-      initializePlatformReducedMotion_2();
+      initializeSheetMotionClassNames();
       initializeMenuConfiguration();
       initializeSheetsScrollArea();
       initializeMenuPopup();
       initializeMenuPassiveOpenGate();
       initializeMenuItemStyles();
-      initializeMenuItemStyles_2();
-      initializeMenuItemStyles_3();
+      initializeParentMenuContext();
+      initializeMenuPopupElementComponent();
       initializeSheetsMenuPopup();
       initializeSheetsStyles();
       initializeSheetsChrome();
-      initializeSheetsChrome_2();
-      initializeSheetsMenuPopup_3();
-      reactSheetsMenuPopup_3 = toModuleNamespace(
+      initializeSheetDismissalReact();
+      initializeSheetSiblingsInert();
+      reactForMenuSheetPopup = toModuleNamespace(
         load_react(),
       );
       jsxSheetsMenuPopup = toModuleNamespace(
         load_react_jsx_runtime(),
       );
       initializeNpm__base_ui_react_jj();
-      SheetsMenuPopupElementCache_2 = new WeakMap();
-      MenuSheetPopup = (0, reactSheetsMenuPopup_3.forwardRef)(
+      inertSiblingsBySheet = new WeakMap();
+      MenuSheetPopup = (0, reactForMenuSheetPopup.forwardRef)(
         (
           {
             side: side,
@@ -559,20 +556,20 @@ export function installCdsSheetsMenuPopup(): () => void {
           "use no memo";
 
           let overlayRoot: Dynamic = useOverlayRoot(),
-            menuRoot: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+            menuRoot: Dynamic = (0, reactForMenuSheetPopup.useContext)(
               MenuRootContext,
             ),
             isContextMenu: Dynamic =
-              (0, reactSheetsMenuPopup_3.useContext)(
+              (0, reactForMenuSheetPopup.useContext)(
                 MenuConfigurationContext,
               ) && menuRoot === null,
             isSheet: Dynamic = useIsSheet(),
             isNestedSheet: Dynamic = isSheet && menuRoot !== null,
-            iconContext: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+            iconContext: Dynamic = (0, reactForMenuSheetPopup.useContext)(
               ComponentsIconContext,
             ),
             effectiveCollisionPadding: Dynamic = collisionPadding ?? iconContext?.collisionPadding,
-            effectiveAnchor: Dynamic = (0, reactSheetsMenuPopup_3.useMemo)(
+            effectiveAnchor: Dynamic = (0, reactForMenuSheetPopup.useMemo)(
               (): Dynamic =>
                 anchor !== undefined || !menuRoot
                   ? anchor
@@ -587,22 +584,22 @@ export function installCdsSheetsMenuPopup(): () => void {
               side: side,
               align: align,
             }),
-            sheetFrame: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+            sheetFrame: Dynamic = (0, reactForMenuSheetPopup.useContext)(
               SheetPopupContext,
             ),
-            menuItem: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+            menuItem: Dynamic = (0, reactForMenuSheetPopup.useContext)(
               MenuItemContext,
             ),
-            sheetElementRef: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(null),
-            coveredSheetRef: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(null),
+            sheetElementRef: Dynamic = (0, reactForMenuSheetPopup.useRef)(null),
+            coveredSheetRef: Dynamic = (0, reactForMenuSheetPopup.useRef)(null),
             restoreCoveredParent: Dynamic = (0,
-            reactSheetsMenuPopup_3.useCallback)((): Dynamic => {
+            reactForMenuSheetPopup.useCallback)((): Dynamic => {
               let coveredSheet: Dynamic = coveredSheetRef.current;
               coveredSheet !== null &&
                 (restoreCoveredSheet(coveredSheet, coveredSheetRef),
                 (coveredSheetRef.current = null));
             }, []),
-            hideParentSheet: Dynamic = (0, reactSheetsMenuPopup_3.useCallback)(
+            hideParentSheet: Dynamic = (0, reactForMenuSheetPopup.useCallback)(
               (element?: Dynamic): Dynamic => {
                 if (menuRoot === null) return;
                 let parentSheet: Dynamic =
@@ -623,22 +620,22 @@ export function installCdsSheetsMenuPopup(): () => void {
               },
               [menuRoot, restoreCoveredParent, sheetFrame],
             ),
-            [hasTextInput, setHasTextInput]: Dynamic = (0, reactSheetsMenuPopup_3.useState)(
+            [hasTextInput, setHasTextInput]: Dynamic = (0, reactForMenuSheetPopup.useState)(
               false,
             ),
-            hasTextInputRef: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(false),
-            updateHasTextInput: Dynamic = (0, reactSheetsMenuPopup_3.useCallback)(
+            hasTextInputRef: Dynamic = (0, reactForMenuSheetPopup.useRef)(false),
+            updateHasTextInput: Dynamic = (0, reactForMenuSheetPopup.useCallback)(
               (hasInput?: Dynamic): Dynamic => {
                 hasTextInputRef.current = hasInput;
                 setHasTextInput(hasInput);
               },
               [],
             ),
-            [inertSheetNode, setInertSheetNode]: Dynamic = (0, reactSheetsMenuPopup_3.useState)(
+            [inertSheetNode, setInertSheetNode]: Dynamic = (0, reactForMenuSheetPopup.useState)(
               null,
             ),
             takeCloseRequest: Dynamic = sheetFrame?.takeCloseRequest,
-            getCloseInertDelay: Dynamic = (0, reactSheetsMenuPopup_3.useCallback)(
+            getCloseInertDelay: Dynamic = (0, reactForMenuSheetPopup.useCallback)(
               (): Dynamic => sheetCloseInertDelay(takeCloseRequest?.() ?? null),
               [takeCloseRequest],
             ),
@@ -648,16 +645,16 @@ export function installCdsSheetsMenuPopup(): () => void {
               liftOnClose: getCloseInertDelay,
             }),
             sheetState: Dynamic = useSheetState(),
-            parentStack: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+            parentStack: Dynamic = (0, reactForMenuSheetPopup.useContext)(
               SheetStackContext,
             ),
-            bridgeCover: Dynamic = (0, reactSheetsMenuPopup_3.useContext)(
+            bridgeCover: Dynamic = (0, reactForMenuSheetPopup.useContext)(
               SheetPopupBridgeContext,
             ),
-            [sheetElement, setSheetElement]: Dynamic = (0, reactSheetsMenuPopup_3.useState)(
+            [sheetElement, setSheetElement]: Dynamic = (0, reactForMenuSheetPopup.useState)(
               null,
             ),
-            setPopupElement: Dynamic = (0, reactSheetsMenuPopup_3.useCallback)(
+            setPopupElement: Dynamic = (0, reactForMenuSheetPopup.useCallback)(
               (element?: Dynamic): Dynamic => {
                 sheetElementRef.current = isSheet ? element : null;
                 setSheetElement(isSheet ? element : null);
@@ -677,8 +674,8 @@ export function installCdsSheetsMenuPopup(): () => void {
                     element,
                   );
                   containsTextInput &&
-                    ((element.style.minHeight = SheetsLayoutCss_3),
-                    (element.style.maxHeight = SheetsLayoutCss_3));
+                    ((element.style.minHeight = halfHeightViewportCss),
+                    (element.style.maxHeight = halfHeightViewportCss));
                   updateHasTextInput(containsTextInput);
                   sheetFrame?.pinHeight(
                     element.getBoundingClientRect().height,
@@ -708,7 +705,7 @@ export function installCdsSheetsMenuPopup(): () => void {
             isSheet && (isNestedSheet ? menuItem.open : (sheetFrame?.open ?? false)),
             isNestedSheet ? menuRoot?.close : sheetFrame?.dismiss,
           );
-          let wasNestedOpenRef: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(false),
+          let wasNestedOpenRef: Dynamic = (0, reactForMenuSheetPopup.useRef)(false),
             isSheetOpen: Dynamic = sheetFrame?.open ?? false;
           useIsomorphicLayoutEffect((): Dynamic => {
             let current: Dynamic = sheetElementRef.current,
@@ -719,8 +716,8 @@ export function installCdsSheetsMenuPopup(): () => void {
               ? hideParentSheet(current)
               : !isNestedOpen && isSheetOpen && restoreCoveredParent();
           }, [isNestedSheet, menuItem.open, isSheetOpen, hideParentSheet, restoreCoveredParent]);
-          let prevNestedOpenRef: Dynamic = (0, reactSheetsMenuPopup_3.useRef)(false),
-            [isPeeling, setIsPeeling]: Dynamic = (0, reactSheetsMenuPopup_3.useState)(
+          let prevNestedOpenRef: Dynamic = (0, reactForMenuSheetPopup.useRef)(false),
+            [isPeeling, setIsPeeling]: Dynamic = (0, reactForMenuSheetPopup.useState)(
               false,
             );
           useIsomorphicLayoutEffect((): Dynamic => {
@@ -738,7 +735,7 @@ export function installCdsSheetsMenuPopup(): () => void {
           }, [isNestedSheet, menuItem.open]);
           let pushLevelHeight: Dynamic = sheetFrame?.pushLevelHeight,
             drag: Dynamic = sheetFrame?.drag;
-          (0, reactSheetsMenuPopup_3.useEffect)((): Dynamic => {
+          (0, reactForMenuSheetPopup.useEffect)((): Dynamic => {
             if (
               !isNestedSheet ||
               !menuItem.open ||
@@ -811,7 +808,7 @@ export function installCdsSheetsMenuPopup(): () => void {
           }, [isNestedSheet, menuItem.open, sheetElement, pushLevelHeight, drag]);
           let repinHeight: Dynamic = sheetFrame?.repinHeight,
             isFrameOpen: Dynamic = sheetFrame?.open ?? false;
-          (0, reactSheetsMenuPopup_3.useEffect)((): Dynamic => {
+          (0, reactForMenuSheetPopup.useEffect)((): Dynamic => {
             if (
               !isSheet ||
               isNestedSheet ||
@@ -946,7 +943,7 @@ export function installCdsSheetsMenuPopup(): () => void {
             ),
             cdsWindow: Dynamic = useCdsWindow(),
             frameHeightPx: Dynamic = sheetFrameHeight(sheetFrame, cdsWindow),
-            stack: Dynamic = (0, reactSheetsMenuPopup_3.useMemo)(
+            stack: Dynamic = (0, reactForMenuSheetPopup.useMemo)(
               (): Dynamic =>
                 isSheet && bridgeCover !== null
                   ? {
@@ -972,7 +969,7 @@ export function installCdsSheetsMenuPopup(): () => void {
                     className={
                       sheetState.depth > 0
                         ? "draggable-none fixed inset-0 bg-transparent"
-                        : PlatformReducedMotionCss_4
+                        : sheetBackdropClassName
                     }
                   />)}
                 <CollisionPaddingProvider
@@ -1012,7 +1009,7 @@ export function installCdsSheetsMenuPopup(): () => void {
                             ? isNestedSheet
                               ? ClipPathInset00200vh0Value
                               : sheetState.depth === 0
-                                ? PlatformReducedMotionClassNames_3
+                                ? sheetOverscrollFillClassName
                                 : undefined
                             : entryAnimation.held?.positionerClassName
                         }
@@ -1057,7 +1054,7 @@ export function installCdsSheetsMenuPopup(): () => void {
                               style={mergedStyle}
                               className={cn(
                                 MenuPopupCss,
-                                isSheet && PlatformReducedMotionCss_2,
+                                isSheet && bottomSheetPanelClassName,
                                 isSheet &&
                                   (isNestedSheet
                                     ? "bg-transparent shadow-none [&[data-ending-style]:not([data-cds-sheet-tree-closing])]:translate-x-full rtl:[&[data-ending-style]:not([data-cds-sheet-tree-closing])]:-translate-x-full [&[data-ending-style][data-cds-sheet-peeling]]:translate-x-full rtl:[&[data-ending-style][data-cds-sheet-peeling]]:-translate-x-full [&[data-ending-style][data-cds-sheet-tree-closing]]:translate-y-[calc(100%+1.5rem)]"
@@ -1073,7 +1070,7 @@ export function installCdsSheetsMenuPopup(): () => void {
                                   <SheetHandle drawPill={!isNestedSheet} />
                                   <div
                                     className={
-                                      PlatformReducedMotionCss_3
+                                      sheetDrillContentClassName
                                     }
                                   >
                                     <PopupScrollArea
@@ -1110,23 +1107,23 @@ export function installCdsSheetsMenuPopup(): () => void {
       );
       MenuSheetPopup.displayName = "MenuSheetPopup";
     });
-    initializeSheetsMenuPopup_5 = initializeOnce((): Dynamic => {
+    initializeSheetPopupPresentationJsx = initializeOnce((): Dynamic => {
       "use client";
 
       initializeClassNames();
       initializeSheetsPresentation();
       initializeSheetsPopupStack();
-      initializePlatformReducedMotion_2();
-      jsxSheetsMenuPopup_2 = toModuleNamespace(
+      initializeSheetMotionClassNames();
+      jsxForSheetPopupPresentation = toModuleNamespace(
         load_react_jsx_runtime(),
       );
       initializeNpm__base_ui_react_pge();
     });
-    initializeSheetsMenuPopup_6 = initializeOnce((): Dynamic => {
+    initializeSheetPopupMotionJsx = initializeOnce((): Dynamic => {
       "use client";
 
-      initializePlatformReducedMotion_2();
-      jsxSheetsMenuPopup_3 = toModuleNamespace(
+      initializeSheetMotionClassNames();
+      jsxForSheetPopupMotion = toModuleNamespace(
         load_react_jsx_runtime(),
       );
       initializeNpm__base_ui_react_wY();

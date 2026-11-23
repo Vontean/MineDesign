@@ -23,8 +23,8 @@ var typographyScaleClassKeys: string[];
 var typographyWeightClassKeys: string[];
 var getThemeClassKeys: (input: ThemeClassGroup) => string[];
 var getThemeClassKeysValue: string[];
-var getThemeClassKeysValue_2: string[];
-var getThemeClassKeysValue_3: string[];
+var marginClassKeys: string[];
+var gapClassKeys: string[];
 var ThemeClassNamesFromEntries: (
   input: string,
   options: string[],
@@ -45,8 +45,8 @@ export {
   cn,
   getThemeClassKeys,
   getThemeClassKeysValue,
-  getThemeClassKeysValue_2,
-  getThemeClassKeysValue_3,
+  marginClassKeys,
+  gapClassKeys,
   initializeClassNames,
   initializeThemeClassNames,
   mergeCdsClasses,
@@ -114,8 +114,8 @@ export function installCdsThemeClassNames(): () => void {
       getThemeClassKeys = (group: ThemeClassGroup): string[] =>
         themeClassKeysByGroup[group];
       getThemeClassKeysValue = getThemeClassKeys("padding");
-      getThemeClassKeysValue_2 = getThemeClassKeys("margin");
-      getThemeClassKeysValue_3 = getThemeClassKeys("gap");
+      marginClassKeys = getThemeClassKeys("margin");
+      gapClassKeys = getThemeClassKeys("gap");
       ThemeClassNamesFromEntries = (
         prefix: string,
         classKeys: string[],
@@ -236,22 +236,22 @@ export function installCdsThemeClassNames(): () => void {
             ],
             ...ThemeClassNamesFromEntries("p", getThemeClassKeysValue),
             ...ThemeClassNamesFromEntries("m", [
-              ...getThemeClassKeysValue_2,
+              ...marginClassKeys,
               "outset",
             ]),
             gap: [
               {
-                gap: getThemeClassKeysValue_3,
+                gap: gapClassKeys,
               },
             ],
             "gap-x": [
               {
-                "gap-x": getThemeClassKeysValue_3,
+                "gap-x": gapClassKeys,
               },
             ],
             "gap-y": [
               {
-                "gap-y": getThemeClassKeysValue_3,
+                "gap-y": gapClassKeys,
               },
             ],
           },

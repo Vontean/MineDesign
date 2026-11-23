@@ -140,7 +140,7 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
     serializeWrites: Dynamic = false,
     lastAcknowledgedAt: Dynamic,
     saveStatusTimer: Dynamic,
-    value13: Dynamic,
+    lastWriteRetryAt: Dynamic,
     lastSyncedAt: Dynamic,
     lastError: Dynamic,
     hasSyncedWrite: Dynamic = false,
@@ -1187,7 +1187,7 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
         (pathState.pending !== undefined || pathState.inflight !== undefined),
     ) ||
       ((hasWriteBackoffError = false),
-      (value13 = undefined),
+      (lastWriteRetryAt = undefined),
       (rateLimitFailures = 0),
       (firstRateLimitAt = undefined));
   }
@@ -1307,7 +1307,7 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
         } else {
           hasWriteBackoffError = true;
           pathState.notBefore = failedAt + writeFailureBackoff(pathState.failures);
-          value13 = pathState.notBefore;
+          lastWriteRetryAt = pathState.notBefore;
           lastError = {
             code: error.code,
             message: error.message,

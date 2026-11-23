@@ -7,7 +7,7 @@ var isDirectiveElement: Dynamic;
 var directiveParent: Dynamic;
 var ModelDomTextSubscribers: Dynamic;
 var ModelDomTextSplitValue: Dynamic;
-var ModelDomTextSplitValue_2: Dynamic;
+var fontInheritanceProperties: Dynamic;
 var ModelDomTextH1H2H3Config: Dynamic;
 var ModelDomTextButtonInputPattern: Dynamic;
 var ModelDomTextRegistry: Dynamic;
@@ -106,7 +106,7 @@ export {
   ModelDomTextH1H2H3Config,
   ModelDomTextRegistry,
   ModelDomTextSplitValue,
-  ModelDomTextSplitValue_2,
+  fontInheritanceProperties,
   ModelDomTextSubscribers,
   nextDirectiveSibling,
   siblingsSeparatedOnlyByWhitespace,
@@ -131,7 +131,7 @@ export function installEditorModelDomText(): () => void {
       "font font-family font-size font-weight font-style line-height letter-spacing color text-align text-transform".split(
         " ",
       );
-    ModelDomTextSplitValue_2 =
+    fontInheritanceProperties =
       "font-family font-size font-weight font-style line-height".split(" ");
     ModelDomTextH1H2H3Config = {
       h1: "font-size font-weight",

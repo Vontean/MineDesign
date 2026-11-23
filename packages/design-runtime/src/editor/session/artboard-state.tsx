@@ -50,7 +50,6 @@ export {
   jsxSessionArtboardState,
   reactSessionArtboardState,
   SessionArtboardStateAlias,
-  writableCheck as SessionArtboardStateAlias_2,
   SessionArtboardStateConstant,
   SessionArtboardStateEscape,
   SessionArtboardStateHandler,

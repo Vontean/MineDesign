@@ -508,7 +508,7 @@ async function runFastEditSamplingRound(
     let waitForReady: Dynamic = (): Dynamic =>
       entry !== undefined &&
       editContext.comment?.pin === undefined &&
-      entry.webviewRef.current !== null &&
+      entry.previewFrameRef.current !== null &&
       !entry.isReady();
     for (
       let readyAttempts: Dynamic = 0;

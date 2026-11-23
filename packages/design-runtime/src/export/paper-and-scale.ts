@@ -8,7 +8,7 @@ import type {
 } from "../contracts/export";
 import type { Size } from "../contracts/geometry";
 import { maxCaptureEdge, maxCapturePixels } from "./capture-runtime";
-import { PlatformFileContentLimit_6 as platformFileContentLimit } from "../platform/file-content";
+import { maxCanvasItemDimension as platformFileContentLimit } from "../platform/file-content";
 
 /** 判断导出方式时，画板需要的字段。 */
 export type PrintableArtboard = ExportArtboard;

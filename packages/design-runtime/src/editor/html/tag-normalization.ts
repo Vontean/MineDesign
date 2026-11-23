@@ -8,10 +8,10 @@ var ScCamelValue: Dynamic;
 var HtmlTagNormalizationSubscribers: Dynamic;
 var HtmlTagNormalizationSelectTableTbodyConfig: Dynamic;
 var HtmlTagNormalizationFromEntriesValue: Dynamic;
-var HtmlTagNormalizationSubscribers_2: Dynamic;
+var booleanAttributes: Dynamic;
 var HtmlTagNormalizationCss: Dynamic;
 var selfClosingImportPattern: Dynamic;
-var HtmlTagNormalizationCss_2: Dynamic;
+var tagAttributesPattern: Dynamic;
 var htmlAttributeTagPattern: Dynamic;
 var HtmlTagNormalizationAZaZPattern: Dynamic;
 function encodeCamelCaseAttributes(html?: Dynamic): Dynamic {
@@ -113,11 +113,11 @@ export {
   htmlAttributeTagPattern,
   HtmlTagNormalizationAZaZPattern,
   HtmlTagNormalizationCss,
-  HtmlTagNormalizationCss_2,
+  tagAttributesPattern,
   HtmlTagNormalizationFromEntriesValue,
   HtmlTagNormalizationSelectTableTbodyConfig,
   HtmlTagNormalizationSubscribers,
-  HtmlTagNormalizationSubscribers_2,
+  booleanAttributes,
   kebabToCamelCase,
   safeJsonStringify,
   ScCamelValue,
@@ -148,7 +148,7 @@ export function installEditorHtmlTagNormalization(): () => void {
         ([authoredTag, parserTag]: Dynamic): Dynamic => [parserTag, authoredTag],
       ),
     );
-    HtmlTagNormalizationSubscribers_2 = new Set(
+    booleanAttributes = new Set(
       "allowFullScreen async autoFocus autoPlay checked controls default defer disabled disablePictureInPicture disableRemotePlayback formNoValidate hidden itemScope loop multiple muted noModule noValidate open playsInline readOnly required reversed scoped seamless selected".split(
         " ",
       ),
@@ -158,12 +158,12 @@ export function installEditorHtmlTagNormalization(): () => void {
       "<(x-import|dc-import)(" + HtmlTagNormalizationCss + ")/>",
       "gi",
     );
-    HtmlTagNormalizationCss_2 = `(?:=\\s*"[^"]*"|=\\s*'[^']*'|=(?!\\s*["'])|[^>=])*`;
+    tagAttributesPattern = `(?:=\\s*"[^"]*"|=\\s*'[^']*'|=(?!\\s*["'])|[^>=])*`;
     htmlAttributeTagPattern = new RegExp(
       "(<\!---?>|<\!--[\\s\\S]*?--!?>)|(<(script|style|textarea|title)(?=[\\s/>])" +
-        HtmlTagNormalizationCss_2 +
+        tagAttributesPattern +
         ">)([\\s\\S]*?<\\/\\3(?=[\\s/>])[^>]*>)|<[a-zA-Z][^\\s/>]*(?=[\\s/>])" +
-        HtmlTagNormalizationCss_2 +
+        tagAttributesPattern +
         ">",
       "gi",
     );

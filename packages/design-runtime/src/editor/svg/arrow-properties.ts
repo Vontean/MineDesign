@@ -65,7 +65,7 @@ export {
   findSvgShaft,
   SvgArrowPropertiesHeadStartHeadEndConfig,
   SvgArrowPropertiesLabel,
-  allArrowsNeedThicknessMessage as SvgArrowPropertiesLabel_2,
+  allArrowsNeedThicknessMessage,
   SvgArrowPropertiesNoneOpenFilledConfig,
 };
 export function installEditorSvgArrowProperties(): () => void {

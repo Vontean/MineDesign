@@ -4,7 +4,7 @@ import {
 } from "../runtime-types";
 import { ExportDeliveryCapMsFinishAnimationsEagerImagesConfig } from "./delivery";
 import { exportHeightTolerance } from "./paper-and-scale";
-import { PlatformFileContentLimit_6 as MAX_CANVAS_ITEM_DIMENSION } from "../platform/file-content";
+import { maxCanvasItemDimension as MAX_CANVAS_ITEM_DIMENSION } from "../platform/file-content";
 
 var ExportCaptureViewportLimit: Dynamic;
 var ExportCaptureViewportLabel: Dynamic;

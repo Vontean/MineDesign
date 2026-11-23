@@ -3,14 +3,14 @@ import { uiMessage } from '@minedesign/contracts/ui-messages';
 import {
   type Dynamic,
 } from "../../runtime-types";
-import { reactCanvasShape_2 } from "../../canvas/shape";
+import { canvasShapeReact as React } from "../../canvas/shape";
 import { MenuMenuAssignValue } from "../../cds/menu/menu";
 import { TooltipGroup } from "../../cds/tooltip/tooltip";
 import { useUiText } from "../../comments/feedback-panel";
 import { ChromeToolIconsRectOvalConfig } from "./tool-icons";
 import { jsxInspectorEditor } from "../inspector/editor";
 import { SessionStripPopover } from "../session-strip/popover";
-import { SessionTouchAndHistoryJsxValue as TextToolGlyph, SessionTouchAndHistoryJsxValue_2 as FrameToolGlyph } from "../session/touch-and-history";
+import { SessionTouchAndHistoryJsxValue as TextToolGlyph, frameToolGlyph as FrameToolGlyph } from "../session/touch-and-history";
 import { usePhoneCanvas } from "../toolbar/layout";
 import { ToolbarPrimitivesComponent } from "../toolbar/primitives";
 import { designToolForShortcut, designToolIcons, designToolLabels, insertDesignTools, insertMenuIcon, isHostOnlyDesignTool, shapeDesignTools, shapesMenuIcon, ShapeToolGlyph } from "../tools";
@@ -21,7 +21,7 @@ export {
 };
 export function installEditorChromeToolSelector(): () => void {
   return () => {
-    CanvasToolSelector = (0, reactCanvasShape_2.memo)(function ({
+    CanvasToolSelector = (0, React.memo)(function ({
       tool: tool,
       onPick: onPick,
       canvasTools = true,
@@ -31,7 +31,7 @@ export function installEditorChromeToolSelector(): () => void {
         menuTools: Dynamic = isPhoneCanvas
           ? insertDesignTools
           : shapeDesignTools,
-        [isMenuOpen, setIsMenuOpen]: Dynamic = (0, reactCanvasShape_2.useState)(
+        [isMenuOpen, setIsMenuOpen]: Dynamic = (0, React.useState)(
           false,
         ),
         pickTool: Dynamic = (pickedTool?: Dynamic): Dynamic => {

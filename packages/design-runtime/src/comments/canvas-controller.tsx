@@ -16,7 +16,7 @@ import { moveObjectCommentArea, normalizeObjectCommentArea, normalizeObjectComme
 import { CommentPointer, commentPointerCursor } from "./pointer";
 import { CommentCardLayer, isCommentCardEvent } from "./comment-cards";
 import { load_react_jsx_runtime } from "../dependencies";
-import { AccessibilityAnnouncementsLabel_24 as commentModePausedMessage } from "../editor/accessibility/announcements";
+import { commentModePausedMessage } from "../editor/accessibility/announcements";
 import { announce } from "../editor/accessibility/announcer";
 import { blockingOverlaySelector } from "../editor/chrome/overlay-state";
 import { isEditingInputTarget } from "../editor/keyboard/find";
@@ -335,7 +335,7 @@ function useCanvasComments(hookOptions?: Dynamic): Dynamic {
                 handle: Dynamic =
                   entry?.isReady() && !entry.isBlocked()
                     ? createPreviewHandle(
-                        entry.webviewRef.current,
+                        entry.previewFrameRef.current,
                       )
                     : null,
                 items: Dynamic = [...scopes.values()],
@@ -736,7 +736,7 @@ function useCanvasComments(hookOptions?: Dynamic): Dynamic {
     ): Promise<Dynamic> => {
       let entry: Dynamic = handlesRef.current.get(file),
         handle: Dynamic = entry
-          ? createPreviewHandle(entry.webviewRef.current)
+          ? createPreviewHandle(entry.previewFrameRef.current)
           : null;
       return handle
         ? pickerCommentAt(handle, localX, localY, timeoutMs)
@@ -904,7 +904,7 @@ function useCanvasComments(hookOptions?: Dynamic): Dynamic {
         });
       if (hit.kind === "offFace")
         return artboardPointTarget(
-          handlesRef.current.get(hit.file)?.webviewRef.current
+          handlesRef.current.get(hit.file)?.previewFrameRef.current
             ? null
             : {
                 x: 0,
@@ -1247,7 +1247,7 @@ function useCanvasComments(hookOptions?: Dynamic): Dynamic {
           let entry: Dynamic = handlesRef.current.get(covered.board.file),
             handle: Dynamic =
               entry?.isReady() && !entry.isBlocked()
-                ? createPreviewHandle(entry.webviewRef.current)
+                ? createPreviewHandle(entry.previewFrameRef.current)
                 : null;
           if (!handle) return null;
           let left: Dynamic = covered.inter.x - covered.frame.x,
@@ -1977,7 +1977,7 @@ function useCanvasComments(hookOptions?: Dynamic): Dynamic {
                 ? undefined
                 : handlesRef.current.get(latestFullscreenFile);
           createPreviewHandle(
-            handle?.webviewRef.current ?? null,
+            handle?.previewFrameRef.current ?? null,
           )?.executeJavaScriptUnchecked(
             "scrollBy(" +
               JSON.stringify(deltaX) +

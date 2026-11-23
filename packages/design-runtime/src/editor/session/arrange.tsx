@@ -4,10 +4,10 @@ import { CouldnTFindThisComponentSArtboardOnMessage } from "../components/detach
 import { CutValue } from "../accessibility/announcements";
 import { DownloadsArenTAvailableToYouForMessage } from "../../export/downloads";
 import { FinishEditingThisDrawingSPointsToMessage } from "../geometry/flip-elements";
-import { GeometryFlipElementsLabel_6 as cropFlipRefusal } from "../geometry/flip-elements";
-import { InspectorEditorEvery } from "../inspector/editor";
-import { InspectorEditorLabel_2 as selectOneElementForPngMessage } from "../inspector/editor";
-import { InspectorEditorLabel_3 as selectOneElementForSvgMessage } from "../inspector/editor";
+import { finishCroppingToFlipMessage as cropFlipRefusal } from "../geometry/flip-elements";
+import { sameTidList } from "../inspector/editor";
+import { selectOneElementForPngMessage } from "../inspector/editor";
+import { selectOneElementForSvgMessage } from "../inspector/editor";
 import { KeyboardEditActionsCutCopyPasteConfig } from "../keyboard/edit-actions";
 import { OutlineAnnotationsLabel } from "../outline/annotations";
 import { PartsOfThisComponentCanTBeMessage } from "../components/detach";
@@ -52,17 +52,42 @@ import { uiMessage } from "@minedesign/contracts/ui-messages";
 import { ungroupElementRefusal } from "../layout/ungrouping";
 import { ungroupModelElement } from "../layout/ungrouping";
 
+interface DuplicateSelectionContext {
+  readonly view: {
+    readonly incrementSessionEpoch: Dynamic;
+    readonly getPreviewFrame: Dynamic;
+  };
+  readonly model: {
+    readonly markModelDirty: Dynamic;
+    readonly modelRef: Dynamic;
+    readonly pushLiveModel: Dynamic;
+    readonly readOnlyRef: Dynamic;
+    readonly rootName: Dynamic;
+    readonly lastEditedTemplateRef: Dynamic;
+  };
+  readonly history: {
+    readonly pushUndoEdit: Dynamic;
+    readonly revokeUndoEdit: Dynamic;
+  };
+  readonly selection: {
+    readonly selectElements: Dynamic;
+    readonly retargetSelection: Dynamic;
+    readonly selectionRef: Dynamic;
+    readonly notePendingHighlight: Dynamic;
+  };
+}
+
 /** 按 Cmd+D 或选择“复制一份”时运行：在模型中逐个复制选中的顶层元素，记录撤销、推送实时模型并选中新副本。 */
-export function duplicateSelectedModelElements(deps: { readonly incrementSessionEpoch: Dynamic; readonly markModelDirty: Dynamic; readonly modelRef: Dynamic; readonly pushLiveModel: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value105: Dynamic; readonly value106: Dynamic; readonly value49: Dynamic; readonly value50: Dynamic; readonly value62: Dynamic; readonly value66: Dynamic; readonly value67: Dynamic }): Dynamic {
-      let current: Dynamic = deps.value49.current;
+export function duplicateSelectedModelElements(deps: DuplicateSelectionContext): Dynamic {
+      let current: Dynamic = deps.selection.selectionRef.current;
       if (
         !current ||
-        deps.readOnlyRef.current ||
-        current.name !== deps.rootName ||
+        deps.model.readOnlyRef.current ||
+        current.name !== deps.model.rootName ||
         current.tids.length === 0
       )
         return;
-      let modelState: Dynamic = deps.modelRef.current.state(deps.rootName);
+      let modelState: Dynamic = deps.model.modelRef.current.state(deps.model.rootName);
       if (!modelState) return;
       let rootTids: Dynamic = selectedRootElementIds(
         modelState.model,
@@ -82,8 +107,8 @@ export function duplicateSelectedModelElements(deps: { readonly incrementSession
       );
       if (rootTids.length === 0) return;
       let redo: Dynamic = modelState.redo,
-        undoMark: Dynamic = deps.value101(
-          deps.rootName,
+        undoMark: Dynamic = deps.history.pushUndoEdit(
+          deps.model.rootName,
           `duplicate-${Date.now()}`,
           modelState,
         ),
@@ -94,7 +119,7 @@ export function duplicateSelectedModelElements(deps: { readonly incrementSession
           )
           .filter((element?: Dynamic): Dynamic => element != null);
       if (duplicateElements.length === 0) {
-        deps.value102(modelState, undoMark, redo);
+        deps.history.revokeUndoEdit(modelState, undoMark, redo);
         return;
       }
       modelState.model.restamp();
@@ -104,28 +129,40 @@ export function duplicateSelectedModelElements(deps: { readonly incrementSession
             parseInt(element.getAttribute("data-dc-tpl") ?? "-1", 10),
         )
         .filter((tid?: Dynamic): Dynamic => tid >= 0);
-      deps.value66.current = deps.rootName;
-      deps.pushLiveModel(deps.rootName, modelState);
-      deps.markModelDirty(deps.rootName);
-      deps.incrementSessionEpoch();
+      deps.model.lastEditedTemplateRef.current = deps.model.rootName;
+      deps.model.pushLiveModel(deps.model.rootName, modelState);
+      deps.model.markModelDirty(deps.model.rootName);
+      deps.view.incrementSessionEpoch();
       if (duplicateTids.length > 0) {
-        let pickerTarget: Dynamic = deps.value67(),
-          pushResult: Dynamic = deps.value106(modelState, duplicateTids);
-        deps.value105(deps.rootName, duplicateTids);
-        pushResult && (deps.value62.current = deps.value50.current);
+        let pickerTarget: Dynamic = deps.view.getPreviewFrame(),
+          pushResult: Dynamic = deps.selection.retargetSelection(modelState, duplicateTids);
+        deps.selection.selectElements(deps.model.rootName, duplicateTids);
+        pushResult && deps.selection.notePendingHighlight();
         pickerTarget &&
           setTimeout((): Dynamic => {
-            let latestSelection: Dynamic = deps.value49.current;
-            latestSelection?.name === deps.rootName &&
-              InspectorEditorEvery(latestSelection.tids, duplicateTids) &&
-              setPickerSelection(pickerTarget, duplicateTids, deps.rootName);
+            let latestSelection: Dynamic = deps.selection.selectionRef.current;
+            latestSelection?.name === deps.model.rootName &&
+              sameTidList(latestSelection.tids, duplicateTids) &&
+              setPickerSelection(pickerTarget, duplicateTids, deps.model.rootName);
           }, 60);
       }
     }
 
+interface StructuralEditContext {
+  readonly modelRef: Dynamic;
+  readonly readOnlyRef: Dynamic;
+  readonly rootName: Dynamic;
+  readonly showToast: Dynamic;
+  readonly pushUndoEdit: Dynamic;
+  readonly revokeUndoEdit: Dynamic;
+  readonly commitStructuralEdit: Dynamic;
+  readonly selectionRef: Dynamic;
+  readonly getPreviewFrame: Dynamic;
+}
+
 /** 选择“编组”时运行：检查选中元素是否同属一个可编组的父级，把它们包进一个新容器并按原有布局计算容器尺寸与定位，无法编组时提示原因。 */
-export async function groupSelectedModelElements(deps: { readonly modelRef: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value250: Dynamic; readonly value49: Dynamic; readonly value67: Dynamic }): Promise<Dynamic> {
-      let current: Dynamic = deps.value49.current;
+export async function groupSelectedModelElements(deps: StructuralEditContext): Promise<Dynamic> {
+      let current: Dynamic = deps.selectionRef.current;
       if (
         !current ||
         deps.readOnlyRef.current ||
@@ -156,7 +193,7 @@ export async function groupSelectedModelElements(deps: { readonly modelRef: Dyna
         elements: Dynamic = orderedTids.map(
           (tid?: Dynamic): Dynamic => model.element(tid),
         ),
-        pickerTarget: Dynamic = deps.value67(),
+        pickerTarget: Dynamic = deps.getPreviewFrame(),
         parentTid: Dynamic = hasSingleParent
           ? modelState.model.parentTid(orderedTids[0])
           : null,
@@ -218,7 +255,7 @@ export async function groupSelectedModelElements(deps: { readonly modelRef: Dyna
                 commonSelectedAncestor(modelState.model, orderedTids),
               )
             : null,
-          latestSelection: Dynamic = deps.value49.current;
+          latestSelection: Dynamic = deps.selectionRef.current;
         if (
           latestSelection?.name !== current.name ||
           latestSelection.tids.join() !== current.tids.join() ||
@@ -261,7 +298,7 @@ export async function groupSelectedModelElements(deps: { readonly modelRef: Dyna
           return;
         }
         let savedRedo: Dynamic = modelState.redo,
-          nestedUndoMark: Dynamic = deps.value101(
+          nestedUndoMark: Dynamic = deps.pushUndoEdit(
             deps.rootName,
             `group-${Date.now()}`,
             modelState,
@@ -272,11 +309,11 @@ export async function groupSelectedModelElements(deps: { readonly modelRef: Dyna
             layouts,
           );
         if (!groupTid) {
-          deps.value102(modelState, nestedUndoMark, savedRedo);
+          deps.revokeUndoEdit(modelState, nestedUndoMark, savedRedo);
           deps.showToast(uiMessage("inspector.session.canTGroupTheseElements"));
           return;
         }
-        deps.value250(modelState, [groupTid]);
+        deps.commitStructuralEdit(modelState, [groupTid]);
         return;
       }
       if (
@@ -295,7 +332,7 @@ export async function groupSelectedModelElements(deps: { readonly modelRef: Dyna
       let isAllAbsolute: Dynamic =
           inspections.length === orderedTids.length && inspections.every(isOutOfFlow),
         redo: Dynamic = modelState.redo,
-        undoMark: Dynamic = deps.value101(
+        undoMark: Dynamic = deps.pushUndoEdit(
           deps.rootName,
           `group-${Date.now()}`,
           modelState,
@@ -332,7 +369,7 @@ export async function groupSelectedModelElements(deps: { readonly modelRef: Dyna
       }
       let wrapperTid: Dynamic = modelState.model.wrapElements(orderedTids, wrapperHtml);
       if (!wrapperTid) {
-        deps.value102(modelState, undoMark, redo);
+        deps.revokeUndoEdit(modelState, undoMark, redo);
         deps.showToast(uiMessage("inspector.session.canTGroupTheseElements"));
         return;
       }
@@ -353,12 +390,12 @@ export async function groupSelectedModelElements(deps: { readonly modelRef: Dyna
             modelState.model.setStyleProperty(tid, "right", null),
             modelState.model.setStyleProperty(tid, "bottom", null));
         });
-      deps.value250(modelState, [wrapperTid]);
+      deps.commitStructuralEdit(modelState, [wrapperTid]);
     }
 
 /** 选择“解除组件实例”时运行：确认选中的是可解除的组件实例并读取组件源文件，把实例替换为展开后的普通标记，必要时带上依赖资源，无法解除时提示原因。 */
-export async function detachSelectedComponentInstances(deps: { readonly modelRef: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value250: Dynamic; readonly value49: Dynamic; readonly value67: Dynamic }): Promise<Dynamic> {
-      let current: Dynamic = deps.value49.current;
+export async function detachSelectedComponentInstances(deps: StructuralEditContext): Promise<Dynamic> {
+      let current: Dynamic = deps.selectionRef.current;
       if (
         !current ||
         deps.readOnlyRef.current ||
@@ -385,7 +422,7 @@ export async function detachSelectedComponentInstances(deps: { readonly modelRef
       let elements: Dynamic = detachableTids.map(
           (tid?: Dynamic): Dynamic => model.element(tid),
         ),
-        pickerTarget: Dynamic = deps.value67(),
+        pickerTarget: Dynamic = deps.getPreviewFrame(),
         componentChecks: Dynamic = await Promise.all(
           detachableTids.map(async (tid?: Dynamic): Promise<Dynamic> => {
             let componentName: Dynamic = importedComponentName(
@@ -461,7 +498,7 @@ export async function detachSelectedComponentInstances(deps: { readonly modelRef
                     };
           }),
         ),
-        latestSelection: Dynamic = deps.value49.current;
+        latestSelection: Dynamic = deps.selectionRef.current;
       if (
         latestSelection?.name !== current.name ||
         latestSelection.tids.join() !== current.tids.join() ||
@@ -492,7 +529,7 @@ export async function detachSelectedComponentInstances(deps: { readonly modelRef
           CouldnTDetachThisInstanceRightNowMessage,
         );
       let redo: Dynamic = modelState.redo,
-        undoMark: Dynamic = deps.value101(
+        undoMark: Dynamic = deps.pushUndoEdit(
           deps.rootName,
           `detach-${Date.now()}`,
           modelState,
@@ -543,10 +580,10 @@ export async function detachSelectedComponentInstances(deps: { readonly modelRef
             : `${firstRefusal.replace(/\.?$/, ".")} ${detachedElements.length} of ${orderedTids.filter((tid?: Dynamic): Dynamic => model.tagName(tid) === "dc-import").length} instances ${detachedElements.length === 1 ? "was" : "were"} detached.`,
         );
       if (detachedElements.length === 0) {
-        deps.value102(modelState, undoMark, redo);
+        deps.revokeUndoEdit(modelState, undoMark, redo);
         return;
       }
-      deps.value250(
+      deps.commitStructuralEdit(
         modelState,
         detachedElements,
         detachedElements.length === 1
@@ -556,8 +593,8 @@ export async function detachSelectedComponentInstances(deps: { readonly modelRef
     }
 
 /** 选择“取消编组”时运行：检查选中的容器可以拆开，把子元素提升到父级并移除容器，记录撤销；无法取消编组时提示。 */
-export async function ungroupSelectedModelElements(deps: { readonly modelRef: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value250: Dynamic; readonly value49: Dynamic; readonly value67: Dynamic }): Promise<Dynamic> {
-      let current: Dynamic = deps.value49.current;
+export async function ungroupSelectedModelElements(deps: StructuralEditContext): Promise<Dynamic> {
+      let current: Dynamic = deps.selectionRef.current;
       if (
         !current ||
         deps.readOnlyRef.current ||
@@ -588,7 +625,7 @@ export async function ungroupSelectedModelElements(deps: { readonly modelRef: Dy
             (tid?: Dynamic): Dynamic => [tid, ...model.childTids(tid)],
           )
           .map((tid?: Dynamic): Dynamic => [tid, model.element(tid)]),
-        pickerTarget: Dynamic = deps.value67(),
+        pickerTarget: Dynamic = deps.getPreviewFrame(),
         childLayouts: Dynamic = await Promise.all(
           ungroupableTids.map(async (tid?: Dynamic): Promise<Dynamic> => {
             let childTids: Dynamic = model.childTids(tid),
@@ -614,7 +651,7 @@ export async function ungroupSelectedModelElements(deps: { readonly modelRef: Dy
                 );
           }),
         ),
-        latestSelection: Dynamic = deps.value49.current;
+        latestSelection: Dynamic = deps.selectionRef.current;
       if (
         latestSelection?.name !== current.name ||
         latestSelection.tids.join() !== current.tids.join() ||
@@ -632,7 +669,7 @@ export async function ungroupSelectedModelElements(deps: { readonly modelRef: Dy
         return;
       }
       let redo: Dynamic = modelState.redo,
-        undoMark: Dynamic = deps.value101(
+        undoMark: Dynamic = deps.pushUndoEdit(
           deps.rootName,
           `ungroup-${Date.now()}`,
           modelState,
@@ -648,15 +685,30 @@ export async function ungroupSelectedModelElements(deps: { readonly modelRef: Dy
         liftedTids && (resultTids.push(...liftedTids), (flag = true));
       });
       if (!flag) {
-        deps.value102(modelState, undoMark, redo);
+        deps.revokeUndoEdit(modelState, undoMark, redo);
         return;
       }
-      deps.value250(modelState, resultTids);
+      deps.commitStructuralEdit(modelState, resultTids);
     }
 
+interface FlipSelectionContext {
+  readonly modelRef: Dynamic;
+  readonly readOnlyRef: Dynamic;
+  readonly rootName: Dynamic;
+  readonly showToast: Dynamic;
+  readonly toolRef: Dynamic;
+  readonly pushUndoEdit: Dynamic;
+  readonly revokeUndoEdit: Dynamic;
+  readonly selectElements: Dynamic;
+  readonly applyModelStyleChanges: Dynamic;
+  readonly selectionRef: Dynamic;
+  readonly getPreviewFrame: Dynamic;
+  readonly cacheFeedbackLabel: Dynamic;
+}
+
 /** 水平或垂直翻转选中元素时运行：排除矢量编辑与裁剪中的情况，读取当前姿态后在模型中翻转，部分元素无法翻转时提示并播报翻转方向。 */
-export async function flipSelectedModelElements(deps: { readonly modelRef: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly toolRef: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value105: Dynamic; readonly value149: Dynamic; readonly value49: Dynamic; readonly value67: Dynamic; readonly value8: Dynamic }, axis?: Dynamic): Promise<Dynamic> {
-        let current: Dynamic = deps.value49.current;
+export async function flipSelectedModelElements(deps: FlipSelectionContext, axis?: Dynamic): Promise<Dynamic> {
+        let current: Dynamic = deps.selectionRef.current;
         if (
           !current ||
           deps.readOnlyRef.current ||
@@ -677,7 +729,7 @@ export async function flipSelectedModelElements(deps: { readonly modelRef: Dynam
           elements: Dynamic = current.tids.map(
             (tid?: Dynamic): Dynamic => model.element(tid),
           ),
-          pickerTarget: Dynamic = deps.value67(),
+          pickerTarget: Dynamic = deps.getPreviewFrame(),
           poses: Dynamic = await inspectFlipSelection(
             model,
             current.tids,
@@ -699,7 +751,7 @@ export async function flipSelectedModelElements(deps: { readonly modelRef: Dynam
                   )
                 : Promise.resolve(null),
           ),
-          latestSelection: Dynamic = deps.value49.current;
+          latestSelection: Dynamic = deps.selectionRef.current;
         if (
           deps.readOnlyRef.current ||
           deps.toolRef.current === "vector" ||
@@ -715,7 +767,7 @@ export async function flipSelectedModelElements(deps: { readonly modelRef: Dynam
         )
           return;
         let redo: Dynamic = modelState.redo,
-          undoMark: Dynamic = deps.value101(
+          undoMark: Dynamic = deps.pushUndoEdit(
             deps.rootName,
             `flip-${Date.now()}`,
             modelState,
@@ -726,18 +778,18 @@ export async function flipSelectedModelElements(deps: { readonly modelRef: Dynam
             partialFlipMessage(refusal, flippedTids.length > 0),
           );
         if (flippedTids.length === 0)
-          return void deps.value102(modelState, undoMark, redo);
-        deps.value149(latestSelection, modelState);
-        deps.value105(deps.rootName, latestSelection.tids);
+          return void deps.revokeUndoEdit(modelState, undoMark, redo);
+        deps.applyModelStyleChanges(latestSelection, modelState);
+        deps.selectElements(deps.rootName, latestSelection.tids);
         announce(flipDirectionAnnouncement(axis));
-        deps.value8(
+        deps.cacheFeedbackLabel(
           `${modelState.path}: flipped ${flippedTids.length > 1 ? `${flippedTids.length} elements` : (model.tagName(flippedTids[0]) ?? "element")} ${axis === "horizontal" ? "horizontally" : "vertically"}`,
         );
       }
 
 /** 选择“包进 Flex/Grid”时运行：把选中元素包进一个自动布局容器（flex 或 grid），按元素原位置推断方向、排序与间距，记录撤销；无法包裹时提示。 */
-export async function wrapSelectionInAutoLayout(deps: { readonly modelRef: Dynamic; readonly readOnlyRef: Dynamic; readonly rootName: Dynamic; readonly showToast: Dynamic; readonly value101: Dynamic; readonly value102: Dynamic; readonly value250: Dynamic; readonly value49: Dynamic; readonly value67: Dynamic }, layoutKind: Dynamic = "flex"): Promise<Dynamic> {
-        let current: Dynamic = deps.value49.current;
+export async function wrapSelectionInAutoLayout(deps: StructuralEditContext, layoutKind: Dynamic = "flex"): Promise<Dynamic> {
+        let current: Dynamic = deps.selectionRef.current;
         if (
           !current ||
           deps.readOnlyRef.current ||
@@ -782,7 +834,7 @@ export async function wrapSelectionInAutoLayout(deps: { readonly modelRef: Dynam
           modelState.model.childTids(orderedTids[0]).length > 0
         ) {
           let savedRedo: Dynamic = modelState.redo,
-            nestedUndoMark: Dynamic = deps.value101(
+            nestedUndoMark: Dynamic = deps.pushUndoEdit(
               deps.rootName,
               `autolayout-${Date.now()}`,
               modelState,
@@ -808,11 +860,11 @@ export async function wrapSelectionInAutoLayout(deps: { readonly modelRef: Dynam
                 styleValue,
               ) || flag;
           flag
-            ? deps.value250(modelState, [singleElement])
-            : deps.value102(modelState, nestedUndoMark, savedRedo);
+            ? deps.commitStructuralEdit(modelState, [singleElement])
+            : deps.revokeUndoEdit(modelState, nestedUndoMark, savedRedo);
           return;
         }
-        let pickerTarget: Dynamic = deps.value67(),
+        let pickerTarget: Dynamic = deps.getPreviewFrame(),
           inspections: Dynamic =
             pickerTarget && hasSingleParent
               ? await Promise.all(
@@ -889,7 +941,7 @@ export async function wrapSelectionInAutoLayout(deps: { readonly modelRef: Dynam
           );
         }
         let redo: Dynamic = modelState.redo,
-          undoMark: Dynamic = deps.value101(
+          undoMark: Dynamic = deps.pushUndoEdit(
             deps.rootName,
             `autolayout-${Date.now()}`,
             modelState,
@@ -919,7 +971,7 @@ export async function wrapSelectionInAutoLayout(deps: { readonly modelRef: Dynam
           wrapperHtml,
         );
         if (!wrapperTid) {
-          deps.value102(modelState, undoMark, redo);
+          deps.revokeUndoEdit(modelState, undoMark, redo);
           deps.showToast(uiMessage("inspector.session.canTAutoLayoutThese"));
           return;
         }
@@ -930,12 +982,38 @@ export async function wrapSelectionInAutoLayout(deps: { readonly modelRef: Dynam
           modelState.model.setStyleProperty(tid, "right", null);
           modelState.model.setStyleProperty(tid, "bottom", null);
         }
-        deps.value250(modelState, [wrapperTid]);
+        deps.commitStructuralEdit(modelState, [wrapperTid]);
       }
 
+interface ElementContextActionsDependencies {
+  readonly canvasTools: Dynamic;
+  readonly insertAtPoint: Dynamic;
+  readonly modelRef: Dynamic;
+  readonly readOnly: Dynamic;
+  readonly rootName: Dynamic;
+  readonly toolRef: Dynamic;
+  readonly deleteSelectionAndAnnounce: Dynamic;
+  readonly deleteSelection: Dynamic;
+  readonly copySelectionHtml: Dynamic;
+  readonly pasteClipboardElements: Dynamic;
+  readonly pasteElementsAtPoint: Dynamic;
+  readonly copySelectionAsPng: Dynamic;
+  readonly copySelectionAsSvg: Dynamic;
+  readonly duplicateSelection: Dynamic;
+  readonly reorderSelection: Dynamic;
+  readonly flipSelection: Dynamic;
+  readonly groupSelection: Dynamic;
+  readonly detachSelection: Dynamic;
+  readonly ungroupSelection: Dynamic;
+  readonly applyAutoLayoutToSelection: Dynamic;
+  readonly selectionRef: Dynamic;
+  readonly areDownloadsWithheld: Dynamic;
+  readonly isClipboardFeatureEnabled: Dynamic;
+}
+
 /** 打开选中元素的右键菜单时运行：按只读、选中类型与可用能力生成菜单项（层级前后移动、剪切复制、复制为 PNG/SVG、粘贴、复制一份、编组与取消编组、翻转、解除实例、包进 Flex/Grid、删除）及其禁用原因。 */
-export function buildElementContextActions(deps: { readonly canvasTools: Dynamic; readonly insertAtPoint: Dynamic; readonly modelRef: Dynamic; readonly readOnly: Dynamic; readonly rootName: Dynamic; readonly toolRef: Dynamic; readonly value153: Dynamic; readonly value154: Dynamic; readonly value164: Dynamic; readonly value167: Dynamic; readonly value169: Dynamic; readonly value170: Dynamic; readonly value171: Dynamic; readonly value174: Dynamic; readonly value251: Dynamic; readonly value259: Dynamic; readonly value260: Dynamic; readonly value261: Dynamic; readonly value262: Dynamic; readonly value268: Dynamic; readonly value49: Dynamic; readonly value77: Dynamic; readonly value78: Dynamic }, contextTid?: Dynamic, clickPoint?: Dynamic): Dynamic {
-        let current: Dynamic = deps.value49.current,
+export function buildElementContextActions(deps: ElementContextActionsDependencies, contextTid?: Dynamic, clickPoint?: Dynamic): Dynamic {
+        let current: Dynamic = deps.selectionRef.current,
           hasSelection: Dynamic =
             contextTid != null ||
             (!!current &&
@@ -1010,7 +1088,7 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
                           direction > 0 ? "front" : "back",
                           false,
                         )) : (direction > 0 ? (uiMessage("inspector.session.alreadyLast")) : (uiMessage("inspector.session.alreadyFirst")))) : (undefined))); },
-            onClick: (): Dynamic => deps.value251(direction, true),
+            onClick: (): Dynamic => deps.reorderSelection(direction, true),
             ...noSelectionState,
             ...readOnlyState,
           }),
@@ -1027,50 +1105,50 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
         return [
           {
             ...editAction("cut", (): Dynamic => {
-              deps.value164() != null && deps.value153(CutValue);
+              deps.copySelectionHtml() != null && deps.deleteSelectionAndAnnounce(CutValue);
             }),
             ...noSelectionState,
             ...readOnlyState,
           },
           {
             ...editAction("copy", (): Dynamic => {
-              deps.value164();
+              deps.copySelectionHtml();
             }),
             ...noSelectionState,
           },
-          ...(deps.value78 && supportsClipboardImages()
+          ...(deps.isClipboardFeatureEnabled && supportsClipboardImages()
             ? [
                 {
                   get label() { return uiMessage("inspector.session.copyAsPNG"); },
-                  disabledReason: deps.value77
+                  disabledReason: deps.areDownloadsWithheld
                     ? DownloadsArenTAvailableToYouForMessage
                     : targetTids.length > 1
                       ? selectOneElementForPngMessage
                       : undefined,
-                  onClick: (): Dynamic => deps.value170(targetTids),
+                  onClick: (): Dynamic => deps.copySelectionAsPng(targetTids),
                   ...noSelectionState,
                 },
                 {
                   get label() { return uiMessage("inspector.session.copyAsSVG"); },
-                  disabledReason: deps.value77
+                  disabledReason: deps.areDownloadsWithheld
                     ? DownloadsArenTAvailableToYouForMessage
                     : targetTids.length > 1
                       ? selectOneElementForSvgMessage
                       : undefined,
-                  onClick: (): Dynamic => deps.value171(targetTids),
+                  onClick: (): Dynamic => deps.copySelectionAsSvg(targetTids),
                   ...noSelectionState,
                 },
               ]
             : []),
           {
             ...editAction("paste", (): Dynamic => {
-              deps.value167({
+              deps.pasteClipboardElements({
                 menu: true,
               });
             }),
             ...readOnlyState,
           },
-          ...(deps.value78 &&
+          ...(deps.isClipboardFeatureEnabled &&
           clickPoint &&
           deps.insertAtPoint &&
           deps.canvasTools &&
@@ -1080,14 +1158,14 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
                 {
                   get label() { return uiMessage("inspector.session.pasteHere"); },
                   onClick: (): Dynamic => {
-                    deps.value169(clickPoint);
+                    deps.pasteElementsAtPoint(clickPoint);
                   },
                   ...readOnlyState,
                 },
               ]
             : []),
           {
-            ...editAction("duplicate", (): Dynamic => deps.value174()),
+            ...editAction("duplicate", (): Dynamic => deps.duplicateSelection()),
             ...noSelectionState,
             ...readOnlyState,
           },
@@ -1100,7 +1178,7 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
             get label() { return uiMessage("inspector.session.group"); },
             hotkey: "cmd+g",
             onClick: (): Dynamic => {
-              deps.value260();
+              deps.groupSelection();
             },
             ...noSelectionState,
             ...readOnlyState,
@@ -1112,21 +1190,21 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
               ? selectionUngroupRefusal(model, targetTids)
               : undefined,
             onClick: (): Dynamic => {
-              deps.value262();
+              deps.ungroupSelection();
             },
             ...noSelectionState,
             ...readOnlyState,
           },
           ...["horizontal", "vertical"].map(
             (axis?: Dynamic): Dynamic => ({
-              get label() { return uiMessage("inspector.session.flip", { value1: String(axis) }); },
+              get label() { return uiMessage("inspector.session.flip", { axis: String(axis) }); },
               hotkey: axis === "horizontal" ? "shift+h" : "shift+v",
               disabledReason:
                 flipRefusal ??
                 (model
                   ? canFlipSelection(model, targetTids, axis)
                   : undefined),
-              onClick: (): Dynamic => deps.value259(axis),
+              onClick: (): Dynamic => deps.flipSelection(axis),
               ...noSelectionState,
               ...readOnlyState,
             }),
@@ -1142,7 +1220,7 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
                 }
               : null),
             onClick: (): Dynamic => {
-              deps.value261();
+              deps.detachSelection();
             },
             ...noSelectionState,
             ...readOnlyState,
@@ -1151,7 +1229,7 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
             get label() { return uiMessage("inspector.session.wrapInFlex"); },
             hotkey: "shift+a",
             onClick: (): Dynamic => {
-              deps.value268();
+              deps.applyAutoLayoutToSelection();
             },
             ...noSelectionState,
             ...readOnlyState,
@@ -1159,13 +1237,13 @@ export function buildElementContextActions(deps: { readonly canvasTools: Dynamic
           {
             get label() { return uiMessage("inspector.session.wrapInGrid"); },
             onClick: (): Dynamic => {
-              deps.value268("grid");
+              deps.applyAutoLayoutToSelection("grid");
             },
             ...noSelectionState,
             ...readOnlyState,
           },
           {
-            ...editAction("delete", deps.value154),
+            ...editAction("delete", deps.deleteSelection),
             separatorBefore: true,
             danger: true,
             ...noSelectionState,

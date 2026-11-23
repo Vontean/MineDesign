@@ -624,7 +624,7 @@ function AssetGroupGrid({
             size={"sm"}
             iconOnly={true}
             icon={"Upload"}
-            aria-label={uiMessage("design-system.assetGroups.uploadFileTo", { value1: String(groupTitle) })}
+            aria-label={uiMessage("design-system.assetGroups.uploadFileTo", { subject: String(groupTitle) })}
             tooltip={uiMessage("design-system.assetGroups.uploadFile")}
             onClick={() => onUpload(group)}
             data-testid={"ds-assets-upload-" + group.name}
@@ -638,7 +638,7 @@ function AssetGroupGrid({
             className={"ds-atable ds-ctable"}
             role={"listbox"}
             aria-multiselectable={"true"}
-            aria-label={uiMessage("design-system.assetGroups.files", { value1: String(groupTitle) })}
+            aria-label={uiMessage("design-system.assetGroups.files", { subject: String(groupTitle) })}
             data-testid={"ds-flist"}
           >
             {[<div
@@ -743,7 +743,7 @@ function AssetGroupGrid({
                         {...UNCOMMENTABLE_PROPS}
                       >
                         {canEditTiles ? (<RemoveRowButton
-                            label={uiMessage("design-system.assetGroups.remove", { value1: String(source.a.name) })}
+                            label={uiMessage("design-system.assetGroups.remove", { subject: String(source.a.name) })}
                             onRemove={() => tiles!.remove([source.a.path])}
                             tabIndex={-1}
                             data-testid={"ds-asset-remove-" + source.a.path}

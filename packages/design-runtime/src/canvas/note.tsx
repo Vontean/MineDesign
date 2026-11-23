@@ -14,11 +14,11 @@ import { showEditorToast } from "../editor/chrome/pending-toasts";
 import { angleBetweenPoints, resizeRotatedRect, snapRotation } from "../editor/geometry/rotation";
 import { activeResizeGuides, snapResize } from "../editor/geometry/snapping";
 import { handleNoteAutoformat, handleNoteFormattingShortcut, installNoteInputRules, moveNoteCaretToEnd, NotesAutoformatOnPasteOnDropOnDragStartConfig } from "../editor/notes/autoformat";
-import { NotesBlocksReplace_2 as normalizeNoteBlocks, renderNoteMarkdown } from "../editor/notes/blocks";
-import { applyNoteMarkdownDom, normalizeNoteLineBreaks, NotesDomHandler_2, NotesDomJoin, serializeNoteDom } from "../editor/notes/dom";
+import { normalizeBlocksText as normalizeNoteBlocks, renderNoteMarkdown } from "../editor/notes/blocks";
+import { applyNoteMarkdownDom, normalizeNoteLineBreaks, unescapeNoteText, NotesDomJoin, serializeNoteDom } from "../editor/notes/dom";
 import { createNoteLinkEditor, NotesLinkEditingClosest, NotesLinkEditingHandler, NotesLinkEditingMin, NotesLinkEditingSize } from "../editor/notes/link-editing";
 import { toModuleNamespace } from "../module-helpers";
-import { annotationTextFit, annotationTextStyle, PlatformFileContentConstant_10 as noteMaxWidth, PlatformFileContentConstant_13 as noteMaxHeight, PlatformFileContentConstant_9 as noteMinWidth, PlatformFileContentKind, PlatformFileContentLimit_4 as noteTextLimit, PlatformFileContentMaxW, PlatformFileContentMin, PlatformFileContentSlice_2 as truncateNoteText } from "../platform/file-content";
+import { annotationTextFit, annotationTextStyle, maxTextAnnotationWidth as noteMaxWidth, maxAnnotationDimensionLimit as noteMaxHeight, minTextAnnotationWidth as noteMinWidth, PlatformFileContentKind, maxAnnotationTextChars as noteTextLimit, PlatformFileContentMaxW, PlatformFileContentMin, normalizeAnnotationText as truncateNoteText } from "../platform/file-content";
 
 var jsxCanvasNote: Dynamic;
 function CanvasNote({
@@ -248,7 +248,7 @@ function CanvasNote({
     let current: Dynamic = editorRef.current;
     if (!current) return;
     isTitle
-      ? ((current.textContent = NotesDomHandler_2(spec.text)),
+      ? ((current.textContent = unescapeNoteText(spec.text)),
         (lastSavedTextRef.current = current.textContent))
       : (applyNoteMarkdownDom(current, spec.text),
         (lastSavedTextRef.current = serializeNoteDom(current)));
@@ -322,7 +322,7 @@ function CanvasNote({
     renderedText: Dynamic = (0, reactCanvasPanZoom.useMemo)(
       (): Dynamic =>
         isTitle
-          ? NotesDomHandler_2(spec.text)
+          ? unescapeNoteText(spec.text)
           : renderNoteMarkdown(spec.text),
       [spec.text, isTitle],
     ),

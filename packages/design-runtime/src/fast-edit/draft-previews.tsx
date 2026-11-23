@@ -48,8 +48,8 @@ function DraftArtboardPreviews({ boards: boards }: Dynamic): Dynamic {
       );
     };
     callback();
-    let value2: Dynamic = setInterval(callback, 500);
-    return (): Dynamic => clearInterval(value2);
+    let timer: Dynamic = setInterval(callback, 500);
+    return (): Dynamic => clearInterval(timer);
   }, [hasPreviews]);
   if (activePreview === null || !activePreview.isConnected || !hasPreviews)
     return null;
@@ -57,17 +57,17 @@ function DraftArtboardPreviews({ boards: boards }: Dynamic): Dynamic {
   return (0, draftPreviewPortal.createPortal)(
     <draftJsxRuntime.Fragment>
       {documentPreviews.map(
-        ([input, input2]: Dynamic): Dynamic => (
+        ([input, bounds]: Dynamic): Dynamic => (
           <div
             key={"g" + input}
             data-fast-edit-ghost={input}
             aria-hidden={"true"}
             style={{
               position: "absolute",
-              left: input2.x,
-              top: input2.y,
-              width: input2.w,
-              height: input2.h,
+              left: bounds.x,
+              top: bounds.y,
+              width: bounds.w,
+              height: bounds.h,
               zIndex: DRAFT_PREVIEW_EXPIRY_MS,
               pointerEvents: "none",
               overflow: "hidden",
@@ -77,43 +77,43 @@ function DraftArtboardPreviews({ boards: boards }: Dynamic): Dynamic {
               // MineDesign: user-facing copy calls the agent "the agent", not Claude.
               title={uiMessage("canvas.draftPreviews.whatTheAgentIsMaking")}
               sandbox={""}
-              srcDoc={input2.doc}
+              srcDoc={bounds.doc}
               tabIndex={-1}
               style={DRAFT_IFRAME_STYLE}
             />
           </div>
         ),
       )}
-      {htmlPreviews.map(([input, input2]: Dynamic): Dynamic => {
-        let value2: Dynamic = value.find(
-          (input3?: Dynamic): Dynamic => input3.file === input,
+      {htmlPreviews.map(([input, preview]: Dynamic): Dynamic => {
+        let artboard: Dynamic = value.find(
+          (board?: Dynamic): Dynamic => board.file === input,
         );
-        return value2 === undefined ||
+        return artboard === undefined ||
           activePreview.querySelector(
             '[data-mega-artboard="' + CSS.escape(input) + '"]',
           ) === null ? null : (
           <div
             key={"p" + input}
             data-fast-edit-preview={input}
-            role={input2.cover ? "status" : undefined}
-            aria-hidden={input2.cover ? undefined : "true"}
+            role={preview.cover ? "status" : undefined}
+            aria-hidden={preview.cover ? undefined : "true"}
             style={{
               position: "absolute",
-              left: value2.x,
-              top: value2.y,
-              width: value2.w,
-              height: value2.h,
+              left: artboard.x,
+              top: artboard.y,
+              width: artboard.w,
+              height: artboard.h,
               zIndex: DRAFT_PREVIEW_EXPIRY_MS,
               overflow: "hidden",
-              pointerEvents: input2.cover ? "auto" : "none",
-              cursor: input2.cover ? "progress" : undefined,
+              pointerEvents: preview.cover ? "auto" : "none",
+              cursor: preview.cover ? "progress" : undefined,
             }}
           >
-            {input2.doc !== null && (<iframe
+            {preview.doc !== null && (<iframe
                 // MineDesign: user-facing copy calls the agent "the agent", not Claude.
                 title={uiMessage("canvas.draftPreviews.whatTheAgentHasWrittenSoFar")}
                 sandbox={""}
-                srcDoc={input2.doc}
+                srcDoc={preview.doc}
                 tabIndex={-1}
                 style={DRAFT_IFRAME_STYLE}
               />)}
@@ -228,8 +228,8 @@ export function installFastEditDraftPreviews(): () => void {
       },
       clear(): Dynamic {
         let flag: Dynamic = false;
-        for (let [value, value2] of [...draftHtmlPreviews] as Dynamic)
-          value2.cover || (draftHtmlPreviews.delete(value), (flag = true));
+        for (let [value, preview] of [...draftHtmlPreviews] as Dynamic)
+          preview.cover || (draftHtmlPreviews.delete(value), (flag = true));
         flag && notifyDraftHtmlPreviewListeners();
       },
       subscribe(input: Dynamic): Dynamic {

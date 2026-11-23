@@ -12,15 +12,11 @@ import type {
   ApplicationView,
   ArtifactDownloadOutcome,
   SectionRow,
-  TokenDialogState,
   ConfirmationState,
   TokenFlashTarget,
   SectionScroller,
   AssetRevealTarget,
   EditorExtraScale,
-  AddedToken,
-  WelcomeIntakeSummary,
-  IntakeQueueEntry,
   SearchEntry,
   NavigationSearch,
   ApplicationSaveState,
@@ -28,18 +24,11 @@ import type {
   EditorAssetGroup,
   EditorTypeGroup,
   ScalarScaleGroup,
-  AssetUploadSummary,
   AssetIntakeOptions,
   ClaudeRequest,
   ClaudeDeliveryResult,
   RefusedUpload,
-  ColorEditActions,
-  ScalarEditActions,
-  ShadowEditActions,
-  TypographyEditActions,
-  ComponentEditActions,
   ScalarTokenKind,
-  AddTokenKind,
   EditorFont,
   EditorComponent,
 } from "../../contracts/application";
@@ -55,9 +44,9 @@ import { AssetDetailsDialog, AssetDetailsPreview } from "../../editor/asset-deta
 import { useAssetGroupEditor } from "../../editor/asset-group-editor";
 import { AssetGroupsList, AssetTileThumbnail } from "../../editor/asset-groups";
 import { FONT_FILE_ACCEPT, useBlobDataUrls } from "../../editor/asset-resources";
-import { collectDownloadFiles, createStoredZip, downloadZipBaseName, extractDroppedFiles, isIgnoredUploadFile, MAX_DROPPED_FILES, readDownloadFileBytes, saveDownloadFile, unsupportedDownloadMessage, uploadedFileRelativePath } from "../../editor/asset-upload";
+import { collectDownloadFiles, createStoredZip, downloadZipBaseName, extractDroppedFiles, MAX_DROPPED_FILES, readDownloadFileBytes, saveDownloadFile, unsupportedDownloadMessage } from "../../editor/asset-upload";
 import { chooseClaudeDeliveryRoad, createClaudeDeliveryContextStore, deliverClaudeRequest } from "../../editor/claude-delivery";
-import { artifactPageAddress, claudeDeliveryStatusMessage, githubStarterPrompt, ownerBuildFromFilesPrompt, ownerEmptySystemPrompt, ownerHandoffFilesPrompt, viewerBuildFromFilesPrompt, viewerEmptySystemPrompt, viewerGitHubSyncPrompt, viewerHandoffFilesPrompt } from "../../editor/claude-prompts";
+import { artifactPageAddress, claudeDeliveryStatusMessage, githubStarterPrompt, ownerEmptySystemPrompt, ownerHandoffFilesPrompt, viewerEmptySystemPrompt, viewerGitHubSyncPrompt, viewerHandoffFilesPrompt } from "../../editor/claude-prompts";
 import { ColorsSection, ColorsSectionHeader } from "../../editor/colors";
 import { UNCOMMENTABLE_PROPS } from "../../editor/comment-anchors";
 import { usePreviewStaticNotice } from "../../editor/component-preview";
@@ -71,7 +60,7 @@ import { performDesignSystemEdit } from "../../editor/edit-dispatch";
 import { showEditorNotification, showEditorPromiseNotification } from "../../editor/editable-name";
 import { EMPTY_SECTION_HINTS, EmptyEditorList, EmptySectionHint, SectionUsageNote } from "../../editor/empty-states";
 import { createFileMutationBatch } from "../../editor/files-merge";
-import { googleFontStylesheetUrl, knownWebFontFamily } from "../../editor/font-catalog";
+import { googleFontStylesheetUrls, syncGoogleFontStylesheets } from "./google-font-stylesheets";
 import { useInlineFontFaces } from "../../editor/font-faces";
 import { flushMarkdownCommitQueues } from "../../editor/markdown-commit";
 import { MarkdownEditor } from "../../editor/markdown-editor";
@@ -84,12 +73,17 @@ import { copyTextToClipboard } from "../../editor/row-context-menu";
 import { SectionAddButton, SectionHeader, SectionSheet } from "../../editor/section-headers";
 import { createEditorSectionNavigationActions, useEditorCardFlash, useEditorSectionNavigation } from "../../editor/section-navigation";
 import { ShadowsSection } from "../../editor/shadows";
-import { extraTokenScaleGroups, groupedTokenScale, tokenScaleGroupId, tokenScaleGroupLabel, tokenScaleGroups, TokenScaleSections } from "../../editor/token-scales";
+import { extraTokenScaleGroups, tokenScaleGroupId, tokenScaleGroupLabel, tokenScaleGroups, TokenScaleSections } from "../../editor/token-scales";
 import { TypographySection, TypographySectionHeader } from "../../editor/typography";
-import { addedFilesSummary, commitUploadedAssetChange, countSuccessfulUploads, existingFontUploadFiles, mergeAssetUploadResults, pickUploadFiles, uploadAssetFiles, uploadedAssetFile, uploadedFilesBuildSummary, uploadResultSummary } from "../../editor/upload-pipeline";
-import { assetGroupDisplayName, designSystemEditorView, emptyDesignSystemSections, extraTokenFamilySectionId, hasOnlyManifestFile, STARTER_SECTION_IDS, starterSectionState, tokenGroupRenamePairs } from "../../editor/view-model";
+import { existingFontUploadFiles, pickUploadFiles } from "../../editor/upload-pipeline";
+import { assetGroupDisplayName, designSystemEditorView, emptyDesignSystemSections, extraTokenFamilySectionId, hasOnlyManifestFile, STARTER_SECTION_IDS, starterSectionState } from "../../editor/view-model";
 import { BOOT_LIVE_NOTICE_MESSAGES, get_MIGRATED_READONLY_MESSAGE } from "../boot-decisions";
 import { FILES_SECTION_ID, useDesignSystemFilesBrowser } from "./design-system-files";
+import { useAssetIntakeQueue } from "./asset-intake-queue";
+import { useWelcomeUpload } from "./welcome-upload";
+import { useStorageReclaim } from "./storage-reclaim";
+import { TOKEN_DEFAULTS, useTokenDialogFlow } from "./token-dialog";
+import { useTokenEditors } from "./token-editing";
 import { notificationsFocusRegion, useFocusRegions } from "./focus-regions";
 import { claudeSendResultMessage } from "./handoff-runtime";
 import { buildSectionSearchIndex } from "./navigation-search";
@@ -100,21 +94,20 @@ import { LazySection, useSectionScroller } from "./section-scroll";
 import { isDarkThemeName, previewThemeDisabledReason, PreviewThemeMenu, resolvePreviewTheme, useHostThemeMode } from "./theme";
 import { BrandUploadPanel, EmptyDesignSystem, HandoffNotice, IntakeProgressStatus, README_STARTER_TEXT, WELCOME_OPTIONS, WelcomeSheet } from "./welcome";
 import { hostDrawsReadOnly, subscribeHostSaveChrome } from "../../host/frame-bridge";
-import { addAssetFile, addColorToken, addScalarToken, addShadowToken, addTypographyGroup, addTypographyStyle, deleteAssetFile, deleteTypographyGroup, renameAssetFile, renameTypographyGroup, replaceInlineFileWithPointer, unusedTokenName } from "../../model/asset-commands";
-import { assessAssetReclamation, assetStorageUsageMessage, deleteStoredAssets, excludePublishedAssets, getAssetsCatalogState, inlineStorageFallbackMessage, missingAssetsMessage, publishedPageBlobIds, RECLAIM_LIST_FAILED_MESSAGE, RECLAIM_NOTHING_UNUSED_MESSAGE, RECLAIM_RECONNECTING_MESSAGE, RECLAIM_SAVE_FIRST_MESSAGE, RECLAIM_SAVING_MESSAGE, RECLAIM_WINDOWED_COLLECTION_MESSAGE, reclaimAssetsButtonLabel, reclaimAssetsConfirmation, reclaimAssetsResultMessage, refreshAssetsCatalog, resolveAssetsCapability, subscribeAssetsState } from "../../model/asset-store";
-import { commonTokenNamePrefix, inferComponentPropControls, PALETTE_GROUP_NAME, tokenGroupName, tokenHasGroupSuffix } from "../../model/component-inference";
+import { deleteTypographyGroup, renameAssetFile, renameTypographyGroup, replaceInlineFileWithPointer } from "../../model/asset-commands";
+import { assessAssetReclamation, assetStorageUsageMessage, getAssetsCatalogState, inlineStorageFallbackMessage, missingAssetsMessage, refreshAssetsCatalog, resolveAssetsCapability, subscribeAssetsState } from "../../model/asset-store";
+import { inferComponentPropControls } from "../../model/component-inference";
 import { humanizeDocumentFilename } from "../../model/derive-system";
 import { deleteDesignSystemFiles, fileFitsInlineBudgets, renameDesignSystemFile, sanitizeUploadFileName, setAdditionalDocument, setDesignSystemReadme } from "../../model/file-commands";
 import { assetKindForPath, DESIGN_SYSTEM_PATHS, fileExtension, mimeTypeForPath, pathBasename, pathDirname } from "../../model/file-policy";
 import { DESIGN_SYSTEM_INLINE_LIMITS, isUnboundedFileParsing } from "../../model/file-table";
-import { addFontFace, deleteFontFace, removeMissingFontReferences, setComponentGuidelines } from "../../model/font-component-commands";
+import { deleteFontFace } from "../../model/font-component-commands";
 import { isCiLastChange } from "../../model/last-change";
 import { DOWNLOAD_INTERNAL_FAILURE, downloadHealthOutcome } from "../../model/publish";
 import { uniqueStoredBlobCount } from "../../model/storage";
 import { createDesignSystemCommands, DesignSystemStore } from "../../model/system-store";
 import { getStoredSystemStatus, subscribeStoredSystemStatus } from "../../model/system-sync";
-import { clearColorThemeOverride, deleteColorTokens, deleteToken, renameColorTokensAtomically, renameToken, setColorTokenUsage, setColorTokenValue, setScalarTokenValue, setShadowTokenValue, setTokenFamilyNote, setTokenUsage, setTypographyFontFamily, setTypographyProperty, setTypographyStyleUsage, validateNewFontFamily } from "../../model/token-commands";
-import { conflictingTokenNames, generateNamedTokensCss, isColorLiteral, resolveColorTokenValue, tokenNamesForFamily } from "../../model/tokens";
+import { generateNamedTokensCss, isColorLiteral, resolveColorTokenValue, tokenNamesForFamily } from "../../model/tokens";
 import { toModuleNamespace } from "../../module-helpers";
 import { artifactHealth } from "../../telemetry/health";
 import { createAnnouncedHistory } from "../../ui/announced-history";
@@ -165,96 +158,13 @@ function useBootWarnings(bootContext: unknown) {
 }
 function useGoogleFontStylesheets(
   familyNames: Record<string, string>,
-  fonts: {
-    family: string;
-  }[],
+  fonts: { family: string }[],
   typeTokens: NormalizedTokens["type"],
 ) {
-  let localFamilies = new Set(
-      fonts.map((font) => font.family.toLowerCase()),
-    ),
-    urls = [
-      ...new Set(
-        Object.entries(familyNames).flatMap(([familyName, fontFamily]) => {
-          let value = knownWebFontFamily(fontFamily);
-          if (
-            value === undefined ||
-            localFamilies.has(fontFamily.toLowerCase())
-          ) {
-            return [];
-          }
-          let stylesheetUrl = googleFontStylesheetUrl(value),
-            values = new Set(
-              (/wght@([\d;]+)/.exec(stylesheetUrl)?.[1] ?? "400")
-                .split(";")
-                .map(Number),
-            ),
-            fontSources = [
-              ...new Set(
-                typeTokens.groups.flatMap((typeGroup) =>
-                  typeGroup.styles
-                    .filter(
-                      (font) =>
-                        (font.family !== ""
-                          ? font.family
-                          : typeGroup.family) === familyName,
-                    )
-                    .map((font) => parseInt(String(font.fontWeight), 10)),
-                ),
-              ),
-            ]
-              .filter(
-                (weight) =>
-                  weight >= 100 && weight <= 900 && !values.has(weight),
-              )
-              .sort((leftWeight, rightWeight) => leftWeight - rightWeight);
-          return [
-            stylesheetUrl,
-            ...fontSources.map(
-              (weight) =>
-                "https://fonts.googleapis.com/css2?family=" +
-                value.replace(/ +/g, "+") +
-                ":wght@" +
-                String(weight) +
-                "&display=swap",
-            ),
-          ];
-        }),
-      ),
-    ].sort(),
-    fingerprint = urls.join("|");
+  const urls = googleFontStylesheetUrls(familyNames, fonts, typeTokens);
+  const fingerprint = urls.join("|");
   (reactArtifactRoot as typeof React).useEffect(() => {
-    let entries = new Map(
-      [
-        ...document.querySelectorAll<HTMLLinkElement>(
-          "link[data-ds-google-font]",
-        ),
-      ].map((link) => [link.href, link]),
-    );
-    for (let [value, link] of entries) {
-      if (!urls.includes(value)) {
-        link.remove();
-      }
-    }
-    for (let value of urls) {
-      if (entries.has(value)) {
-        continue;
-      }
-      let existingLink = [
-        ...document.head.querySelectorAll<HTMLLinkElement>(
-          'link[rel="stylesheet"]',
-        ),
-      ].find((link) => link.href === value);
-      if (existingLink !== undefined) {
-        existingLink.dataset.dsGoogleFont = "1";
-        continue;
-      }
-      let stylesheetLink = document.createElement("link");
-      stylesheetLink.rel = "stylesheet";
-      stylesheetLink.dataset.dsGoogleFont = "1";
-      stylesheetLink.href = value;
-      document.head.appendChild(stylesheetLink);
-    }
+    syncGoogleFontStylesheets(urls);
   }, [fingerprint]);
 }
 function previewThemeGroundColors(
@@ -761,20 +671,6 @@ function DesignSystemApp(): React.ReactElement {
         inline: "nearest",
       });
     },
-    removeToken = (tokenKind: AddTokenKind) => (tokenName: string) => {
-      if (
-        editable?.exec(uiMessage("design-system.designSystemApp.remove") + tokenName, (deleteConfirmation) =>
-          deleteToken(deleteConfirmation, tokenKind, tokenName),
-        ) === true
-      ) {
-        announceUndoableChange(uiMessage("design-system.designSystemApp.removed") + tokenName);
-      }
-    },
-    renameTokenFactory =
-      (tokenKind: AddTokenKind) => (tokenName: string, newName: string) =>
-        editable?.exec(uiMessage("design-system.designSystemApp.rename") + tokenName, (renameConfirmation) =>
-          renameToken(renameConfirmation, tokenKind, tokenName, newName),
-        ) ?? false,
     sectionTitle = (sectionId: string, defaultTitle: string) =>
       snapshot.sectionTitles[sectionId] ?? defaultTitle,
     sectionHead = (sectionId: string, defaultTitle: string) => ({
@@ -782,275 +678,10 @@ function DesignSystemApp(): React.ReactElement {
       defaultTitle: defaultTitle,
       "data-testid": "ds-card-" + sectionId,
     }),
-    colorEdit = reactArtifactRoot.useMemo<
-      ColorEditActions | undefined
-    >(
-      () =>
-        editable === undefined
-          ? undefined
-          : {
-              usage: (tokenName, usage) =>
-                void editable.set("usage:color:" + tokenName, (nextUsage) =>
-                  setColorTokenUsage(nextUsage, tokenName, usage),
-                ),
-              value: (tokenName, field, fallback) =>
-                void editable.set(
-                  "color:" + tokenName + ":" + field,
-                  (nextValue) =>
-                    setColorTokenValue(
-                      nextValue,
-                      tokenName,
-                      field,
-                      fallback,
-                    ),
-                ),
-              clear: (tokenName, field) =>
-                void editable.exec(
-                  uiMessage("design-system.designSystemApp.clear") + tokenName + " " + field,
-                  (nextValue) =>
-                    clearColorThemeOverride(
-                      nextValue,
-                      tokenName,
-                      field,
-                    ),
-                ),
-              done: () => editable.seal(),
-              remove: removeToken("color"),
-              rename: renameTokenFactory("color"),
-              addTo: (group) => showAddColor(group.name),
-              addGroup: (isNewGroup) => showAddColor("", isNewGroup === true),
-              removeGroup: (group) => {
-                let value =
-                    group.name === ""
-                      ? PALETTE_GROUP_NAME
-                      : group.name,
-                  length = group.tokens.length;
-                setConfirmation({
-                  get title() { return uiMessage("design-system.designSystemApp.deleteAndIts", { value1: String(value), value2: String(String(length)), value3: String(length === 1 ? " color?" : " colors?") }); },
-                  get confirmLabel() { return uiMessage("design-system.designSystemApp.delete"); },
-                  body:
-                    (length === 1
-                      ? uiMessage("design-system.designSystemApp.itIs")
-                      : uiMessage("design-system.designSystemApp.all") + String(length) + " are") +
-                    " removed from tokens.json; colors in other groups that alias them keep their resolved values. Undo brings the group back.",
-                  run: () => {
-                    let tokenNames = (
-                      viewRef.current.colorGroups.find(
-                        (candidate) => candidate.name === group.name,
-                      )?.tokens ?? []
-                    ).map((tokenName) => tokenName.name);
-                    if (
-                      tokenNames.length > 0 &&
-                      editable.exec(uiMessage("design-system.designSystemApp.removeGroup") + value, (groupRemovalConfirmation) =>
-                        deleteColorTokens(groupRemovalConfirmation, tokenNames),
-                      )
-                    ) {
-                      announceUndoableChange(uiMessage("design-system.designSystemApp.deleted") + value);
-                    } else {
-                      showEditorNotification(
-                        value + " changed meanwhile. Nothing was deleted.",
-                      );
-                    }
-                    requestAnimationFrame(() =>
-                      focusTestId("ds-add-color-group"),
-                    );
-                  },
-                });
-              },
-              renameGroup: (group, newName) => {
-                let value = tokenGroupRenamePairs(
-                  group.tokens.map((tokenName) => tokenName.name),
-                  commonTokenNamePrefix(
-                    tokenNamesForFamily(
-                      snapshot.tokens,
-                      "color",
-                    ),
-                  ),
-                  group.name,
-                  newName,
-                );
-                if (value.length === 0) {
-                  return false;
-                }
-                return editable.exec(
-                  uiMessage("design-system.designSystemApp.renameGroup") +
-                    (group.name === "" ? "palette" : group.name),
-                  (tokenName) =>
-                    renameColorTokensAtomically(tokenName, value),
-                );
-              },
-            },
-      [editable, snapshot],
-    ),
-    scaleEdit = (
-      scaleKind: ScalarTokenKind,
-      noteLabel?: string,
-    ): ScalarEditActions | undefined =>
-      editable === undefined
-        ? undefined
-        : {
-            value: (field, fieldValue) =>
-              void editable.set(scaleKind + ":" + field, (nextValue) =>
-                setScalarTokenValue(
-                  nextValue,
-                  scaleKind,
-                  field,
-                  fieldValue,
-                ),
-              ),
-            done: () => editable.seal(),
-            usage: (field, usage) =>
-              void editable.set("usage:" + scaleKind + ":" + field, (nextUsage) =>
-                setTokenUsage(nextUsage, scaleKind, field, usage),
-              ),
-            note: (noteValue) =>
-              void editable.exec(
-                uiMessage("design-system.designSystemApp.edit") + (noteLabel ?? scaleKind) + " note",
-                (note) =>
-                  setTokenFamilyNote(
-                    note,
-                    scaleKind,
-                    noteValue,
-                    noteLabel,
-                  ),
-              ),
-            remove: removeToken(scaleKind),
-            rename: renameTokenFactory(scaleKind),
-          },
-    spacingEdit = reactArtifactRoot.useMemo<
-      ScalarEditActions | undefined
-    >(() => scaleEdit("spacing"), [editable, snapshot]),
-    radiusEdit = reactArtifactRoot.useMemo<
-      ScalarEditActions | undefined
-    >(() => scaleEdit("radius"), [editable, snapshot]),
-    extraScaleEdit = (extraValue: string) => {
-      let value = scaleEdit("extra", extraValue);
-      if (value === undefined) {
-        return undefined;
-      } else {
-        return {
-          ...value,
-          add: showAddScaleToken,
-        };
-      }
-    },
-    shadowEdit = reactArtifactRoot.useMemo<
-      ShadowEditActions | undefined
-    >(
-      () =>
-        editable === undefined
-          ? undefined
-          : {
-              value: (field, fieldValue, fallback) =>
-                void editable.exec(
-                  uiMessage("design-system.designSystemApp.edit") + field + " " + fieldValue,
-                  (nextValue) =>
-                    setShadowTokenValue(
-                      nextValue,
-                      field,
-                      fieldValue,
-                      fallback,
-                    ),
-                ),
-              live: (field, shadowValue, fallback) =>
-                void editable.set(
-                  "shadow:" + field + ":" + shadowValue,
-                  (nextValue) =>
-                    setShadowTokenValue(
-                      nextValue,
-                      field,
-                      shadowValue,
-                      fallback,
-                    ),
-                ),
-              done: () => editable.seal(),
-              usage: (tokenName, usage) =>
-                void editable.set("usage:shadow:" + tokenName, (nextUsage) =>
-                  setTokenUsage(
-                    nextUsage,
-                    "shadow",
-                    tokenName,
-                    usage,
-                  ),
-                ),
-              remove: removeToken("shadow"),
-              rename: renameTokenFactory("shadow"),
-            },
-      [editable, snapshot],
-    ),
-    typeEdit = reactArtifactRoot.useMemo<
-      TypographyEditActions | undefined
-    >(
-      () =>
-        editable === undefined
-          ? undefined
-          : {
-              setField: (field, styleValue, fallback) =>
-                void editable.set(
-                  "style:" + field + ":" + styleValue,
-                  (nextValue) =>
-                    setTypographyProperty(
-                      nextValue,
-                      field,
-                      styleValue,
-                      fallback,
-                    ),
-                ),
-              setFont: (fontFamily, fontWeight) => {
-                let value = validateNewFontFamily(
-                  fontWeight,
-                  snapshot.tokens.type.families,
-                );
-                if (value !== null) {
-                  showEditorNotification(value);
-                  return;
-                }
-                editable.exec(uiMessage("design-system.designSystemApp.font") + fontFamily, (fontRemovalConfirmation) =>
-                  setTypographyFontFamily(
-                    fontRemovalConfirmation,
-                    fontFamily,
-                    fontWeight,
-                  ),
-                );
-              },
-              done: () => editable.seal(),
-              setUsage: (fontFamily, usage) =>
-                void editable.set("usage:style:" + fontFamily, (nextUsage) =>
-                  setTypographyStyleUsage(
-                    nextUsage,
-                    fontFamily,
-                    usage,
-                  ),
-                ),
-              remove: removeToken("type"),
-              rename: renameTokenFactory("type"),
-              dropMissingFonts: () => {
-                if (
-                  editable.exec(uiMessage("design-system.designSystemApp.dropMissingFontReferences"), (missingFontConfirmation) =>
-                    removeMissingFontReferences(missingFontConfirmation),
-                  )
-                ) {
-                  announceLiveMessage(uiMessage("design-system.designSystemApp.referenceRemoved"));
-                }
-              },
-            },
-      [editable, snapshot],
-    ),
-    componentEdit = reactArtifactRoot.useMemo<
-      ComponentEditActions | undefined
-    >(
-      () =>
-        editable === undefined
-          ? undefined
-          : {
-              setGuidelines: (componentName, guidelines) =>
-                void editable.set("guide:" + componentName, (nextGuidelines) =>
-                  setComponentGuidelines(nextGuidelines, componentName, guidelines),
-                ),
-              done: () => editable.seal(),
-            },
-      [editable],
-    ),
+    { colorEdit, spacingEdit, radiusEdit, shadowEdit, typeEdit, componentEdit, extraScaleEdit } = useTokenEditors({
+      editable, snapshot, viewRef, setConfirmation, focusTestId, announceUndoableChange,
+      getTokenFlow: () => tokenFlow,
+    }),
     componentProps = reactArtifactRoot.useMemo(() => {
       if (!editorFeatureFlags.componentProps) {
         return;
@@ -1124,146 +755,19 @@ function DesignSystemApp(): React.ReactElement {
       missingAssetsMessage(blobAnalysis.missing),
     );
   }, [blobAnalysis]);
-  let [freeingStorage, setFreeingStorage] =
-      reactArtifactRoot.useState(false),
-    freeSpaceText =
-      editable === undefined || freeingStorage || blobAnalysis === null
-        ? ""
-        : reclaimAssetsButtonLabel(
-            blobAnalysis.reclaimableBytes,
-            blobAnalysis.reclaimable.length,
-            undefined,
-            blobAnalysis.windowed,
-          ),
-    documentStillLoading = () =>
-      "loadState" in applicationDocument && applicationDocument.saveState().status !== "ready",
-    afterContentSaved = (afterSave: () => void) => {
-      let callback = () =>
-        documentStillLoading()
-          ? showEditorNotification(
-              RECLAIM_RECONNECTING_MESSAGE,
-            )
-          : afterSave();
-      if (!applicationDocument.dirty()) {
-        return callback();
-      }
-      if (applicationDocument.saveMode() !== "auto") {
-        return showEditorNotification(
-          RECLAIM_SAVE_FIRST_MESSAGE,
-        );
-      }
-      if (system.holdAutosave) {
-        return showEditorNotification(
-          uiMessage("design-system.designSystemApp.addingYourFilesFirstTry"),
-        );
-      }
-      applicationDocument.save().then(() => {
-        if (!applicationDocument.dirty()) {
-          return callback();
-        }
-        let value = applicationDocument.saveState();
-        showEditorNotification(
-          value.status === "error"
-            ? uiMessage("design-system.designSystemApp.yourLatestChangesCouldNot") +
-                (value.message ?? "")
-            : RECLAIM_SAVING_MESSAGE,
-        );
-      });
-    },
-    freeStorage = () =>
-      afterContentSaved(() => {
-        let value = assessAssetReclamation(
-          system.getSnapshot().files,
-        );
-        if (value?.windowed === true) {
-          return showEditorNotification(
-            RECLAIM_WINDOWED_COLLECTION_MESSAGE,
-          );
-        }
-        if (value === null || value.reclaimable.length === 0) {
-          return;
-        }
-        setFreeingStorage(true);
-        publishedPageBlobIds()
-          .then((reclaimResult) => {
-            if (applicationDocument.dirty() || documentStillLoading()) {
-              showEditorNotification(
-                !applicationDocument.dirty()
-                  ? RECLAIM_RECONNECTING_MESSAGE
-                  : applicationDocument.saveMode() === "auto"
-                    ? RECLAIM_SAVING_MESSAGE
-                    : RECLAIM_SAVE_FIRST_MESSAGE,
-              );
-              return;
-            }
-            let reclaimAssessment = assessAssetReclamation(
-              system.getSnapshot().files,
-            );
-            if (reclaimAssessment === null || reclaimAssessment.windowed) {
-              showEditorNotification(
-                reclaimAssessment === null
-                  ? RECLAIM_LIST_FAILED_MESSAGE
-                  : RECLAIM_WINDOWED_COLLECTION_MESSAGE,
-              );
-              return;
-            }
-            let values = new Set(
-                reclaimAssessment.reclaimable.map((asset) => asset.id),
-              ),
-              reclaimableAssets = excludePublishedAssets(
-                value.reclaimable.filter((asset) => values.has(asset.id)),
-                reclaimResult,
-              );
-            if (reclaimableAssets.length === 0) {
-              showEditorNotification(
-                RECLAIM_NOTHING_UNUSED_MESSAGE,
-              );
-              return;
-            }
-            freeingBlobIdsRef.current = new Set(
-              reclaimableAssets.map((asset) => asset.id),
-            );
-            return deleteStoredAssets(reclaimableAssets).then((deleteResult) => {
-              if (deleteResult.freed.size > 0) {
-                editor.undo.clear();
-              }
-              showEditorNotification(
-                reclaimAssetsResultMessage(deleteResult),
-              );
-            });
-          })
-          .finally(() => {
-            freeingBlobIdsRef.current = new Set();
-            setFreeingStorage(false);
-          });
-      }),
-    askFreeStorage = () =>
-      afterContentSaved(() => {
-        refreshAssetsCatalog().then(() => {
-          let value = assessAssetReclamation(
-            system.getSnapshot().files,
-          );
-          if (value === null || value.reclaimable.length === 0) {
-            showEditorNotification(
-              value === null
-                ? RECLAIM_LIST_FAILED_MESSAGE
-                : value.windowed
-                  ? RECLAIM_WINDOWED_COLLECTION_MESSAGE
-                  : RECLAIM_NOTHING_UNUSED_MESSAGE,
-            );
-            return;
-          }
-          setConfirmation({
-            get title() { return uiMessage("design-system.designSystemApp.freeSpace"); },
-            body: reclaimAssetsConfirmation(
-              value.reclaimable.length,
-              value.reclaimableBytes,
-            ),
-            get confirmLabel() { return uiMessage("design-system.designSystemApp.deletePermanently"); },
-            run: freeStorage,
-          });
-        });
-      }),
+  let {
+      freeing: freeingStorage,
+      freeSpaceLabel: freeSpaceText,
+      askFree: askFreeStorage,
+    } = useStorageReclaim({
+      editable,
+      editor,
+      applicationDocument,
+      system,
+      blobAnalysis,
+      freeingBlobIdsRef,
+      askConfirmation: setConfirmation,
+    }),
     downloadAsset = (asset: EditorAsset) => {
       readDownloadFileBytes(
         snapshot.files,
@@ -1436,203 +940,17 @@ function DesignSystemApp(): React.ReactElement {
               },
               element,
             ),
-    [uploadPanelOpen, setUploadPanelOpen] =
-      reactArtifactRoot.useState(false),
-    uploadPanelActive = uploadPanelOpen,
-    uploadPanelActiveRef = reactArtifactRoot.useRef(false);
-  uploadPanelActiveRef.current = uploadPanelActive;
-  let uploadPanelVisibleRef = reactArtifactRoot.useRef(false);
-  uploadPanelVisibleRef.current =
-    uploadPanelOpen && currentSection === "readme";
-  let showWelcome = starter.hint || uploadPanelOpen,
-    emptyIntakeSummary: WelcomeIntakeSummary = {
-      refused: [],
-      landTo: null,
-    },
-    [intakeSummary, setIntakeSummary] =
-      reactArtifactRoot.useState(emptyIntakeSummary),
-    [intakeFiles, setIntakeFiles] = reactArtifactRoot.useState<
-      File[]
-    >([]),
-    intakeFilesRef = reactArtifactRoot.useRef<File[]>([]);
-  intakeFilesRef.current = intakeFiles;
-  let addWelcomeFiles = (welcomeFiles: File[]) => {
-      let callback = (leftFile: File, rightFile: File) =>
-          leftFile.name === rightFile.name &&
-          leftFile.size === rightFile.size &&
-          uploadedFileRelativePath(leftFile) ===
-            uploadedFileRelativePath(rightFile),
-        value = welcomeFiles.filter(
-          (candidateFile, index) =>
-            !intakeFilesRef.current.some((file) =>
-              callback(file, candidateFile),
-            ) &&
-            welcomeFiles.findIndex((file) => callback(file, candidateFile)) === index,
-        );
-      if (
-        value.length === 0 ||
-        addFiles === undefined ||
-        !addFiles(value, undefined, true)
-      ) {
-        return;
-      }
-      intakeFilesRef.current = [...intakeFilesRef.current, ...value];
-      setIntakeFiles((files) => [...files, ...value]);
-      setUploadPanelOpen(true);
-    },
-    clearWelcomeFiles = () => {
-      setIntakeSummary(emptyIntakeSummary);
-      setIntakeFiles([]);
-      intakeFilesRef.current = [];
-      setIntakeFilePaths(new Map());
-    },
-    closeUploadPanel = () => setUploadPanelOpen(false),
-    openUploadPanel = () => setUploadPanelOpen(true),
-    backFromUpload = () => {
-      closeUploadPanel();
-      if (intakeSummary.landTo !== null) {
-        jumpToSection(intakeSummary.landTo);
-      }
-    },
-    [intakeFilePaths, setIntakeFilePaths] =
-      reactArtifactRoot.useState(new Map<File, string>()),
-    keptIntakeCount = intakeFilePaths.size,
-    previousFilesRef = reactArtifactRoot.useRef(snapshot.files);
-  reactArtifactRoot.useEffect(() => {
-    let current = previousFilesRef.current;
-    previousFilesRef.current = snapshot.files;
-    if (current === snapshot.files || intakeFilePaths.size === 0) {
-      return;
-    }
-    let callback = (path: string) =>
-        path.startsWith(DESIGN_SYSTEM_PATHS.fontsDir) ||
-        path.startsWith(DESIGN_SYSTEM_PATHS.assetsDir),
-      values = new Set(intakeFilePaths.values()),
-      value = Object.keys(snapshot.files).filter(
-        (path) =>
-          !Object.hasOwn(current, path) &&
-          !values.has(path) &&
-          callback(path),
-      ),
-      removedPaths = Object.keys(current).filter(
-        (path) => !Object.hasOwn(snapshot.files, path) && callback(path),
-      ),
-      intakePaths = [...intakeFilePaths].filter(
-        ([, path]) => !Object.hasOwn(snapshot.files, path),
-      );
-    if (intakePaths.length === 0) {
-      return;
-    }
-    let entries = new Map(intakeFilePaths),
-      items = [],
-      baseName = (path: string) => path.slice(path.lastIndexOf("/") + 1),
-      pathPrefix = (path: string) => path.slice(0, path.indexOf("/"));
-    for (let [intakePath, existingPath] of intakePaths) {
-      let matchingPaths = value.filter(
-          (candidatePath) =>
-            baseName(candidatePath) === baseName(existingPath) &&
-            pathPrefix(candidatePath) === pathPrefix(existingPath),
-        ),
-        removedMatches = removedPaths.filter(
-          (candidatePath) =>
-            baseName(candidatePath) === baseName(existingPath) &&
-            pathPrefix(candidatePath) === pathPrefix(existingPath),
-        );
-      if (matchingPaths.length === 1 && removedMatches.length === 1) {
-        entries.set(intakePath, matchingPaths[0]);
-        value.splice(value.indexOf(matchingPaths[0]), 1);
-      } else {
-        entries.delete(intakePath);
-        items.push(intakePath);
-      }
-    }
-    setIntakeFilePaths(entries);
-    if (items.length > 0) {
-      setIntakeFiles((paths) =>
-        paths.filter((path) => !items.includes(path)),
-      );
-    }
-  }, [snapshot.files, intakeFilePaths]);
-  let recordIntakeOutcome = (
-      uploadSummary: AssetUploadSummary,
-      uploadedFiles: Map<File, string>,
-    ) => {
-      let value = countSuccessfulUploads(uploadSummary);
-      setIntakeSummary((summary) => ({
-        refused: [
-          ...summary.refused,
-          ...uploadSummary.refused.map((file) => file.name),
-        ],
-        landTo:
-          value === 0
-            ? summary.landTo
-            : summary.landTo === "assets" ||
-                Object.keys(uploadSummary.assets).length > 0
-              ? "assets"
-              : "type",
-      }));
-      if (uploadedFiles.size > 0) {
-        setIntakeFilePaths((paths) => new Map([...paths, ...uploadedFiles]));
-      }
-    },
-    removeWelcomeFile = (fileIndex: number) => {
-      let value = intakeFiles[fileIndex];
-      if (value === undefined || editable === undefined) {
-        return;
-      }
-      let entry = intakeFilePaths.get(value),
-        name = uploadedAssetFile(value).name,
-        singleIntakeFile = intakeFiles.length === 1,
-        callback = () => {
-          setIntakeFiles((files) =>
-            files.filter((file) => file !== value),
-          );
-          if (singleIntakeFile) {
-            clearWelcomeFiles();
-            closeUploadPanel();
-          }
-        };
-      if (entry !== undefined) {
-        let removeFile = (
-          document: import("../../contracts").DesignSystemContent,
-        ) =>
-          entry.startsWith(DESIGN_SYSTEM_PATHS.fontsDir)
-            ? deleteFontFace(document, entry)
-            : deleteAssetFile(document, entry);
-        performDesignSystemEdit(
-          editable,
-          removeFile,
-          (removalChoice) => {
-            if (!editable.exec(uiMessage("design-system.designSystemApp.remove") + entry, removeFile, removalChoice)) {
-              return false;
-            }
-            setIntakeFilePaths((paths) => {
-              let entries = new Map(paths);
-              entries.delete(value);
-              return entries;
-            });
-            callback();
-            return true;
-          },
-          {
-            nameOf: () => name,
-          },
-          "removal",
-        );
-        return;
-      }
-      if (intakeSummary.refused.includes(name)) {
-        setIntakeSummary((summary) => {
-          let items = [...summary.refused];
-          items.splice(items.indexOf(name), 1);
-          return {
-            ...summary,
-            refused: items,
-          };
-        });
-      }
-      callback();
-    },
+    {
+      uploadPanelOpen, uploadPanelActiveRef, uploadPanelVisibleRef, intakeFiles, intakeFilePaths,
+      keptIntakeCount, refusedUploadNames, openUploadPanel, backFromUpload, addWelcomeFiles,
+      removeWelcomeFile, createFromWelcomeFiles, recordIntakeOutcome, announceIntakeOutcome,
+    } = useWelcomeUpload({
+      editable, editor, applicationDocument, system, currentSection,
+      filesSnapshot: snapshot.files, uploadOptionLabel, jumpToSection, askClaude, noticeWithAction,
+      getAddFiles: () => addFiles,
+      getFileHandoffAction: () => fileHandoffAction,
+    }),
+    showWelcome = starter.hint || uploadPanelOpen,
     renderAssetThumbnail = (thumbnail: import("../../contracts/editor-runtime").AssetThumbnail): React.ReactElement => (
       <AssetDetailsPreview
         asset={thumbnail}
@@ -1666,57 +984,6 @@ function DesignSystemApp(): React.ReactElement {
           renderThumb={renderAssetThumbnail}
         />
       );
-    },
-    createFromWelcomeFiles = (files: File[]) => {
-      let value = files
-          .filter(
-            (file) =>
-              !isIgnoredUploadFile(file) &&
-              !intakeSummary.refused.includes(
-                uploadedAssetFile(file).name,
-              ),
-          )
-          .map((file) => ({
-            name: file.name,
-            bytes: file.size,
-          })),
-        state: ClaudeRequest = {
-          label: uploadOptionLabel,
-          request: viewerBuildFromFilesPrompt(
-            keptIntakeCount,
-            artifactPageAddress(),
-            uploadOptionLabel,
-          ),
-          prompt: ownerBuildFromFilesPrompt(
-            value,
-            artifactPageAddress(),
-            uploadOptionLabel,
-          ),
-          deliver: "send",
-        },
-        callback = () => askClaude(state, null, callback);
-      callback();
-      let landTo = intakeSummary.landTo;
-      clearWelcomeFiles();
-      if (applicationDocument.dirty() && !system.holdAutosave) {
-        editor.seal();
-        applicationDocument.save().then(() => {
-          let saveStatus = applicationDocument.saveState();
-          if (saveStatus.status === "error") {
-            showEditorNotification(
-              uiMessage("design-system.designSystemApp.theFilesAreInBut") +
-                (saveStatus.message ?? "") +
-                (applicationDocument.saveMode() === "auto"
-                  ? ""
-                  : " Press Save to retry."),
-            );
-          }
-        });
-      }
-      closeUploadPanel();
-      if (landTo !== null) {
-        jumpToSection(landTo);
-      }
     },
     handoffNote =
       handoffNotice === null ? null : (
@@ -1793,35 +1060,6 @@ function DesignSystemApp(): React.ReactElement {
       };
       return callback;
     },
-    announceIntakeOutcome = (
-      summary: AssetUploadSummary,
-      isQuiet: boolean,
-      fromStart = false,
-    ) => {
-      if (
-        fromStart &&
-        uploadPanelVisibleRef.current &&
-        isQuiet &&
-        summary.refused.length === 0 &&
-        summary.warnings.length === 0
-      ) {
-        return;
-      }
-      let value = uploadResultSummary(summary, isQuiet, fromStart);
-      if (value === null) {
-        return;
-      }
-      if (value.handOff !== undefined) {
-        noticeWithAction(
-          value.text,
-          // MineDesign: user-facing copy calls the agent "the agent", not Claude.
-          uiMessage("design-system.designSystemApp.askTheAgent"),
-          fileHandoffAction(value.handOff),
-        );
-      } else {
-        showEditorNotification(value.text);
-      }
-    },
     assetManager = useAssetGroupEditor({
       groups: view.assetGroups,
       edit: editable,
@@ -1833,211 +1071,11 @@ function DesignSystemApp(): React.ReactElement {
       removed: announceUndoableChange,
       reveal: revealAsset,
     }),
-    INTAKE_QUEUE_WAIT_MS = 700,
-    intakeRunningRef = reactArtifactRoot.useRef(false),
-    intakeQueueRef = reactArtifactRoot.useRef<IntakeQueueEntry[]>([]),
-    intakeSavingRef = reactArtifactRoot.useRef(false),
-    addFiles =
-      editable === undefined
-        ? undefined
-        : (items: File[], fileGroup?: string, fromStart = false) => {
-            if (items.length === 0) {
-              return false;
-            }
-            if (intakeSavingRef.current) {
-              showEditorNotification(
-                uiMessage("design-system.designSystemApp.savingWhatYouJustAdded"),
-              );
-              return false;
-            }
-            intakeQueueRef.current.push({
-              files: items,
-              group: fileGroup ?? null,
-              fromStart: fromStart,
-            });
-            if (intakeRunningRef.current) {
-              return true;
-            }
-            intakeRunningRef.current = true;
-            setIntakeBusy(true);
-            let current = currentSectionRef.current;
-            system.holdAutosave = true;
-            let hadExistingEdits = applicationDocument.dirty(),
-              values = new Set(Object.keys(applicationDocument.content().files)),
-              callback = (path: string) =>
-                !values.has(path) &&
-                (path.startsWith(DESIGN_SYSTEM_PATHS.fontsDir) ||
-                  path.startsWith(DESIGN_SYSTEM_PATHS.assetsDir)),
-              flag = false;
-            (async (): Promise<AssetUploadSummary> => {
-              let state: AssetUploadSummary = {
-                fonts: 0,
-                assets: {},
-                blobs: 0,
-                refused: [],
-                warnings: [],
-              };
-              while (
-                intakeQueueRef.current.length > 0 ||
-                (await new Promise<boolean>((resolve) =>
-                  setTimeout(
-                    () => resolve(intakeQueueRef.current.length > 0),
-                    INTAKE_QUEUE_WAIT_MS,
-                  ),
-                ))
-              ) {
-                if (intakeQueueRef.current.length === 0) {
-                  continue;
-                }
-                let queuedUpload = intakeQueueRef.current.shift();
-                if (queuedUpload === undefined) {
-                  continue;
-                }
-                let group = queuedUpload.group,
-                  entries = new Map<File, string>(),
-                  commitUpload = (
-                    file: File,
-                    commit: () => import("../../contracts/application").UploadCommitResult,
-                  ) => {
-                    if (!queuedUpload.fromStart) {
-                      return commit();
-                    }
-                    let queuedPaths = new Set(
-                        Object.keys(applicationDocument.content().files),
-                      ),
-                      commitResult = commit(),
-                      committedPath =
-                        commitResult === true
-                          ? Object.keys(applicationDocument.content().files).find(
-                              (path) =>
-                                !queuedPaths.has(path) && callback(path),
-                            )
-                          : undefined;
-                    if (committedPath !== undefined) {
-                      entries.set(file, committedPath);
-                    }
-                    return commitResult;
-                  },
-                  neverSaves = applicationDocument.neverSaves,
-                  uploadResult = await uploadAssetFiles(
-                    queuedUpload.files,
-                    {
-                      ...intakeOptions,
-                      onProgress: (progress) => {
-                        let queuedCount = intakeQueueRef.current.reduce(
-                          (count, upload) =>
-                            count + upload.files.length,
-                          0,
-                        );
-                        setIntakeProgress(
-                          progress === null
-                            ? null
-                            : progress +
-                                (queuedCount > 0
-                                  ? " · " + String(queuedCount) + " more queued"
-                                  : ""),
-                        );
-                      },
-                      font: (fontSource, commit) =>
-                        commitUpload(commit, () =>
-                          commitUploadedAssetChange(
-                            (result) =>
-                              editable.exec(
-                                "add font " + fontSource.fileName,
-                                result,
-                              ),
-                            (result) =>
-                              addFontFace(result, fontSource),
-                            neverSaves,
-                          ),
-                        ),
-                      asset: (assetSource, commit) =>
-                        commitUpload(commit, () =>
-                          commitUploadedAssetChange(
-                            (result) =>
-                              editable.exec("add " + assetSource.fileName, result),
-                            (result) =>
-                              addAssetFile(result, assetSource),
-                            neverSaves,
-                          ),
-                        ),
-                    },
-                    group ?? undefined,
-                  );
-                if (queuedUpload.fromStart) {
-                  flag = true;
-                  recordIntakeOutcome(uploadResult, entries);
-                }
-                state = mergeAssetUploadResults(state, uploadResult);
-              }
-              return state;
-            })()
-              .then(async (uploadResult): Promise<void> => {
-                setIntakeProgress(null);
-                if (countSuccessfulUploads(uploadResult) === 0) {
-                  announceIntakeOutcome(uploadResult, false, flag);
-                  return;
-                }
-                system.setNote(
-                  flag
-                    ? uploadedFilesBuildSummary(uploadResult)
-                    : addedFilesSummary(uploadResult),
-                  Object.fromEntries(
-                    Object.entries(applicationDocument.content().files).filter(
-                      ([path]) => callback(path),
-                    ),
-                  ),
-                );
-                let activeElement = document.activeElement,
-                  hasFocusedTextInput =
-                    activeElement instanceof HTMLElement &&
-                    (activeElement.isContentEditable ||
-                      /^(INPUT|TEXTAREA|SELECT)$/.test(
-                        activeElement.tagName,
-                      ));
-                if (
-                  currentSectionRef.current === current &&
-                  tokenDialogRef.current === null &&
-                  !uploadPanelVisibleRef.current &&
-                  !hasFocusedTextInput
-                ) {
-                  jumpToSection(
-                    Object.keys(uploadResult.assets).length === 0 && uploadResult.fonts > 0
-                      ? "type"
-                      : "assets",
-                  );
-                }
-                let hasPendingManualEdits = hadExistingEdits && applicationDocument.saveMode() !== "auto";
-                announceIntakeOutcome(uploadResult, !hasPendingManualEdits, flag);
-                if (hasPendingManualEdits) {
-                  return;
-                }
-                editor.seal();
-                system.holdAutosave = false;
-                setIntakeProgress("Saving…");
-                intakeSavingRef.current = true;
-                await applicationDocument.save();
-                intakeSavingRef.current = false;
-                setIntakeProgress(null);
-                let intakeSaveState = applicationDocument.saveState();
-                if (intakeSaveState.status === "error") {
-                  showEditorNotification(
-                    uiMessage("design-system.designSystemApp.theFilesAreInBut") +
-                      intakeSaveState.message +
-                      (applicationDocument.saveMode() === "auto"
-                        ? ""
-                        : " Press Save to retry."),
-                  );
-                }
-              })
-              .finally(() => {
-                system.holdAutosave = false;
-                intakeSavingRef.current = false;
-                intakeRunningRef.current = false;
-                setIntakeBusy(false);
-              });
-            return true;
-          },
+    addFiles = useAssetIntakeQueue({
+      editable, editor, applicationDocument, system, intakeOptions, currentSectionRef,
+      uploadPanelVisibleRef, getTokenDialog: () => tokenFlow.getDialog(),
+      setIntakeBusy, setIntakeProgress, recordIntakeOutcome, announceIntakeOutcome, jumpToSection,
+    }),
     uploadAssets =
       addFiles === undefined
         ? undefined
@@ -2096,45 +1134,6 @@ function DesignSystemApp(): React.ReactElement {
       targetElement.classList.remove("ds-flash");
     };
   }, [flashTarget]);
-  let nextNumericTokenName = (
-      inputName: string,
-      existingNames: string[],
-      fallbackName: string,
-    ) => {
-      if (inputName === "") {
-        return fallbackName;
-      }
-      let value = existingNames
-        .map((suffix) => /-(\d{1,4})$/.exec(suffix)?.[1])
-        .filter((suffix) => suffix !== undefined);
-      if (value.length === 0) {
-        return inputName + "-2";
-      }
-      let suffixes = [
-          ...new Set(value.map((suffix) => parseInt(suffix, 10))),
-        ].sort((suffix, otherSuffix) => suffix - otherSuffix),
-        nextSuffix =
-          suffixes.length > 1
-            ? Math.min(
-                ...suffixes
-                  .slice(1)
-                  .map((suffix, index) => suffix - suffixes[index]),
-              )
-            : 100;
-      return (
-        inputName +
-        "-" +
-        String(suffixes.at(-1)! + nextSuffix).padStart(
-          Math.max(...value.map((items) => items.length)),
-          "0",
-        )
-      );
-    },
-    [tokenDialog, setTokenDialog] = (
-      reactArtifactRoot as typeof React
-    ).useState<TokenDialogState | null>(null),
-    tokenDialogRef = reactArtifactRoot.useRef(tokenDialog);
-  tokenDialogRef.current = tokenDialog;
   let valueThemes =
       themes.length > 0
         ? themes
@@ -2145,6 +1144,15 @@ function DesignSystemApp(): React.ReactElement {
             },
           ],
     defaultValueThemeId = valueThemes[0]?.id ?? "light",
+    tokenFlow = useTokenDialogFlow({
+      editable,
+      snapshot,
+      view,
+      valueThemes,
+      defaultValueThemeId,
+      flashToken,
+      revealAsset,
+    }),
     themeGrounds = reactArtifactRoot.useMemo(
       () => previewThemeGroundColors(snapshot.tokens, valueThemes),
       [snapshot.tokens, valueThemes],
@@ -2153,516 +1161,6 @@ function DesignSystemApp(): React.ReactElement {
       needsGround && previewThemeId !== undefined
         ? themeGrounds[previewThemeId]?.well
         : undefined,
-    addColorTokenFromSource = (source: AddedToken, namePrefix?: string) => {
-      if (editable === undefined || source.kind !== "color") {
-        return;
-      }
-      let value = source.values[defaultValueThemeId] ?? "#888888";
-      if (
-        editable.exec(
-          source.newGroup ? uiMessage("design-system.designSystemApp.addColorGroup") : uiMessage("design-system.designSystemApp.addColor"),
-          (candidateName) => {
-            let tokenName = addColorToken(
-              candidateName,
-              source.name,
-              value,
-              namePrefix,
-            );
-            if (tokenName === candidateName) {
-              return candidateName;
-            }
-            for (let [themeId, themeValue] of Object.entries(source.values)) {
-              if (themeId !== defaultValueThemeId) {
-                tokenName = setColorTokenValue(
-                  tokenName,
-                  source.name,
-                  themeId,
-                  themeValue,
-                );
-              }
-            }
-            if (source.usage !== "") {
-              tokenName = setColorTokenUsage(
-                tokenName,
-                source.name,
-                source.usage,
-              );
-            }
-            return tokenName;
-          },
-        )
-      ) {
-        flashToken(
-          source.name,
-          true,
-          source.group === "" ? undefined : source.group,
-        );
-      } else {
-        showEditorNotification(
-          uiMessage("design-system.designSystemApp.couldNotAdd") + source.name + ".",
-        );
-      }
-    },
-    showAddColor = (initialName = "", useSuggestedName = false) => {
-      if (editable === undefined) {
-        return;
-      }
-      let value = tokenNamesForFamily(snapshot.tokens, "color"),
-        namePrefix = commonTokenNamePrefix(value),
-        groups = view.colorGroups.map((group) => ({
-          key: group.name,
-          label:
-            group.name === "" ? PALETTE_GROUP_NAME : group.name,
-          seed:
-            group.name === ""
-              ? namePrefix
-              : group.numeric === true
-                ? unusedTokenName(
-                    snapshot.tokens,
-                    "color",
-                    nextNumericTokenName(
-                      namePrefix + group.name,
-                      group.tokens.map((tokenName) => tokenName.name),
-                      "color",
-                    ),
-                  )
-                : namePrefix + group.name + "-",
-        }));
-      if (!groups.some((group) => group.key === "")) {
-        groups.unshift({
-          key: "",
-          label: PALETTE_GROUP_NAME,
-          seed: namePrefix,
-        });
-      }
-      let nameSeed = useSuggestedName
-          ? {
-              key: NEW_TOKEN_GROUP_SENTINEL,
-              label: "",
-              seed: namePrefix,
-            }
-          : (groups.find((group) => group.key === initialName) ?? groups[0]),
-        callback = (groupName: string) =>
-          view.colorGroups
-            .find((token) => token.name === groupName)
-            ?.tokens.at(-1)?.name;
-      setTokenDialog({
-        req: {
-          kind: "color",
-          themes: valueThemes,
-          taken: new Set(
-            conflictingTokenNames(snapshot.tokens, "color"),
-          ),
-          names: new Set(value),
-          name: nameSeed.seed,
-          value: "#888888",
-          groups: groups,
-          group: nameSeed.key,
-          namespace: namePrefix,
-          seedFor: (groupName) => namePrefix + groupName + "-",
-          groupOf: (tokenName) =>
-            tokenHasGroupSuffix(tokenName, namePrefix)
-              ? tokenGroupName(tokenName, namePrefix)
-              : "",
-        },
-        land: (source) => {
-          if (source.kind === "color") {
-            addColorTokenFromSource(source, callback(source.group));
-          }
-        },
-      });
-    },
-    TOKEN_DEFAULTS: Record<
-      ScalarTokenKind,
-      {
-        value: string;
-        label: string;
-      }
-    > = {
-      spacing: {
-        value: "8px",
-        get label() { return uiMessage("design-system.designSystemApp.spacingValue"); },
-      },
-      radius: {
-        value: "4px",
-        get label() { return uiMessage("design-system.designSystemApp.cornerRadius"); },
-      },
-      extra: {
-        value: "1",
-        get label() { return uiMessage("design-system.designSystemApp.token"); },
-      },
-    },
-    commonNumericNameStem = (names: string[]): string => {
-      let values = new Set(
-          names.map((name) => /^(.*)-\d{1,4}$/.exec(name)?.[1] ?? null),
-        ),
-        [items] = [...values];
-      if (values.size === 1 && items !== null && items !== undefined) {
-        return items;
-      } else {
-        return "";
-      }
-    },
-    newTokenNameSeed = (
-      tokenKind: AddTokenKind,
-      namePrefix: string,
-      items: string[],
-      nameSeed = "",
-    ) => {
-      let nameStem = namePrefix !== "" ? namePrefix : commonNumericNameStem(items);
-      if (nameStem === "") {
-        return nameSeed;
-      }
-      if (
-        items.length > 0 &&
-        items.every((name) => /-\d{1,4}$/.test(name))
-      ) {
-        return unusedTokenName(
-          snapshot.tokens,
-          tokenKind,
-          nextNumericTokenName(nameStem, items, nameStem),
-        );
-      } else {
-        return nameStem + "-";
-      }
-    },
-    showAddScaleToken = (source: ScalarScaleGroup) => {
-      if (editable === undefined) {
-        return;
-      }
-      let kind = source.kind,
-        value = source.family?.key,
-        defaults = TOKEN_DEFAULTS[kind],
-        tokens =
-          (kind === "spacing"
-            ? view.spacing
-            : kind === "radius"
-              ? view.corners
-              : view.extras.find((extraGroup) => extraGroup.key === value)?.scale
-          )?.tokens ?? [],
-        namePrefix = commonTokenNamePrefix(
-          tokens.map((token) => token.name),
-        ),
-        groups =
-          kind === "spacing"
-            ? groupedTokenScale(kind, tokens)
-            : null,
-        selectedGroup =
-          groups === null
-            ? undefined
-            : groups.map((group) => ({
-                key: group.name === "" ? "" : namePrefix + group.name,
-                get label() { return group.name === "" ? (uiMessage("design-system.designSystemApp.spacing")) : (group.name); },
-                seed: newTokenNameSeed(
-                  kind,
-                  group.name === "" ? "" : namePrefix + group.name,
-                  group.tokens.map((token) => token.name),
-                  namePrefix,
-                ),
-              })),
-        selectedSource =
-          selectedGroup?.find((token) => token.key === source.name) ?? selectedGroup?.[0],
-        callback = (tokenName: string) =>
-          tokenName === ""
-            ? tokens.filter(
-                (token) =>
-                  !tokenHasGroupSuffix(token.name, namePrefix),
-              )
-            : tokens.filter((token) => token.name.startsWith(tokenName + "-"));
-      setTokenDialog({
-        req: {
-          kind: kind,
-          get label() { return value !== undefined ? ((value) + (" token")) : (defaults.label); },
-          taken: new Set(
-            conflictingTokenNames(snapshot.tokens, kind),
-          ),
-          name:
-            selectedSource !== undefined
-              ? selectedSource.seed
-              : newTokenNameSeed(
-                  kind,
-                  source.name,
-                  source.tokens.map((token) => token.name),
-                  namePrefix,
-                ),
-          value:
-            source.tokens.at(-1)?.value ??
-            tokens.at(-1)?.value ??
-            defaults.value,
-          ...(kind === "spacing"
-            ? {
-                namespace: namePrefix,
-              }
-            : {}),
-          ...(selectedGroup !== undefined && selectedSource !== undefined
-            ? {
-                groups: selectedGroup,
-                group: selectedSource.key,
-                groupOf: (tokenName: string) =>
-                  tokenHasGroupSuffix(tokenName, namePrefix)
-                    ? namePrefix + tokenGroupName(tokenName, namePrefix)
-                    : "",
-              }
-            : {}),
-        },
-        land: (tokenSource: AddedToken) => {
-          if (tokenSource.kind !== kind) {
-            return;
-          }
-          let nameSeed = (
-            (tokenSource.group !== undefined
-              ? callback(tokenSource.group).at(-1)
-              : undefined) ??
-            source.tokens.at(-1) ??
-            tokens.at(-1)
-          )?.name;
-          if (
-            editable.exec("add " + (value ?? kind), (candidateName) => {
-              let tokenName = addScalarToken(
-                candidateName,
-                kind,
-                tokenSource.name,
-                tokenSource.value,
-                nameSeed,
-                value,
-              );
-              if (tokenName === candidateName || tokenSource.usage === "") {
-                return tokenName;
-              } else {
-                return setTokenUsage(
-                  tokenName,
-                  kind,
-                  tokenSource.name,
-                  tokenSource.usage,
-                );
-              }
-            })
-          ) {
-            flashToken(tokenSource.name);
-          } else {
-            showEditorNotification(
-              uiMessage("design-system.designSystemApp.couldNotAdd") + tokenSource.name + ".",
-            );
-          }
-        },
-      });
-    },
-    lastTypeSetRef = reactArtifactRoot.useRef<string | null>(null),
-    showAddTypeStyle = (initialName?: string) => {
-      if (editable === undefined) {
-        return;
-      }
-      let value = view.typeGroups.map((group) => group.name),
-        groupName =
-          initialName ??
-          (lastTypeSetRef.current !== null &&
-          value.includes(lastTypeSetRef.current)
-            ? lastTypeSetRef.current
-            : (value.at(-1) ?? "")),
-        selectedTypeGroup = view.typeGroups.find((group) => group.name === groupName),
-        selectedStyle =
-          selectedTypeGroup?.styles.at(-1) ?? view.typeGroups.at(-1)?.styles.at(-1),
-        familyKey =
-          selectedStyle?.familyKey ??
-          selectedTypeGroup?.family ??
-          Object.keys(view.families)[0] ??
-          "",
-        fontWeight =
-          selectedStyle === undefined
-            ? "400"
-            : String(
-                typeof selectedStyle.fontWeight === "number"
-                  ? selectedStyle.fontWeight
-                  : parseInt(String(selectedStyle.fontWeight), 10) || 400,
-              );
-      setTokenDialog({
-        req: {
-          kind: "type",
-          taken: new Set(
-            conflictingTokenNames(snapshot.tokens, "type"),
-          ),
-          name: "",
-          families: view.families,
-          familyNames: view.familyNames,
-          fontNames: [
-            ...new Set(
-              view.fonts
-                .filter((font) => font.asset !== true)
-                .map((font) => font.family),
-            ),
-          ],
-          style: {
-            family: familyKey,
-            fontSize: selectedStyle?.fontSize ?? "16px",
-            lineHeight: selectedStyle?.lineHeight ?? "1.5",
-            fontWeight: fontWeight,
-            fontStyle: selectedStyle?.fontStyle === "italic" ? "italic" : "normal",
-            letterSpacing: selectedStyle?.letterSpacing ?? "0",
-          },
-          sets: value,
-          set: groupName,
-        },
-        land: (source) => {
-          if (source.kind !== "type") {
-            return;
-          }
-          let groups = view.typeGroups
-              .find((group) => group.name === source.set)
-              ?.styles.at(-1)?.name,
-            renameConfirmationResult = editable.exec(
-              source.newSet ? "add type set" : "add type style",
-              (group) => {
-                let isNewGroup = source.newSet
-                  ? addTypographyGroup(group, source.set)
-                  : group;
-                if (source.newSet && isNewGroup === group) {
-                  return group;
-                }
-                let style = addTypographyStyle(
-                  isNewGroup,
-                  source.name,
-                  groups,
-                  source.set,
-                );
-                if (style === isNewGroup) {
-                  return group;
-                }
-                style =
-                  source.font !== undefined
-                    ? setTypographyFontFamily(
-                        style,
-                        source.name,
-                        source.font,
-                      )
-                    : setTypographyProperty(
-                        style,
-                        source.name,
-                        "family",
-                        source.style.family,
-                      );
-                style = setTypographyProperty(
-                  style,
-                  source.name,
-                  "fontSize",
-                  source.style.fontSize,
-                );
-                style = setTypographyProperty(
-                  style,
-                  source.name,
-                  "lineHeight",
-                  source.style.lineHeight,
-                );
-                style = setTypographyProperty(
-                  style,
-                  source.name,
-                  "fontWeight",
-                  source.style.fontWeight,
-                );
-                style = setTypographyProperty(
-                  style,
-                  source.name,
-                  "fontStyle",
-                  source.style.fontStyle,
-                );
-                style = setTypographyProperty(
-                  style,
-                  source.name,
-                  "letterSpacing",
-                  source.style.letterSpacing,
-                );
-                if (source.usage !== "") {
-                  style = setTypographyStyleUsage(
-                    style,
-                    source.name,
-                    source.usage,
-                  );
-                }
-                return style;
-              },
-            );
-          if (renameConfirmationResult) {
-            lastTypeSetRef.current = source.set;
-          }
-          if (renameConfirmationResult && source.newSet) {
-            revealAsset({
-              kind: "type",
-              key: source.set,
-            });
-          } else if (renameConfirmationResult) {
-            flashToken(source.name);
-          } else {
-            showEditorNotification(
-              uiMessage("design-system.designSystemApp.couldNotAdd") + source.name + ".",
-            );
-          }
-        },
-      });
-    },
-    showAddShadow = () => {
-      if (editable === undefined) {
-        return;
-      }
-      let value = view.shadows.tokens.at(-1);
-      setTokenDialog({
-        req: {
-          kind: "shadow",
-          themes: valueThemes,
-          taken: new Set(
-            conflictingTokenNames(snapshot.tokens, "shadow"),
-          ),
-          name: newTokenNameSeed(
-            "shadow",
-            "",
-            view.shadows.tokens.map((token) => token.name),
-          ),
-          value:
-            value?.value[defaultValueThemeId] ??
-            "0 1px 2px rgba(0, 0, 0, 0.2)",
-        },
-        land: (source) => {
-          if (source.kind !== "shadow") {
-            return;
-          }
-          if (
-            editable.exec("add shadow", (candidateName) => {
-              let tokenName = addShadowToken(
-                candidateName,
-                source.name,
-                source.values[defaultValueThemeId] ?? "",
-              );
-              if (tokenName === candidateName) {
-                return candidateName;
-              }
-              for (let [themeId, themeValue] of Object.entries(source.values)) {
-                if (themeId !== defaultValueThemeId) {
-                  tokenName = setShadowTokenValue(
-                    tokenName,
-                    source.name,
-                    themeId,
-                    themeValue,
-                  );
-                }
-              }
-              if (source.usage !== "") {
-                tokenName = setTokenUsage(
-                  tokenName,
-                  "shadow",
-                  source.name,
-                  source.usage,
-                );
-              }
-              return tokenName;
-            })
-          ) {
-            flashToken(source.name);
-          } else {
-            showEditorNotification(
-              uiMessage("design-system.designSystemApp.couldNotAdd") + source.name + ".",
-            );
-          }
-        },
-      });
-    },
     announceDropLimit = (limit: number) =>
       showEditorNotification(
         String(limit) +
@@ -2775,8 +1273,8 @@ function DesignSystemApp(): React.ReactElement {
         ? undefined
         : {
             ...typeEdit,
-            add: (sectionId?: string) => showAddTypeStyle(sectionId),
-            addSet: () => showAddTypeStyle(NEW_TOKEN_GROUP_SENTINEL),
+            add: (sectionId?: string) => tokenFlow.openTypeStyle(sectionId),
+            addSet: () => tokenFlow.openTypeStyle(NEW_TOKEN_GROUP_SENTINEL),
             uploadFont: uploadFonts,
           },
     [readmeTouched, setReadmeTouched] =
@@ -2808,7 +1306,7 @@ function DesignSystemApp(): React.ReactElement {
           <SectionAddButton
             label={uiMessage("design-system.designSystemApp.add")}
             what={"Add shadow"}
-            onClick={() => showAddShadow()}
+            onClick={() => tokenFlow.openShadow()}
             data-testid={"ds-page-add-" + sectionId}
           />
         );
@@ -2821,7 +1319,7 @@ function DesignSystemApp(): React.ReactElement {
             label={uiMessage("design-system.designSystemApp.add")}
             what={"Add " + TOKEN_DEFAULTS[value].label}
             onClick={() =>
-              showAddScaleToken(
+              tokenFlow.openScale(
                 tokenScaleGroups(
                   value,
                   value === "spacing" ? view.spacing : view.corners,
@@ -3025,7 +1523,7 @@ function DesignSystemApp(): React.ReactElement {
                           intake={{
                             busy: intakeBusy,
                             kept: keptIntakeCount,
-                            refused: intakeSummary.refused,
+                            refused: refusedUploadNames,
                             save:
                               intakeBusy ||
                               saveState.status === "ready" ||
@@ -3223,7 +1721,7 @@ function DesignSystemApp(): React.ReactElement {
                     ? undefined
                     : () =>
                         setConfirmation({
-                          get title() { return uiMessage("design-system.designSystemApp.delete2", { value1: String(group.name), value2: String(group.styles.length > 0 ? (" and its " + String(group.styles.length) + group.styles.length === 1
+                          get title() { return uiMessage("design-system.designSystemApp.delete2", { subject: String(group.name), detail: String(group.styles.length > 0 ? (" and its " + String(group.styles.length) + group.styles.length === 1
                                   ? " style?"
                                   : " styles?") : ("?")) }); },
                           get confirmLabel() { return uiMessage("design-system.designSystemApp.delete"); },
@@ -3272,7 +1770,7 @@ function DesignSystemApp(): React.ReactElement {
                   ? undefined
                   : {
                       ...shadowEdit,
-                      add: showAddShadow,
+                      add: tokenFlow.openShadow,
                     }
               }
               head={sectionHead("shadow", "Shadows")}
@@ -3683,9 +2181,9 @@ function DesignSystemApp(): React.ReactElement {
           }
         : undefined,
     tokenDialogActions = {
-      addColor: () => showAddColor(),
-      addStyle: () => showAddTypeStyle(),
-      addShadow: () => showAddShadow(),
+      addColor: () => tokenFlow.openColor(),
+      addStyle: () => tokenFlow.openTypeStyle(),
+      addShadow: () => tokenFlow.openShadow(),
       uploadFont: () => uploadFonts?.(),
       uploadAsset: () => uploadAssets?.(),
     },
@@ -4016,15 +2514,11 @@ function DesignSystemApp(): React.ReactElement {
                           <AssetDialogElement key={assetDialogKey} {...assetDialogProps} />
                         );
                       })()
-                    : null, assetManager.overlay, assetGroupDialog, tokenDialog !== null ? (
+                    : null, assetManager.overlay, assetGroupDialog, tokenFlow.dialog !== null ? (
                     <AddTokenDialog
-                      req={tokenDialog.req}
-                      onClose={() => setTokenDialog(null)}
-                      onSubmit={(token: AddedToken) => {
-                        let land = tokenDialog.land;
-                        setTokenDialog(null);
-                        land(token);
-                      }}
+                      req={tokenFlow.dialog.req}
+                      onClose={tokenFlow.close}
+                      onSubmit={tokenFlow.submit}
                     />
                   ) : null, confirmation !== null ? (
                     <ConfirmRemoveDialog
