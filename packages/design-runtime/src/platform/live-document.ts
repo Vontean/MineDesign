@@ -9,6 +9,16 @@ import { DATABASE_ACCESS_DENIED_CODES, normalizeDatabaseError } from "./database
 import { normalizeDocumentTitle, normalizeNewDocumentTitle } from "./database-document-store";
 import { countRecordNulls, deepMerge, DELETE_DOCUMENT, diffRecord, dirname, isPlainRecord, mergeCompatibleRecords, removeNullValues, serializedDocumentBytes, structurallyEqual } from "./document-values";
 import { recordEdit } from "./edit-count";
+import { markDueWrites, selectNextWrite as selectNextWriteFrom } from "./live-document-write-order";
+import { createSaveStateReporter, formatSyncTime, pluralizeSyncCount } from "./live-document-save-state";
+import {
+  applyPendingPatch,
+  combinePendingPatches,
+  createEffectiveDocuments,
+  effectivePathValue as effectivePathValueOf,
+  rebaseReplacementPatch,
+  type PathState,
+} from "./live-document-effective";
 
 var liveDocumentFlushers: Dynamic;
 var LIVE_WRITE_DEBOUNCE_MS: Dynamic;
@@ -52,19 +62,6 @@ function createLiveDocumentTimers(): Dynamic {
         : undefined,
   };
 }
-function formatSyncTime(timestamp?: Dynamic): Dynamic {
-  try {
-    return new Date(timestamp).toLocaleTimeString([], {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  } catch {
-    return new Date(timestamp).toISOString().slice(11, 16);
-  }
-}
-function pluralizeSyncCount(count?: Dynamic, noun?: Dynamic): Dynamic {
-  return count + " " + noun + (count === 1 ? "" : "s");
-}
 function createLiveDocument(liveOptions?: Dynamic): Dynamic {
   let { codec: codec, db: database }: Dynamic = liveOptions,
     timers: Dynamic = liveOptions.timers ?? createLiveDocumentTimers(),
@@ -93,9 +90,7 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
       content: liveOptions.initialContent,
       comments: [],
     },
-    pathStates: Dynamic = new Map(),
-    effectiveDocuments: Dynamic = new Map(),
-    documentSizes: Dynamic = new Map(),
+    pathStates: Map<string, PathState> = new Map(),
     decomposedDocuments: Dynamic = new Map(),
     composeCarry: Dynamic,
     loadState: Dynamic = "loading",
@@ -139,14 +134,12 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
     cachedReconnectAvailabilityTimer: Dynamic,
     serializeWrites: Dynamic = false,
     lastAcknowledgedAt: Dynamic,
-    saveStatusTimer: Dynamic,
     lastWriteRetryAt: Dynamic,
     lastSyncedAt: Dynamic,
     lastError: Dynamic,
     hasSyncedWrite: Dynamic = false,
     disposed: Dynamic = false,
     contentListeners: Dynamic = new Set(),
-    saveListeners: Dynamic = new Set(),
     stuckListeners: Dynamic = new Set(),
     loadListeners: Dynamic = new Set();
   function ensurePathState(path?: Dynamic): Dynamic {
@@ -167,76 +160,20 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
       pathStates.set(path, entry));
     return entry;
   }
-  function applyPendingPatch(
-    baseDocument?: Dynamic,
-    pending?: Dynamic,
-    wasRemoved: Dynamic = false,
-  ): Dynamic {
-    if (pending === undefined) return baseDocument;
-    if (
-      pending.patch !== DELETE_DOCUMENT &&
-      !(baseDocument === undefined && !pending.replace && wasRemoved)
-    )
-      return pending.replace || baseDocument === undefined
-        ? pending.patch
-        : deepMerge(baseDocument, pending.patch);
-  }
+  // 本地视角的文档缓存；pathStates 由入口维护，这里只读取
+  const effective = createEffectiveDocuments(pathStates);
+  const effectiveDocuments: Map<string, Dynamic> = effective.documents;
   function effectivePathValue(path?: Dynamic): Dynamic {
-    let entry: Dynamic = pathStates.get(path);
-    if (entry === undefined) return;
-    let document: Dynamic =
-        entry.held && entry.heldBase !== undefined
-          ? (entry.heldBase ?? undefined)
-          : entry.server,
-      wasRemoved: Dynamic = entry.removedSeen && entry.server === undefined;
-    for (let acknowledgedWrite of entry.acked as Dynamic)
-      document = acknowledgedWrite.del
-        ? undefined
-        : applyPendingPatch(document, acknowledgedWrite, wasRemoved);
-    entry.inflightEchoed !== true &&
-      (document = applyPendingPatch(document, entry.inflight, wasRemoved));
-    document = applyPendingPatch(document, entry.pending, wasRemoved);
-    return document;
+    return effectivePathValueOf(pathStates.get(path));
   }
   function updateEffectiveDocument(path?: Dynamic): Dynamic {
-    let effective: Dynamic = effectivePathValue(path),
-      normalized: Dynamic =
-        effective === undefined
-          ? undefined
-          : removeNullValues(effective),
-      entry: Dynamic = effectiveDocuments.get(path);
-    return normalized === undefined
-      ? entry === undefined
-        ? false
-        : (effectiveDocuments.delete(path),
-          documentSizes.delete(path),
-          true)
-      : entry !== undefined && structurallyEqual(entry, normalized)
-        ? false
-        : (effectiveDocuments.set(path, normalized),
-          documentSizes.set(
-            path,
-            serializedDocumentBytes(normalized),
-          ),
-          true);
+    return effective.update(path);
   }
   function collectionContentSize(
     collectionPath?: Dynamic,
     excludePath?: Dynamic,
   ): Dynamic {
-    let bytes: Dynamic = 0;
-    for (let [path, documentBytes] of documentSizes as Dynamic) {
-      if (path === excludePath || dirname(path) !== collectionPath)
-        continue;
-      let entry: Dynamic = pathStates.get(path);
-      bytes +=
-        entry?.parked !== undefined
-          ? entry.server !== undefined
-            ? serializedDocumentBytes(entry.server)
-            : 0
-          : documentBytes;
-    }
-    return bytes;
+    return effective.collectionContentSize(collectionPath, excludePath);
   }
   function isLoaded(): Dynamic {
     return loadState === "live" || loadState === "cached";
@@ -249,136 +186,39 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
       pathStates.get(path)?.pending === undefined && (count += 1);
     return count + (needsDecompose ? 1 : 0);
   }
+  // 保存状态的事实一律惰性读取；变量声明在本函数更靠前的 let 里
+  const saveReporter = createSaveStateReporter(
+    {
+      canWrite,
+      readOnlyReason: (): Dynamic => liveOptions.readOnlyReason,
+      liveSyncEnded: (): Dynamic => liveSyncError !== undefined,
+      loadState: (): Dynamic => loadState,
+      reconnecting: (): Dynamic => reconnecting,
+      pendingWriteCount,
+      inFlightCount: (): Dynamic => inFlightWrites.size,
+      parkedWrites: (): Dynamic => parkedWrites,
+      collectionsWithPendingWritesCount: (): Dynamic => collectionsWithPendingWrites.size,
+      lastErrorCode: (): Dynamic => lastError?.code,
+      hasWriteBackoffError: (): Dynamic => hasWriteBackoffError,
+      firstRateLimitAt: (): Dynamic => firstRateLimitAt,
+      lastAcknowledgedAt: (): Dynamic => lastAcknowledgedAt,
+      lastSyncedAt: (): Dynamic => lastSyncedAt,
+      hasSyncedWrite: (): Dynamic => hasSyncedWrite,
+      now: (): Dynamic => timers.now(),
+      errorSurfaceDelayMs: (): Dynamic => LIVE_ERROR_SURFACE_DELAY_MS,
+      writeAckTimeoutMs: (): Dynamic => LIVE_WRITE_ACK_TIMEOUT_MS,
+      syncExplanation: (): Dynamic => LIVE_SYNC_EXPLANATION,
+    },
+    {
+      setTimeout: (run: () => void, delayMs: number): Dynamic => timers.setTimeout(run, delayMs),
+      clearTimeout: (timer: Dynamic): Dynamic => timers.clearTimeout(timer),
+    },
+  );
   function getSaveState(): Dynamic {
-    if (liveSyncError !== undefined)
-      return {
-        status: "readonly",
-        get message() { return uiMessage("canvas.liveDocument.liveSyncEndedForThisViewReloadToContinue"); },
-      };
-    if (loadState === "loading")
-      return {
-        status: "loading",
-        get message() { return uiMessage("canvas.liveDocument.loadingTheLatestContent"); },
-      };
-    if (loadState === "failed")
-      return {
-        status: "error",
-        get message() { return uiMessage("canvas.liveDocument.theLatestContentFailedToLoadClickToRetry"); },
-      };
-    if (loadState === "cached") {
-      if (!canWrite)
-        return {
-          status: "readonly",
-          get message() { return uiMessage("canvas.liveDocument.showingASavedCopyReconnecting"); },
-        };
-      if (
-        pendingWriteCount() === 0 &&
-        inFlightWrites.size === 0 &&
-        parkedWrites.size === 0
-      )
-        return collectionsWithPendingWrites.size > 0
-          ? {
-              status: "cached",
-              get message() { return uiMessage("canvas.liveDocument.showingYourSavedCopyYourChangesWillSyncWhenYouReBackOnline"); },
-            }
-          : {
-              status: "cached",
-              get message() { return uiMessage("canvas.liveDocument.showingYourSavedCopyReconnecting"); },
-            };
-    }
-    if (reconnecting)
-      return canWrite
-        ? {
-            status: "error",
-            get message() { return uiMessage("canvas.liveDocument.liveUpdatesStoppedReconnectingClickToRetryNowYourEditsAreKeptOnThisScreen"); },
-          }
-        : {
-            status: "readonly",
-            get message() { return uiMessage("canvas.liveDocument.liveUpdatesStoppedReconnecting"); },
-          };
-    if (!canWrite)
-      return {
-        status: "readonly",
-        message:
-          liveOptions.readOnlyReason ??
-          "Read-only. You\u2019re seeing live changes.",
-      };
-    let pendingCount: Dynamic = pendingWriteCount();
-    if (parkedWrites.size > 0) {
-      let [parkedReason]: Dynamic = parkedWrites.values(),
-        wasRefused: Dynamic = lastError?.code === "refused";
-      return {
-        status: "error",
-        message:
-          (parkedReason ?? "A change could not be stored.") +
-          (pendingCount > parkedWrites.size
-            ? " Other changes keep syncing."
-            : "") +
-          (wasRefused
-            ? " Shorten it to resume syncing this item."
-            : " Click to retry."),
-      };
-    }
-    return hasWriteBackoffError ||
-      (firstRateLimitAt !== undefined &&
-        timers.now() - firstRateLimitAt > LIVE_ERROR_SURFACE_DELAY_MS)
-      ? {
-          status: "error",
-          message:
-            (inFlightWrites.size > 0
-              ? "The store is unreachable. Retrying now."
-              : "The store is unreachable. Retrying shortly; click to retry now.") +
-            " Your edits are kept on this screen.",
-        }
-      : inFlightWrites.size > 0
-        ? {
-            status: "saving",
-            get message() { return uiMessage("canvas.liveDocument.syncing"); },
-          }
-        : pendingCount > 0
-          ? {
-              status: "dirty",
-              message:
-                pluralizeSyncCount(pendingCount, "change") + " waiting to sync.",
-            }
-          : collectionsWithPendingWrites.size > 0
-            ? lastAcknowledgedAt !== undefined &&
-              timers.now() - lastAcknowledgedAt < LIVE_WRITE_ACK_TIMEOUT_MS
-              ? ((saveStatusTimer ??= timers.setTimeout(
-                  (): Dynamic => {
-                    saveStatusTimer = undefined;
-                    notifySaveState();
-                  },
-                  lastAcknowledgedAt + LIVE_WRITE_ACK_TIMEOUT_MS - timers.now(),
-                )),
-                {
-                  status: "saving",
-                  get message() { return uiMessage("canvas.liveDocument.syncing"); },
-                })
-              : {
-                  status: "dirty",
-                  get message() { return uiMessage("canvas.liveDocument.changesSavedOnThisDeviceNotYetSynced"); },
-                }
-            : {
-                status: "ready",
-                message:
-                  (lastSyncedAt !== undefined
-                    ? "All changes synced \xB7 " + formatSyncTime(lastSyncedAt)
-                    : hasSyncedWrite
-                      ? "All changes synced"
-                      : "Synced") +
-                  ". " +
-                  LIVE_SYNC_EXPLANATION,
-              };
+    return saveReporter.current();
   }
-  let lastSaveStateKey: Dynamic = "";
   function notifySaveState(): Dynamic {
-    let saveState: Dynamic = getSaveState(),
-      nextSaveStateKey: Dynamic = saveState.status + "|" + (saveState.message ?? "");
-    if (nextSaveStateKey !== lastSaveStateKey) {
-      lastSaveStateKey = nextSaveStateKey;
-      for (let listener of [...saveListeners] as Dynamic) listener(saveState);
-    }
+    saveReporter.notify();
   }
   function notifyContent(isRemote?: Dynamic): Dynamic {
     for (let listener of [...contentListeners] as Dynamic)
@@ -542,73 +382,6 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
     validatePendingWrite(path, pathState);
     updateEffectiveDocument(path);
   }
-  function rebaseReplacementPatch(
-    baseDocument?: Dynamic,
-    replacement?: Dynamic,
-    remoteDocument?: Dynamic,
-  ): Dynamic {
-    let patch: Dynamic = diffRecord(baseDocument, replacement);
-    if (patch === null) return null;
-    let rebasedPatch: Dynamic = {
-      ...patch,
-    };
-    for (let key of Object.keys(rebasedPatch) as Dynamic) {
-      let baseValue: Dynamic = baseDocument[key],
-        localValue: Dynamic = replacement[key],
-        remoteValue: Dynamic = remoteDocument[key],
-        isStringList: Dynamic = (candidate?: Dynamic): Dynamic =>
-          Array.isArray(candidate) &&
-          candidate.every(
-            (item?: Dynamic): Dynamic => typeof item == "string",
-          );
-      if (!isStringList(baseValue) || !isStringList(localValue) || !isStringList(remoteValue))
-        continue;
-      let mergedList: Dynamic = [
-        ...remoteValue,
-        ...localValue.filter(
-          (item?: Dynamic): Dynamic =>
-            !baseValue.includes(item) && !remoteValue.includes(item),
-        ),
-      ];
-      structurallyEqual(mergedList, remoteValue)
-        ? delete rebasedPatch[key]
-        : (rebasedPatch[key] = mergedList);
-    }
-    return Object.keys(rebasedPatch).length === 0 ? null : rebasedPatch;
-  }
-  function combinePendingPatches(
-    earlierPatch?: Dynamic,
-    laterPatch?: Dynamic,
-    baseDocument?: Dynamic,
-  ): Dynamic {
-    let compatiblePatch: Dynamic = mergeCompatibleRecords(
-      earlierPatch,
-      laterPatch,
-    );
-    if (compatiblePatch !== null)
-      return {
-        patch: compatiblePatch,
-        replace: false,
-      };
-    if (baseDocument === undefined)
-      return {
-        patch: deepMerge(earlierPatch, laterPatch),
-        replace: false,
-      };
-    let combinedPatch: Dynamic = diffRecord(
-      baseDocument,
-      deepMerge(
-        deepMerge(baseDocument, earlierPatch),
-        laterPatch,
-      ),
-    );
-    return combinedPatch === null
-      ? undefined
-      : {
-          patch: combinedPatch,
-          replace: false,
-        };
-  }
   function queueDeletion(path?: Dynamic, queuedAt?: Dynamic): Dynamic {
     let pathState: Dynamic = ensurePathState(path);
     touchPendingState(pathState, queuedAt, pathState.pending === undefined);
@@ -666,22 +439,10 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
     writeFlushTimer !== undefined &&
       (timers.clearTimeout(writeFlushTimer), (writeFlushTimer = undefined));
     let now: Dynamic = timers.now(),
-      nextWakeAt: Dynamic = 1 / 0;
-    for (let pathState of pathStates.values() as Dynamic)
-      if (!(pathState.pending === undefined || pathState.parked !== undefined)) {
-        if (!pathState.due) {
-          let dueAt: Dynamic = Math.min(
-            pathState.lastAt + LIVE_WRITE_DEBOUNCE_MS,
-            pathState.firstAt + LIVE_WRITE_MAX_WAIT_MS,
-          );
-          dueAt <= now
-            ? (pathState.due = true)
-            : (nextWakeAt = Math.min(nextWakeAt, dueAt));
-        }
-        pathState.due &&
-          pathState.notBefore > now &&
-          (nextWakeAt = Math.min(nextWakeAt, pathState.notBefore));
-      }
+      nextWakeAt: number = markDueWrites(pathStates.values(), now, {
+        debounceMs: LIVE_WRITE_DEBOUNCE_MS,
+        maxWaitMs: LIVE_WRITE_MAX_WAIT_MS,
+      });
     writesPausedUntil > now && (nextWakeAt = Math.min(nextWakeAt, writesPausedUntil));
     flushDueWrites();
     nextWakeAt !== 1 / 0 &&
@@ -695,42 +456,13 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
       ));
     notifySaveState();
   }
-  function collectionWriteOrder(path?: Dynamic): Dynamic {
-    let collectionIndex: Dynamic = collections.indexOf(dirname(path));
-    return collectionIndex < 0 ? collections.length : collectionIndex;
-  }
   function selectNextWrite(): Dynamic {
-    let now: Dynamic = timers.now(),
-      nextPath: Dynamic,
-      nextDeleteRank: Dynamic = 0,
-      nextCollectionRank: Dynamic = 0,
-      nextSequence: Dynamic = 0;
-    for (let [path, pathState] of pathStates as Dynamic) {
-      if (
-        pathState.pending === undefined ||
-        !pathState.due ||
-        pathState.notBefore > now ||
-        pathState.parked !== undefined ||
-        inFlightWrites.has(path)
-      )
-        continue;
-      let deleteRank: Dynamic =
-          pathState.pending.patch === DELETE_DOCUMENT ? 1 : 0,
-        collectionIndex: Dynamic = collectionWriteOrder(path),
-        collectionRank: Dynamic = deleteRank
-          ? -collectionIndex
-          : collectionIndex + (path === metaPath ? 0.5 : 0);
-      (nextPath === undefined ||
-        deleteRank < nextDeleteRank ||
-        (deleteRank === nextDeleteRank &&
-          (collectionRank < nextCollectionRank ||
-            (collectionRank === nextCollectionRank && pathState.seq < nextSequence)))) &&
-        ((nextPath = path),
-        (nextDeleteRank = deleteRank),
-        (nextCollectionRank = collectionRank),
-        (nextSequence = pathState.seq));
-    }
-    return nextPath;
+    return selectNextWriteFrom(pathStates, {
+      now: timers.now(),
+      collections,
+      metaPath,
+      isInFlight: (path: string): Dynamic => inFlightWrites.has(path),
+    });
   }
   function shouldPauseWrites(): Dynamic {
     return (
@@ -1428,7 +1160,6 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
       recoveryTimer,
       cachedReconnectAvailabilityTimer,
       cachedReconnectTimer,
-      saveStatusTimer,
     ] as Dynamic)
       timer !== undefined && timers.clearTimeout(timer);
     writeFlushTimer =
@@ -1439,8 +1170,8 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
       recoveryTimer =
       cachedReconnectAvailabilityTimer =
       cachedReconnectTimer =
-      saveStatusTimer =
         undefined;
+    saveReporter.clearTimer();
   }
   let pendingServerChanges: Dynamic = [],
     serverFlushScheduled: Dynamic = false,
@@ -2342,10 +2073,7 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
         });
     },
     documentBytes(): Dynamic {
-      let totalBytes: Dynamic = 0;
-      for (let bytes of documentSizes.values() as Dynamic)
-        totalBytes += bytes;
-      return totalBytes;
+      return effective.totalBytes();
     },
     async save(): Promise<Dynamic> {
       (loadState === "failed" ||
@@ -2364,8 +2092,7 @@ function createLiveDocument(liveOptions?: Dynamic): Dynamic {
       return (): Dynamic => contentListeners.delete(listener);
     },
     subscribeSave(listener: Dynamic): Dynamic {
-      saveListeners.add(listener);
-      return (): Dynamic => saveListeners.delete(listener);
+      return saveReporter.subscribe(listener);
     },
     subscribeStuck(listener: Dynamic): Dynamic {
       stuckListeners.add(listener);

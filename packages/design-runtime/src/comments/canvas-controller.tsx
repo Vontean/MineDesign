@@ -5,40 +5,35 @@ import {
 } from "../runtime-types";
 import { prefersDragGesture, watchPointerRelease } from "../canvas/image-decode-scheduler";
 import { buttonKeyboardActivation } from "../canvas/keyboard-activation";
-import { isCanvasPageMatch } from "../canvas/page-operations";
 import { isArtboardInViewport, useViewport } from "../canvas/viewport-store";
-import { parseDesignCommentAnchor, serializeDesignCommentAnchor, stableAnchorHash } from "./anchor-codec";
+import { parseDesignCommentAnchor, serializeDesignCommentAnchor } from "./anchor-codec";
 import { CommentAreaOutline, react_mi, useCommentAreaMarquee, usePendingCommentArea } from "./area-drawing";
-import { artboardsCoveredByCommentArea, commentAreaHandlePoint, commentAreaWithinArtboardContent, createCommentOperationToken, denormalizeCommentArea, describeCommentAreaLocation, nearestCommentAreaCorner, normalizeCommentArea, unionCommentRects } from "./area-geometry";
+import { artboardsCoveredByCommentArea, commentAreaHandlePoint, commentAreaWithinArtboardContent, createCommentOperationToken, describeCommentAreaLocation, nearestCommentAreaCorner, normalizeCommentArea, unionCommentRects } from "./area-geometry";
+import { commentRectsEqual, commentScopeKey, createCommentAnchorResolver, createCommentBoardLookup } from "./anchor-resolution";
+import { useCommentElementRects } from "./element-rects";
 import { bindCustomAnchors } from "./host-controller";
+import { useCommentModeShortcuts } from "./mode-shortcuts";
+import { canvasToLayerPoint as toLayerPoint, commentAreaOutline, commentCardTargets, commentRevealTarget, computeThreadPlacements, revealFallbackPoint } from "./thread-placement";
 import { clampCommentAreaToViewport, commentAnchorShortLabel, commentArtboardAreaDetail, commentArtboardAreaShortLabel, commentArtboardElementDetail, commentCanvasPointDetail, commentObjectAreaDetail, commentObjectAreaShortLabel, commentObjectPointDetail, commentSurfaceAriaLabel, commentTargetKeyboardHint, defaultArtboardCommentPoint, describeCommentElement, isCommentTargetEvent } from "./labels";
-import { moveObjectCommentArea, normalizeObjectCommentArea, normalizeObjectCommentPoint, objectCommentAreaHandlePoint, objectCommentAreaRect, objectCommentPoint, objectsCoveredByCommentArea, pointWithinCommentObject } from "./object-geometry";
+import { moveObjectCommentArea, normalizeObjectCommentArea, normalizeObjectCommentPoint, objectCommentAreaRect, objectsCoveredByCommentArea, pointWithinCommentObject } from "./object-geometry";
 import { CommentPointer, commentPointerCursor } from "./pointer";
 import { CommentCardLayer, isCommentCardEvent } from "./comment-cards";
 import { load_react_jsx_runtime } from "../dependencies";
 import { commentModePausedMessage } from "../editor/accessibility/announcements";
 import { announce } from "../editor/accessibility/announcer";
-import { blockingOverlaySelector } from "../editor/chrome/overlay-state";
-import { isEditingInputTarget } from "../editor/keyboard/find";
-import { shouldKeepLocalKeyboardEvent } from "../editor/keyboard/paste";
-import { pickerCommentAt, pickerCommentIn, pickerCommentRects } from "../editor/picker/bridge";
-import { hasBlockingEditorOverlay } from "../editor/text/typing-target";
+import { pickerCommentAt, pickerCommentIn } from "../editor/picker/bridge";
 import { toolbarOverlayHeight } from "../editor/toolbar/layout";
 import { toModuleNamespace } from "../module-helpers";
 import { rotatedAnnotationBounds } from "../platform/file-content";
 import { createPreviewHandle } from "../preview/evaluation";
 
 var jsx_mg: Dynamic;
-var commentAnchorRefreshIntervalMs: Dynamic;
-var commentPlacementInsetPixels: Dynamic;
 var commentRevealTimeoutMs: Dynamic;
 var canvasCommentScopeKey: Dynamic;
 var commentPointerStrokeInset: Dynamic;
 var commentPointerMovementThreshold: Dynamic;
 var commentClickMovementThresholdPixels: Dynamic;
 var maxCommentAreaElementLabels: Dynamic;
-var commentScopeKey: Dynamic;
-var commentRectsEqual: Dynamic;
 function useCanvasComments(hookOptions?: Dynamic): Dynamic {
   let {
       manifest: manifest,
@@ -79,18 +74,7 @@ function useCanvasComments(hookOptions?: Dynamic): Dynamic {
     [threads, setThreads]: Dynamic = (0, react_mi.useState)([]),
     threadsRef: Dynamic = (0, react_mi.useRef)(threads);
   threadsRef.current = threads;
-  let pageRectsRef: Dynamic = (0, react_mi.useRef)(new Map()),
-    [, setPageRectVersion]: Dynamic = (0, react_mi.useState)(0),
-    setPageRect: Dynamic = (file?: Dynamic, rect?: Dynamic): Dynamic => {
-      let previousRect: Dynamic = pageRectsRef.current.get(file) ?? null;
-      rect
-        ? pageRectsRef.current.set(file, rect)
-        : pageRectsRef.current.delete(file);
-      commentRectsEqual(previousRect, rect) ||
-        setPageRectVersion((version?: Dynamic): Dynamic => version + 1);
-    },
-    [elementRects, setElementRects]: Dynamic = (0, react_mi.useState)(new Map()),
-    [hoverRect, setHoverRect]: Dynamic = (0, react_mi.useState)(null),
+  let [hoverRect, setHoverRect]: Dynamic = (0, react_mi.useState)(null),
     // MineDesign：点中元素后输入评论期间，继续框住这个元素（同 Codex），输入框关掉再放开
     [mdnHeldRect, mdnSetHeldRect]: Dynamic = (0, react_mi.useState)(
       null,
@@ -133,38 +117,7 @@ function useCanvasComments(hookOptions?: Dynamic): Dynamic {
             ? parseDesignCommentAnchor(foundThread.anchor)
             : null;
         if (!parsedAnchor) return;
-        let revealTarget: Dynamic =
-          parsedAnchor.kind === "el" ||
-          parsedAnchor.kind === "artboard" ||
-          parsedAnchor.kind === "area"
-            ? {
-                kind: "artboard",
-                match: (file?: Dynamic): Dynamic =>
-                  stableAnchorHash(file) === parsedAnchor.fileHash,
-              }
-            : parsedAnchor.kind === "note" || parsedAnchor.kind === "notearea"
-              ? {
-                  kind: "note",
-                  match: (noteId?: Dynamic): Dynamic =>
-                    stableAnchorHash(noteId) === parsedAnchor.idHash,
-                }
-              : parsedAnchor.kind === "boards"
-                ? {
-                    kind: "artboard",
-                    match: (file?: Dynamic): Dynamic =>
-                      parsedAnchor.boards.some(
-                        (board?: Dynamic): Dynamic =>
-                          board.fileHash ===
-                          stableAnchorHash(file),
-                      ),
-                    boards: true,
-                  }
-                : {
-                    kind: "page",
-                    match: (pageId?: Dynamic): Dynamic =>
-                      stableAnchorHash(pageId) ===
-                      parsedAnchor.pageHash,
-                  };
+        let revealTarget: Dynamic = commentRevealTarget(parsedAnchor);
         value.current.onReveal?.(revealTarget) !== false && setRevealThreadId(threadId);
       },
     }).then((controller?: Dynamic): Dynamic => {
@@ -183,436 +136,57 @@ function useCanvasComments(hookOptions?: Dynamic): Dynamic {
       value.current.onController?.(null);
     };
   }, []);
-  let exitCommentMode: Dynamic = (): Dynamic => {
-    let current: Dynamic = controllerRef.current;
-    typeof current?.exitMode == "function" && current.exitMode();
-  };
-  (0, react_mi.useEffect)((): Dynamic => {
-    if (!isCommentMode) return;
-    let handlePointerDown: Dynamic = (event?: Dynamic): Dynamic => {
-      if (event.button !== 0) return;
-      let target: Dynamic =
-        event.target instanceof Element ? event.target : null;
-      target?.closest(
-        '[data-mega-chrome="comments"],[data-view-control],[data-mc-scrim]',
-      ) ||
-        (target?.closest(blockingOverlaySelector) &&
-          (document as Dynamic).querySelector(
-            '[data-view-control] [aria-expanded="true"]',
-          )) ||
-        exitCommentMode();
-    };
-    (document as Dynamic).addEventListener("pointerdown", handlePointerDown, true);
-    return (): Dynamic =>
-      (document as Dynamic).removeEventListener(
-        "pointerdown",
-        handlePointerDown,
-        true,
-      );
-  }, [isCommentMode]);
-  (0, react_mi.useEffect)((): Dynamic => {
-    isCommentMode && armedTool != null && armedTool !== "select" && exitCommentMode();
-  }, [armedTool]);
-  (0, react_mi.useEffect)((): Dynamic => {
-    if (!hasController) return;
-    let toggleCommentMode: Dynamic = (): Dynamic => {
-        let current: Dynamic = controllerRef.current;
-        return typeof current?.enterMode != "function" ||
-          value.current.keyHeld ||
-          hasBlockingEditorOverlay()
-          ? false
-          : (isCommentModeRef.current ? current.exitMode?.() : current.enterMode(),
-            true);
-      },
-      handleCommentKeyDown: Dynamic = (event?: Dynamic): Dynamic => {
-        (event.key !== "c" && event.key !== "C") ||
-          event.shiftKey ||
-          event.metaKey ||
-          event.ctrlKey ||
-          event.altKey ||
-          event.defaultPrevented ||
-          event.repeat ||
-          event.isComposing ||
-          isEditingInputTarget(event.target) ||
-          shouldKeepLocalKeyboardEvent(event) ||
-          (event.target instanceof Element &&
-            event.target.closest("[data-mega-selection-strip]") !== null) ||
-          (toggleCommentMode() && event.preventDefault());
-      },
-      handleCommentKeyEvent: Dynamic = (): Dynamic => {
-        toggleCommentMode();
-      };
-    (window as Dynamic).addEventListener("keydown", handleCommentKeyDown);
-    (window as Dynamic).addEventListener("canvas-comment-key", handleCommentKeyEvent);
-    return (): Dynamic => {
-      (window as Dynamic).removeEventListener("keydown", handleCommentKeyDown);
-      (window as Dynamic).removeEventListener(
-        "canvas-comment-key",
-        handleCommentKeyEvent,
-      );
-    };
-  }, [hasController]);
-  let findArtboardByFile: Dynamic = (file?: Dynamic): Dynamic =>
-      manifest.artboards.find(
-        (artboard?: Dynamic): Dynamic => artboard.file === file,
-      ) ?? null,
-    findFileByHash: Dynamic = (hash?: Dynamic): Dynamic =>
-      manifest.artboards.find(
-        (artboard?: Dynamic): Dynamic =>
-          stableAnchorHash(artboard.file) === hash,
-      )?.file ?? null,
+  useCommentModeShortcuts({
+    isCommentMode,
+    armedTool,
+    hasController,
+    controllerRef,
+    isCommentModeRef,
+    optionsRef: value,
+  });
+  let boardLookup: Dynamic = createCommentBoardLookup({ manifest, fullscreenFile, fullscreenFrame }),
+    {
+      findArtboardByFile,
+      findFileByHash,
+      findNoteByHash,
+      findNoteById,
+      isFileVisible,
+      getArtboardFrame,
+    }: Dynamic = boardLookup,
     findFileByHashRef: Dynamic = (0, react_mi.useRef)(findFileByHash);
   findFileByHashRef.current = findFileByHash;
-  let findNoteByHash: Dynamic = (hash?: Dynamic): Dynamic =>
-      (manifest.annotations ?? []).find(
-        (note?: Dynamic): Dynamic =>
-          stableAnchorHash(note.id) === hash,
-      ) ?? null,
-    findNoteById: Dynamic = (noteId?: Dynamic): Dynamic =>
-      (manifest.annotations ?? []).find(
-        (note?: Dynamic): Dynamic => note.id === noteId,
-      ) ?? null,
-    isFileVisible: Dynamic = (file?: Dynamic): Dynamic =>
-      fullscreenFile == null || fullscreenFile === file,
-    getArtboardFrame: Dynamic = (artboard?: Dynamic): Dynamic =>
-      artboard.file === fullscreenFile && fullscreenFrame
-        ? fullscreenFrame
-        : {
-            x: artboard.x,
-            y: artboard.y,
-            w: artboard.w,
-            h: artboard.h,
-          };
-  (0, react_mi.useLayoutEffect)(
-    (): Dynamic => (): Dynamic =>
-      [...pageRectsRef.current.keys()].forEach(
-        (file?: Dynamic): Dynamic => setPageRect(file, null),
-      ),
-    [isCommentMode, fullscreenFile],
-  );
-  (0, react_mi.useEffect)((): Dynamic => {
-    if (!isCommentMode) return;
-    let flag: Dynamic = false,
-      refreshTimer: Dynamic,
-      refreshElementRects: Dynamic = async (): Promise<Dynamic> => {
-        let entries: Dynamic = new Map();
-        fullscreenFile != null && entries.set(fullscreenFile, new Map());
-        for (let thread of threadsRef.current as Dynamic) {
-          let parsedAnchor: Dynamic = parseDesignCommentAnchor(
-              thread.anchor,
-            ),
-            isPixelArtboard: Dynamic =
-              parsedAnchor?.kind === "artboard" && "px" in parsedAnchor;
-          if (
-            !parsedAnchor ||
-            !(
-              parsedAnchor.kind === "el" ||
-              (parsedAnchor.kind === "area" && parsedAnchor.path != null) ||
-              isPixelArtboard
-            )
-          )
-            continue;
-          let file: Dynamic = findFileByHashRef.current(parsedAnchor.fileHash);
-          if (file == null) continue;
-          if (isPixelArtboard) {
-            entries.has(file) || entries.set(file, new Map());
-            continue;
-          }
-          let entry: Dynamic = entries.get(file);
-          entry || entries.set(file, (entry = new Map()));
-          entry.set(commentScopeKey(parsedAnchor.path, parsedAnchor.tid, parsedAnchor.fp), {
-            path: parsedAnchor.path,
-            tid: parsedAnchor.tid,
-            fp: parsedAnchor.fp,
-          });
-        }
-        let measuredRects: Dynamic = new Map();
-        await Promise.all(
-          [...entries].map(
-            async ([file, scopes]: Dynamic): Promise<Dynamic> => {
-              let entry: Dynamic =
-                  value.current.handlesRef.current.get(file),
-                handle: Dynamic =
-                  entry?.isReady() && !entry.isBlocked()
-                    ? createPreviewHandle(
-                        entry.previewFrameRef.current,
-                      )
-                    : null,
-                items: Dynamic = [...scopes.values()],
-                rects: Dynamic = handle
-                  ? await pickerCommentRects(handle, [
-                      {
-                        page: true,
-                      },
-                      ...items,
-                    ])
-                  : null;
-              rects &&
-                measuredRects.set(
-                  file,
-                  new Map(
-                    items.map(
-                      (scope?: Dynamic, index?: Dynamic): Dynamic => [
-                        commentScopeKey(scope.path, scope.tid, scope.fp),
-                        rects[index + 1] ?? null,
-                      ],
-                    ),
-                  ),
-                );
-              flag || setPageRect(file, rects?.[0] ?? null);
-            },
-          ),
-        );
-        !flag &&
-          ([...pageRectsRef.current.keys()]
-            .filter((file?: Dynamic): Dynamic => !entries.has(file))
-            .forEach((file?: Dynamic): Dynamic => setPageRect(file, null)),
-          setElementRects(
-            (previous?: Dynamic): Dynamic => new Map([...previous, ...measuredRects]),
-          ),
-          (refreshTimer = setTimeout((): Dynamic => {
-            refreshElementRects();
-          }, commentAnchorRefreshIntervalMs)));
-      };
-    refreshElementRects();
-    return (): Dynamic => {
-      flag = true;
-      clearTimeout(refreshTimer);
-    };
-  }, [isCommentMode, threads, fullscreenFile]);
-  let resolveAreaRect: Dynamic = (source?: Dynamic): Dynamic => {
-      if (source.kind === "notearea") {
-        let note: Dynamic =
-          fullscreenFile == null ? findNoteByHash(source.idHash) : null;
-        return note
-          ? rotatedAnnotationBounds(
-              note,
-              objectCommentAreaRect(
-                note,
-                hookOptions.annBox(note),
-                source.box,
-              ),
-            )
-          : null;
-      }
-      if (source.kind === "boards") {
-        if (fullscreenFile != null) return null;
-        let boardRects: Dynamic = source.boards.flatMap(
-            (board?: Dynamic): Dynamic => {
-              let boardFile: Dynamic = findFileByHash(board.fileHash),
-                boardArtboard: Dynamic =
-                  boardFile == null ? null : findArtboardByFile(boardFile);
-              return boardArtboard
-                ? [
-                    {
-                      x: boardArtboard.x,
-                      y: boardArtboard.y,
-                      w: boardArtboard.w,
-                      h: boardArtboard.h,
-                    },
-                  ]
-                : [];
-            },
-          ),
-          boardsUnion: Dynamic = unionCommentRects(boardRects);
-        return boardsUnion
-          ? denormalizeCommentArea(boardsUnion, source.box)
-          : null;
-      }
-      if (source.kind !== "area") return null;
-      let file: Dynamic = findFileByHash(source.fileHash),
-        artboard: Dynamic = file == null ? null : findArtboardByFile(file);
-      if (!artboard || file == null || !isFileVisible(file)) return null;
-      if (source.path == null)
-        return denormalizeCommentArea(
-          getArtboardFrame(artboard),
-          source.box,
-        );
-      let elementRect: Dynamic = elementRects
-        .get(file)
-        ?.get(commentScopeKey(source.path, source.tid, source.fp));
-      if (elementRect !== undefined)
-        return elementRect === null
-          ? null
-          : artboardRectToCanvas(
-              file,
-              denormalizeCommentArea(elementRect, source.box),
-            );
-    },
-    resolveAnchorPoint: Dynamic = (source?: Dynamic): Dynamic => {
-      if (source.kind === "canvas") {
-        let firstPageId: Dynamic = manifest.pages?.[0]?.id ?? "",
-          isCurrentPage: Dynamic = isCanvasPageMatch(
-            (pageId?: Dynamic): Dynamic =>
-              source.pageHash === stableAnchorHash(pageId),
-            pageKey === "" ? firstPageId : pageKey,
-            firstPageId,
-          );
-        return fullscreenFile == null && isCurrentPage
-          ? {
-              x: source.x,
-              y: source.y,
-            }
-          : null;
-      }
-      if (source.kind === "note") {
-        if (fullscreenFile != null) return null;
-        let note: Dynamic = findNoteByHash(source.idHash);
-        if (!note) return null;
-        if (source.fx != null && source.fy != null)
-          return objectCommentPoint(
-            note,
-            hookOptions.annBox(note),
-            {
-              fx: source.fx,
-              fy: source.fy,
-            },
-          );
-        let noteBounds: Dynamic = rotatedAnnotationBounds(
-          note,
-          hookOptions.annBox(note),
-        );
-        return {
-          x: noteBounds.x + noteBounds.w / 2,
-          y: noteBounds.y + 12,
-        };
-      }
-      if (source.kind === "notearea") {
-        let note: Dynamic =
-          fullscreenFile == null ? findNoteByHash(source.idHash) : null;
-        return note
-          ? objectCommentAreaHandlePoint(
-              note,
-              hookOptions.annBox(note),
-              source.box,
-            )
-          : null;
-      }
-      if (source.kind === "area" || source.kind === "boards") {
-        let areaRect: Dynamic = resolveAreaRect(source);
-        if (areaRect)
-          return commentAreaHandlePoint(
-            areaRect,
-            source.box.corner,
-          );
-        if (areaRect === null && source.kind === "area") return null;
-        let boardHashes: Dynamic =
-          source.kind === "area"
-            ? [source.fileHash]
-            : source.boards.map((board?: Dynamic): Dynamic => board.fileHash);
-        for (let boardHash of boardHashes as Dynamic) {
-          let boardFile: Dynamic = findFileByHash(boardHash),
-            boardArtboard: Dynamic = boardFile == null ? null : findArtboardByFile(boardFile);
-          if (!boardArtboard || !isFileVisible(boardArtboard.file)) continue;
-          let boardFrame: Dynamic = getArtboardFrame(boardArtboard);
-          return {
-            x: boardFrame.x + boardFrame.w / 2,
-            y: boardFrame.y + boardFrame.h / 2,
-          };
-        }
-        return null;
-      }
-      let file: Dynamic = findFileByHash(source.fileHash),
-        artboard: Dynamic = file == null ? null : findArtboardByFile(file);
-      if (!artboard || file == null || !isFileVisible(file)) return null;
-      let frame: Dynamic = getArtboardFrame(artboard);
-      if (source.kind === "artboard" && !("px" in source))
-        return {
-          x: frame.x + source.fx * frame.w,
-          y: frame.y + source.fy * frame.h,
-        };
-      if (source.kind === "artboard") {
-        let entry: Dynamic = pageRectsRef.current.get(file);
-        if (!entry && file === fullscreenFile)
-          return {
-            x: frame.x + frame.w / 2,
-            y: frame.y + frame.h / 2,
-          };
-        let pixelX: Dynamic =
-            (entry?.x ?? 0) +
-            (entry
-              ? Math.min(
-                  source.px,
-                  Math.max(0, entry.w - commentPlacementInsetPixels),
-                )
-              : source.px),
-          pixelY: Dynamic =
-            (entry?.y ?? 0) +
-            (entry
-              ? Math.min(
-                  source.py,
-                  Math.max(0, entry.h - commentPlacementInsetPixels),
-                )
-              : source.py);
-        return pixelX < 0 ||
-          pixelY < 0 ||
-          pixelX > frame.w ||
-          pixelY > frame.h
-          ? null
-          : {
-              x: frame.x + pixelX,
-              y: frame.y + pixelY,
-            };
-      }
-      let elementRect: Dynamic = elementRects
-        .get(file)
-        ?.get(commentScopeKey(source.path, source.tid, source.fp));
-      if (elementRect === undefined)
-        return {
-          x: frame.x + frame.w / 2,
-          y: frame.y + frame.h / 2,
-        };
-      if (elementRect === null) return null;
-      let localX: Dynamic = elementRect.x + source.fx * elementRect.w,
-        localY: Dynamic = elementRect.y + source.fy * elementRect.h;
-      return localX < 0 ||
-        localY < 0 ||
-        localX > frame.w ||
-        localY > frame.h
-        ? null
-        : {
-            x: frame.x + localX,
-            y: frame.y + localY,
-          };
-    },
-    canvasToLayerPoint: Dynamic = (point?: Dynamic): Dynamic => ({
-      x: (point.x - viewport.x) * viewport.scale,
-      y: (point.y - viewport.y) * viewport.scale,
-    });
+  // 评论模式下定时重测元素与页面矩形；状态与定时器都归该 Hook 所有
+  let { elementRects, pageRects, setPageRect }: Dynamic = useCommentElementRects({
+    isCommentMode,
+    fullscreenFile,
+    threads,
+    threadsRef,
+    findFileByHashRef,
+    getHandlesRef: (): Dynamic => value.current.handlesRef,
+  });
+  let { resolveAreaRect, resolveAnchorPoint, artboardRectToCanvas }: Dynamic = createCommentAnchorResolver({
+      manifest,
+      pageKey,
+      fullscreenFile,
+      lookup: boardLookup,
+      annBox: (note?: Dynamic): Dynamic => hookOptions.annBox(note),
+      elementRects,
+      pageRects,
+    }),
+    canvasToLayerPoint: Dynamic = (point?: Dynamic): Dynamic => toLayerPoint(point, viewport);
   (0, react_mi.useLayoutEffect)((): Dynamic => {
     let current: Dynamic = controllerRef.current,
       surfaceElement: Dynamic = surfaceRef.current;
     if (!isCommentMode || !current || !surfaceElement) return;
-    let bounds: Dynamic = surfaceElement.getBoundingClientRect(),
-      toolbarHeight: Dynamic = toolbarOverlayHeight(surfaceElement),
-      state: Dynamic = {};
-    for (let thread of threads as Dynamic) {
-      let parsedAnchor: Dynamic = parseDesignCommentAnchor(
-          thread.anchor,
-        ),
-        anchorPoint: Dynamic = parsedAnchor ? resolveAnchorPoint(parsedAnchor) : null;
-      if (!anchorPoint) continue;
-      let layerPoint: Dynamic = canvasToLayerPoint(anchorPoint),
-        innerWidth: Dynamic = (window as Dynamic).innerWidth,
-        innerHeight: Dynamic = (window as Dynamic).innerHeight,
-        clientX: Dynamic =
-          layerPoint.x < 0
-            ? layerPoint.x - innerWidth
-            : layerPoint.x > bounds.width
-              ? layerPoint.x + innerWidth
-              : bounds.left + layerPoint.x,
-        clientY: Dynamic =
-          layerPoint.y < toolbarHeight
-            ? layerPoint.y - innerHeight
-            : layerPoint.y > bounds.height
-              ? layerPoint.y + innerHeight
-              : bounds.top + layerPoint.y;
-      state[thread.id] = {
-        x: Math.round(clientX + (window as Dynamic).scrollX),
-        y: Math.round(clientY + (window as Dynamic).scrollY),
-      };
-    }
-    let placedJson: Dynamic = JSON.stringify(state);
+    let state: Dynamic = computeThreadPlacements({
+        threads,
+        resolveAnchorPoint,
+        viewport,
+        bounds: surfaceElement.getBoundingClientRect(),
+        toolbarHeight: toolbarOverlayHeight(surfaceElement),
+        window: window as Dynamic,
+      }),
+      placedJson: Dynamic = JSON.stringify(state);
     placedJson !== lastPlacedJsonRef.current &&
       ((lastPlacedJsonRef.current = placedJson), current.placed(state));
   });
@@ -630,25 +204,7 @@ function useCanvasComments(hookOptions?: Dynamic): Dynamic {
       return;
     }
     let targetPoint: Dynamic = resolveAnchorPoint(parsedAnchor);
-    if (
-      !targetPoint &&
-      (parsedAnchor.kind === "el" ||
-        parsedAnchor.kind === "artboard" ||
-        parsedAnchor.kind === "area" ||
-        parsedAnchor.kind === "boards")
-    ) {
-      let boardFile: Dynamic = findFileByHash(
-          parsedAnchor.kind === "boards"
-            ? (parsedAnchor.boards[0]?.fileHash ?? "")
-            : parsedAnchor.fileHash,
-        ),
-        artboard: Dynamic = boardFile == null ? null : findArtboardByFile(boardFile);
-      artboard &&
-        (targetPoint = {
-          x: artboard.x + artboard.w / 2,
-          y: artboard.y + artboard.h / 2,
-        });
-    }
+    targetPoint || (targetPoint = revealFallbackPoint(parsedAnchor, boardLookup));
     if (!targetPoint || (setRevealThreadId(null), fullscreenFile != null)) return;
     let toolbarHeight: Dynamic = toolbarOverlayHeight(current),
       viewWidth: Dynamic = current.clientWidth || 1,
@@ -741,23 +297,6 @@ function useCanvasComments(hookOptions?: Dynamic): Dynamic {
       return handle
         ? pickerCommentAt(handle, localX, localY, timeoutMs)
         : null;
-    },
-    artboardRectToCanvas: Dynamic = (file?: Dynamic, rect?: Dynamic): Dynamic => {
-      let artboard: Dynamic = findArtboardByFile(file);
-      if (!artboard) return null;
-      let frame: Dynamic = getArtboardFrame(artboard),
-        left: Dynamic = Math.max(0, rect.x),
-        top: Dynamic = Math.max(0, rect.y),
-        right: Dynamic = Math.min(frame.w, rect.x + rect.w),
-        bottom: Dynamic = Math.min(frame.h, rect.y + rect.h);
-      return right <= left || bottom <= top
-        ? null
-        : {
-            x: frame.x + left,
-            y: frame.y + top,
-            w: right - left,
-            h: bottom - top,
-          };
     },
     hoverProbeRef: Dynamic = (0, react_mi.useRef)({
       busy: false,
@@ -2043,53 +1582,25 @@ function useCanvasComments(hookOptions?: Dynamic): Dynamic {
         py: (frame.y + fy * frame.h - viewport.y) * viewport.scale,
       };
     })(),
-    areaOutline: Dynamic = ((): Dynamic => {
-      if (marqueeState) {
-        let pinX: Dynamic = (marqueeState.pin.x - viewport.x) * viewport.scale,
-          pinY: Dynamic = (marqueeState.pin.y - viewport.y) * viewport.scale,
-          { x1: x1, y1: y1 }: Dynamic = marqueeState;
-        return {
-          x: Math.min(pinX, x1),
-          y: Math.min(pinY, y1),
-          w: Math.abs(x1 - pinX),
-          h: Math.abs(y1 - pinY),
-          ox: marqueeState.resizing ? x1 : pinX,
-          oy: marqueeState.resizing ? y1 : pinY,
-        };
-      }
-      return activeThreadAreaRect
-        ? {
-            x: (activeThreadAreaRect.x - viewport.x) * viewport.scale,
-            y: (activeThreadAreaRect.y - viewport.y) * viewport.scale,
-            w: activeThreadAreaRect.w * viewport.scale,
-            h: activeThreadAreaRect.h * viewport.scale,
-            deg: activeThreadAreaRect.deg,
-          }
-        : drawnAreaRect
-          ? {
-              x: (drawnAreaRect.x - viewport.x) * viewport.scale,
-              y: (drawnAreaRect.y - viewport.y) * viewport.scale,
-              w: drawnAreaRect.w * viewport.scale,
-              h: drawnAreaRect.h * viewport.scale,
-              ox: (drawnAreaRect.ox - viewport.x) * viewport.scale,
-              oy: (drawnAreaRect.oy - viewport.y) * viewport.scale,
-            }
-          : null;
-    })();
+    areaOutline: Dynamic = commentAreaOutline({
+      marquee: marqueeState,
+      activeThreadAreaRect,
+      drawnAreaRect,
+      viewport,
+    });
   let mdnTargetRect: Dynamic =
     hoverRect ?? (isComposing && !drawnAreaRect ? mdnHeldRect : null);
   // MineDesign：评论卡片的目标点与编号圆点同一位置，换成本图层的屏幕坐标；只给可视区域内的
   let mdnCardTop: Dynamic = surfaceRef.current
       ? toolbarOverlayHeight(surfaceRef.current)
       : 0,
-    mdnCardTargets: Dynamic = threads.flatMap((thread?: Dynamic): Dynamic => {
-      let anchor: Dynamic = parseDesignCommentAnchor(thread.anchor),
-        world: Dynamic = anchor ? resolveAnchorPoint(anchor) : null;
-      if (!world) return [];
-      let point: Dynamic = canvasToLayerPoint(world);
-      return point.x < 0 || point.x > layerWidth || point.y < mdnCardTop || point.y > layerHeight
-        ? []
-        : [{ id: thread.id, x: point.x, y: point.y }];
+    mdnCardTargets: Dynamic = commentCardTargets({
+      threads,
+      resolveAnchorPoint,
+      viewport,
+      layerWidth,
+      layerHeight,
+      cardTop: mdnCardTop,
     });
   return (
     <div
@@ -2297,14 +1808,10 @@ function useCanvasComments(hookOptions?: Dynamic): Dynamic {
 }
 export {
   canvasCommentScopeKey,
-  commentAnchorRefreshIntervalMs,
   commentClickMovementThresholdPixels,
-  commentPlacementInsetPixels,
   commentPointerMovementThreshold,
   commentPointerStrokeInset,
-  commentRectsEqual,
   commentRevealTimeoutMs,
-  commentScopeKey,
   jsx_mg,
   maxCommentAreaElementLabels,
   useCanvasComments,
@@ -2315,31 +1822,11 @@ export function installCommentsCanvasController(): () => void {
       load_react_jsx_runtime(),
       1,
     );
-    commentAnchorRefreshIntervalMs = 1e3;
-    commentPlacementInsetPixels = 12;
     commentRevealTimeoutMs = 1500;
     canvasCommentScopeKey = "\0canvas";
     commentPointerStrokeInset = 2;
     commentPointerMovementThreshold = 8;
     commentClickMovementThresholdPixels = 4;
     maxCommentAreaElementLabels = 8;
-    commentScopeKey = (
-      path?: Dynamic,
-      templateId?: Dynamic,
-      fingerprint?: Dynamic,
-    ): Dynamic =>
-      String(templateId) +
-      (fingerprint ?? "") +
-      `
-` +
-      path;
-    commentRectsEqual = (rectA?: Dynamic, rectB?: Dynamic): Dynamic =>
-      rectA === rectB ||
-      (!!rectA &&
-        !!rectB &&
-        rectA.x === rectB.x &&
-        rectA.y === rectB.y &&
-        rectA.w === rectB.w &&
-        rectA.h === rectB.h);
   };
 }

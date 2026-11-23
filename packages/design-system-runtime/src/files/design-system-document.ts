@@ -5,31 +5,32 @@ import type * as F from "../contracts/files-core";
 /** Restored application module; prepare first, initialize in original order. */
 import { addressedProjectFileUrl, notifyAddressedFiles, setAddressedVersionResolver, setFileVersionResolver } from "../editor/addressed-files";
 import { previewStaticNoticeSnapshot } from "../editor/component-preview";
-import { blobFilesOwedToFileStorage, buildFilesIndex, damagedDerivedProjectPaths, DEFAULT_FILE_STORAGE_POLICY, explainUnpublishableFile, FILES_INDEX_PROJECT_PATH, filesLeftOutOfMigration, isDerivedProjectPath, PROJECT_FILE_PREFIXEditorFilesIndex, projectFilePath, projectFilesForSave, publishableFileMimeType, relativeProjectFilePath, validDerivedProjectFiles } from "../editor/files-index";
-import { sha256, sha256Sync } from "../editor/index-file-store";
-import { MIGRATION_ANALYTICS_EVENTS, reportMigrationAnalytics } from "../editor/migration-banners";
-import { activeElementIsEditing, currentDesignSystemArtifactPath, designSystemFilesCodec, EMPTY_FILES_PEER_SOURCE, fileBaseName, HOT_CARRY_STORAGE_PREFIX, prioritizeStashedTextEdits, readOwedArtifactBlob, safeSessionStorage, stripEditingOffFromStashedIndex, summarizeFileNames } from "./carry";
+import { blobFilesOwedToFileStorage, buildFilesIndex, DEFAULT_FILE_STORAGE_POLICY, explainUnpublishableFile, FILES_INDEX_PROJECT_PATH, filesLeftOutOfMigration, isDerivedProjectPath, PROJECT_FILE_PREFIXEditorFilesIndex, projectFilePath, projectFilesForSave, publishableFileMimeType, relativeProjectFilePath } from "../editor/files-index";
+import { sha256 } from "../editor/index-file-store";
+import { activeElementIsEditing, currentDesignSystemArtifactPath, designSystemFilesCodec, EMPTY_FILES_PEER_SOURCE, fileBaseName, HOT_CARRY_STORAGE_PREFIX, prioritizeStashedTextEdits, readOwedArtifactBlob, safeSessionStorage, stripEditingOffFromStashedIndex } from "./carry";
 import { createCarryStorage } from "./carry-storage";
 import { createHotCarryRestorer } from "./hot-carry-restore";
 import { snapshotHotCarry } from "./hot-carry-snapshot";
 import {  } from "./crash-stash";
 import { bytesToFileDataUri } from "./data-uri";
-import { createDesignSystemFilesPort, DAMAGED_FILE_REPLACEMENT_CHARACTER } from "./design-system-port";
+import { createDesignSystemFilesPort } from "./design-system-port";
 import { createFilesDocument } from "./document";
 import { createDocumentUndo } from "./document-undo";
 import { createFileClash } from "./file-clash";
+import { createGeneratedOwnership } from "./generated-ownership";
+import { createGeneratedReadme } from "./generated-readme";
+import { createRegeneration } from "./regeneration";
 import { authoredIndexMergeConflicts, describeIndexConflicts, invalidAssetGroupOrders } from "./index-conflicts";
-import { fileContentContainsRuntimeMarkers, filePublishRejection, filePublishSizeRejection, MAX_FILE_PUBLISH_ENCODED_BYTES, retryFileRead } from "./paths";
+import { filePublishRejection, filePublishSizeRejection, MAX_FILE_PUBLISH_ENCODED_BYTES, retryFileRead } from "./paths";
 import { describeStuckSave, formatUnsendableFilesMessage } from "./save-messages";
 import { isTokenFilePath } from "./token-merge";
 import { refreshManifest } from "../model/asset-commands";
 import { setHeldFileBaseUrl, stringifyManifestWithinBudget } from "../model/derive-system";
-import { generatedConsumptionReadme, stripGeneratedReadmeTail } from "../model/documentation";
-import { DESIGN_SYSTEM_PATHS, hasGeneratedSystemHeader, isHeldFilePointer, isTextFilePath, setAllowAllBinaryFilePointers, storagePointerForFile } from "../model/file-policy";
+import { stripGeneratedReadmeTail } from "../model/documentation";
+import { DESIGN_SYSTEM_PATHS, isHeldFilePointer, isTextFilePath, setAllowAllBinaryFilePointers, storagePointerForFile } from "../model/file-policy";
 import { DESIGN_SYSTEM_MANIFEST_VERSION, isPublishableFilePathModelFileTable, parseManifest } from "../model/file-table";
 import { REACT_LIBRARY_CATALOG } from "../model/libraries";
 import { parseManifestBundleMetadata } from "../model/manifest-metadata";
-import { generatedReadmeTail, mergeReadmeWithGeneratedTail } from "../model/stored-file-codec";
 
 function createDesignSystemFilesDocument(
   documentOptions: M.DesignSystemFilesDocumentOptions,
@@ -217,46 +218,7 @@ function createDesignSystemFilesDocument(
     flagClashingFile: (...flagArguments) => flagClashingFile(...flagArguments),
     flushNow: () => enhancedDocument.flushNow(),
   });
-  let lastGeneratedFiles: Core.FileTable | undefined,
-    lastGeneratedTitle: string | undefined,
-    generatedTexts: Map<string, string> = new Map(),
-    damagedGeneratedPaths: Set<string> = new Set(),
-    userEditedLocally: boolean = false,
-    generatedReadme: M.GeneratedReadme | undefined,
-    generatedReadmeStopped: boolean = false,
-    generatedReadmePending: boolean = false,
-    generatedReadmeTexts: Set<string> = new Set(),
-    generatedReadmeConflictCount = 0,
-    recentGeneratedReadmeWrites: number[] = [],
-    generatedReadmeTimer: ReturnType<typeof setTimeout> | undefined,
-    scheduleReadmeRegeneration = (): void => {
-      let value = timers.now();
-      while (
-        recentGeneratedReadmeWrites.length > 0 &&
-        value - recentGeneratedReadmeWrites[0] > 60000
-      ) {
-        recentGeneratedReadmeWrites.shift();
-      }
-      if (
-        recentGeneratedReadmeWrites.length >= 10 ||
-        generatedReadmeTimer !== undefined
-      ) {
-        return;
-      }
-      recentGeneratedReadmeWrites.push(value);
-      generatedReadmeTimer = timers.setTimeout((): void => {
-        generatedReadmeTimer = undefined;
-        lastGeneratedFiles = undefined;
-        if (regenerate().length > 0) {
-          queue.commit();
-        }
-      }, 1000);
-    },
-    readmeHeading = (): string =>
-      "# " +
-      (document.title().replace(/\s+/g, " ").trim() || uiMessage("design-system.designSystemDocument.designSystem")) +
-      `
-`;
+  let userEditedLocally: boolean = false;
   function ensureReactPreviewLibraries(): void {
     if (!previewStaticNoticeSnapshot()) {
       return;
@@ -308,538 +270,45 @@ function createDesignSystemFilesDocument(
       },
     );
   }
-  let generatedOwnership: Map<string, "ours" | "theirs" | number> = new Map(),
-    foreignFileNoticePaths: Set<string> = new Set(),
-    foreignFileNotices: M.ForeignFileNotice[] = [],
-    ownershipProbeGeneration: number = 0,
-    ownershipProbeChain: Promise<void> = Promise.resolve(),
-    disposed: boolean = false,
-    ownedFilesDiscovered: boolean = false,
-    generatedRefreshOwed: boolean = false,
-    ownershipRetryTimer: ReturnType<typeof setTimeout> | undefined,
-    ownershipRetryAttempt: number = 0,
-    ownershipProbeTimeoutMs: number = 1e4,
-    ownershipRetryDelays: number[] = [2000, 5000, 15000, 30000, 60000, 60000],
-    fileWasGeneratedByEditor = (filePath: string, fileText: string) => {
-      let value: string =
-        relativeProjectFilePath(filePath) ?? filePath;
-      if (value !== DESIGN_SYSTEM_PATHS.manifest) {
-        return hasGeneratedSystemHeader(value, fileText);
-      }
-      try {
-        let parsedFile: { manifestVersion?: unknown; files?: unknown } | null =
-          JSON.parse(fileText);
-        return (
-          parsedFile !== null &&
-          typeof parsedFile === "object" &&
-          !Array.isArray(parsedFile) &&
-          typeof parsedFile.manifestVersion === "number" &&
-          (parsedFile.manifestVersion <= DESIGN_SYSTEM_MANIFEST_VERSION ||
-            Array.isArray(parsedFile.files))
-        );
-      } catch {
-        return false;
-      }
-    },
-    ownershipProbePending = () =>
-      [...generatedOwnership.values()].some(
-        (numericValue): boolean => typeof numericValue === "number",
-      ),
-    generatedWorkPending = () =>
-      !disposed &&
-      (ownershipProbePending() ||
-        ownedFilesDiscovered ||
-        generatedRefreshOwed ||
-        ownershipRetryTimer !== undefined),
-    generatedPendingNotified = false,
-    notifyGeneratedPending = (): void => {
-      let value = generatedWorkPending();
-      if (value === generatedPendingNotified) {
-        return;
-      }
-      generatedPendingNotified = value;
-      let saveState = enhancedDocument.saveState();
-      for (let subscriber of [...saveSubscribers]) {
-        try {
-          subscriber(saveState);
-        } catch {}
-      }
-    },
-    announceForeignFiles = (): void => {
-      let value = foreignFileNotices;
-      foreignFileNotices = [];
-      for (let operation of ["write", "remove"]) {
-        let fileNames = value
-          .filter((change): boolean => change.wanted === operation)
-          .map((fileEntry) => fileEntry.name);
-        if (fileNames.length === 0) {
-          continue;
-        }
-        reportMigrationAnalytics(
-          MIGRATION_ANALYTICS_EVENTS.foreignFilesNoticed,
-        );
-        let singleFile: boolean = fileNames.length === 1;
-        notice(
-          summarizeFileNames(fileNames) +
-            (singleFile
-              ? " in this system was not made by this editor, so it is left as it is"
-              : " in this system were not made by this editor, so they are left as they are") +
-            (operation === "write"
-              ? singleFile
-                ? "; changes you make here are not written to it."
-                : "; changes you make here are not written to them."
-              : "."),
-        );
-      }
-    },
-    finishOwnershipProbe = (): void => {
-      if (disposed) {
-        return;
-      }
-      if (!ownershipProbePending()) {
-        if (foreignFileNotices.length > 0) {
-          announceForeignFiles();
-        }
-        if (ownedFilesDiscovered) {
-          ownedFilesDiscovered = false;
-          generatedRefreshOwed = true;
-          lastGeneratedFiles = undefined;
-          scheduleGeneratedRetry();
-        }
-      }
-      notifyGeneratedPending();
-    },
-    ownershipFailureNoticed: boolean = false,
-    scheduleOwnershipRetry = (): void => {
-      if (disposed || ownershipRetryTimer !== undefined) {
-        return;
-      }
-      if (ownershipRetryAttempt >= ownershipRetryDelays.length) {
-        if (!ownershipFailureNoticed) {
-          ownershipFailureNoticed = true;
-          notice(
-            uiMessage("design-system.designSystemDocument.theFilesThisEditorMakes"),
-          );
-        }
-        return;
-      }
-      ownershipRetryTimer = timers.setTimeout((): void => {
-        ownershipRetryTimer = undefined;
-        lastGeneratedFiles = undefined;
-        regenerate();
-        if (queue.state().dirty > 0) {
-          queue.commit();
-        }
-        finishOwnershipProbe();
-      }, ownershipRetryDelays[ownershipRetryAttempt++]);
-    },
-    recordForeignFile = (filePath: string, operation: string): void => {
-      generatedOwnership.set(filePath, "theirs");
-      if (!foreignFileNoticePaths.has(filePath)) {
-        foreignFileNoticePaths.add(filePath);
-        foreignFileNotices.push({
-          name: relativeProjectFilePath(filePath) ?? filePath,
-          wanted: operation,
-        });
-      }
-    },
-    withOwnershipDeadline = <Value>(promise: Promise<Value>): Promise<Value> =>
-      new Promise<Value>((resolve, reject): void => {
-        let value = timers.setTimeout(
-          () =>
-            reject({
-              code: "deadline",
-            }),
-          ownershipProbeTimeoutMs,
-        );
-        promise.then(
-          (rejectedValue): void => {
-            timers.clearTimeout(value);
-            resolve(rejectedValue);
-          },
-          (error: unknown): void => {
-            timers.clearTimeout(value);
-            reject(error);
-          },
-        );
-      });
-  function canGenerateFile(
-    filePath: string,
-    operation: "write" | "remove",
-  ): boolean {
-    if (port.liveSha?.(filePath) === null) {
-      return true;
-    }
-    let entry = generatedOwnership.get(filePath);
-    if (entry !== undefined) {
-      return entry === "ours";
-    }
-    let peekBytes = port.peekBytes;
-    if (peekBytes === undefined) {
-      recordForeignFile(filePath, operation);
-      ownershipProbeChain.then(finishOwnershipProbe);
-      return false;
-    }
-    let value = ++ownershipProbeGeneration;
-    generatedOwnership.set(filePath, value);
-    ownershipProbeChain = ownershipProbeChain
-      .then(() =>
-        withOwnershipDeadline(
-          retryFileRead(() => peekBytes(filePath), timers),
-        ),
-      )
-      .then(
-        (bytes): string =>
-          fileWasGeneratedByEditor(
-            filePath,
-            new TextDecoder().decode(bytes.bytes),
-          )
-            ? "ours"
-            : "theirs",
-        (error: { code?: string } | undefined): string | undefined =>
-          error?.code === "not_found" &&
-          typeof port.liveSha?.(filePath) !== "string"
-            ? "ours"
-            : undefined,
-      )
-      .then((ownershipResult) => {
-        if (disposed || generatedOwnership.get(filePath) !== value) {
-          return finishOwnershipProbe();
-        }
-        if (ownershipResult === undefined) {
-          generatedOwnership.delete(filePath);
-          scheduleOwnershipRetry();
-        } else if (((ownershipRetryAttempt = 0), ownershipResult === "theirs")) {
-          recordForeignFile(filePath, operation);
-        } else {
-          generatedOwnership.set(filePath, "ours");
-          ownedFilesDiscovered = true;
-        }
-        finishOwnershipProbe();
-      })
-      .catch((): void => {
-        if (generatedOwnership.get(filePath) === value) {
-          generatedOwnership.delete(filePath);
-          scheduleOwnershipRetry();
-        }
-        finishOwnershipProbe();
-      });
-    notifyGeneratedPending();
-    return false;
-  }
-  let settleOwnershipProbes = async (): Promise<void> => {
-    for (let index: number = 0; index < 4 && !disposed; index++) {
-      await ownershipProbeChain;
-      if (ownedFilesDiscovered || generatedRefreshOwed) {
-        ownedFilesDiscovered = false;
-        generatedRefreshOwed = false;
-        if (generatedRetryTimer !== undefined) {
-          timers.clearTimeout(generatedRetryTimer);
-          generatedRetryTimer = undefined;
-        }
-        lastGeneratedFiles = undefined;
-        regenerate();
-        if (queue.state().dirty > 0) {
-          queue.commit();
-        }
-      }
-      notifyGeneratedPending();
-      if (!ownershipProbePending()) {
-        return;
-      }
-    }
-  };
-  function regenerate(): string[] {
-    if (
-      documentOptions.generated !== true ||
-      !userEditedLocally ||
-      document.readOnly() ||
-      document.loadState() !== "live" ||
-      flags.size > 0
-    ) {
-      return [];
-    }
-    ensureReactPreviewLibraries();
-    let files = document.content().files;
-    if (
-      files === lastGeneratedFiles &&
-      document.title() === lastGeneratedTitle
-    ) {
-      return [];
-    }
-    lastGeneratedFiles = files;
-    lastGeneratedTitle = document.title();
-    let items: string[] = [],
-      value: Map<string, string> = validDerivedProjectFiles(
-        files,
-      );
-    for (let [filePath, fileText] of value) {
-      if (generatedTexts.get(filePath) === fileText) {
-        continue;
-      }
-      if (port.liveSha?.(filePath) === sha256Sync(fileText)) {
-        generatedTexts.set(filePath, fileText);
-        continue;
-      }
-      if (!canGenerateFile(filePath, "write")) {
-        continue;
-      }
-      generatedTexts.set(filePath, fileText);
-      queue.markDirty(filePath, () => fileText);
-      items.push(filePath);
-    }
-    let values = new Set<string>(
-        damagedDerivedProjectPaths(files),
-      ),
-      damagedPaths = [...values].filter(
-        (filePath): boolean => !damagedGeneratedPaths.has(filePath),
-      );
-    for (let filePath of damagedGeneratedPaths) {
-      if (!values.has(filePath)) {
-        damagedGeneratedPaths.delete(filePath);
-      }
-    }
-    for (let filePath of damagedPaths) {
-      damagedGeneratedPaths.add(filePath);
-    }
-    if (damagedPaths.length > 0) {
-      let singlePath: boolean = damagedPaths.length === 1,
-        hasPublishedFiles = damagedPaths.some(
-          (filePath): boolean => typeof port.liveSha?.(filePath) === "string",
-        );
-      notice(
-        summarizeFileNames(
-          damagedPaths.map(
-            (filePath) => relativeProjectFilePath(filePath) ?? filePath,
-          ),
-        ) +
-          (singlePath ? " is" : " are") +
-          " not being updated. Find the " +
-          DAMAGED_FILE_REPLACEMENT_CHARACTER +
-          " in your tokens, names, notes or READMEs and type it again." +
-          (hasPublishedFiles ? " What is published stays as it is until then." : ""),
-      );
-    }
-    let knownListing = port.knownListing?.();
-    for (let filePath of new Set([
-      ...generatedTexts.keys(),
-      ...(knownListing !== undefined
-        ? [...knownListing.keys()].filter(isDerivedProjectPath)
-        : []),
-    ])) {
-      if (value.has(filePath) || values.has(filePath)) {
-        continue;
-      }
-      generatedTexts.delete(filePath);
-      if (port.liveSha?.(filePath) === null) {
-        continue;
-      }
-      if (!canGenerateFile(filePath, "remove")) {
-        continue;
-      }
-      queue.markDirty(filePath, (): null => null);
-      items.push(filePath);
-    }
-    updateReadmeTail(files, items);
-    generateMissingReadme(files, items);
-    if (items.length > 0) {
-      emit("generated", {
-        paths: items,
-      });
-    }
-    return items;
-  }
-  let projectReadmePath: string = projectFilePath(
-      DESIGN_SYSTEM_PATHS.readme,
-    ),
-    CONSUMER_PROJECT_PATH_HINT: string =
-      "Every path named below is under `project/` in this design system: read `project/api/tokens.md`, not `api/tokens.md`.",
-    wireReadme = (readmeText: string): string => {
-      let value = generatedReadmeTail(
-        generatedConsumptionReadme(
-          Object.freeze({
-            ...document.content().files,
-            [DESIGN_SYSTEM_PATHS.readme]: readmeText,
-          }),
-          PROJECT_FILE_PREFIXEditorFilesIndex,
-        ),
-      );
-      return mergeReadmeWithGeneratedTail(
-        readmeText,
-        value.replace(
-          /^(## Consuming this system[^\n]*\n)/,
-          `$1
-` +
-            CONSUMER_PROJECT_PATH_HINT +
-            `
-`,
-        ),
-      );
-    },
-    lastWireReadme: string | undefined,
-    readmeTailPending: boolean = false;
-  function updateReadmeTail(fileTable: Core.FileTable, items: string[]): void {
-    let value = fileTable[DESIGN_SYSTEM_PATHS.readme];
-    if (
-      items.length === 0 ||
-      typeof value !== "string" ||
-      flags.has(DESIGN_SYSTEM_PATHS.readme) ||
-      mergingTokenPaths.has(DESIGN_SYSTEM_PATHS.readme) ||
-      readTexts.get(projectReadmePath) !== value
-    ) {
-      return;
-    }
-    let wireText = wireReadme(value);
-    if (wireText === lastWireReadme) {
-      return;
-    }
-    let publishedSha = port.liveSha?.(projectReadmePath);
-    if (
-      typeof publishedSha === "string" &&
-      publishedSha !== readShas.get(projectReadmePath)
-    ) {
-      return;
-    }
-    lastWireReadme = wireText;
-    if (
-      publishedSha === undefined ||
-      publishedSha === null ||
-      publishedSha === sha256Sync(wireText)
-    ) {
-      return;
-    }
-    readmeTailPending = true;
-    queue.markDirty(
-      projectReadmePath,
-      fileValueProvider(DESIGN_SYSTEM_PATHS.readme),
-    );
-    items.push(projectReadmePath);
-  }
-  function generateMissingReadme(
-    fileTable: Core.FileTable,
-    changedPaths: string[],
-  ): void {
-    if (fileTable[DESIGN_SYSTEM_PATHS.readme] !== undefined) {
-      generatedReadme = undefined;
-      return;
-    }
-    if (generatedReadmeStopped) {
-      return;
-    }
-    let value = port.liveSha?.(projectReadmePath),
-      readmeText = readmeHeading(),
-      wireText = wireReadme(readmeText),
-      readmeMissing: boolean = value === null,
-      readmeUnchanged =
-        value !== undefined ? value : port.heldSha?.(projectReadmePath),
-      readmeMatches =
-        generatedReadme?.sha !== undefined &&
-        readmeUnchanged === generatedReadme.sha &&
-        (readmeText !== generatedReadme.text || wireText !== generatedReadme.wire);
-    if (!readmeMissing && !readmeMatches) {
-      return;
-    }
-    let previousSha = readmeMissing ? null : generatedReadme!.sha;
-    generatedReadme = {
-      text: readmeText,
-      wire: wireText,
-      ...(readmeMissing
-        ? {}
-        : {
-            sha: previousSha,
-          }),
-    };
-    generatedReadmeTexts.add(readmeText);
-    generatedReadmePending = true;
-    markDirty(projectReadmePath, () => readmeText, previousSha);
-    changedPaths.push(projectReadmePath);
-  }
-  async function writeReadmeTail(): Promise<boolean> {
-    if (
-      documentOptions.generated !== true ||
-      document.readOnly() ||
-      document.loadState() !== "live"
-    ) {
-      return false;
-    }
-    let value = document.content().files[DESIGN_SYSTEM_PATHS.readme];
-    if (
-      typeof value !== "string" ||
-      flags.has(DESIGN_SYSTEM_PATHS.readme) ||
-      mergingTokenPaths.has(DESIGN_SYSTEM_PATHS.readme) ||
-      readTexts.get(projectReadmePath) !== value
-    ) {
-      return false;
-    }
-    let wireText = wireReadme(value),
-      publishedSha = port.liveSha?.(projectReadmePath);
-    if (
-      publishedSha === undefined ||
-      publishedSha === null ||
-      publishedSha === sha256Sync(wireText) ||
-      fileContentContainsRuntimeMarkers(wireText)
-    ) {
-      return false;
-    }
-    let remoteReadme = await documentOptions.port
-      .readText(projectReadmePath)
-      .catch((): null => null);
-    if (
-      remoteReadme === null ||
-      remoteReadme.text.includes("## Consuming this system") ||
-      document.readOnly() ||
-      readTexts.get(projectReadmePath) !== value
-    ) {
-      return false;
-    }
-    lastWireReadme = wireText;
-    readmeTailPending = true;
-    queue.markDirty(
-      projectReadmePath,
-      fileValueProvider(DESIGN_SYSTEM_PATHS.readme),
-    );
-    emit("generated", {
-      paths: [projectReadmePath],
-    });
-    return true;
-  }
-  let regenerationTimer: ReturnType<typeof setTimeout> | undefined,
-    generatedRetryTimer: ReturnType<typeof setTimeout> | undefined,
-    generatedRetryTimes: number[] = [],
-    scheduleGeneratedRetry = (): void => {
-      if (generatedRetryTimer !== undefined) {
-        return;
-      }
-      let callback = (): void => {
-        generatedRetryTimer = undefined;
-        let value = timers.now();
-        while (
-          generatedRetryTimes.length > 0 &&
-          value - generatedRetryTimes[0] > 60000
-        ) {
-          generatedRetryTimes.shift();
-        }
-        if (generatedRetryTimes.length >= 3) {
-          if (generatedRefreshOwed) {
-            generatedRetryTimer = timers.setTimeout(
-              callback,
-              60000 - (value - generatedRetryTimes[0]) + 100,
-            );
-          }
-          return;
-        }
-        generatedRefreshOwed = false;
-        regenerate();
-        if (queue.state().dirty > 0) {
-          generatedRetryTimes.push(value);
-          queue.commit();
-        }
-        notifyGeneratedPending();
-      };
-      generatedRetryTimer = timers.setTimeout(callback, 1000);
-    },
-    // 恢复流程的状态在模块内；document、queue 等靠后声明的绑定用 getter 惰性读取
-    hotCarryRestorer = createHotCarryRestorer({
+  let disposed: boolean = false;
+  // 生成文件所有权探测：重试计时器与探测队列在模块内。queue、enhancedDocument 与再生成动作靠后声明，惰性读取
+  const generatedOwnership = createGeneratedOwnership({
+    get queue() { return queue; },
+    port, timers, saveSubscribers, notice,
+    isDisposed: () => disposed,
+    saveState: () => enhancedDocument.saveState(),
+    regenerate: () => regeneration.regenerate(),
+    invalidateGeneratedFiles: () => regeneration.invalidate(),
+    scheduleGeneratedRetry: () => regeneration.scheduleRetry(),
+    cancelGeneratedRetry: () => regeneration.cancelRetry(),
+  });
+  // 再生成：重试与防抖计时器在模块内。document、queue 靠后声明，用 getter 惰性读取
+  const regeneration = createRegeneration({
+    get document() { return document; },
+    get queue() { return queue; },
+    port, timers, flags, notice, emit,
+    generated: documentOptions.generated === true,
+    debounceMs: Math.min(300, Math.floor((documentOptions.commitMs ?? 800) / 2)),
+    ownership: generatedOwnership,
+    userEditedLocally: () => userEditedLocally,
+    ensureReactPreviewLibraries: () => ensureReactPreviewLibraries(),
+    updateReadmeTail: (fileTable, items) => generatedReadme.updateReadmeTail(fileTable, items),
+    generateMissingReadme: (fileTable, changedPaths) => generatedReadme.generateMissingReadme(fileTable, changedPaths),
+  });
+  const { regenerate } = regeneration;
+  const projectReadmePath: string = projectFilePath(DESIGN_SYSTEM_PATHS.readme);
+  // README 尾部与缺失 README 的生成：状态与计时器在模块内；保存回调经下面的钩子调用。document、queue 靠后声明，用 getter 惰性读取
+  const generatedReadme = createGeneratedReadme({
+    get document() { return document; },
+    get queue() { return queue; },
+    port, timers, flags, mergingTokenPaths, readTexts, readShas, clashPolicy, projectReadmePath, regeneration, emit,
+    generated: documentOptions.generated === true,
+    currentFileText: (filePath) => currentFileText(filePath),
+    fileValueProvider: (filePath) => fileValueProvider(filePath),
+    refreshUnchangedLocalFile,
+  });
+  // 恢复流程的状态在模块内；document、queue 等靠后声明的绑定用 getter 惰性读取
+  let hotCarryRestorer = createHotCarryRestorer({
       get document() { return document; },
       get queue() { return queue; },
       documentOptions, indexPath, flags, flaggedPaths, noticedClashShas, timers, emit, notice,
@@ -854,7 +323,7 @@ function createDesignSystemFilesDocument(
         : {}),
       wireText: (filePath: string, fileText: string) =>
         filePath === projectReadmePath && documentOptions.generated === true
-          ? wireReadme(fileText)
+          ? generatedReadme.wire(fileText)
           : fileText,
       tableText: (filePath: string, fileText: string) =>
         filePath === projectReadmePath
@@ -924,54 +393,7 @@ function createDesignSystemFilesDocument(
         ) {
           recordVersion(publishReport.version);
         }
-        let value = publishReport.texts?.[projectReadmePath],
-          readmeIsCurrent =
-            publishReport.paths.includes(projectReadmePath) &&
-            currentFileText(DESIGN_SYSTEM_PATHS.readme) === null &&
-            generatedReadme !== undefined &&
-            (value === undefined
-              ? generatedReadmePending
-              : typeof value === "string" && generatedReadmeTexts.has(value));
-        if (
-          publishReport.paths.includes(projectReadmePath) &&
-          (value === undefined ||
-            generatedReadme === undefined ||
-            value === generatedReadme.text)
-        ) {
-          generatedReadmePending = false;
-        }
-        if (publishReport.ok && generatedReadme !== undefined && readmeIsCurrent) {
-          let readmeText = publishReport.texts?.[projectReadmePath],
-            readmeSha = port.liveSha?.(projectReadmePath);
-          if (typeof readmeText === "string" && typeof readmeSha === "string") {
-            generatedReadme = {
-              text: readmeText,
-              wire: wireReadme(readmeText),
-              sha: readmeSha,
-            };
-            if (readmeText !== readmeHeading()) {
-              scheduleReadmeRegeneration();
-            }
-          }
-        }
-        if (
-          !publishReport.ok &&
-          publishReport.code === "conflict" &&
-          generatedReadme !== undefined &&
-          readmeIsCurrent
-        ) {
-          let hasReadmeSha: boolean = generatedReadme.sha !== undefined;
-          generatedReadme = undefined;
-          queue.withdraw(projectReadmePath);
-          generatedReadmeConflictCount += 1;
-          if (
-            hasReadmeSha ||
-            port.liveSha?.(projectReadmePath) !== null ||
-            generatedReadmeConflictCount >= 2
-          ) {
-            generatedReadmeStopped = true;
-          }
-        }
+        let readmeIsCurrent: boolean = generatedReadme.noteReadmePublish(publishReport);
         if (publishReport.ok && typeof publishReport.texts?.[indexPath] === "string") {
           try {
             documentUndo.setIndexBase(JSON.parse(publishReport.texts[indexPath]));
@@ -1007,11 +429,11 @@ function createDesignSystemFilesDocument(
               publishedText === null &&
               currentFileText(DESIGN_SYSTEM_PATHS.readme) === null
             ) {
-              scheduleReadmeRegeneration();
+              generatedReadme.scheduleRegeneration();
             }
             let publishedSha = publishReport.shas?.[publishedPath];
             if (publishedPath === projectReadmePath) {
-              readmeTailPending = false;
+              generatedReadme.markTailPublished();
             }
             fileClash.forgetRestoredStash(relativePath);
             preReadBases.delete(publishedPath);
@@ -1044,9 +466,9 @@ function createDesignSystemFilesDocument(
           for (let publishedPath of publishReport.paths) {
             if (isDerivedProjectPath(publishedPath)) {
               if (publishReport.texts !== undefined && publishReport.texts[publishedPath] === null) {
-                generatedOwnership.delete(publishedPath);
+                generatedOwnership.forget(publishedPath);
               } else {
-                generatedOwnership.set(publishedPath, "ours");
+                generatedOwnership.markOurs(publishedPath);
               }
             }
           }
@@ -1104,37 +526,17 @@ function createDesignSystemFilesDocument(
         : {}),
       onConflict(conflict: F.FileSaveConflict): void {
         if (isDerivedProjectPath(conflict.path)) {
-          generatedOwnership.delete(conflict.path);
+          generatedOwnership.forget(conflict.path);
           queue.withdraw(conflict.path);
-          generatedTexts.delete(conflict.path);
-          lastGeneratedFiles = undefined;
+          regeneration.forgetGeneratedText(conflict.path);
+          regeneration.invalidate();
           emit("generated-behind", {
             path: conflict.path,
           });
-          scheduleGeneratedRetry();
+          regeneration.scheduleRetry();
           return;
         }
-        if (
-          conflict.path === projectReadmePath &&
-          readmeTailPending &&
-          currentFileText(DESIGN_SYSTEM_PATHS.readme) ===
-            readTexts.get(projectReadmePath)
-        ) {
-          readmeTailPending = false;
-          lastWireReadme = undefined;
-          queue.withdraw(conflict.path);
-          lastGeneratedFiles = undefined;
-          emit("generated-behind", {
-            path: conflict.path,
-          });
-          if (clashPolicy === "mine") {
-            refreshUnchangedLocalFile(
-              DESIGN_SYSTEM_PATHS.readme,
-              conflict.path,
-              conflict.theirsSha,
-            );
-          }
-          scheduleGeneratedRetry();
+        if (generatedReadme.handleTailConflict(conflict)) {
           return;
         }
         let value: string =
@@ -1166,12 +568,12 @@ function createDesignSystemFilesDocument(
           if (
             isDerivedProjectPath(row.path) &&
             !(
-              generatedOwnership.get(row.path) === "ours" &&
+              generatedOwnership.isOurs(row.path) &&
               row.sha256 !== null &&
               port.heldSha?.(row.path) === row.sha256
             )
           ) {
-            generatedOwnership.delete(row.path);
+            generatedOwnership.forget(row.path);
           }
           let relativePath: string | undefined = relativeProjectFilePath(row.path);
           if (
@@ -1182,7 +584,7 @@ function createDesignSystemFilesDocument(
             continue;
           }
           if (row.path === projectReadmePath) {
-            generatedReadme = undefined;
+            generatedReadme.forgetGeneratedReadme();
           }
           advancePathRevision(relativePath);
           removedPaths.add(relativePath);
@@ -1534,18 +936,9 @@ function createDesignSystemFilesDocument(
     disposeDocument = document.dispose.bind(document);
   enhancedDocument.dispose = (): void => {
     disposed = true;
-    if (ownershipRetryTimer !== undefined) {
-      timers.clearTimeout(ownershipRetryTimer);
-    }
-    if (generatedReadmeTimer !== undefined) {
-      timers.clearTimeout(generatedReadmeTimer);
-    }
-    if (generatedRetryTimer !== undefined) {
-      timers.clearTimeout(generatedRetryTimer);
-    }
-    if (regenerationTimer !== undefined) {
-      timers.clearTimeout(regenerationTimer);
-    }
+    generatedOwnership.dispose();
+    generatedReadme.dispose();
+    regeneration.dispose();
     disposeDocument();
   };
   let restoreStash = document.restoreStash.bind(document);
@@ -1644,8 +1037,7 @@ function createDesignSystemFilesDocument(
     if (!userEditedLocally && queue.pending()) {
       userEditedLocally = true;
     }
-    ownershipRetryAttempt = 0;
-    ownershipFailureNoticed = false;
+    generatedOwnership.resetRetryBudget();
     for (let value of flags.keys()) {
       queue.withdraw(projectFilePath(value));
     }
@@ -1653,16 +1045,7 @@ function createDesignSystemFilesDocument(
       queue.withdraw(projectFilePath(value));
     }
     if (documentOptions.generated === true) {
-      if (regenerationTimer !== undefined) {
-        timers.clearTimeout(regenerationTimer);
-      }
-      regenerationTimer = timers.setTimeout(
-        (): void => {
-          regenerationTimer = undefined;
-          regenerate();
-        },
-        Math.min(300, Math.floor((documentOptions.commitMs ?? 800) / 2)),
-      );
+      regeneration.scheduleDebounced();
     }
   });
   let hasHeldConflicts = () => flags.size > 0 || mergingTokenPaths.size > 0,
@@ -1672,14 +1055,14 @@ function createDesignSystemFilesDocument(
     queue.commit();
   };
   enhancedQueue.pending = () =>
-    queue.pending() || hasHeldConflicts() || generatedWorkPending();
+    queue.pending() || hasHeldConflicts() || generatedOwnership.workPending();
   enhancedDocument.queue = () => enhancedQueue;
   let originalSaveState = document.saveState.bind(document);
   enhancedDocument.saveState = () => {
     let value = originalSaveState();
     if (flags.size === 0) {
       if (
-        (mergingTokenPaths.size > 0 || generatedWorkPending()) &&
+        (mergingTokenPaths.size > 0 || generatedOwnership.workPending()) &&
         value.status === "ready"
       ) {
         return {
@@ -1733,7 +1116,7 @@ function createDesignSystemFilesDocument(
     };
   };
   enhancedDocument.dirty = () =>
-    queue.pending() || hasHeldConflicts() || generatedWorkPending();
+    queue.pending() || hasHeldConflicts() || generatedOwnership.workPending();
   let originalFlushNow = document.flushNow.bind(document);
   enhancedDocument.flushNow = (): void => {
     regenerate();
@@ -1745,7 +1128,7 @@ function createDesignSystemFilesDocument(
       return;
     }
     enhancedDocument.flushNow();
-    await settleOwnershipProbes();
+    await generatedOwnership.settleProbes();
     await queue.settle();
   };
   enhancedDocument.stuck = () => {
@@ -1800,7 +1183,7 @@ function createDesignSystemFilesDocument(
   enhancedDocument.stepCommand = documentUndo.createUndoCommand;
   enhancedDocument.bindUndoStack = documentUndo.bindUndoStack;
   enhancedDocument.regenerate = regenerate;
-  enhancedDocument.writeReadmeTail = writeReadmeTail;
+  enhancedDocument.writeReadmeTail = generatedReadme.writeReadmeTail;
   enhancedDocument.personChanged = (): boolean => userEditedLocally;
   enhancedDocument.events = () => events;
   let entryProblem = (
