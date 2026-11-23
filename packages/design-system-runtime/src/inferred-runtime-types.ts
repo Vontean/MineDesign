@@ -116,7 +116,7 @@ export interface InferredRuntimeBindings {
   dynamicRequire: ProducerModuleHelpers_RequireFunction;
   accentColorNames: string[];
   repeatedClickSelectionProps: Readonly<{
-    onMouseDown: import("./runtime-types").RuntimeBindings["preventRepeatedClickSelection"];
+    onMouseDown: typeof import("./ui/disclosure").preventRepeatedClickSelection;
   }>;
   useHiddenUntilFoundRef: () => ProducerReact.RefCallback<HTMLElement>;
   attachBeforeMatchStyleRecovery: (element: HTMLElement) => () => void;

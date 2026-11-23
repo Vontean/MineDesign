@@ -20,29 +20,38 @@ import { hasBlockingEditorOverlay } from "../text/typing-target";
 import { isPreviewMessage } from "../../platform/file-content";
 import { normalizePasteStamp } from "../inspector/editor";
 import { type Dynamic } from "../../runtime-types";
+import type { PreviewFrame, Ref, SessionSelection } from "./selection-state";
+
+/** 转发给预览帧的快捷键路由：返回真值表示预览帧已处理。 */
+type ForwardedKeyRouter = (
+  action: string,
+  payload?: { stamp: unknown; seen: unknown },
+  didSelectionChange?: boolean,
+  nudge?: { dx: number; dy: number; repeat: boolean },
+) => unknown;
 
 interface RouteFrameKeyMessageDependencies {
-  readonly active: Dynamic;
-  readonly readOnly: Dynamic;
-  readonly routeForwardedKey: Dynamic;
-  readonly deleteSelectionAndAnnounce: Dynamic;
-  readonly deleteSelection: Dynamic;
-  readonly queueSelectionDeletion: Dynamic;
-  readonly copySelectionHtml: Dynamic;
-  readonly pasteClipboardElementsRef: Dynamic;
-  readonly duplicateSelection: Dynamic;
-  readonly flipSelection: Dynamic;
-  readonly groupSelection: Dynamic;
-  readonly ungroupSelection: Dynamic;
-  readonly selectSiblings: Dynamic;
-  readonly applyAutoLayoutToSelection: Dynamic;
-  readonly isInspectorOpen: Dynamic;
-  readonly setInspectorOpen: Dynamic;
-  readonly hasInspectorProvider: Dynamic;
-  readonly isEditorActiveRef: Dynamic;
-  readonly isEditorMountedRef: Dynamic;
-  readonly hasPendingPickerHighlight: Dynamic;
-  readonly previewFrameRef: Dynamic;
+  readonly active: boolean;
+  readonly readOnly: boolean;
+  readonly routeForwardedKey: ForwardedKeyRouter | undefined;
+  readonly deleteSelectionAndAnnounce: (verb: string) => unknown;
+  readonly deleteSelection: () => unknown;
+  readonly queueSelectionDeletion: () => unknown;
+  readonly copySelectionHtml: (options?: { inTabOnly?: boolean }) => unknown;
+  readonly pasteClipboardElementsRef: Ref<(options?: { inTabOnly?: boolean; seen?: unknown }) => unknown>;
+  readonly duplicateSelection: () => unknown;
+  readonly flipSelection: (axis: "horizontal" | "vertical", fromFrame?: boolean) => unknown;
+  readonly groupSelection: () => unknown;
+  readonly ungroupSelection: () => unknown;
+  readonly selectSiblings: () => unknown;
+  readonly applyAutoLayoutToSelection: () => unknown;
+  readonly isInspectorOpen: boolean;
+  readonly setInspectorOpen: (next: boolean | ((wasOpen?: boolean) => boolean)) => void;
+  readonly hasInspectorProvider: boolean;
+  readonly isEditorActiveRef: Ref<boolean>;
+  readonly isEditorMountedRef: Ref<boolean>;
+  readonly hasPendingPickerHighlight: () => boolean;
+  readonly previewFrameRef: Ref<PreviewFrame | null>;
 }
 
 /** 画板预览转发键盘消息时运行：根据消息类型执行删除、撤销重做、面板切换、焦点区域、批注、缩放、参考线、翻转、分组和复制剪切粘贴等快捷操作。 */
@@ -194,57 +203,60 @@ export function routeFrameKeyMessage(deps: RouteFrameKeyMessageDependencies, mes
     }
 
 interface EditorKeyboardDependencies {
-  readonly active: Dynamic;
-  readonly readOnly: Dynamic;
-  readonly selectionRef: Dynamic;
-  readonly rootName: Dynamic;
-  readonly lastContextMenuShortcutTimeRef: Dynamic;
-  readonly getPreviewFrame: Dynamic;
-  readonly canvasTools: Dynamic;
-  readonly chooseEditorTool: Dynamic;
-  readonly hasPendingPickerHighlight: Dynamic;
-  readonly routeForwardedKey: Dynamic;
-  readonly selectParents: Dynamic;
-  readonly modelRef: Dynamic;
-  readonly selectChildren: Dynamic;
-  readonly selectAdjacentSiblings: Dynamic;
-  readonly applyAutoLayoutToSelection: Dynamic;
-  readonly toolRef: Dynamic;
-  readonly flipSelection: Dynamic;
-  readonly nudgeSelection: Dynamic;
-  readonly reorderSelection: Dynamic;
-  readonly isPickerDraggingRef: Dynamic;
-  readonly isPickerBoxSelectingRef: Dynamic;
-  readonly setTool: Dynamic;
-  readonly foreignSelection: Dynamic;
-  readonly pendingSelectionRef: Dynamic;
-  readonly selectionSequenceRef: Dynamic;
-  readonly clearedSelectionSequenceRef: Dynamic;
-  readonly advanceSelectionSequence: Dynamic;
-  readonly clearSelectionRef: Dynamic;
-  readonly foreignClipboardExpiryRef: Dynamic;
-  readonly setSelection: Dynamic;
-  readonly setForeignSelection: Dynamic;
+  readonly active: boolean;
+  readonly readOnly: boolean;
+  readonly selectionRef: Ref<SessionSelection | null>;
+  readonly rootName: string;
+  readonly lastContextMenuShortcutTimeRef: Ref<number>;
+  readonly getPreviewFrame: () => PreviewFrame | null | undefined;
+  readonly canvasTools: boolean;
+  readonly chooseEditorTool: (tool: string, shouldToggleTool?: boolean) => void;
+  readonly hasPendingPickerHighlight: () => boolean;
+  readonly routeForwardedKey: ForwardedKeyRouter | undefined;
+  readonly selectParents: () => unknown;
+  readonly modelRef: Ref<{
+    state(templateName: string): { model: { isTextEditable(tid: number): boolean } } | null | undefined;
+  }>;
+  readonly selectChildren: () => unknown;
+  readonly selectAdjacentSiblings: (direction: "prev" | "next") => unknown;
+  readonly applyAutoLayoutToSelection: () => unknown;
+  readonly toolRef: Ref<string>;
+  readonly flipSelection: (axis: "horizontal" | "vertical", fromFrame?: boolean) => unknown;
+  readonly nudgeSelection: (deltaX: number, deltaY: number) => unknown;
+  readonly reorderSelection: (step: number, toEnd?: boolean) => unknown;
+  readonly isPickerDraggingRef: Ref<boolean>;
+  readonly isPickerBoxSelectingRef: Ref<boolean>;
+  readonly setTool: (tool: string) => void;
+  readonly foreignSelection: { html: string } | null;
+  readonly pendingSelectionRef: Ref<{ seq: number } | null>;
+  readonly selectionSequenceRef: Ref<number>;
+  readonly clearedSelectionSequenceRef: Ref<number>;
+  readonly advanceSelectionSequence: () => number;
+  readonly clearSelectionRef: () => void;
+  readonly foreignClipboardExpiryRef: Ref<number>;
+  readonly setSelection: (selection: SessionSelection | null) => void;
+  readonly setForeignSelection: (selection: { html: string } | null) => void;
+  /** 传给无障碍播报的大纲结构，内部形态由 accessibility/announcements 解释。 */
   readonly rootOutline: Dynamic;
-  readonly deleteSelection: Dynamic;
-  readonly queuePickerAction: Dynamic;
-  readonly queueSelectionDeletion: Dynamic;
-  readonly stepUndoRedo: Dynamic;
-  readonly copySelectionStyles: Dynamic;
-  readonly pasteSelectionStyles: Dynamic;
-  readonly pickColorForSelection: Dynamic;
-  readonly copySelectionHtml: Dynamic;
-  readonly deleteSelectionAndAnnounce: Dynamic;
-  readonly pendingPasteTimeoutRef: Dynamic;
-  readonly isEditorMountedRef: Dynamic;
-  readonly isEditorActiveRef: Dynamic;
-  readonly pasteClipboardElementsRef: Dynamic;
-  readonly duplicateSelection: Dynamic;
-  readonly runAfterSelectionLoaded: Dynamic;
-  readonly selectSiblings: Dynamic;
-  readonly toggleSelectionBold: Dynamic;
-  readonly ungroupSelection: Dynamic;
-  readonly groupSelection: Dynamic;
+  readonly deleteSelection: () => unknown;
+  readonly queuePickerAction: (action: (didSelectionChange?: boolean) => unknown) => unknown;
+  readonly queueSelectionDeletion: () => unknown;
+  readonly stepUndoRedo: (direction: "undo" | "redo") => unknown;
+  readonly copySelectionStyles: () => unknown;
+  readonly pasteSelectionStyles: () => unknown;
+  readonly pickColorForSelection: (selection: SessionSelection) => unknown;
+  readonly copySelectionHtml: (options?: { inTabOnly?: boolean }) => unknown;
+  readonly deleteSelectionAndAnnounce: (verb: string) => unknown;
+  readonly pendingPasteTimeoutRef: Ref<ReturnType<typeof setTimeout> | undefined>;
+  readonly isEditorMountedRef: Ref<boolean>;
+  readonly isEditorActiveRef: Ref<boolean>;
+  readonly pasteClipboardElementsRef: Ref<(options?: { inTabOnly?: boolean; seen?: unknown }) => unknown>;
+  readonly duplicateSelection: () => unknown;
+  readonly runAfterSelectionLoaded: (action: () => unknown) => unknown;
+  readonly selectSiblings: () => unknown;
+  readonly toggleSelectionBold: () => unknown;
+  readonly ungroupSelection: () => unknown;
+  readonly groupSelection: () => unknown;
 }
 
 /** 修饰键变化时同步拖动手势的 Ctrl/Alt 状态；keyup 与 keydown 共用。 */

@@ -3,6 +3,8 @@ import { reactChromeTheme as React } from "../../editor/chrome/theme";
 import { canFreezeSinglePaste, pastedElementGeometry } from "../../editor/insert/drop-targets";
 import type { Dynamic } from "../../runtime-types";
 import { randomSessionToken } from "../working-state";
+import type { ProjectFiles } from "../../preview/asset-rewriting";
+import type { CanvasManifest } from "../manifest-history";
 import { annotationToElementHtml } from "./annotations";
 import {
   dropCanvasObjectIntoArtboard,
@@ -20,53 +22,85 @@ import { requestDropPlanPreview, trackObjectHoverOverArtboard } from "./drag-hov
  * 每项都是 getter，保证惰性读取（入口里声明靠后的函数和 ref 在事件触发时才取值）。
  * hostGesturingRef 属于更广的宿主手势状态，由入口持有并经 session.hostGesturing 传入。
  */
+type Ref<T> = { current: T };
+
+/** 画板槽位对外暴露的拖动与序列化能力（只列出本会话用到的）。 */
+interface ArtboardDragEntry {
+  dropPlanClear(token: string): void;
+  moveHost(token: string, mode: "open" | "close"): Promise<boolean>;
+  renderDefaults(): Promise<unknown>;
+  serializeSelection(tids: number[], options: { bakeProps: boolean; vals: unknown }): string | null;
+  hostDrag(action: string, gestureKey: string): void;
+  pieceContent(): unknown;
+  describeTids(tids: number[]): { kind: string }[];
+}
+
+/** 悬停命中的画板：frameless 画板只有在激活时才接收悬停。 */
+interface HoverableArtboard {
+  file: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  frameless?: boolean;
+}
+
+/** 可撤销历史的读写口：落点撤销需要读取栈顶并执行 undo。 */
+interface InlineHistoryKeeper {
+  headBound(direction: "undo" | "redo"): unknown;
+  busy(): boolean;
+  undo(): string;
+  clearRedo(): void;
+}
+
 /** useCanvasDragSession 的依赖：每个字段都是 getter，由入口按需读取。 */
 export interface CanvasDragSessionDependencies {
-  project: { assets: Dynamic; doc: Dynamic };
+  /** assets 只透传给拖动预览；doc 供预览读取项目文件，也透传给落点提交。 */
+  project: { assets: unknown; doc: { content(): { files: ProjectFiles } } };
   target: {
-    artboardEntries: Dynamic;
-    pageContents: Dynamic;
-    activeArtboard: Dynamic;
-    playingFile: Dynamic;
-    fullscreenActive: Dynamic;
-    focusedFile: Dynamic;
-    getArtboardTitle: Dynamic;
-    componentName: Dynamic;
-    recordDropTarget: Dynamic;
+    artboardEntries: Ref<Map<string, ArtboardDragEntry>>;
+    pageContents: Ref<{ artboards: HoverableArtboard[] }>;
+    activeArtboard: Ref<string | null>;
+    playingFile: Ref<string | null>;
+    fullscreenActive: Ref<boolean>;
+    focusedFile: Ref<string | null>;
+    getArtboardTitle: (fileKey: string) => string;
+    componentName: (file: string) => unknown;
+    recordDropTarget: (...args: unknown[]) => unknown;
   };
   session: {
-    pendingSelectionCommands: Dynamic;
-    waitForBoundOperation: Dynamic;
-    runSelectionCommand: Dynamic;
-    hostGesturing: Dynamic;
+    pendingSelectionCommands: Ref<number>;
+    waitForBoundOperation: (key: unknown) => Promise<unknown>;
+    runSelectionCommand: (timeoutMs: number) => unknown;
+    hostGesturing: Ref<boolean>;
   };
   history: {
-    inlineHistory: Dynamic;
-    recordManifestHistory: Dynamic;
-    runWhenConditionReady: Dynamic;
+    inlineHistory: Ref<InlineHistoryKeeper | null>;
+    recordManifestHistory: Ref<(...args: unknown[]) => unknown>;
+    runWhenConditionReady: (condition: () => boolean, onReady: () => void, attempts?: number) => void;
   };
   document: {
-    manifest: Dynamic;
-    manifestState: Dynamic;
-    dropCanvasObject: Dynamic;
-    deleteCanvasObjects: Dynamic;
-    savePageSelection: Dynamic;
-    supportsLoadState: Dynamic;
-    persistManifest: Dynamic;
-    markArtboardDropped: Dynamic;
+    manifest: Ref<CanvasManifest>;
+    manifestState: CanvasManifest;
+    dropCanvasObject: (travelState: unknown) => Promise<unknown>;
+    deleteCanvasObjects: Ref<(...args: unknown[]) => unknown>;
+    savePageSelection: (pageId?: string) => unknown;
+    supportsLoadState: boolean;
+    persistManifest: (nextState: CanvasManifest, baseState?: CanvasManifest) => void;
+    markArtboardDropped: (file: string) => unknown;
   };
   selection: {
-    current: Dynamic;
-    setSelection: Dynamic;
-    setShownFrameSelection: Dynamic;
-    abandonGesture: Dynamic;
-    clearFramePick: Dynamic;
+    current: Ref<{ elements: Map<string, { tids: number[] }> }>;
+    setSelection: (selection: unknown) => void;
+    setShownFrameSelection: (selection: unknown) => void;
+    abandonGesture: (...args: unknown[]) => unknown;
+    clearFramePick: () => void;
   };
   feedback: {
-    showToast: Dynamic;
-    showDragToast: Dynamic;
-    clearDragToast: Dynamic;
-    showDragToastRef: Dynamic;
+    showToast: (message: string, variant?: string) => unknown;
+    showDragToast: (message: string) => void;
+    clearDragToast: (message?: string) => void;
+    showDragToastRef: Ref<(message: string) => void>;
   };
 }
 

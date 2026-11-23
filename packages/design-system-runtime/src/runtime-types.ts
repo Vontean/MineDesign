@@ -1,11 +1,9 @@
 /** Every live binding has a reviewed contract or a checked producer type. */
 import type { NpmRuntimeBindings } from "./npm-runtime-types";
 import type { ModuleNamespace } from "./contracts/module-helpers";
-import type { ReviewedRuntimeBindings } from "./reviewed-runtime-types";
 import type { InferredRuntimeBindings } from "./inferred-runtime-types";
 export interface RuntimeBindings
   extends NpmRuntimeBindings,
-    ReviewedRuntimeBindings,
     InferredRuntimeBindings {
   toModuleNamespace<T extends object>(
     moduleValue: T,

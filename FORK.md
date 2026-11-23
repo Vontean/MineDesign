@@ -874,7 +874,7 @@ npx vitest run tools/third-party-notices.test.ts apps/desktop/src/main/packaged-
 | 路径 | 内容 |
 | --- | --- |
 | `runtime.ts`、`bootstrap.tsx`、`dependencies.ts`、`module-helpers.ts` | 入口与安装顺序；挂界面；npm 依赖的登记；CommonJS / ESM 互操作 |
-| `runtime-api.ts`、`runtime-types.ts`、`reviewed-runtime-types.ts`、`inferred-runtime-types.ts`、`npm-runtime-types.ts`、`types.ts`、`contracts.ts`、`contracts/`、`reconstruction/` | 绑定表与各模块之间的协议类型（含宿主全局 `ProtocolGlobal`，`contracts/platform-host.ts`） |
+| `runtime-api.ts`、`runtime-types.ts`、`inferred-runtime-types.ts`、`npm-runtime-types.ts`、`types.ts`、`contracts.ts`、`contracts/`、`reconstruction/` | 绑定表与各模块之间的协议类型（含宿主全局 `ProtocolGlobal`，`contracts/platform-host.ts`） |
 | `files/`、`files/ui/` | 按文件存储：启动与读取、索引编解码、懒读、保存队列、外部改动、迁移（旧版单页存储）；应用外壳、导航与搜索、文件表、欢迎页 |
 | `editor/` | 各章节的编辑器：色板与对比度、字体、间距与圆角、阴影、组件预览（`run.html` runner、swatch 运行时）、素材组与上传、Markdown 文档、向智能体发请求（`claude-delivery.tsx`、`claude-prompts.ts`）、迁移提示条 |
 | `model/` | 设计系统模型：tokens、文件策略与分类、组件推断、文档生成（`documentation.ts`、`remote-text.ts`）、预览用的库目录（`libraries.ts`）、发布 |
@@ -896,8 +896,8 @@ shim（`packages/design-system/src/editor`）不用 `declare global` 声明 `des
 
 代码里以 `BaoCut:` 注释标出，页面模板 `apps/design-system-editor/index.html` 的改动写在它开头的注释里。
 
-- **宿主接口**：运行时从 `globalThis.designSystemHost` 读宿主能力，原运行时读 `globalThis.claude`。统一入口 `host/claude-capabilities.ts` 之外另有直接读的地方，都改了：`contracts/platform-host.ts`、`contracts/model-core.ts`、`contracts/editor-runtime.ts`、`reviewed-runtime-types.ts`、`host/hot-reload.ts`、`media/assets.ts`、`model/asset-store.ts`、`model/derive-system.ts`、`files/reopen.ts`、`editor/claude-delivery.tsx`（5 处）、`documents/storage.ts`、`documents/self-publish.ts`、`files/debug-panel.ts`；提到它的报错文案也改了。宿主对象由 `installDesignSystemEditorHost()` 装上，复用 `@baocut/slides/editor` 的 `connectEditorHost`；提供哪些能力（`artifact`、`self`、`user`（另给 `name()`）、`assets`，在会话的标签里另有 `chat`）、不提供哪些（`use`、`comments`、`room`、`hot`、`db`、`downloads`、`commentLabels`；运行时本来就不调 `comments`，标注的桥交给 shim 自己的目标层 `comment-targets.ts`），见 `packages/design-system/src/editor/design-system-host.ts`。
-- **标注**：原版不画批注层，只在 DOM 上标目标，批注层归宿主；BaoCut 的父窗口跨源读不到 DOM，所以这一层在 shim 里（`packages/design-system/src/editor/comment-targets.ts`）。运行时这边只改两处：`commentTargetProps` 另标原名 `data-comment-name`（`editor/comment-anchors.ts`，类型在 `reviewed-runtime-types.ts`），名字截短加哈希后位置标签仍能写原名；`files/ui/design-system-app.tsx` 监听 `baocut:reveal-comment-target`，跳回一处时与搜索里选中一条走同一条路（`navigationSearch.onPick`），索引里没有那个目标时按给的章节去等它出现。
+- **宿主接口**：运行时从 `globalThis.designSystemHost` 读宿主能力，原运行时读 `globalThis.claude`。统一入口 `host/claude-capabilities.ts` 之外另有直接读的地方，都改了：`contracts/platform-host.ts`、`contracts/model-core.ts`、`contracts/editor-runtime.ts`、`host/hot-reload.ts`、`media/assets.ts`、`model/asset-store.ts`、`model/derive-system.ts`、`files/reopen.ts`、`editor/claude-delivery.tsx`（5 处）、`documents/storage.ts`、`documents/self-publish.ts`、`files/debug-panel.ts`；提到它的报错文案也改了。宿主对象由 `installDesignSystemEditorHost()` 装上，复用 `@baocut/slides/editor` 的 `connectEditorHost`；提供哪些能力（`artifact`、`self`、`user`（另给 `name()`）、`assets`，在会话的标签里另有 `chat`）、不提供哪些（`use`、`comments`、`room`、`hot`、`db`、`downloads`、`commentLabels`；运行时本来就不调 `comments`，标注的桥交给 shim 自己的目标层 `comment-targets.ts`），见 `packages/design-system/src/editor/design-system-host.ts`。
+- **标注**：原版不画批注层，只在 DOM 上标目标，批注层归宿主；BaoCut 的父窗口跨源读不到 DOM，所以这一层在 shim 里（`packages/design-system/src/editor/comment-targets.ts`）。运行时这边只改两处：`commentTargetProps` 另标原名 `data-comment-name`（`editor/comment-anchors.ts`），名字截短加哈希后位置标签仍能写原名；`files/ui/design-system-app.tsx` 监听 `baocut:reveal-comment-target`，跳回一处时与搜索里选中一条走同一条路（`navigationSearch.onPick`），索引里没有那个目标时按给的章节去等它出现。
 - **frame 协议**：父窗口的 origin 白名单为空（`host/frame-bridge.tsx` 的 `DEFAULT_HOST_ORIGINS`），编辑器自己画保存状态与只读标记，不把导出、保存、只读交给宿主画。
 - **功能开关固定**：页面模板装固定取值的 `__appifact_flags`，不向宿主要；`design_system_clean_up_button` 取原版的 `true`，其余是运行时读开关时的默认值。不装健康上报 `__appifact_health`。
 - **能力声明**：页面的 `appifact-capabilities` 去掉 `room`；运行时只读其中的 `db`（判断存储方式）与 `downloads`（是否声明了下载）。

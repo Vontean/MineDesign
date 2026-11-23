@@ -4,22 +4,36 @@ import { finishPickerEdit } from "../picker/bridge";
 import { classifyTextListEdit } from "../text/list-state";
 import { SessionBusyError, UnsettledEditsError } from "./errors";
 import type { Dynamic } from "../../runtime-types";
+import type { TextEditState, TypingQuietScheduler } from "./picker-messages";
+import type { PreviewFrame, Ref } from "./selection-state";
 
 interface SessionSettlementOptions {
-  readonly getPreviewFrame: Dynamic;
-  readonly readOnlyRef: Dynamic;
-  readonly pendingTextStateRef: Dynamic;
-  readonly pendingTextRequestCounter: Dynamic;
-  readonly modelRef: Dynamic;
-  readonly rootName: Dynamic;
-  readonly finishTextEdit: Dynamic;
-  readonly typingQuietScheduler: Dynamic;
-  readonly isReloadSuppressedRef: Dynamic;
-  readonly resolveReloadDecisionRef: Dynamic;
-  readonly hasUnsavedChanges: Dynamic;
-  readonly flushSessionEdits: Dynamic;
-  readonly settleSessionRef: Dynamic;
-  readonly active: Dynamic;
+  readonly getPreviewFrame: () => PreviewFrame | null | undefined;
+  readonly readOnlyRef: Ref<boolean>;
+  readonly pendingTextStateRef: Ref<TextEditState | null>;
+  /** begin 登记一次待决的文字请求，返回的函数结束该登记。 */
+  readonly pendingTextRequestCounter: { begin(hasPendingText: boolean): () => void };
+  readonly modelRef: Ref<{
+    state(templateName: string):
+      | {
+          readonly undo: readonly unknown[];
+          readonly pendingScript: unknown;
+          readonly pendingProps: unknown;
+          readonly model: { serialize(): string };
+        }
+      | null
+      | undefined;
+  }>;
+  readonly rootName: string;
+  readonly finishTextEdit: (edit: { type: "textEdit" } & Record<string, Dynamic>) => unknown;
+  readonly typingQuietScheduler: TypingQuietScheduler;
+  readonly isReloadSuppressedRef: Ref<boolean>;
+  readonly resolveReloadDecisionRef: Ref<unknown>;
+  readonly hasUnsavedChanges: () => boolean;
+  readonly flushSessionEdits: (options?: { eject?: boolean }) => Promise<unknown>;
+  /** 外部持有的收敛入口；会话活跃时写入，卸载时清空。 */
+  readonly settleSessionRef: Ref<(() => Promise<void>) | null> | undefined;
+  readonly active: boolean;
 }
 
 /** 结束画板文字编辑、收敛保存并保护会话退出。 */

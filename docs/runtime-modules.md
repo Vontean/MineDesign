@@ -7,7 +7,7 @@
 | 包 | 状态 | 验证 |
 | --- | --- | --- |
 | design-runtime | 注册表已移除，迁移时 610 个文件全部改为 import；注册表的类型定义已删除 | 迁移时 17 个基线场景与迁移前零差异。现行基线为 24 个场景（含设计系统），Ticket #38 各轮均零差异 |
-| design-system-runtime | 注册表已移除，迁移时 218 个文件全部改为 import；注册表遗留的类型桥 `reviewed-runtime-types.ts` 尚未清理 | 迁移时 6 个基线场景与迁移前零差异；现行基线见上 |
+| design-system-runtime | 注册表已移除，迁移时 218 个文件全部改为 import；注册表遗留的类型桥 `reviewed-runtime-types.ts` 已删除（其 9,000 余行成员表无人读取，仅 3 个类型引用已改为指向真实实现） | 迁移时 6 个基线场景与迁移前零差异；现行基线见上 |
 
 迁移由 `scripts/runtime-to-imports.mjs` 完成，分两步：先把声明提到模块作用域并把读取改为 import，再删除注册表绑定（`--contract`）。被其他文件写入的名称（设计稿 12 个、设计系统 6 个）改为提供方导出的 `set_名称` 函数；取值随界面语言变化的绑定改为 `get_名称()` 访问函数。每个文件仍保留 `installXxx()`，它返回原来的初始化函数，入口按原顺序调用，所以初始化时机没有变化。
 
@@ -98,7 +98,7 @@
 | 模块 | interface | 说明 |
 | --- | --- | --- |
 | 画板选择框数据（`canvas/frame-payloads.ts`） | `SelectionChrome`、`ChromeRing`、`ChromeMeasure`、`ChromeGuide`、`ChromePen`、`parseSelectionChromePayload` | 画布扩展 seam。画板内的选择脚本计算元素位置，以画板像素坐标发给画布；选择框、测距、参考线、钢笔路径的叠层只依赖这些类型。新增叠层功能（例如评论卡片）沿用同一通道：选择脚本提供位置，叠层在画板坐标里渲染 |
-| 评论的几何与锚点（`comments/area-geometry.ts`、`object-geometry.ts`、`anchor-codec.tsx`、`labels.ts`） | `CommentRect`、`CommentArea`、`DesignCommentAnchor` 及各锚点类型、`CommentLabelAnchor` | 区域与对象的归一化坐标、锚点字符串的编码与解析、给人看的位置描述。评论的界面控制（`canvas-controller.tsx`）尚未改写，归入画布主函数收尾 |
+| 评论的几何与锚点（`comments/area-geometry.ts`、`object-geometry.ts`、`anchor-codec.tsx`、`labels.ts`） | `CommentRect`、`CommentArea`、`DesignCommentAnchor` 及各锚点类型、`CommentLabelAnchor` | 区域与对象的归一化坐标、锚点字符串的编码与解析、给人看的位置描述。评论的界面控制（`canvas-controller.tsx`）保留宿主绑定、悬停与框选、键盘焦点等共享状态；锚点解析、落点计算、元素矩形测量与模式快捷键见下方模块表 |
 | 画布评论卡片的排布（`comments/card-layout.ts`） | `CardTarget`、`CardSize`、`CardBounds`、`CardLayoutOptions`、`CardPlacement`、`layoutCommentCards` | 新写的纯函数模块，不是改写：给定目标点屏幕坐标、卡片尺寸与可用区域，算出卡片位置与引线端点，保证互不重叠、不盖住目标点、结果确定。卡片组件 `comment-cards.tsx` 只渲染它的结果 |
 | 预览文档的构建材料（`preview/html-scanner.ts`、`css-rewriting.ts`、`asset-rewriting.ts`、`dependency-graph.ts`、`module-cache.ts`、`blob-paths.ts`、`project-root.ts`）与画板聚焦、预览导航（`canvas/focus.ts`、`canvas/preview-navigation.ts`） | 各文件导出的扫描结果、路径与依赖图类型 | HTML 标签扫描、CSS 与资源路径改写、组件依赖图、模块缓存。预览文档的组装与执行（`build-document.ts`、`evaluation.ts`、`dependency-injection.ts`、`runtime-loading.ts`）和画布导航（`canvas/navigation.ts`）尚未改写 |
 | 组件属性与 Tweaks 的数据（`editor/components/props.ts`、`prop-validation.ts`、`inferred-metadata.ts`、`imports.ts`、`text-edits.ts`、`detach.ts`） | `PropMetadata`、`PropMetadataMap`、`PropOption`、`ComponentImport`、`ComponentTextOption`、`DetachResult` 等 | data-props 的解析与校验、默认值与编辑结果的规整、组件导入的解析、可编辑文字的收集、实例分离的判断。Tweaks 面板的界面（`canvas/artboard-tweaks.tsx`）与预览传值（`use-dc-props.ts`）尚未改写 |
@@ -130,7 +130,7 @@ Ticket #38（2026-11-23）把入口里的完整职责继续收进领域模块，
 | `editor/session.tsx` | 约 4600 行 | `editor/session/` 下 26 个，含消息路由、键盘、收尾、选区持有与写入动作 |
 | `canvas/interaction-layer.tsx` | 约 3400 行 | `canvas/interaction-layer/` 下 18 个，含拖动、槽位派生与槽位事件 |
 | `platform/files-design-document.ts` | 约 2200 行 | 冲突处理在 `platform/board-clash.ts` |
-| 设计系统 `files/design-system-document.ts` | 约 2100 行 | 热重载恢复、文件冲突、撤销栈各自成模块 |
+| 设计系统 `files/design-system-document.ts` | 约 1500 行 | 热重载恢复、文件冲突、撤销栈、生成文件所有权、再生成与 README 各自成模块 |
 | 设计系统 `files/ui/design-system-app.tsx` | 约 2700 行 | token 对话框与编辑、导入队列、欢迎面板、释放存储各自成模块 |
 
 两个运行时的编号机器名与 `_N` 数字后缀名已清理，只被赋值、无人读取的死绑定已删除（`Math.SQRT1_2` 是标准常量）。设计稿运行时仍大量使用 `Dynamic` 类型，类型化是独立的后续工作。
@@ -172,6 +172,9 @@ Ticket #38（2026-11-23）把入口里的完整职责继续收进领域模块，
 | 宿主桥接 | `platform/frame-host-validation.ts` | 维护宿主操作、导出格式、目标与时限校验，供宿主桥和导出注册复用。 |
 | 设计稿文档 | `platform/design-stash-offer.ts` | 管理崩溃暂存的恢复提示、远端变化复核、用户答复与丢弃。文档继续负责内容合并和轮询。 |
 | 设计稿文档 | `platform/board-clash.ts` | 拥有同名画板冲突：识别本地与远端的同名或删除冲突，暂扣远端文件直至焦点离开，处理采用对方、保留我的与另存副本，以及被覆盖保存的放回提示。 |
+| 实时文档 | `platform/live-document-effective.ts`、`live-document-save-state.ts`、`live-document-write-order.ts` | 本地视角文档（待写补丁叠加、缓存与字节数、补丁合并与重基）；保存状态推导、去重通知与延后刷新；写入的到期标记与下一条选择。连接、重连、远端合并与写入确认共用大量标志，留在 `live-document.ts`。 |
+| 画布评论 | `comments/anchor-resolution.ts`、`thread-placement.ts`、`element-rects.ts`、`mode-shortcuts.ts` | 把评论锚点解析为画布坐标，计算线程落点、卡片目标、区域描边与定位目标；每秒重测元素与页面矩形；评论模式的进出快捷键与点击外部退出。 |
+| 编辑 Worker | `worker/css-declarations.ts`、`preview-form.ts`、`preview-svg.ts` | 画板沙箱 Worker 中的纯计算：内联样式声明的解析、合并与序列化；流式预览语句的形态解析与字符串字面量；未闭合 SVG data URL 的补全。求值、文件 SDK 与消息协议入口留在 `worker/runtime.ts`。 |
 | 画布交互 | `canvas/interaction-layer/preview-lifecycle.ts`、`linked-artboards.ts` | 按视口和编辑状态挑选挂载的预览，管理延迟刷新和清理，合并作品及组件更新。 |
 | 画布交互 | `canvas/interaction-layer/title-hover.ts`、`title-press.ts` | 跟踪画板标题与预览之间的悬停，按指针、选区和修饰键决定选择、聚焦或拖动。 |
 | 画布交互 | `canvas/interaction-layer/hover-curtain.ts` | 处理选中画板的悬停遮罩、坐标刷新、修饰键订阅和清理。 |
@@ -202,6 +205,7 @@ Ticket #38（2026-11-23）把入口里的完整职责继续收进领域模块，
 | 设计系统编辑器 | `files/hot-carry-restore.ts` | 热重载后一次性恢复携带的未保存编辑，处理三方合并、冲突标记和丢失提示，远端落地后补发晚到的删除说明。 |
 | 设计系统编辑器 | `files/file-clash.ts` | 拥有同名文件冲突：标记与提示、按 mine/theirs/ask 策略分流、token 文件三方合并、同时发布后找回本地改动，以及用他们的、用我的与另存副本的用户选择。 |
 | 设计系统编辑器 | `files/document-undo.ts` | 拥有设计系统的撤销栈：创建、应用与修剪撤销命令，记录外部索引变化与发布中的索引基线，被他人改过的 token 文件撤销时三方合并。 |
+| 设计系统编辑器 | `files/generated-ownership.ts`、`regeneration.ts`、`generated-readme.ts` | 生成文件的所有权探测与外来文件提示、重试计时；派生文件的再生成、防抖与限流重试；缺失 README 的生成、Consuming 尾部维护与发布冲突后的重试。文档保存回调通过它们暴露的钩子接入。 |
 | 设计系统编辑器 | `files/ui/asset-intake-queue.ts` | 将连续导入的字体与素材合并为一次串行保存，保留已有的手动编辑，导入后跳转到对应章节并释放自动保存暂停。 |
 | 设计系统编辑器 | `files/ui/token-dialog.ts`、`storage-reclaim.ts` | 管理新增颜色、尺度、字体样式与阴影 token 的对话框、默认值、命名与提交定位；释放存储时先保存再确认，删除孤立素材并清空撤销历史。 |
 | 设计系统编辑器 | `files/ui/welcome-upload.ts` | 管理欢迎面板的上传：面板开合、导入记录与结果播报、移除文件和由导入文件创建设计系统。导入队列经它提供的记录与播报动作回报结果。 |

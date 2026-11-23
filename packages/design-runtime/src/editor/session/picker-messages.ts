@@ -24,90 +24,115 @@ import { passiveEditorEvents, runtimeDesignTool } from "../tools";
 import { isPreviewMessage } from "../../platform/file-content";
 import { isImageFile } from "../../platform/image-processing";
 import { type Dynamic } from "../../runtime-types";
+import type { PreviewFrame, Ref, SessionSelection } from "./selection-state";
+
+/** 预览帧发来的编辑器事件载荷；字段由事件类型决定，使用前逐项校验。 */
+type PickerPayload = { readonly type?: string } & Record<string, Dynamic>;
+/** 文字编辑的列表状态（normalizeTextEditListState 的结果）；tid 为 null 表示没有定位到元素。 */
+export interface TextEditState {
+  readonly tid: number | null;
+}
+interface Point {
+  readonly x: number;
+  readonly y: number;
+}
+interface TextEditCommit {
+  readonly tid: number | null;
+  readonly edit: unknown;
+}
+/** 打字静默期调度器，决定何时可以合并保存。 */
+export interface TypingQuietScheduler {
+  boxOpen(): void;
+  boxClosed(): void;
+  dragLive(live: boolean): void;
+  beat(): void;
+}
+/** 模板状态里的撤销栈、模型等结构由编辑模型定义，此处仅作不透明传递。 */
+type TemplateState = Dynamic;
 
 interface PickerMessageDependencies {
   readonly frame: {
-    readonly active: Dynamic;
-    readonly readOnly: Dynamic;
-    readonly previewFrameRef: Dynamic;
-    readonly getPreviewFrame: Dynamic;
-    readonly sessionAliveRef: Dynamic;
-    readonly isEditorActiveRef: Dynamic;
-    readonly isEditorMountedRef: Dynamic;
-    readonly onEditInput: Dynamic;
-    readonly onPointerPresence: Dynamic;
-    readonly onPointerAt: Dynamic;
-    readonly lastCanvasFocusTimeRef: Dynamic;
-    readonly isPickerDraggingRef: Dynamic;
-    readonly isPickerBoxSelectingRef: Dynamic;
-    readonly toolRef: Dynamic;
-    readonly chooseEditorTool: Dynamic;
-    readonly setDirectivesByElement: Dynamic;
+    readonly active: boolean;
+    readonly readOnly: boolean;
+    readonly previewFrameRef: Ref<PreviewFrame | null>;
+    readonly getPreviewFrame: () => PreviewFrame | null | undefined;
+    readonly sessionAliveRef: Ref<boolean>;
+    readonly isEditorActiveRef: Ref<boolean>;
+    readonly isEditorMountedRef: Ref<boolean>;
+    readonly onEditInput: (() => void) | undefined;
+    readonly onPointerPresence: ((inside: boolean) => void) | undefined;
+    readonly onPointerAt: ((point: Point) => void) | undefined;
+    readonly lastCanvasFocusTimeRef: Ref<number>;
+    readonly isPickerDraggingRef: Ref<boolean>;
+    readonly isPickerBoxSelectingRef: Ref<boolean>;
+    readonly toolRef: Ref<string>;
+    readonly chooseEditorTool: (tool: string, shouldToggleTool?: boolean) => void;
+    readonly setDirectivesByElement: (directives: unknown) => void;
   };
   readonly textEditing: {
-    readonly typingQuietScheduler: Dynamic;
-    readonly pendingTextStateRef: Dynamic;
-    readonly pendingTextCommitRef: Dynamic;
-    readonly pendingTextTargetTidRef: Dynamic;
-    readonly commitOpenTextEditRef: Dynamic;
-    readonly finishOpenTextEditRef: Dynamic;
-    readonly finishOpenTextEdit: Dynamic;
-    readonly finishTextEdit: Dynamic;
-    readonly setPendingTextState: Dynamic;
-    readonly textEditOpenStateRef: Dynamic;
-    readonly onTextEditEndedRef: Dynamic;
-    readonly setLinkEditor: Dynamic;
-    readonly setTextEditTargetTid: Dynamic;
-    readonly showInstanceTextHint: Dynamic;
+    readonly typingQuietScheduler: TypingQuietScheduler;
+    readonly pendingTextStateRef: Ref<TextEditState | null>;
+    readonly pendingTextCommitRef: Ref<TextEditCommit | null>;
+    readonly pendingTextTargetTidRef: Ref<number | null>;
+    readonly commitOpenTextEditRef: Ref<unknown> | undefined;
+    readonly finishOpenTextEditRef: Ref<(shouldClassifyEdit?: boolean) => Promise<string | undefined>>;
+    readonly finishOpenTextEdit: () => Promise<unknown>;
+    readonly finishTextEdit: (edit: PickerPayload) => unknown;
+    readonly setPendingTextState: (update: (previous?: TextEditState | null) => TextEditState | null) => void;
+    readonly textEditOpenStateRef: Ref<boolean>;
+    readonly onTextEditEndedRef: Ref<(() => void) | undefined>;
+    readonly setLinkEditor: (editor: Record<string, unknown> | null) => void;
+    readonly setTextEditTargetTid: (tid: number | null) => void;
+    readonly showInstanceTextHint: (instanceTid: number, componentName: string) => void;
   };
   readonly template: {
-    readonly rootName: Dynamic;
-    readonly modelRef: Dynamic;
-    readonly dcPropsRef: Dynamic;
-    readonly ensureModel: Dynamic;
-    readonly streamingTemplateNames: Dynamic;
-    readonly recoverMissingTemplate: Dynamic;
-    readonly pushUndoEdit: Dynamic;
-    readonly revokeUndoEdit: Dynamic;
-    readonly commitStructuralEdit: Dynamic;
+    readonly rootName: string;
+    readonly modelRef: Ref<{ state(templateName: string): TemplateState | null | undefined }>;
+    readonly dcPropsRef: Ref<{ propsMeta?: unknown }>;
+    readonly ensureModel: (templateName: string) => Promise<TemplateState>;
+    readonly streamingTemplateNames: ReadonlySet<string>;
+    readonly recoverMissingTemplate: () => unknown;
+    readonly pushUndoEdit: (templateName: string, key: string, state: TemplateState) => unknown;
+    readonly revokeUndoEdit: (state: TemplateState, didPushUndo: unknown, previousRedoEntries: unknown) => unknown;
+    readonly commitStructuralEdit: (state: TemplateState, wrappedTextRuns: unknown) => unknown;
   };
   readonly selection: {
-    readonly selectionRef: Dynamic;
-    readonly selectionSequenceRef: Dynamic;
-    readonly clearedSelectionSequenceRef: Dynamic;
-    readonly advanceSelectionSequence: Dynamic;
-    readonly clearSelectionRef: Dynamic;
-    readonly invalidateSelection: Dynamic;
-    readonly markSelectionCleared: Dynamic;
-    readonly foreignClipboardExpiryRef: Dynamic;
-    readonly setSelection: Dynamic;
-    readonly setForeignSelection: Dynamic;
-    readonly selectElements: Dynamic;
+    readonly selectionRef: Ref<SessionSelection | null>;
+    readonly selectionSequenceRef: Ref<number>;
+    readonly clearedSelectionSequenceRef: Ref<number>;
+    readonly advanceSelectionSequence: () => number;
+    readonly clearSelectionRef: () => void;
+    readonly invalidateSelection: () => void;
+    readonly markSelectionCleared: () => void;
+    readonly foreignClipboardExpiryRef: Ref<number>;
+    readonly setSelection: (selection: SessionSelection | null) => void;
+    readonly setForeignSelection: (selection: { html: string } | null) => void;
+    readonly selectElements: (templateName: string, tids: number[], tag?: unknown, instances?: unknown) => unknown;
   };
   readonly gestures: {
-    readonly previewLiveStyle: Dynamic;
-    readonly cancelStylePreview: Dynamic;
-    readonly previewMoveGesture: Dynamic;
-    readonly cancelMovePreview: Dynamic;
-    readonly commitMoveGesture: Dynamic;
-    readonly commitResizeGesture: Dynamic;
-    readonly commitElementRotation: Dynamic;
-    readonly commitGroupTransform: Dynamic;
-    readonly moveStrokeEndpoint: Dynamic;
+    readonly previewLiveStyle: (preview: PickerPayload) => unknown;
+    readonly cancelStylePreview: (preview: PickerPayload) => unknown;
+    readonly previewMoveGesture: (gesture: PickerPayload) => unknown;
+    readonly cancelMovePreview: (gesture: PickerPayload) => unknown;
+    readonly commitMoveGesture: (gesture: PickerPayload) => unknown;
+    readonly commitResizeGesture: (gesture: PickerPayload) => unknown;
+    readonly commitElementRotation: (gesture: PickerPayload) => unknown;
+    readonly commitGroupTransform: (kind: "rotate" | "resize", gestureKey: string | undefined, name: string, members: unknown) => unknown;
+    readonly moveStrokeEndpoint: (gesture: PickerPayload) => unknown;
   };
   readonly insertion: {
-    readonly setInsertionMenuPosition: Dynamic;
-    readonly lastContextMenuShortcutTimeRef: Dynamic;
-    readonly isClipboardFeatureEnabled: Dynamic;
-    readonly placeToolElementRef: Dynamic;
-    readonly routeMediaDropRef: Dynamic;
-    readonly pasteMediaFilesRef: Dynamic;
-    readonly pasteClipboardElementsRef: Dynamic;
-    readonly routeForwardedKey: Dynamic;
+    readonly setInsertionMenuPosition: (position: Record<string, unknown>) => void;
+    readonly lastContextMenuShortcutTimeRef: Ref<number>;
+    readonly isClipboardFeatureEnabled: boolean;
+    readonly placeToolElementRef: Ref<(payload: unknown) => unknown>;
+    readonly routeMediaDropRef: Ref<(payload: unknown) => unknown>;
+    readonly pasteMediaFilesRef: Ref<(files: File[]) => unknown>;
+    readonly pasteClipboardElementsRef: Ref<(options?: { inTabOnly?: boolean; seen?: unknown }) => unknown>;
+    readonly routeForwardedKey: ((action: string, payload?: { stamp: unknown; seen: unknown }) => unknown) | undefined;
   };
   readonly feedback: {
-    readonly showToast: Dynamic;
-    readonly showDeduplicatedToast: Dynamic;
+    readonly showToast: (message: string, variant?: string) => unknown;
+    readonly showDeduplicatedToast: (message: string) => unknown;
   };
 }
 

@@ -5,7 +5,6 @@ import type * as Token from "../contracts/token-editors";
 import type * as Model from "../contracts";
 import type * as Color from "../contracts/color-controls";
 /** Restored application module; prepare first, initialize in original order. */
-import { type RuntimeBindings } from "../runtime-types";
 import { loadJsxNamespace, loadReactNamespace } from "../dependencies";
 import { isComposingEvent } from "./markdown-toolbar";
 import { normalizeTokenName } from "../model/token-commands";
@@ -25,7 +24,7 @@ function showEditorNotification(message: string, toastOptions?: number): void {
 }
 function showEditorPromiseNotification(
   promise: string,
-  toastOptions: Parameters<RuntimeBindings["showActionToast"]>[1],
+  toastOptions: Parameters<typeof showActionToast>[1],
 ): number {
   clearAllToasts();
   return showActionToast(promise, toastOptions);

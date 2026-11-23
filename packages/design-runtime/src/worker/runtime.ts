@@ -2,6 +2,19 @@ import type { DoneMessage } from "./types";
 /** Fast edit runtime: CSS fidelity, SDK v1/v2/v3, streaming statements and previews. */
 import { Window as HappyWindow } from "happy-dom";
 import { jQueryFactory as createJQuery } from "jquery/factory";
+import {
+  collapseFlexShorthand,
+  cssDeclarationMap,
+  extractBackgroundUrl,
+  freshCssDeclaration,
+  kebabCaseCssProperty,
+  matchesCssDeclarations,
+  parseCssDeclarations,
+  replaceCssDeclaration,
+  serializeCssDeclarations,
+} from "./css-declarations";
+import { parsePreviewForm, readStringLiteral } from "./preview-form";
+import { completeSvgDataUrl } from "./preview-svg";
 import * as statementStream from "./statement-stream";
 import type {
   Dynamic,
@@ -492,48 +505,6 @@ function createEditRuntime(
   }
   let originalStyles: Dynamic = new WeakMap();
   let scratchElement: Dynamic = null;
-  function parseCssDeclarations(
-    css?: Dynamic,
-    ..._unusedArgs: Dynamic[]
-  ): Dynamic {
-    let declarations: Dynamic = [];
-    let parenthesisDepth: Dynamic = 0;
-    let quote: Dynamic = "";
-    let declarationStart: Dynamic = 0;
-    for (let index: Dynamic = 0; index <= css.length; index++) {
-      let character: Dynamic = css[index];
-      if (
-        index === css.length ||
-        (character === ";" && !parenthesisDepth && !quote)
-      ) {
-        let text: Dynamic = css.slice(declarationStart, index).trim();
-        let colonIndex: Dynamic = text.indexOf(":");
-        if (((declarationStart = index + 1), colonIndex > 0))
-          declarations.push({
-            prop: text.slice(0, colonIndex).trim().toLowerCase(),
-            value: text.slice(colonIndex + 1).trim(),
-            text: text,
-          });
-      } else if (quote) {
-        if (character === quote) quote = "";
-      } else if (character === '"' || character === "'") quote = character;
-      else if (character === "(") parenthesisDepth++;
-      else if (character === ")" && parenthesisDepth) parenthesisDepth--;
-    }
-    return declarations;
-  }
-  let cssDeclarationMap: Dynamic = (
-    declarations?: Dynamic,
-    ..._unusedArgs: Dynamic[]
-  ): Dynamic =>
-    new Map(
-      parseCssDeclarations(declarations).map(
-        (declaration?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic => [
-          declaration.prop,
-          declaration.value,
-        ],
-      ),
-    );
   let normalizeCssDeclaration: Dynamic = (
     declaration?: Dynamic,
     ..._unusedArgs: Dynamic[]
@@ -554,119 +525,9 @@ function createEditRuntime(
     scratchElement.removeAttribute("style");
     return [parsedDeclarations, normalizedDeclarations];
   };
-  let matchesCssDeclarations: Dynamic = (
-    declarations?: Dynamic,
-    expectedDeclarations?: Dynamic,
-    seenProperties?: Dynamic,
-    ..._unusedArgs: Dynamic[]
-  ): Dynamic => {
-    if (!declarations.size) return false;
-    for (let [propertyName, declaration] of declarations)
-      if (expectedDeclarations.get(propertyName) !== declaration || seenProperties.has(propertyName)) return false;
-    return true;
-  };
-  let freshCssDeclaration: Dynamic = (
-    property?: Dynamic,
-    cssValue?: Dynamic,
-    ..._unusedArgs: Dynamic[]
-  ): Dynamic => ({
-    prop: property,
-    value: cssValue,
-    fresh: true,
-  });
-  function collapseFlexShorthand(
-    declarations?: Dynamic,
-    ..._unusedCollapseArgs: Dynamic[]
-  ): Dynamic {
-    let findDeclaration: Dynamic = (
-      property?: Dynamic,
-      ..._unusedArgs: Dynamic[]
-    ): Dynamic =>
-      declarations.find(
-        (declaration?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
-          declaration.fresh && declaration.prop === property,
-      );
-    let flexGrow: Dynamic = findDeclaration("flex-grow");
-    let flexShrink: Dynamic = findDeclaration("flex-shrink");
-    let flexBasis: Dynamic = findDeclaration("flex-basis");
-    if (
-      flexGrow &&
-      flexShrink &&
-      flexBasis &&
-      flexShrink.value === "1" &&
-      flexBasis.value === "0%"
-    ) {
-      flexGrow.prop = "flex";
-      declarations = declarations.filter(
-        (declaration?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
-          declaration !== flexShrink && declaration !== flexBasis,
-      );
-    }
-    for (let declaration of declarations)
-      if (declaration.fresh && declaration.prop === "flex")
-        declaration.value = declaration.value.replace(/^(\d+(?:\.\d+)?) 1 0%$/, "$1");
-    return declarations;
-  }
-  let serializeCssDeclarations: Dynamic = (
-    declarations?: Dynamic,
-    ..._unusedArgs: Dynamic[]
-  ): Dynamic =>
-    declarations
-      .map(
-        (declaration?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
-          declaration.fresh
-            ? declaration.prop + ": " + declaration.value
-            : declaration.text,
-      )
-      .join("; ");
   let fallbackStyles: Dynamic = new WeakMap();
   let removedStyleProperties: Dynamic = new WeakMap();
   let directStyleWrites: Dynamic = new WeakSet();
-  let kebabCaseCssProperty: Dynamic = (
-    propertyName?: Dynamic,
-    ..._unusedArgs: Dynamic[]
-  ): Dynamic =>
-    String(propertyName)
-      .replace(/^ms(?=[A-Z])/, "-ms")
-      .replace(
-        /[A-Z]/g,
-        (character?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
-          "-" + character.toLowerCase(),
-      );
-  let extractBackgroundUrl: Dynamic = (
-    cssText?: Dynamic,
-    ..._unusedArgs: Dynamic[]
-  ): Dynamic => {
-    let urlStart: Dynamic = cssText.search(/url\(/i);
-    if (urlStart < 0) return "";
-    let text: Dynamic = "";
-    for (let index: Dynamic = urlStart + 4; index < cssText.length; index++) {
-      let character: Dynamic = cssText[index];
-      if (text) {
-        if (character === text) text = "";
-      } else if (character === '"' || character === "'") text = character;
-      else if (character === ")") return cssText.slice(urlStart, index + 1);
-    }
-    return "";
-  };
-  function replaceCssDeclaration(
-    cssText?: Dynamic,
-    propertyName?: Dynamic,
-    propertyValue?: Dynamic,
-    ..._unusedArgs: Dynamic[]
-  ): Dynamic {
-    let declarations: Dynamic = parseCssDeclarations(cssText);
-    let replaced: Dynamic = false;
-    let items: Dynamic = [];
-    for (let declaration of declarations)
-      if (declaration.prop !== propertyName) items.push(declaration.text);
-      else if (!replaced) {
-        items.push(propertyName + ": " + propertyValue);
-        replaced = true;
-      }
-    if (!replaced) items.push(propertyName + ": " + propertyValue);
-    return items.join("; ");
-  }
   let lastJqueryStyles: Dynamic = new WeakMap();
   let canonicalCss: Dynamic = (
     cssText?: Dynamic,
@@ -4201,176 +4062,6 @@ function createEditRuntime(
   }
   let previewState: Dynamic = null;
   let previewElement: Dynamic = null;
-  let quotedStringPattern: Dynamic = (
-    captureGroupIndex?: Dynamic,
-    ..._unusedArgs: Dynamic[]
-  ): Dynamic => `(['"])((?:\\\\.|(?!\\` + captureGroupIndex + ")[^\\\\\\n])*)\\" + captureGroupIndex;
-  let PREVIEW_PATTERNS: Dynamic = {
-    assign: /^(?:(?:var|let|const)\s+)?(?:[A-Za-z_$][\w$]*\s*=\s*)?/,
-    sel: new RegExp("^\\$\\(\\s*" + quotedStringPattern(1) + "\\s*\\)"),
-    all: /^\$\(\s*\)/,
-    me: /^(?:\$\.slide|slide)\b/,
-    k: /^(?:k|\$k)\(\s*([\w\s,'"]*?)\s*\)/,
-    file: new RegExp(
-      "^(?:file|deck\\.slide)\\(\\s*" + quotedStringPattern(1) + "\\s*\\)",
-    ),
-    step: new RegExp(
-      "^\\s*\\.(find|children|eq|first|last|parent|next|prev|closest|filter|not)\\(\\s*(?:" +
-        quotedStringPattern(2) +
-        "|(-?\\d+))?\\s*\\)",
-    ),
-    into: /^\s*\.(html|append|prepend|after|before)\(\s*(?=['"`])/,
-    make: /^(?:\$|(?:deck\.)?add)\(\s*(?=['"`])/,
-  };
-  let unescapeSelector: Dynamic = (
-    selector?: Dynamic,
-    ..._unusedArgs: Dynamic[]
-  ): Dynamic => selector.replace(/\\(.)/g, "$1");
-  function parsePreviewForm(
-    code?: Dynamic,
-    ..._unusedPreviewFormArgs: Dynamic[]
-  ): Dynamic {
-    let offset: Dynamic = (code.match(/^\s*/) || [""])[0].length;
-    offset += (code.slice(offset).match(PREVIEW_PATTERNS.assign) || [""])[0]
-      .length;
-    let remaining: Dynamic = (..._unusedArgs: Dynamic[]): Dynamic =>
-      code.slice(offset);
-    let match: Dynamic;
-    if ((match = remaining().match(PREVIEW_PATTERNS.make))) {
-      let literalOffset: Dynamic = offset + match[0].length;
-      let usesJquery: Dynamic = match[0][0] === "$";
-      let literal: Dynamic = readStringLiteral(code, literalOffset);
-      if (!literal) return null;
-      let firstCharacter: Dynamic = (literal.value.match(/^\s*(\S)/) || [])[1];
-      if (firstCharacter === undefined) return literal.closed ? null : undefined;
-      if (!usesJquery || firstCharacter === "<")
-        return {
-          method: usesJquery ? "create" : "add",
-          at: literalOffset,
-          steps: null,
-        };
-    }
-    let steps: Dynamic = [];
-    if (chainMode && remaining()[0] === ".") {
-      steps.push(["prev"]);
-      match = [""];
-    } else if ((match = remaining().match(PREVIEW_PATTERNS.sel))) {
-      let selectorLiteral: Dynamic = readStringLiteral(
-        code,
-        offset + match[0].indexOf(match[1]),
-      );
-      if (!selectorLiteral || !selectorLiteral.closed || /^\s*</.test(selectorLiteral.value)) return null;
-      steps.push(["$", selectorLiteral.value]);
-    } else if ((match = remaining().match(PREVIEW_PATTERNS.all)))
-      steps.push(["files"]);
-    else if ((match = remaining().match(PREVIEW_PATTERNS.me)))
-      steps.push(["me"]);
-    else if ((match = remaining().match(PREVIEW_PATTERNS.k)))
-      steps.push(["k", match[1].replace(/['"]/g, " ")]);
-    else if ((match = remaining().match(PREVIEW_PATTERNS.file)))
-      steps.push(["file", unescapeSelector(match[2])]);
-    else
-      return code.length - offset < 80 &&
-        /^[$\w.]*\(?\s*['"]?[^'"]*$/.test(remaining())
-        ? undefined
-        : null;
-    offset += match[0].length;
-    while ((match = remaining().match(PREVIEW_PATTERNS.step))) {
-      steps.push([
-        match[1],
-        match[3] !== undefined
-          ? unescapeSelector(match[3])
-          : match[4] !== undefined
-            ? +match[4]
-            : undefined,
-      ]);
-      offset += match[0].length;
-    }
-    if ((match = remaining().match(PREVIEW_PATTERNS.into)))
-      return {
-        method: match[1],
-        at: offset + match[0].length,
-        steps: steps,
-      };
-    return /^\s*(?:\.\w*(?:\(\s*(?:['"][^'"\n]*|-?\d*)?\s*)?)?$/.test(
-      remaining(),
-    )
-      ? undefined
-      : null;
-  }
-  function readStringLiteral(
-    code?: Dynamic,
-    start?: Dynamic,
-    ..._unusedArgs: Dynamic[]
-  ): Dynamic {
-    let quote: Dynamic = code[start];
-    let escapes: Dynamic = {
-      n: `
-`,
-      t: "\t",
-      r: "\r",
-      b: "\b",
-      f: "\f",
-      v: "\v",
-      0: "\x00",
-    };
-    let literalText: Dynamic = "";
-    for (let index: Dynamic = start + 1; index < code.length; index++) {
-      let character: Dynamic = code[index];
-      if (character === "\\") {
-        let escapedCharacter: Dynamic = code[++index];
-        if (escapedCharacter === undefined) break;
-        if (escapedCharacter === "u" || escapedCharacter === "x") {
-          let hexLength: Dynamic = escapedCharacter === "x" ? 2 : 4;
-          let hexDigits: Dynamic = code.slice(index + 1, index + 1 + hexLength);
-          if (code[index + 1] === "{") {
-            let braceEnd: Dynamic = code.indexOf("}", index);
-            if (braceEnd < 0) break;
-            literalText += String.fromCodePoint(
-              parseInt(code.slice(index + 2, braceEnd), 16) || 65533,
-            );
-            index = braceEnd;
-            continue;
-          }
-          if (hexDigits.length < hexLength) break;
-          literalText += String.fromCharCode(parseInt(hexDigits, 16) || 65533);
-          index += hexLength;
-          continue;
-        }
-        literalText +=
-          escapedCharacter ===
-          `
-`
-            ? ""
-            : escapes[escapedCharacter] !== undefined
-              ? escapes[escapedCharacter]
-              : escapedCharacter;
-        continue;
-      }
-      if (character === quote)
-        return {
-          value: literalText,
-          closed: true,
-          end: index,
-        };
-      if (quote === "`" && character === "$") {
-        if (code[index + 1] === "{") return null;
-        if (code[index + 1] === undefined) break;
-      }
-      if (
-        quote !== "`" &&
-        character ===
-          `
-`
-      )
-        return null;
-      literalText += character;
-    }
-    return {
-      value: literalText,
-      closed: false,
-    };
-  }
   function sanitizePreviewHtml(
     html?: Dynamic,
     ..._unusedArgs: Dynamic[]
@@ -4393,7 +4084,7 @@ function createEditRuntime(
     }
     let completedSvgTag: Dynamic =
       insideTag && previewState && previewState.form && previewState.form.steps
-        ? completeSvgDataUrl(html, index)
+        ? completeSvgDataUrl(html, index, previewState)
         : null;
     let completeHtml: Dynamic =
       completedSvgTag !== null
@@ -4404,153 +4095,6 @@ function createEditRuntime(
     let innerHTML: Dynamic = previewElement.innerHTML;
     previewElement.innerHTML = "";
     return innerHTML;
-  }
-  let HTML_ENTITIES: Dynamic = {
-    "&quot;": '"',
-    "&#39;": "'",
-    "&apos;": "'",
-    "&lt;": "<",
-    "&gt;": ">",
-  };
-  let UNSAFE_SVG_ELEMENTS: Dynamic = new Set([
-    "style",
-    "script",
-    "foreignobject",
-    "text",
-  ]);
-  let VOID_ELEMENTS: Dynamic = new Set([
-    "img",
-    "input",
-    "br",
-    "hr",
-    "source",
-    "embed",
-  ]);
-  function completeSvgDataUrl(
-    html?: Dynamic,
-    tagStart?: Dynamic,
-    ..._unusedCompleteSvgArgs: Dynamic[]
-  ): Dynamic {
-    let scanner: Dynamic = previewState.g;
-    if (scanner === null) return null;
-    let abandon: Dynamic = (..._unusedArgs: Dynamic[]): Dynamic => {
-      previewState.g = null;
-      return null;
-    };
-    if (scanner && scanner.from !== tagStart) return abandon();
-    if (!scanner) {
-      let attributeMatch: Dynamic =
-        /^<([A-Za-z][\w-]*)((?:\s+[\w:-]+(?:=(?:"[^"]*"|'[^']*'))?)*)\s+[\w:-]+=(["'])/.exec(
-          html.slice(tagStart),
-        );
-      if (!attributeMatch) return html.length - tagStart > 400 ? abandon() : null;
-      let attributeStart: Dynamic = tagStart + attributeMatch[0].length;
-      let slice: Dynamic = html.slice(attributeStart);
-      if (slice.includes(attributeMatch[3])) return abandon();
-      let svgUrlMatch: Dynamic =
-        /url\(\s*(&quot;|&#39;|&apos;|'|")data:image\/svg\+xml((?:;[\w=-]+)*),/i.exec(
-          slice,
-        );
-      if (!svgUrlMatch) return slice.length > 2000 ? abandon() : null;
-      if (
-        /;base64/i.test(svgUrlMatch[2]) ||
-        /url\(/i.test(slice.slice(0, svgUrlMatch.index))
-      )
-        return abandon();
-      scanner = previewState.g = {
-        from: tagStart,
-        i: attributeStart + svgUrlMatch.index + svgUrlMatch[0].length,
-        Q: svgUrlMatch[1],
-        aq: attributeMatch[3],
-        depth: 0,
-        tag: 0,
-        q: "",
-        name: "",
-        closing: false,
-        slash: false,
-        cut: -1,
-        done: false,
-        was: -2,
-        out: null,
-        s0: attributeStart + svgUrlMatch.index + svgUrlMatch[0].length,
-        tail:
-          svgUrlMatch[1] +
-          ")" +
-          attributeMatch[3] +
-          ">" +
-          (VOID_ELEMENTS.has(attributeMatch[1].toLowerCase())
-            ? ""
-            : "</" + attributeMatch[1] + ">"),
-      };
-    }
-    while (scanner.i < html.length && !scanner.done) {
-      let decodedCharacter: Dynamic = html[scanner.i];
-      let count: Dynamic = 1;
-      let sourceToken: Dynamic = decodedCharacter;
-      if (decodedCharacter === "&") {
-        let match: Dynamic = Object.keys(HTML_ENTITIES).find(
-          (entity?: Dynamic, ..._unusedCallbackArgs: Dynamic[]): Dynamic =>
-            html.startsWith(entity, scanner.i),
-        );
-        if (match) {
-          decodedCharacter = HTML_ENTITIES[match];
-          count = match.length;
-          sourceToken = match;
-        } else if (html.length - scanner.i < 6) break;
-      }
-      if (sourceToken === scanner.Q || sourceToken === scanner.aq) return abandon();
-      if (scanner.i - scanner.s0 > 12000) return abandon();
-      if (!scanner.tag) {
-        if (decodedCharacter === "<") {
-          let svgTagMatch: Dynamic = /^(\/?)([A-Za-z][\w:.-]*)(?=[\s/>]|&gt;)/.exec(
-            html.slice(scanner.i + count, scanner.i + count + 40),
-          );
-          if (!svgTagMatch) {
-            if (
-              html.length - scanner.i - count < 40 &&
-              /^\/?[\w:.-]*$/.test(html.slice(scanner.i + count))
-            )
-              break;
-            return abandon();
-          }
-          if (
-            ((scanner.name = svgTagMatch[2].toLowerCase()),
-            (scanner.closing = svgTagMatch[1] === "/"),
-            UNSAFE_SVG_ELEMENTS.has(scanner.name) ||
-              (scanner.depth === 0 &&
-                (scanner.closing || scanner.name !== "svg")))
-          )
-            return abandon();
-          scanner.tag = 1;
-          scanner.slash = false;
-          scanner.i += count + svgTagMatch[0].length;
-          continue;
-        }
-      } else if (scanner.q) {
-        if (decodedCharacter === scanner.q) scanner.q = "";
-      } else if (decodedCharacter === '"' || decodedCharacter === "'") scanner.q = decodedCharacter;
-      else if (decodedCharacter === "<") return abandon();
-      else if (decodedCharacter === ">") {
-        if (((scanner.tag = 0), scanner.closing)) scanner.depth--;
-        else if (!scanner.slash) scanner.depth++;
-        if (scanner.depth < 0) return abandon();
-        if (scanner.depth === 1) scanner.cut = scanner.i + count;
-        if (scanner.depth === 0) {
-          scanner.cut = scanner.i + count;
-          scanner.done = true;
-        }
-      } else scanner.slash = decodedCharacter === "/";
-      scanner.i += count;
-    }
-    if (scanner.cut < 0) return null;
-    if (scanner.was !== scanner.cut) {
-      scanner.was = scanner.cut;
-      scanner.out =
-        html.slice(tagStart, scanner.cut) +
-        (scanner.done ? "" : "</svg>") +
-        scanner.tail;
-    }
-    return scanner.out;
   }
   function resolvePreviewTarget(
     selectionSteps?: Dynamic,
@@ -4669,7 +4213,7 @@ function createEditRuntime(
     if (previewState.dead) return;
     if (previewState.form === undefined) {
       if (
-        ((previewState.form = parsePreviewForm(pendingStatement)),
+        ((previewState.form = parsePreviewForm(pendingStatement, chainMode)),
         previewState.form === null ||
           (previewState.form === undefined && pendingStatement.length > 400))
       )

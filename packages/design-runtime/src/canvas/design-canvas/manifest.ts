@@ -1,13 +1,22 @@
 import { uiMessage } from '@minedesign/contracts/ui-messages';
 import type { Dynamic } from '../../runtime-types';
+import type { CanvasManifest } from '../manifest-history';
 import { reactChromeTheme as React } from '../../editor/chrome/theme';
 import { structurallyEqual } from '../../platform/document-values';
 import { canvasMetadataFile, designArtboardsMatchFiles, getKvClient, parseCanvasMetadata, projectFileKey, serializeCanvasMetadata } from '../../platform/file-content';
 import { mergeMissingCanvasManifestMetadata, reconcileCanvasManifestHistory } from '../manifest-history';
 
+/** 画布清单所在的实时文档：读取全部文件内容并订阅变更。 */
+interface CanvasManifestDocument {
+  content(): { readonly files: Record<string, string | undefined> };
+  subscribe(listener: (documentEvent?: { remote?: boolean }) => void): () => void;
+  /** 编辑器确认已看到的清单状态；宿主不支持时缺省。 */
+  editorSaw?(documentState: CanvasManifest): void;
+}
+
 /** 保持本地画布清单与远端文件同步，并在保存前合并并发的元数据。 */
 export function useCanvasManifest({ doc, markLocalWrite, showToast }: {
-  doc: Dynamic;
+  doc: CanvasManifestDocument;
   markLocalWrite: () => void;
   showToast: (message: string, variant: 'error') => unknown;
 }) {
